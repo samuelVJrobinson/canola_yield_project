@@ -309,8 +309,10 @@ seeds2014=transmute(plants2014,Field=FieldName,Plot,Plant,
                 Pods=Pods+Bag+Bag_Tscar,Missing=Missing-Bag,
                 Pod1,Pod2,Pod3,Pod4,Pod5,
                 Weigh1,Weigh2,Weigh3,Weigh4,Weigh5,SeedCount) %>% #Selects correct columns
+  
   gather('Pod','Value',9:18) %>% #Melts pod count and pod weight
-  separate(Pod,into=c('Param','PodNum'),sep=-2) %>%
+  
+  separate(Pod,into=c('Param','PodNum'),sep=-1) %>%
   mutate(Param=as.factor(Param),PodNum=as.numeric(PodNum)) %>%
   spread(Param,Value) %>% #Casts pod count and pod weight back
   rename(PodCount=Pod,PodMass=Weigh,Pod=PodNum) %>%
@@ -318,7 +320,8 @@ seeds2014=transmute(plants2014,Field=FieldName,Plot,Plant,
   mutate(FieldPlot=paste(Field,Plot,sep='_'))%>%
   filter(paste(Field,Plot,Plant,sep='.')!='McKee 5.1.5') #Removes McKee5.1.5 (DISPUTE IN LABELLING)
 
-plants2014=summarise_each(group_by(seeds2014,Field,Plot,Plant),funs(mean,se),vars=-FieldPlot)%>% #Mean and SE of metrics for each plant (all mean values except for pod measurements will equal plant-level metrics)
+plants2014= group_by(seeds2014,Field,Plot,Plant) %>% 
+  summarise_each(funs(mean,se),vars=-FieldPlot)%>% #Mean and SE of metrics for each plant (all mean values except for pod measurements will equal plant-level metrics)
   select(Field,Plot,Plant,VegMass=VegMass_mean,SeedMass=SeedMass_mean,
          Branch=Branch_mean,Pods=Pods_mean,Missing=Missing_mean,SeedCount=SeedCount_mean,
          AvPodCount=PodCount_mean,SEPodCount=PodCount_se,AvPodMass=PodMass_mean,SEPodMass=PodMass_se) %>%
@@ -348,7 +351,7 @@ seeds2015=transmute(plants2015,Field=FieldName,Plot,Plant,
                     Pod1,Pod2,Pod3,Pod4,Pod5,
                     Weigh1,Weigh2,Weigh3,Weigh4,Weigh5,SeedCount) %>% #Selects correct columns
   gather('Pod','Value',9:18) %>% #Melts pod count and pod weight
-  separate(Pod,into=c('Param','PodNum'),sep=-2) %>%
+  separate(Pod,into=c('Param','PodNum'),sep=-1) %>%
   mutate(Param=as.factor(Param),PodNum=as.numeric(PodNum)) %>%
   spread(Param,Value) %>% #Casts pod count and pod weight back
   rename(PodCount=Pod,PodMass=Weigh,Pod=PodNum) %>%
@@ -404,7 +407,7 @@ conversion= (1/(50*453.492))/(1/4046.86)
 plantsAll=mutate(plantsAll,Yield=SeedMass*PlDens*conversion)
 
 # Save workspace
-save.image("C:\\Users\\Samuel\\Documents\\Projects\\UofC\\Commodity field analysis\\commodityfieldDataAll.RData")
+save.image("C:\\Users\\Samuel\\Documents\\Projects\\UofC\\canola_yield_project\\Commodity field analysis\\commodityfieldDataAll.RData")
 
 #Data frame descriptions:
 #FIELDS: general field information (not really used)

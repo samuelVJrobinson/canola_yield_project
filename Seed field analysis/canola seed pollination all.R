@@ -25,7 +25,7 @@ prestheme=theme(legend.position='right',
 theme_set(theme_classic()+prestheme) #Sets graph theme to B/Ws + prestheme
 rm(prestheme)
 
-setwd("C:\\Users\\Samuel\\Documents\\Projects\\UofC\\Seed field analysis")
+setwd("C:\\Users\\Samuel\\Documents\\Projects\\UofC\\canola_yield_project\\Seed field analysis")
 load("seedfieldDataAll.RData")
 
 # # Load 2015 data ----------------------------------------------------------

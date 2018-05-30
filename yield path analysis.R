@@ -4,6 +4,7 @@
 library(ggplot2)
 library(dplyr)
 library(tidyr)
+library(jagsUI)
 
 #Big-text theme, no grid lines (used for Bayer 2016 presentation)
 prestheme=theme(legend.position='right',
@@ -18,10 +19,9 @@ prestheme=theme(legend.position='right',
 theme_set(theme_bw()+prestheme) #Sets graph theme to B/Ws + prestheme
 rm(prestheme)
 
-setwd('~/Projects/UofC/Commodity field analysis')
-load("commodityfieldDataAll.RData")
-
-setwd('~/Projects/UofC/Commodity field analysis/Models')
+load("~/Projects/UofC/canola_yield_project/Commodity field analysis/commodityfieldDataAll.RData")
+rm(AICc,brix2mgul,deltaAIC,DIC,plotFixedTerms,predFixef,se,varComp,zeroCheck,conversion)
+setwd('~/Projects/UofC/canola_yield_project')
 
 # Pod-level model ------------------------------------------
 
@@ -37,18 +37,6 @@ datalistPod=with(temp[!is.na(temp$PodCount),],list(
   Npod=length(PodCount),
   SeedCount=PodCount
   ))
-
-#JAGS version
-
-library(jagsUI)
-
-
-# startlist=function() list(
-#   int.Pol= rnorm(1,-3,1),
-#   slope.Fert = rnorm(1,0.1,.2)
-# )
-
-
 
 # mod1=jags(data=datalistPod,inits=startlist,
 #           parameters.to.save=c('int.Pol','slope.Fert','fit','fit.new'),
@@ -82,7 +70,7 @@ mod2=jags(data=datalistPod,inits=startlist,
             'int.PodMass','slope.PodMass','prec.PodMass', #Seed weight-count variables
             'fit.SeedCount','fit.SeedCount.new', #Post. pred checks
             'fit.PodMass','fit.PodMass.new'),
-          model.file='pod_count_weight.txt',
+          model.file='Models/pod_count_weight.txt',
           n.chains=3,n.adapt=1000,n.iter=4500,n.burnin=500,n.thin=4,parallel=T)
 
 summary(mod2)
@@ -93,8 +81,8 @@ pp.check(mod2,'fit.SeedCount','fit.SeedCount.new') #Good
 pp.check(mod2,'fit.PodMass','fit.PodMass.new') #Weird. Very close to 1:1, but offset by constant value. Does the variance change with podcount too?
 
 par(mfrow=c(2,1))
-hist(temp$PodMass,breaks=50,xlim=c(0,0.7))
-hist(rlnorm(1000,-3.04,1/sqrt(1.964)),breaks=100,xlim=c(0,0.7))
+hist(temp$PodMass,breaks=50,xlim=c(0,0.7),main='Actual Pod Mass',xlab='g')
+hist(rlnorm(1000,-3.04,1/sqrt(1.964)),breaks=100,xlim=c(0,0.7),main='Simulated Pod Mass',xlab='g')
 
 
 # Field-level visitation, nectar, and pollen deposition model -------------
