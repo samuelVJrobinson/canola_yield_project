@@ -1,0 +1,43 @@
+model{ #Model of seed count per pod
+
+#Trying out models for seed count:
+#Single binomial, fixed ovule number (~50) - Bad fit (p=1)
+#Single binomial, variable ovule number - Divergent. Comes up with ridiculously high ovule numbers.
+#Overdispersed binomial, fixed ovule number (50) - Fit is better, but still not great (p=0.06)
+#Overdispersed binomial, fixed ovule number (120) - Bad fit (p=1)
+#Overdispersed binomial, variable ovule number - Similar to above (p=0.05), takes a long time to run.
+#Binomial - binomial (requires bounding conditions) - doesn't work due to alleged directed cycle
+#Poisson - Fit is bad
+#Poisson - poisson - Convergence is good, and p.pred checks are good.
+
+#Other notes: Young et al 2004 found ovule numbers ranged from 105-158, and pollen tube numbers from 3-48, 
+#	but that this only translated into ~17 seeds (Table 3). 
+
+# Novules ~ dpois(120) T(100,150)
+Novules <- 120 #Set this as fixed. Not enough info to estimate relationships otherwise...
+int.Pol ~ dnorm(-2,1) 
+slope.Fert ~ dnorm(0.1,1)
+ 
+	for(pod in 1:Npod){					
+	
+		#Number of ovules that become fertilized (conditioned on Novules)
+		log(p1[pod]) <- int.Pol 
+		FertCount[pod] ~ dpois(p1[pod]*Novules) 
+		
+		#Number of fertilized ovules that become seeds (conditioned on FertCount)
+		log(p2[pod]) <- slope.Fert*FertCount[pod] #Model has trouble converging with an intercept term, and has bad p.pred. checks.		
+		SeedCount[pod] ~ dpois((p2[pod]*FertCount[pod])+0.01) 
+							
+		
+		#Absolute residual
+		res[pod] <- abs(SeedCount[pod] - p2[pod]*FertCount[pod])
+		#Generate new dataset
+		count.new[pod] ~ dpois(p2[pod]*FertCount[pod])
+		res.new[pod] <- abs(count.new[pod] - p2[pod]*FertCount[pod])		
+	}
+	
+#Derived parameters for posterior predictive check
+fit <- sum(res[])
+fit.new <- sum(res.new[])
+	
+}

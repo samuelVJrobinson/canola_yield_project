@@ -1,0 +1,17 @@
+model{ 
+#Binomial-binomial model for simulating and re-estimating distribution of seed counts 
+          #Priors
+           a1 ~ dnorm(0,0.1)
+           a2 ~ dnorm(0,0.1) 
+           b2 ~ dnorm(0,0.1)
+           
+             for(i in 1:length(N3)){ #Likelihood
+             
+             logit(p1[i]) <- a1 #Prob. of surviving to N2
+             N2[i] ~ dbin(p1[i],N1) T(N3_2[i],)  #Number of N1 that survive to N2
+             
+             logit(p2[i]) <- a2 + b2*N2[i] #Prob. of surviving to N3
+             N3[i] ~ dbin(p2[i],N2[i])  #Number of N2 that survive to N3		
+             }	
+           }
+           

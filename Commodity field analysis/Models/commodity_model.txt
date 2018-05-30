@@ -1,0 +1,56 @@
+model{
+
+#Priors
+nOvules ~ dunif(maxSeedCount,70)
+theta.OvSuccess ~ dbeta(5,5)
+
+	# for(field in 1:Nfield){
+		
+	# }
+	
+	# for(plot in 1:Nplot){
+		#Hbee Visits ~ Distance + NHives*slope
+		
+		#Pollen count ~ Hbee Visits + Other Visits
+		
+		#Nectar volume ~ Hbee Visits + Other Visits + Variety(?)
+		
+		#Yield <- Density x Seed Weight (per plant)		
+	# }
+	
+	# for(plant in 1:Nplant){
+		#LATENT 
+		#Pollination Success ~ Pollen Count + Hbee Visits 
+		
+		#LATENT
+		#Plant Resources ~ Plant Density + Irrigation + Plot Quality(?)
+		
+		#Plant Size ~ Variety + Plant Resources
+	
+		#Branch Number ~ Pollination Success + Plant Size + Variety(?) 
+		
+		#Number of Flowers ~ Plant Size + Branch Number + Variety(?)
+		
+		#Number of pods ~ Pollination success + offset(Number of Flowers)
+		#phi.podSuccess <- 
+		#Npods.plant[plant] ~ dbinom(success,NumFls.plant[plant])
+	
+	# }
+	
+	for(pod in 1:Npod){
+		#LATENT
+		#Ovule Number ~ Variety(?)
+		
+		#LATENT
+		#Flower Resources ~ Plant Resources
+		
+		#Seed Number ~ Flower Resources + Pollination success + offset(Ovule Number)
+		SeedCount[pod] ~ dbinom(nOvules,theta.OvSuccess)
+		
+		#Seed Size ~ Flower Resources + Seed Number
+		
+		#Weight per pod ~ Seed size * Seed Number #SHOULD THIS BE DONE USING DPROD OR SIMILAR?
+		
+	}
+
+}

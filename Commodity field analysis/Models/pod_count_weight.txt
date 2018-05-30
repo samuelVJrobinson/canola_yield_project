@@ -1,0 +1,51 @@
+model{ #Model of seed count per pod ~ pod weight relationship
+#Lognorm - bad p.pred. checks
+#Gamma - bad p. pred. checks
+
+#Priors #####
+
+
+Novules <- 120 #Ovule number, set as fixed. Not enough info to estimate relationships otherwise...
+int.Pol ~ dnorm(-3,.1)  #Probability of ovule fertilization
+slope.Fert ~ dnorm(0.1,.1) #Probability of seed development 
+
+int.PodMass ~ dnorm(0,0.01) #Intercept of weight-count relationship
+slope.PodMass ~ dnorm(0,0.01) #Intercept of weight-count relationship
+prec.PodMass ~ dgamma(0.01,0.01) #Precision of pod weight
+
+	for(pod in 1:Npod){
+		
+		#Number of ovules that become fertilized (conditioned on Novules)
+		log(p1[pod]) <- int.Pol 
+		FertCount[pod] ~ dpois(p1[pod]*Novules) 
+		
+		#Number of fertilized ovules that become seeds (conditioned on FertCount)
+		log(p2[pod]) <- slope.Fert*FertCount[pod] #Model has trouble converging with an intercept term, and has bad p.pred. checks.		
+		SeedCount[pod] ~ dpois((p2[pod]*FertCount[pod])+0.01) 
+		
+		#Podweight ~ SeedCount
+		mu.PodMass[pod] <- int.PodMass+slope.PodMass*SeedCount[pod]
+		PodMass[pod] ~ dlnorm(mu.PodMass[pod],prec.PodMass)
+
+		#Posterior predictive checks:
+		
+		#Seed count
+		res.SeedCount[pod] <- abs(SeedCount[pod] - p2[pod]*FertCount[pod])
+		#Generate new dataset
+		SeedCount.new[pod] ~ dpois(p2[pod]*FertCount[pod])
+		res.SeedCount.new[pod] <- abs(SeedCount.new[pod] - p2[pod]*FertCount[pod])		
+		
+		#Pod weight
+		res.PodMass[pod] <- abs(PodMass[pod] - exp(mu.PodMass[pod]+(1/2*prec.PodMass))) #exp(mu) = median, mean = exp(mu+(sigma^2)/2) = exp(mu + 1/2tau)
+		#Generate new dataset
+		PodMass.new[pod] ~ dlnorm(mu.PodMass[pod],prec.PodMass)
+		res.PodMass.new[pod] <- abs(PodMass.new[pod] - exp(mu.PodMass[pod]+(1/2*prec.PodMass)))	
+	}
+	
+#Posterior predictive checks
+fit.SeedCount <- sum(res.SeedCount[]) #Seed count
+fit.SeedCount.new <- sum(res.SeedCount.new[])
+
+fit.PodMass <- sum(res.PodMass[]) #Pod mass
+fit.PodMass.new <- sum(res.PodMass.new[])	
+}

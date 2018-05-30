@@ -1,0 +1,121 @@
+model{
+
+#Priors
+
+#Variety
+# probVar[1:NVar] ~ ddirch(repOnes) #Prior for variety probability (vector of ones)
+# precVar ~ dgamma(0.01,0.01) #Precision for variety
+
+#Hbee count
+intNumHives ~ dnorm(0,0.1)
+slopeNumHives ~ dnorm(0,0.1)
+intNumHivesShape ~ dnorm(0,0.1)
+# slopeNumHivesShape ~ dnorm(0,0.1)
+slopeAirtempHbee ~ dnorm(0,0.1)
+rBeeCount ~ dgamma(0.1,0.1) #Overdispersion for Count~Distance relationship
+
+#Nectar levels
+shapeNectVol ~ dgamma(0.1,0.1) #Shape factor for nectar volume
+#NOTES: Tried making shape factor a linear function of HbeeDist, but this doesn't really help. Slope term is centered on 0.
+
+#Nectar production rate
+intNectarProd ~ dnorm(-2.4,0.1)
+slopeAirTempNect ~ dnorm(-0.5,0.1) #Air temperature slope
+slopeIrrigNect ~ dnorm(2,0.1) #Irrigation slope
+
+#Max nectar (standing crop at 0 visits)
+intMaxNect ~ dnorm(0,0.1) 
+slopeAirTempMaxNect ~ dnorm(0,0.1) #Air temperature slope
+slopeIrrigMaxNect ~ dnorm(0,0.1) #Irrigation slope
+
+#Pollen count
+intPollen ~ dnorm(0,0.1)
+slopePollen ~ dnorm(0,0.1)
+rPollen ~ dgamma(.1,.1) #Overdispersion for PollenCount ~ BeeVisits relationship
+
+# betaVariety ~ dmnorm(muVarietyNect,precVarietyNect) #Effect coefficients for variety
+
+for(field in 1:NFields){ #Field level 
+	# Variety[field] ~ dcat(probVar[1:NVar]) #Prior for Variety (model NAs using probVar)	
+	#Nectar production		
+	log(nectarProd[field]) <- intNectarProd+
+		(slopeAirTempNect*AirTemp[field])+ #Effect of air temperature
+		(slopeIrrigNect*Irrigated[field])#+ #Effect of irrigation
+		#airtempIrrigInter*AirTemp[field]*Irrigated[field] #Interaction b/w air temp & irrigation
+		#Something is going on with air temp and irrigation. Interaction is highly correlated with slopeAirTempNect, so maybe drop interaction?
+		# betaVariety[Variety[field]] #Effect of variety - not enought info to estimate, IMO
+	log(maxNect[field]) <- intMaxNect+
+		(slopeAirTempMaxNect*AirTemp[field])+ #Effect of air temperature
+		(slopeIrrigMaxNect*Irrigated[field])#+ #Effect of irrigation
+#NOTE: in future models, maxNect should also be a function of these parameters
+}
+
+for(plot in 1:NPlots){	
+	# HbeeCount ~ nonlinear asymptotic decrease
+	# NOTES: This gives strange results (no effect of stocking). Next step should be trying a field-level random effect, but moving on for now
+	
+	stocked[plot]<-BeeYard[FieldPlot[plot]] #Is plot in a stocked field?	
+	maxCount[plot] <- intNumHives + AirTemp[FieldPlot[plot]]*slopeAirtempHbee + stocked[plot]*slopeNumHives #Coefficients for first parameter
+	beeCountShape[plot] <- intNumHivesShape# + stocked[plot]*slopeNumHivesShape #Coefficients for second parameter
+	
+	# Standard (linear) NB regression, but results are different than glm.nb. Reports no effect of stocking.	
+	# Poor mixing using gamma-poisson; good mixing using dnegbin, but weird post. pred checks.
+	log(lambdaBeeCount[plot]) <- maxCount[plot] + #Intercept
+		beeCountShape[plot]*centLogDist[plot] #Slope of centered log-Distance relationship
+		
+	# Nonlinear version	
+	# Trying f(x|b0,b1,LRC) = b0+(b1-b0)*(1-exp(-exp(LRC)*x)), with b1 fixed at -10 (exp(-10)~=0)	
+	# log(lambdaBeeCount[plot]) <- maxCount[plot]+(-10-maxCount[plot])*(1-exp(-exp(beeCountShape[plot])*Distance[plot]))
+	
+	# Alternate Nonlinear version
+	# Trying f(x|a,b) = (a/((x/b)*a+1)) - no log-transform for count, because function bottoms out at 0. 	
+	# Used gamma priors for everything within equation. Mixing is OK with gammas, but not with anything else.
+	# lambdaBeeCount[plot] <- maxCount[plot]/((Distance[plot]/beeCountShape[plot])*maxCount[plot]+1)	
+			
+	pBeeCount[plot] <- rBeeCount/(rBeeCount+lambdaBeeCount[plot]) #Transform lambda (p=r/(r+lambda), lambda=r(1-p)/p
+	HbeeCount[plot] ~ dnegbin(pBeeCount[plot],rBeeCount) #Negative binomial (pascal version)
+		
+	# Posterior pred. checks
+	
+	# Hbee counts
+	hbeeResid[plot]<- abs(lambdaBeeCount[plot]-HbeeCount[plot])
+	HbeeCountNew[plot] ~ dnegbin(pBeeCount[plot],rBeeCount)
+	hbeeResidNew[plot]<- abs(lambdaBeeCount[plot]-HbeeCountNew[plot])	
+}
+
+for(flw in 1:NFlowers){
+	#NectVol ~ Possingham's model of nectar secretion, i.e.
+	# Vol~(Vol_max/((VisRate/Lambda)*Vol_max+1)), where VisRate = Visits/flower*hr, Lambda = Secretion rate/hr, Vol_max = Volume			
+	meanNectVol[flw] <- maxNect[FieldFlw[flw]]/((HbeeVisRate[PlotFlw[flw]]/nectarProd[FieldFlw[flw]])*maxNect[FieldFlw[flw]]+1)
+	# NectVol[flw] ~ dnorm(alphaNectVol[flw],precNectVol)	 #Normal version. Not as good...	
+	rateNectVol[flw] <- shapeNectVol/meanNectVol[flw]
+	NectVol[flw] ~ dgamma(shapeNectVol,rateNectVol[flw]) 
+	#Gamma version, using rate=shape/mean transform from pg 18 of https://ms.mcmaster.ca/~bolker/emdbook/chap6A.pdf
+	
+	#PollenCount ~ HbeeCount
+	log(lambdaPollen[flw]) <- intPollen + slopePollen*HbeeCount[PlotFlw[flw]]	
+	pPollen[flw]<- rPollen/(rPollen+lambdaPollen[flw])
+	PollenCount[flw]~dnegbin(pPollen[flw],rPollen)	
+	
+	#Posterior pred. checks
+	
+	#Nectar volume	
+	nectVolResid[flw]<- abs(meanNectVol[flw]-NectVol[flw]) #Gamma version
+	nectVolNew[flw] ~ dgamma(shapeNectVol,rateNectVol[flw])
+	nectVolResidNew[flw]<- abs(meanNectVol[flw]-nectVolNew[flw])
+	
+	#Pollen count
+	pollenResid[flw]<- abs(lambdaPollen[flw]-PollenCount[flw])
+	pollenCountNew[flw] ~ dnegbin(pPollen[flw],rPollen)	
+	pollenResidNew[flw]<- abs(lambdaPollen[flw]-pollenCountNew[flw])
+}
+
+hbeeCountFit<-sum(hbeeResid[]) #Hbee counts
+hbeeCountFitNew<-sum(hbeeResidNew[])
+
+nectVolFit<-sum(nectVolResid[]) #Nectar volume
+nectVolFitNew<-sum(nectVolResidNew[])
+
+pollenCountFit<-sum(pollenResid[])
+pollenCountFitNew<-sum(pollenResidNew[])
+}
