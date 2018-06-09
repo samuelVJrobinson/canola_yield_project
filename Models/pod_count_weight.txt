@@ -4,7 +4,6 @@ model{ #Model of seed count per pod ~ pod weight relationship
 
 #Priors #####
 
-
 Novules <- 120 #Ovule number, set as fixed. Not enough info to estimate relationships otherwise...
 int.Pol ~ dnorm(-3,.1)  #Probability of ovule fertilization
 slope.Fert ~ dnorm(0.1,.1) #Probability of seed development 
