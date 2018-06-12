@@ -173,15 +173,15 @@ logLikNB <- optim(c(1,1),negbinFun,dat=flowersAll$Pollen[!is.na(flowersAll$Polle
 2*1+(2*logLikPois$objective) #AIC for poisson - much worse
 
 par(mfrow=c(4,1)) #Plot results
-hist(rnbinom(datalist$Npod,mu=logLikNB[[1]][1],size=logLikNB[[1]][2]),main=NULL,xlab='Neg Bin',xlim=c(0,4000),breaks=100)
-hist(rgeom(datalist$Npod,logLikGeom[[1]][1]),main=NULL,xlab='Geom',xlim=c(0,4000),breaks=100)
-hist(rpois(datalist$Npod,logLikPois[[1]][1]),main=NULL,xlab='Pois',xlim=c(0,4000))
-hist(flowersAll$Pollen[!is.na(flowersAll$Pollen)],xlim=c(0,4000),breaks=100,main=NULL,xlab='Actual pollen counts')
+hist(rnbinom(datalist$Npod,mu=logLikNB[[1]][1],size=logLikNB[[1]][2]),main=NULL,xlab='Neg Bin',xlim=c(0,4000),breaks=seq(0,4000,20))
+hist(rgeom(datalist$Npod,logLikGeom[[1]][1]),main=NULL,xlab='Geom',xlim=c(0,4000),breaks=seq(0,4000,20))
+hist(rpois(datalist$Npod,logLikPois[[1]][1]),main=NULL,xlab='Pois',xlim=c(0,4000),breaks=seq(0,4000,20))
+hist(flowersAll$Pollen[!is.na(flowersAll$Pollen)],xlim=c(0,4000),breaks=seq(0,4000,20),main=NULL,xlab='Actual pollen counts')
 
 # Test model to simulate seed counts --------------------------------------
 invLogit <- function(x){ 
   i <- exp(x)/(1+exp(x)) 
-  i[is.nan(i)] <- 1
+  i[is.nan(i)] <- 1 #If x is large enough, becomes Inf/Inf = NaN, but Lim(invLogit) x->Inf = 1
   return(i)
 }
 #Linear breakpoint function - two lines with intersection "b"
@@ -496,9 +496,9 @@ simSeedsBP2 <- function(mu,size,Novules,coefs,plotResults=T,actualSeeds=NA,propD
 
 margProb(coefs=c(-0.475,-0.002,0.004,0.000),dat=datalist$SeedCount,maxOvNum=maxOvNum,maxPolNum=maxPolNum,mu=292.9317,size=0.6136358)
 margProbBP(coefs=c(0,0.1,20,-0.1),dat=datalist$SeedCount,maxPolNum=maxPolNum,mu=292.9317,size=0.6136358)
-margProbBP2(coefs=c(-0.475,-0.002,0.004,0.000,20,-0.1),dat=datalist$SeedCount,maxPolNum=maxPolNum,mu=292.9317,size=0.6136358)
+margProbBP2(coefs=c(-0.475,-0.002,-20,1,30,-.3),dat=datalist$SeedCount,maxPolNum=maxPolNum,mu=292.9317,size=0.6136358)
 
-simSeedsBP2(coefs=c(-0.475,-0.002,-20,1,30,-5),
+simSeedsBP2(coefs=c(-0.475,-0.002,-20,1,30,-.3),
          mu=logLikNB[[1]][1],size=logLikNB[[1]][2],Novules=maxOvNum,plotResults=T,
          actualSeeds=datalist$SeedCount,propDiff=F) #Works, but not well (looks like seed field distribution)
 
@@ -528,10 +528,132 @@ simSeedsBp(coefs=bestCoefs2$par,
          actualSeeds=datalist$SeedCount,propDiff=F) #Doesn't work properly - same as first model
 
 #Breakpoint model with ovules
-bestCoefs3 <- optim(par=c(-0.475,-0.002,-20,1,30,-5),fn=margProbBP,
-                    lower=c(-100,-100,-100,-100,0,-100),
-                    upper=c(100,100,100,100,120,100),
-                    dat=datalist$SeedCount,maxPolNum=1500,mu=292.9317,size=0.6136358)
+# -1.008786435  -0.003902827 -18.149592217   6.460526408  26.304270993  -1.327666477
+bestCoefs3 <- optim(par=c(-0.475,-0.002,-20,1,30,-.3),fn=margProbBP2,
+                    dat=datalist$SeedCount,maxPolNum=1000,mu=292.9317,size=0.6136358)
+
+simSeedsBP2(#coefs=bestCoefs3$par,
+            coefs=c(-1.008786435,-0.003902827,-18.149592217,6.460526408,26.304270993,-1.327666477),
+            mu=logLikNB[[1]][1],size=logLikNB[[1]][2],Novules=maxOvNum,plotResults=T,
+            actualSeeds=datalist$SeedCount,propDiff=F) #Works, but not well (looks like seed field distribution)
+
+
+#Linear model with intermediate fertilized ovules - linear for pollen survival, linear for ovule survival, linear for flower survival
+margProb3 <- function(coefs,dat,maxOvNum,maxPolNum,mu,size){
+  polInt <- coefs[1] #Pollen survival
+  polSlope <- coefs[2]
+  ovInt <- coefs[3] #Ovule survival
+  ovSlope <- coefs[4]
+  flwInt <- coefs[5] #Flower survival
+  flwSlope <- coefs[6]
+  
+  #Replicate all levels of seed/ovule/pollen counts
+  prob <- data.matrix(expand.grid(seedCount=sort(unique(dat)),ovCount=1:maxOvNum,polCount=1:maxPolNum,
+                                  lp=NA,probOv=NA,probSeed=NA,probPod=NA))
+  #Remove impossible categories
+  prob <- prob[(prob[,'ovCount']>=prob[,'seedCount']) & (prob[,'polCount']>=prob[,'ovCount']),]
+  
+  prob[,'probOv'] <- invLogit(polInt+polSlope*prob[,'polCount']) #Prob of pollen -> fert ovule
+  prob[,'probSeed'] <- invLogit(ovInt+ovSlope*prob[,'ovCount']) #Prob of fert ovule -> seed
+  prob[,'probPod'] <- invLogit(flwInt+flwSlope*prob[,'ovCount']) #Prob of pod survival
+  
+  #Calculate log-prob for each
+  prob[,'lp'] <- dnbinom(prob[,'polCount'],mu=mu,size=size,log=T)+ # Pollen count ~ NegBin(mu,size)
+    dbinom(prob[,'ovCount'],prob[,'polCount'],prob[,'probOv'],log=T)+ #Ovule count ~ Binomial(Pollen count,probOv)
+    dbinom(1,1,prob[,'probPod']) + #Pod survival | Fertilization ~ Bernoulli(propPod)
+    dbinom(prob[,'seedCount'],prob[,'ovCount'],prob[,'probSeed'],log=T) #Seed count
+    
+  #Sum by seed counts
+  seedLp <- tapply(prob[,'lp'],prob[,'seedCount'],function(x) log(sum(exp(x)))) 
+  #Match -lp to actual counts, sum, return
+  return(-sum(seedLp[match(dat,sort(unique(dat)))])) #Match 
+}
+
+simSeeds3 <- function(mu,size,Novules,coefs,plotResults=T,actualSeeds=NA,propDiff=F){
+  
+  polInt <- coefs[1] #Pollen survival
+  polSlope <- coefs[2]
+  ovInt <- coefs[3] #Ovule survival
+  ovSlope <- coefs[4]
+  flwInt <- coefs[5] #Flower survival
+  flwSlope <- coefs[6]
+  
+  set.seed(1)
+  #Generate pollen counts for 15000 flowers
+  simPol <- rnbinom(15000,mu=mu,size=size)
+  #"Abort" flowers with 0 pollen grains
+  simPol <- simPol[simPol>0]
+  
+  #Proportion of pollen germinates and makes it to ovules
+  propFert <- invLogit(polInt+polSlope*simPol) #Proportion surviving
+  simFert <- rbinom(length(simPol),simPol,propFert)
+  #If more than 120 pollen grains make it, cut off fertilization at max ovules
+  simFert[simFert>Novules] <- Novules 
+  #If there are zero fertilized ovules, "abort" flowers
+  simFert <- simFert[simFert>0]
+  
+  #Proportion of fertilized ovules become seeds
+  propSeed <- invLogit(ovInt+ovSlope*simFert) #Proportion surviving
+  simSeed <- rbinom(length(simFert),simFert,propSeed)
+  #If there are zero seeds, "abort" flowers
+  simSeed <- simSeed[simSeed>0]
+  
+  #Plant aborts flowers according to seed production ('rolls the dice' again)
+  propAbort <- invLogit(flwInt+flwSlope*propSeed) #Prob of flower suriving
+  simAbort <- rbinom(length(propSeed),1,propAbort) #Bernoulli dist.
+  simSeed <- simSeed[simAbort==1]
+  
+  if(plotResults==T & (length(actualSeeds)!=1 & !is.na(actualSeeds[1]))){
+    #Plots
+    par(mfrow=c(4,1),mar=c(5,5,2,5))
+    #Pollen
+    hist(simPol,main=NULL,xlab='Pollen grains',breaks=50,xlim=c(0,max(simPol)))
+    par(new=T) #Survival prob
+    curve(invLogit(polInt+polSlope*x),0,max(simPol),xlab=NA,ylab=NA,col='red',lty=2,axes=F)
+    axis(side=4,cex.axis=1,col='red',col.axis='red') 
+    mtext(side=4,line=3,'Prob survival',col='red')
+    #Ovules
+    hist(simFert,main=NULL,xlab='Fertilized ovules',breaks=50,xlim=c(0,Novules))
+    par(new=T) #Survival prob
+    curve(invLogit(ovInt+ovSlope*x), #Ovule survival
+          0,max(simFert),xlab=NA,ylim=c(range(c(propAbort,propSeed))),ylab=NA,col='red',lty=2,axes=F)
+    curve(invLogit(flwInt+flwSlope*x), #Flower survival
+          0,max(simFert),xlab=NA,ylab=NA,col='darkred',lty=1,add=T)
+    axis(side=4,cex.axis=1,col='red',col.axis='red') 
+    mtext(side=4,line=3,'Prob survival',col='red')
+    #Seeds
+    hist(simSeed,main=NULL,xlab='Seeds',breaks=length(unique(simSeed)),xlim=c(0,Novules))
+    hist(actualSeeds,main=NULL,xlab='Actual Seed Count',xlim=c(0,Novules),breaks=length(unique(datalist$SeedCount)))
+    par(mfrow=c(1,1),mar= c(5, 4, 4, 2) + 0.1)
+  } else if(propDiff==T) {
+    uniqueCounts <- sort(unique(c(actualSeeds,simSeed))) #Unique counts (from sim or actual)
+    props <- matrix(0,nrow=length(uniqueCounts),ncol=2) #Matrix to store proportions
+    propsActual <- table(actualSeeds)/length(actualSeeds)
+    propsSim <- table(simSeed)/length(simSeed)
+    props[match(names(propsActual),uniqueCounts),1] <- propsActual
+    props[match(names(propsSim),uniqueCounts),2] <- propsSim
+    return(sum(abs(props[,1]-props[,2])))
+  } else {
+    return(list(simPol=simPol,simFert=simFert,simSeed=simSeed))
+  }
+}
+
+simSeeds3(coefs=c(0.36650299,-0.00370369,2.01436660,-0.03364391,-5.37489532,1.80187306),
+            mu=logLikNB[[1]][1],size=logLikNB[[1]][2],Novules=120,plotResults=T,
+            actualSeeds=datalist$SeedCount,propDiff=F)
+
+margProb3(coefs=c(-1,-0.003,4,-0.1,-5,0.1),dat=datalist$SeedCount,
+            maxOvNum=100,maxPolNum=1000,
+            mu=logLikNB[[1]][1],size=logLikNB[[1]][2]) 
+
+#LL = 10014.17 - This appears to work OK.
+#0.36650299 -0.00370369  2.01436660 -0.03364391 -5.37489532  1.80187306
+bestCoefs4 <- optim(par=c(-1,-0.003,4,-0.1,-5,0.1),fn=margProb3,maxOvNum=120,maxPolNum=1000,
+                    dat=datalist$SeedCount,mu=292.9317,size=0.6136358)
+
+#Proportion missing seeds. Should be related to 
+plantsAll %>% mutate(PropMis=Missing/(Pods+Missing)) %>% filter(!is.na(PropMis),PropMis>0) %>% 
+  ggplot(aes(PropMis))+geom_histogram()
 
 
 # Field-level visitation, nectar, and pollen deposition model -------------
