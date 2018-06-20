@@ -22,10 +22,19 @@ load("~/Projects/UofC/canola_yield_project/Commodity field analysis/commodityfie
 rm(AICc,brix2mgul,deltaAIC,DIC,plotFixedTerms,predFixef,se,varComp,zeroCheck,conversion)
 setwd('~/Projects/UofC/canola_yield_project')
 
+#Convenience functions
+invLogit <- function(x){ 
+  i <- exp(x)/(1+exp(x)) 
+  i[is.nan(i)] <- 1 #If x is large enough, becomes Inf/Inf = NaN, but Lim(invLogit) x->Inf = 1
+  return(i)
+}
+#Linear breakpoint function - two lines with intersection "b"
+bpoint <- function(x,int1,slope1,b,slope2) ifelse(x<b,int1+slope1*x,b*slope1+(x-b)*slope2+int1)
+
 # Pod-level model ------------------------------------------
 
 temp=filter(seedsAll)
-
+ 
 # ggplot(temp,aes(PodCount))+geom_histogram(bins=45)+labs(x='Seeds per pod',y='Count')
 # ggplot(temp,aes(PodMass))+geom_histogram(bins=45)+labs(x='Weight of pod',y='Count')+xlim(0,0.2)
 # ggplot(temp,aes(PodCount,PodMass))+geom_point()+labs(x='Seeds per pod',y='Weight of pod',y='Count')
@@ -126,21 +135,40 @@ rstan_options(auto_write = TRUE)
 options(mc.cores = 3)
 
 #Rows without missing seed counts/weights
-noMiss <- with(temp,rowSums(is.na(cbind(PodCount,PodMass)))==0 & PodCount!=0)
+# noMiss <- with(temp,rowSums(is.na(cbind(PodCount,PodMass)))==0 & PodCount!=0)
 
 #List structure for Stan
 
 datalist <- with(temp[!is.na(temp$PodCount)&temp$PodCount>0,],list( #Strips NAs and 0 counts
   Npod=length(PodCount), #Number of observed seed counts
   Nunique=length(unique(PodCount)), #Number of unique seed counts
-  uniquePodCount=sort(unique(PodCount)), 
+  uniquePodCount=sort(unique(PodCount)),
+  NuniquePodCount=as.vector(table(PodCount)),
   uniqueMatches=match(PodCount,sort(unique(PodCount))), #Matching index
   SeedCount=PodCount
 ))
 str(datalist)
 
-modPodcount = stan(file='pod_level.stan',data=datalist,iter=2000,chains=3,
-             control=list(adapt_delta=0.8))
+datalist <- c(datalist,with(flowersAll[!is.na(flowersAll$Pollen),],{list(
+  Npollen=length(Pollen),
+  PollenCount=Pollen
+)})) #Append pollen data to list
+
+datalist <- c(datalist,with(plantsAll[!is.na(plantsAll$Pods)&!is.na(plantsAll$Missing)&plantsAll$Missing>0,],{list(
+  Nplants=length(Pods),
+  Pods=Pods,PodsMissing=Missing
+)})) #Append flower success data to list
+
+# modPodcount = stan(file='pod_level.stan',data=datalist,iter=10,chains=1,
+#              control=list(adapt_delta=0.8))
+
+podMod <- stan_model(file='pod_level.stan')
+optFit <- optimizing(podMod,data=datalist,init=list(pollenMu=270,pollenPhi=0.6,propPol=0.5,intPodSurv=-2,slopePodSurv=0.1))
+round(optFit$par,4) #Weird. Chooses super-low survival probs.
+
+#I think that binomial_lcdf is doing weird things:
+#eg: 1st row (regular prob) = 0.971047,0.975132,0.975149,0.975149,0.975149
+#1st row(log prob) = -0.0357161,-0.0357161,-0.0357161,-0.0357161,-0.0357161
 
 #Check output
 pars <- c('intPol','intFert','slopeFert')
@@ -179,13 +207,6 @@ hist(rpois(datalist$Npod,logLikPois[[1]][1]),main=NULL,xlab='Pois',xlim=c(0,4000
 hist(flowersAll$Pollen[!is.na(flowersAll$Pollen)],xlim=c(0,4000),breaks=seq(0,4000,20),main=NULL,xlab='Actual pollen counts')
 
 # Test model to simulate seed counts --------------------------------------
-invLogit <- function(x){ 
-  i <- exp(x)/(1+exp(x)) 
-  i[is.nan(i)] <- 1 #If x is large enough, becomes Inf/Inf = NaN, but Lim(invLogit) x->Inf = 1
-  return(i)
-}
-#Linear breakpoint function - two lines with intersection "b"
-bpoint <- function(x,int1,slope1,b,slope2) ifelse(x<b,int1+slope1*x,b*slope1+(x-b)*slope2+int1)
 
 #Likelihood method: (non-vectorized version)
 
@@ -206,17 +227,17 @@ bpoint <- function(x,int1,slope1,b,slope2) ifelse(x<b,int1+slope1*x,b*slope1+(x-
 #mu=292.9316584
 #size=0.6136358
 
-margProb <- function(coefs,dat,maxOvNum,maxPolNum,mu,size){
+margProb <- function(coefs,dat,maxOvNum,maxPolNum,mu,size,lambda){
   
-  seedCount <- c(1:52) #Number of seeds to try
-  mu <- 292.9316584 #Pollen dist
-  size <- 0.6136358
-  lambda <- 32 #Ovule dist
+  seedCount <- c(1:maxOvNum) #Number of seeds to try
+  # mu <- 292.9316584 #Pollen dist
+  # size <- 0.6136358
+  # lambda <- 32 #Ovule dist
   
-  maxOvNum <- max(datalist$SeedCount) #Number of potential ovules
-  maxPolNum <- qnbinom(.95,mu=mu,size=0.6136358) #Upper number of potential pollen grains (95% of density)
+  # maxOvNum <- max(datalist$SeedCount) #Number of potential ovules
+  # maxPolNum <- qnbinom(.99,mu=mu,size=0.6136358) #Upper number of potential pollen grains (99% of density)
   
-  coefs <- c(0.1,-1,0.1) #10% pollen survival, invLogit(-6+0.5*seedNum) pod abortion rate
+  # coefs <- c(0.2,-3,0.2) #10% pollen survival, invLogit(-6+0.5*seedNum) pod abortion rate
   
   #Replicate all levels of seed/ovule/pollen counts
   prob <- expand.grid(seedCount=seedCount,ovCount=1:maxOvNum,polCount=1:maxPolNum)
@@ -228,48 +249,59 @@ margProb <- function(coefs,dat,maxOvNum,maxPolNum,mu,size){
   prob$probSeed <- invLogit(coefs[2]+coefs[3]*prob$seedCount)
   
   #Calculate log-prob for each
-  prob$lp <- dnbinom(prob$polCount,mu=mu,size=size,log=T)+ #Pollen prob
-    dpois(prob$ovCount,lambda=lambda,log=T)+ #Ovule prob
+  prob$lp <- dnbinom(prob$polCount,mu=mu,size=size,log=T)+ #Pollen prob - same for all pollen counts
+    dpois(prob$ovCount,lambda=lambda,log=T)+ #Ovule prob - same for all ovule counts
     ifelse(prob$seedCount==prob$ovCount, #Fert prob
            #if seeds==ovules, successful pollen count could have been anything between #seeds and #pollen
            pbinom(prob$seedCount-1,prob$polCount,prob$probPol,log=T,lower.tail=F),
            #if seeds<ovules, only one way to get seed count
            dbinom(prob$seedCount,prob$polCount,prob$probPol,log=T))+
-    dbinom(1,1,prob$probSeed,log=T) #Pod abort prob
+    dbinom(1,1,prob$probSeed,log=T) #Pod abort prob - same for each seed count
   #Sum by seed counts
   seedLp <- with(prob,tapply(lp,seedCount,function(x) log(sum(exp(x))))) 
-  barplot(exp(seedLp),pch=19,ylab='p(x)',xlab='Seed count')
+  barplot(c(1-sum(exp(seedLp)),exp(seedLp)),pch=19,ylab='p(x)',xlab='Seed count')
+  
   #p(seeds=1:52)
-  sum(exp(seedLp)) #Problem: sum(seedprob)>1 : 0.55
+  # sum(exp(seedLp)) #0.508
   #p(seeds!=1:52)
+  # 1-sum(exp(seedLp)) #0.492 
   
-  dnbinom(0,mu=mu,size=size) #Prob of 0 pollen - 0.02
+  # #Plot of lp across seed sizes
+  # filter(prob,seedCount==1|seedCount==10|seedCount==20|seedCount==30) %>% 
+  #   mutate(seedCount=paste('Seeds =',seedCount)) %>% 
+  #   ggplot(aes(ovCount,polCount,fill=lp))+geom_raster()+
+  #   facet_wrap(~seedCount)+
+  #   # scale_x_reverse()+
+  #   scale_y_reverse()+labs(x='Ovule #',y='Pollen #')
   
-  with(expand.grid(pol=1:maxPolNum,ov=1:maxOvNum),{ #Prob of >1 pollen, but no fertilization - 0.07
-    sum(exp(dnbinom(pol,mu=mu,size=size,log=T)+
-        dpois(ov,lambda=lambda,log=T)+
-        dbinom(0,pol,coefs[1],log=T)))})
-  
-  
-  
-  prob$lp_ab <- dnbinom(prob$polCount,mu=mu,size=size,log=T)+ #Pollen prob
-    dpois(prob$ovCount,lambda=lambda,log=T)+ #Ovule prob
-    ifelse(prob$seedCount==prob$ovCount, #Fert prob
-           #if seeds==ovules, successful pollen count could have been anything between #seeds and #pollen
-           pbinom(prob$seedCount-1,prob$polCount,prob$probPol,log=T,lower.tail=F),
-           #if seeds<ovules, only one way to get seed count
-           dbinom(prob$seedCount,prob$polCount,prob$probPol,log=T))+ 
-    dbinom(0,1,prob$probSeed,log=T) #Pod abort prob
-  
-  abLp <- with(prob,tapply(lp_ab,seedCount,function(x) log(sum(exp(x))))) 
-  sum(exp(abLp))
-  
-  
-  
-  
-  
-  
-  
+  # group_by(prob,seedCount) %>% 
+  #   summarize(p=sum(exp(lp))) %>% ungroup() %>% 
+  #   bind_rows(data.frame(seedCount=0,p=NA),.) %>% 
+  #   mutate(p=ifelse(is.na(p),1-sum(p,na.rm=T),p)) %>% 
+  #   ggplot(aes(seedCount,p))+geom_col()
+  # 
+  # dnbinom(0,mu=mu,size=size) #Prob of 0 pollen - 0.022
+  # 
+  # with(expand.grid(pol=1:maxPolNum,ov=1:maxOvNum),{ #Prob of >1 pollen, but no fertilization - 0.069
+  #   sum(exp(dnbinom(pol,mu=mu,size=size,log=T)+
+  #           dpois(ov,lambda=lambda,log=T)+
+  #           dbinom(0,pol,coefs[1],log=T)))})
+  # 
+  # prob$lp_ab <- dnbinom(prob$polCount,mu=mu,size=size,log=T)+ #Pollen prob - 0.389
+  #   dpois(prob$ovCount,lambda=lambda,log=T)+ #Ovule prob
+  #   ifelse(prob$seedCount==prob$ovCount, #Fert prob
+  #          #if seeds==ovules, successful pollen count could have been anything between #seeds and #pollen
+  #          pbinom(prob$seedCount-1,prob$polCount,prob$probPol,log=T,lower.tail=F),
+  #          #if seeds<ovules, only one way to get seed count
+  #          dbinom(prob$seedCount,prob$polCount,prob$probPol,log=T))+ 
+  #   dbinom(0,1,prob$probSeed,log=T) #Pod abort prob
+  # 
+  # abLp <- with(prob,tapply(lp_ab,seedCount,function(x) log(sum(exp(x))))) 
+  # sum(exp(abLp))
+  # 
+  # 
+  # (dbinom(7,10,0.5)+dbinom(8,10,0.5)+dbinom(9,10,0.5)+dbinom(10,10,0.5))
+  #   pbinom(10-7,10,0.5)
   
   #This appears to work. Double-check the math and try to figure out p(0 seeds)
   
@@ -277,36 +309,38 @@ margProb <- function(coefs,dat,maxOvNum,maxPolNum,mu,size){
   return(-sum(seedLp[match(dat,names(seedLp))])) #Match 
 }
 
+
+
 simSeeds <- function(maxNovules,coefs,plotResults=T,actualSeeds=NA,propDiff=F){
   #Idea: 
   #Pollination is a Negative Binomial process with mu=292.9,size=0.61
-  mu <- 292.9316584 
-  size <- 0.6136358
+  mu <- coefs[1]
+  size <- coefs[2]
   #Ovule number per flower is a Poisson process with lambda =~32. Wang et al 2011 found that there are cross-season difference, but they aren't that big (~30-35 ovules).
   lambda <- 32
   #Fertilization is a Binomial process, where Fert Ovules ~ Bin(Pollen,p)
   #If more ovules are fertilized than available, fert ovules = total ovules (integrate all outcomes < Novules)
   
   #Pod abortion is a Bernoulli process where Abortion ~ Bern(invLogit(int1+slope1*Nfert))
-  p <- coefs[1]
-  int1 <- coefs[2]
-  slope1 <- coefs[3]
+  p <- coefs[3]
+  int1 <- coefs[4]
+  slope1 <- coefs[5]
   
   set.seed(1)
   #Generate pollen counts for 1000 flowers
-  simPol <- rnbinom(1000,mu=mu,size=size)
-  #Generate ovule counts for 1000 flowers
-  simOv <- rpois(1000,32)
+  simPol <- rnbinom(5000,mu=mu,size=size)
+  #Generate ovule counts for flowers
+  simOv <- rpois(5000,32)
   simOv[simOv>maxNovules] <- maxNovules #Set all ovules > maxNovules to maxNovules
   
   #Ovules are fertilized by pollen
-  simFert <- rbinom(1000,simPol,p) #Fixed perc of pollen makes it to ovules
+  simFert <- rbinom(length(simPol),simPol,p) #Fixed perc of pollen makes it to ovules
   simFert[simFert>simOv] <- simOv[simFert>simOv] #If Npollen>Novules, reverts to ov number "first come first served"
   
   #Fertilized ovules become seeds
   simSeed <- simFert[simFert>0] #Fertilized (suriving pollen>1) ovules become seeds
   probSeed <- invLogit(int1+slope1*simSeed) #Prob of pod abortion ~ # of fertilized ovules
-  simSeed <- simSeed[rbinom(1000,1,probSeed)==1] #Plant aborts pods depending on number of ovules
+  simSeed <- simSeed[rbinom(length(simSeed),1,probSeed)==1] #Plant aborts pods depending on number of ovules
   
   if(plotResults==T & (length(actualSeeds)!=1 & !is.na(actualSeeds[1]))){
     #Plots
@@ -343,7 +377,7 @@ simSeeds <- function(maxNovules,coefs,plotResults=T,actualSeeds=NA,propDiff=F){
   }
 }
 
-simSeeds(maxNovules=50,coefs=c(0.2,-6,0.5),plotResults=T,actualSeeds=datalist$SeedCount)
+simSeeds(maxNovules=50,coefs=unname(optFit$par),plotResults=T,actualSeeds=datalist$SeedCount)
 
 
 #Proportion missing seeds. Should be related to 
