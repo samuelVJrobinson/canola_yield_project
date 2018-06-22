@@ -18,8 +18,7 @@ transformed data {
 	int maxOvNum = 52; //Max number of ovules
 	int minOvNum = 12; //Min number of ovules
 	int totalFlowers[Nplants]; //Total flowers produced by a plant
-	real<lower=-10,upper=0.1> slopePolSurv=0; 
-	
+		
 	for(i in 1:Nplants) //Calculate total number of flowers (missing+observed pods)
 		 totalFlowers[i]= Pods[i]+PodsMissing[i]; 	
 }
@@ -33,6 +32,8 @@ parameters {
 	//(inv-logit)Proportion of pollen reaching ovules
 	// real<lower=0,upper=1> propPol; 
 	real<lower=-10,upper=2> intPolSurv; 
+	real<lower=-10,upper=0.1> slopePolSurv=0; 
+	
 	// real<lower=-10,upper=0.1> slopePolSurv; 
 	//(inv-logit) Proportion of pods that survive
 	real<lower=-10,upper=10> intPodSurv; //Intercept
