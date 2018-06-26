@@ -1,3 +1,65 @@
+functions {
+
+	//Returns log probability for seeds 1:maxOvNum, given:
+	// minOvNum: minimum # of ovules to consider (marginalize across)
+	// maxOvNum: maximum # of ovules to consider
+	// maxPolNum: maximum # of pollen to consider
+	// polMu: mu for neg. binomial polliantion process
+	// polPhi: phi for neg. binomial pollination process
+	// ovLambda: lambda for poisson ovule production process
+	// intPolSurv: intercept for pollen survival (pollen -> fertilized seed)
+	// slopePolSurv: slope for pollen survival
+	// intPodSurv: intercept for pod survival
+	// slopePodSuv: slope for pod survival
+	
+	vector lpSeeds(int minOvNum, int maxOvNum, int maxPolNum, real polMu, real polPhi, real ovLambda, real intPolSurv, real slopePolSurv, real intPodSurv, real slopePodSurv) {	
+		vector[maxPolNum] lpPollen; //Log-prob for pollen counts
+		vector[maxOvNum-minOvNum+1] lpOv; //Log prob for ovule counts		
+		matrix[maxOvNum,maxPolNum] lpFertSeed; //Log prob for pollen success | ovule success
+		vector[maxOvNum] lpPodAbort; //Log prob for pod abortion | fert seed number
+		matrix[maxOvNum-minOvNum+1,maxPolNum] lpMarg[maxOvNum]; //Array of matrices to store marginal lp
+		vector[maxOvNum] lp; //Lp for each seed count				
+		
+		//Pre-calculate log prob for marginal vectors
+		for(i in 1:maxPolNum) //Pollination
+			lpPollen[i] = neg_binomial_2_lpmf(i|polMu,polPhi);
+		for(i in 1:(maxOvNum-minOvNum+1))
+			lpOv[i] = poisson_lpmf((i+minOvNum-1)|ovLambda); //Ovule production
+		for(i in 1:maxOvNum){ 		
+			lpPodAbort[i] = bernoulli_logit_lpmf(1|intPodSurv+slopePodSurv*i); //Pod abortion ~ #seeds 
+			lpMarg[i] = rep_matrix(0,maxOvNum-minOvNum+1,maxPolNum); //Intial values for lpMarg
+			for(j in i:maxPolNum){	//Upper triangular matrix with pollen success log-probs | pollen	 
+				lpFertSeed[i,j] = binomial_logit_lpmf(i|j,intPolSurv+(slopePolSurv*j/10000)); //#Successful ovules~#Pollen (/10000)
+			}		
+		}	
+		
+		//Marginal probability matrix
+		for(seed in 1:maxOvNum){ //For each seed count		
+			int start=(seed>minOvNum ? seed-minOvNum+1 : 1); //Start at position 1 (minimum ovule count), unless seed > minOvNum			
+			int end=maxOvNum-minOvNum+1; //End position
+			for(pol in seed:maxPolNum){ //For each pollen count >= seed count			
+				//Use pre-calculated lps for seed+1:maxOvNum 
+				//print("start:",start," end:",end);
+				if(start<end){ //If index not at end of matrix (ie last possible seed size)
+					lpMarg[seed,(start+1):end,pol] = rep_vector(lpPollen[pol],end-start) + //lp from pollen process
+						lpOv[(start+1):end]+ //lp from ovule process				
+						rep_vector(lpFertSeed[seed,pol],end-start)+ //lp from pollination success - not sure if indexing is right??
+						rep_vector(lpPodAbort[seed],end-start); //lp from pod success process
+				}
+				//Use mixture of lps for pol==seed
+				lpMarg[seed,start,pol] = lpPollen[pol]+ //lp from pollen process
+					lpOv[start]+ //lp from ovule process				
+					(pol==seed ? lpFertSeed[seed,pol] : binomial_lccdf(seed-1|pol,inv_logit(intPolSurv+slopePolSurv*pol/10000)))+ //lp from pollination success				
+					//(pol==seed ? lpFertSeed[seed,pol] : log_sum_exp(lpFertSeed[,pol]))+ //lp from pollination success				
+					lpPodAbort[seed]; //lp from pod success process				
+			}		
+			lp[seed] = log_sum_exp(lpMarg[seed,start:end,seed:maxPolNum]); //Sums lp for each unique seed count		
+		}	
+		return lp;	
+	}
+	
+}
+
 data {
 	int Npod; //number of pods measured	
 	int Nunique; //Length of unique seed counts
@@ -17,6 +79,7 @@ transformed data {
 	int maxPolNum = 1500; //Max number of pollen ~ 98% of nbinom density
 	int maxOvNum = 52; //Max number of ovules
 	int minOvNum = 12; //Min number of ovules
+	real ovLambda = 32; //Lambda for ovule production process
 	int totalFlowers[Nplants]; //Total flowers produced by a plant
 		
 	for(i in 1:Nplants) //Calculate total number of flowers (missing+observed pods)
@@ -25,83 +88,42 @@ transformed data {
 
 parameters {
 	//Pollen distribution model - negative binomial
-	real<lower=0,upper=400> pollenMu;
-	real<lower=0,upper=2> pollenPhi;
+	real<lower=0> pollenMu;
+	real<lower=0> pollenPhi;
 
 	//Seed count model	
-	//(inv-logit)Proportion of pollen reaching ovules
-	// real<lower=0,upper=1> propPol; 
-	real<lower=-10,upper=2> intPolSurv; 
-	real<lower=-10,upper=0.1> slopePolSurv=0; 
-	
-	// real<lower=-10,upper=0.1> slopePolSurv; 
+	//(inv-logit)Proportion of pollen reaching ovules	
+	real intPolSurv; 
+	real slopePolSurv; 
+		
 	//(inv-logit) Proportion of pods that survive
-	real<lower=-10,upper=10> intPodSurv; //Intercept
-	real<lower=-0.1,upper=10> slopePodSurv; //Slope (effect of fert ov count)	
+	real intPodSurv; //Intercept
+	real slopePodSurv; //Slope (effect of fert ov count)	
 }
 
 model {
-	vector[maxPolNum] lpPollen; //Log-prob for pollen counts
-	vector[maxOvNum-minOvNum+1] lpOv; //Log prob for ovule counts		
-	matrix[maxOvNum,maxPolNum] lpFertSeed; //Log prob for pollen success | ovule success
-	vector[maxOvNum] lpPodAbort; //Log prob for pod abortion | fert seed number
-	matrix[maxOvNum-minOvNum+1,maxPolNum] lpMarg[maxOvNum]; //Array of matrices to store marginal lp
-	vector[maxOvNum] lpSeeds; //Lp for each seed count		
+	vector[maxOvNum] logProbSeeds; //Log probability for seed counts from 1:maxOvNum	
 	real probZero; //Prob of observing zero seeds per pod
 	
-	//Calculate log prob for marginal vectors
-	for(i in 1:maxPolNum) //Pollination
-		lpPollen[i] = neg_binomial_2_lpmf(i|pollenMu,pollenPhi);
-	for(i in 1:(maxOvNum-minOvNum+1))
-		lpOv[i] = poisson_lpmf((i+minOvNum-1)|32); //Ovule production
-	for(i in 1:maxOvNum){ 		
-		lpPodAbort[i] = bernoulli_logit_lpmf(1|intPodSurv+slopePodSurv*i); //Pod abortion ~ #seeds
-		lpMarg[i] = rep_matrix(0,maxOvNum-minOvNum+1,maxPolNum); //Intial values for lpMarg
-		for(j in i:maxPolNum){	//Upper triangular matrix with pollen success log-probs | pollen	 
-			lpFertSeed[i,j] = binomial_logit_lpmf(i|j,intPolSurv+slopePolSurv*j); //#Successful ovules~#Pollen
-		}		
-	}	
-	
-	//Marginal probability matrix
-	for(seed in 1:maxOvNum){ //For each seed count		
-		int start=(seed>minOvNum ? seed-minOvNum+1 : 1); //Start at position 1 (minimum ovule count), unless seed > minOvNum			
-		int end=maxOvNum-minOvNum+1; //End position
-		for(pol in seed:maxPolNum){ //For each pollen count >= seed count			
-			//Use pre-calculated lps for seed+1:maxOvNum 
-			//print("start:",start," end:",end);
-			if(start<end){ //If index not at end of matrix (ie last possible seed size)
-				lpMarg[seed,(start+1):end,pol] = rep_vector(lpPollen[pol],end-start) + //lp from pollen process
-					lpOv[(start+1):end]+ //lp from ovule process				
-					rep_vector(lpFertSeed[seed,pol],end-start)+ //lp from pollination success - not sure if indexing is right??
-					rep_vector(lpPodAbort[seed],end-start); //lp from pod success process
-			}
-			//Use mixture of lps for pol==seed
-			lpMarg[seed,start,pol] = lpPollen[pol]+ //lp from pollen process
-				lpOv[start]+ //lp from ovule process				
-				(pol==seed ? lpFertSeed[seed,pol] : binomial_lccdf(seed-1|pol,inv_logit(intPolSurv+slopePolSurv*pol)))+ //lp from pollination success				
-				//(pol==seed ? lpFertSeed[seed,pol] : log_sum_exp(lpFertSeed[,pol]))+ //lp from pollination success				
-				lpPodAbort[seed]; //lp from pod success process				
-		}		
-		lpSeeds[seed] = log_sum_exp(lpMarg[seed,start:end,seed:maxPolNum]); //Sums lp for each unique seed count		
-	}	
-	// print("lpSeeds: ",lpSeeds);	
+	logProbSeeds = lpSeeds(minOvNum,maxOvNum,maxPolNum,pollenMu,pollenPhi,ovLambda,intPolSurv,slopePolSurv,intPodSurv,slopePodSurv);
 	
 	//Calculate p(seed!=1:maxOvNum), basically p(seeds==0)
-	probZero = 1-sum(exp(lpSeeds));
-	// print("ProbZero: ",probZero, " intPolSurv:",intPolSurv," slopePolSurv:",slopePolSurv," intPodSurv:",intPodSurv," slopePodSurv:",slopePodSurv);
+	probZero = 1-sum(exp(logProbSeeds));	
 		
 	for(i in 1:Nunique){ //Multiply log-lik for seed count by number of data in each category 
-		target += lpSeeds[uniquePodCount[i]]*NuniquePodCount[i]; //Scales by observed number of seed counts, increments LL
+		target += logProbSeeds[uniquePodCount[i]]*NuniquePodCount[i]; //Scales by observed number of seed counts, increments LL
 	}		
 	
 	//Priors
-	// propPol ~ beta(1.1,3); //Should be low
+	//Pollen survival	
 	intPolSurv ~ normal(0,3);
-	// slopePolSurv ~ normal(0,3);
+	slopePolSurv ~ normal(0,3);
+	//Pod survival
 	intPodSurv ~ normal(0,3); 
-	slopePodSurv ~ normal(0,3); //Should be about 0.009 +- 0.001 (JAGS)
-	pollenMu ~ normal(290,40); // Should be about 293
-	pollenPhi ~ gamma(2,3); // Should be about 0.61
+	slopePodSurv ~ normal(0,3);
+	//Pollen distribution
+	pollenMu ~ normal(293.75,10); // Should be about 293
+	pollenPhi ~ gamma(8,12); // Should be about 0.61
 	
 	//Likelihood	
 	// print("Target lpSeeds LL:",sum(lpSeeds));

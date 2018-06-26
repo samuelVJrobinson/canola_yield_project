@@ -173,14 +173,20 @@ datalist <- c(datalist,with(plantsAll[!is.na(plantsAll$Pods)&!is.na(plantsAll$Mi
 # length((start+1):end) #Length of indices
 # end-start #Argument to rep_vector
 
-modPodcount = stan(file='pod_level.stan',data=datalist,iter=10,chains=1,control=list(adapt_delta=0.9))
-                   #init=list(pollenMu=292,pollenPhi=0.6,intPolSurv=-2,slopePolSurv=-0.1,intPodSurv=1,slopePodSurv=0.1))
+modPodcount = stan(file='pod_level.stan',data=datalist,iter=400,chains=3,control=list(adapt_delta=0.9),
+                   init=function() list(pollenMu=293.75,pollenPhi=0.61,intPolSurv=0,slopePolSurv=0,intPodSurv=0,slopePodSurv=2))
 print(modPodcount)
-traceplot(modPodcount) #Getting single values in the chain, plus a list of rejected values at the start.
+traceplot(modPodcount) #Very poor traces, esp for pollen mu and phi. Likely what is happening is the mu and phi terms are being "influenced" by seed counts. Not sure how to separate these two, aside from heirarchical terms (?)
+#Try running model without pollen included, and use results from below for pollen input 
+
+modPolcount <- stan(file='pollenMod.stan',data=datalist[c('Npollen','PollenCount')],iter=1000,chains=3)
+print(modPolcount) #mu=293.75, phi=0.61
+traceplot(modPolcount)
+
 
 # podMod <- stan_model(file='pod_level.stan')
 # optFit <- optimizing(podMod,data=datalist,init=list(
-#   pollenMu=290,pollenPhi=0.6,intPolSurv=0,intPodSurv=0,slopePodSurv=0))
+#   pollenMu=290,pollenPhi=1,intPolSurv=0,slopePolSurv=0,intPodSurv=0,slopePodSurv=2))
 # round(optFit$par,4) #Weird. Chooses super-low survival probs.
 
 #Check output
@@ -248,7 +254,7 @@ margProb <- function(coefs,dat,maxOvNum,maxPolNum,mu,size,lambda){
   #Remove impossible categories
   prob <- prob[(prob$ovCount>=prob$seedCount) & (prob$polCount>=prob$seedCount),]
   #Pollen survial prob
-  prob$probPol <- invLogit(coefs[1]+coefs[2]*(prob$polCount/1000))
+  prob$probPol <- invLogit(coefs[1]+coefs[2]*(prob$polCount/10000))
   #Pod survival prob
   # prob$probSeed <- invLogit(coefs[3]+coefs[4]*prob$seedCount)
   
@@ -258,7 +264,7 @@ margProb <- function(coefs,dat,maxOvNum,maxPolNum,mu,size,lambda){
   # for(i in 1:maxPolNum){ #For each potential pollen receipt
   #   lpPolSurv[i,1:i] <- dbinom(1:i,i,invLogit(coefs[1]+coefs[2]*i)) #Pollen survival lp
   # }
-  lpPodSurv <- dbinom(1,1,invLogit(coefs[3]+coefs[4]*(seedCount/10)),log=T) #Pod survival prob
+  lpPodSurv <- dbinom(1,1,invLogit(coefs[3]+coefs[4]*(seedCount)),log=T) #Pod survival prob
   
   #Calculate log-prob for each
   prob$lp <- lpPollen[prob$polCount] +
@@ -290,26 +296,26 @@ cl <- makeCluster(4,type='SOCK')
 clusterExport(cl,list('margProb','invLogit','datalist'))
 
 #Try across various pollen survival probs (1st arg)
-ll3 <- parSapply(cl,seq(-3,-1,0.2),function(x) 
-  margProb(c(x,-6.571283,-2.828,4.580386),dat=list(SeedCount=datalist$SeedCount,FailFlw=datalist$PodsMissing,AllFlw=datalist$PodsMissing+datalist$Pods),52,1800,292.9316584,0.6136358,32))
+ll3 <- parSapply(cl,seq(-3,3,0.2),function(x) 
+  margProb(c(x,-1.75,-2.828,1.857143),dat=list(SeedCount=datalist$SeedCount,FailFlw=datalist$PodsMissing,AllFlw=datalist$PodsMissing+datalist$Pods),52,1800,292.9316584,0.6136358,32))
 
-#(2nd arg)
-ll4 <- parSapply(cl,seq(-5,20,length.out=15),function(x) 
-  margProb(c(-1.746,x,-2.828,4.580386),dat=list(SeedCount=datalist$SeedCount,FailFlw=datalist$PodsMissing,AllFlw=datalist$PodsMissing+datalist$Pods),52,1800,292.9316584,0.6136358,32))
+#Pollen survival slopes (2nd arg)
+ll4 <- parSapply(cl,seq(-3,2,length.out=25),function(x) 
+  margProb(c(-1.746,x,-2.828,1.857143),dat=list(SeedCount=datalist$SeedCount,FailFlw=datalist$PodsMissing,AllFlw=datalist$PodsMissing+datalist$Pods),52,1800,292.9316584,0.6136358,32))
 
 #Try across various pod abortion intercepts (3rd arg)
-ll2 <- parSapply(cl,seq(-6,0,0.4),function(x) 
-  margProb(c(-1.746,-6.571283,x,4.580386),dat=list(SeedCount=datalist$SeedCount,FailFlw=datalist$PodsMissing,AllFlw=datalist$PodsMissing+datalist$Pods),52,1800,292.9316584,0.6136358,32))
+ll2 <- parSapply(cl,seq(-6,3,0.5),function(x) 
+  margProb(c(-1.746,-1.75,x,1.857143),dat=list(SeedCount=datalist$SeedCount,FailFlw=datalist$PodsMissing,AllFlw=datalist$PodsMissing+datalist$Pods),52,1800,292.9316584,0.6136358,32))
 
 #Try across various pod abortion slopes (4th arg)
-ll <- parSapply(cl,seq(10,40,length.out=15),function(x)
-  margProb(c(-1.746,-6.571283,-2.828,x),dat=list(SeedCount=datalist$SeedCount,FailFlw=datalist$PodsMissing,AllFlw=datalist$PodsMissing+datalist$Pods),52,1800,292.9316584,0.6136358,32))
+ll <- parSapply(cl,seq(1,4,length.out=15),function(x)
+  margProb(c(-1.746,-1.75,-2.828,x),dat=list(SeedCount=datalist$SeedCount,FailFlw=datalist$PodsMissing,AllFlw=datalist$PodsMissing+datalist$Pods),52,1800,292.9316584,0.6136358,32))
 
 par(mfrow=c(2,2))
-plot(seq(-3,-1,0.2),ll3,xlab='Pollen surv int | Pod surv Intercept,Slope',ylab='-Log Lik',pch=19,main='Arg1: pol surv int')
-plot(seq(-5,20,length.out=15),ll4,xlab='Pollen surv int | Pod surv Intercept,Slope',ylab='-Log Lik',pch=19,main='Arg2: pol surv slope') 
-plot(seq(-6,0,0.4),ll2,xlab='Intercept | Slope values, Pollen surv',ylab='-Log Lik',pch=19,main='Arg3: pod surv int')
-plot(seq(10,40,length.out=15),ll,xlab='Pod surv slope | Pod surv int, Pol surv int, slope',ylab='-Log Lik',pch=19,main='Arg4: pod surv slope')
+plot(seq(-3,3,0.2),ll3,xlab='Pollen surv int | Pod surv Intercept,Slope',ylab='-Log Lik',pch=19,main='Arg1: pol surv int')
+plot(seq(-3,2,length.out=25),ll4,xlab='Pollen surv int | Pod surv Intercept,Slope',ylab='-Log Lik',pch=19,main='Arg2: pol surv slope') 
+plot(seq(-6,3,0.5),ll2,xlab='Intercept | Slope values, Pollen surv',ylab='-Log Lik',pch=19,main='Arg3: pod surv int')
+plot(seq(1,4,length.out=15),ll,xlab='Pod surv slope | Pod surv int, Pol surv int, slope',ylab='-Log Lik',pch=19,main='Arg4: pod surv slope')
 par(mfrow=c(1,1))
 
 stopCluster(cl)
