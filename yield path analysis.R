@@ -104,34 +104,47 @@ datalist <- c(datalist,with(plantsAll[!is.na(plantsAll$Pods)&!is.na(plantsAll$Mi
   Pods=Pods,PodsMissing=Missing
 )})) #Append flower success data to list
 
-# startlist=function() list(
-#   int.Pol= rnorm(1,-3.5,0.3),
-#   slope.Fert = rnorm(1,0.1,0.3),
-#   int.PodMass = rnorm(1,0,1), 
-#   slope.PodMass = rnorm(1,0,1), 
-#   prec.PodMass = rgamma(1,0.01,0.01) 
-# )
+startlist <- function() list(
+  #lambda=5.6, r=0.6,
+  intPol=-2.9,
+  slopePol1=0.8,
+  slopePol2=-3.1,
+  polBp=0.38
+)
 
-params <- c('lambda','r', #Params for negbin pollination process
-            # 'simPollenCount','simOvCount',
-            'intPol','slopePol',
-            'fitSeedCount','fitSimSeedCount')
+params <- c(#'lambda','r', #Params for negbin pollination process
+            #'simPollenCount','simOvCount',
+            #'simPollenCountZero',
+            'simFertSeed',
+            'intPol','slopePol1','slopePol2','polBp')
 
 mod2 <- jags(data=datalist,
-          #inits=startlist,
+          # inits=startlist,
           parameters.to.save=params,
           model.file='pod_count_weight.txt',
-          n.chains=1,n.adapt=200,n.iter=200,n.thin=1,parallel=F)
+          n.chains=1,n.adapt=200,n.iter=300,n.burnin=0,n.thin=1,parallel=F)
 
 summary(mod2)
 print(mod2)
-traceplot(mod2,parameters=c('lambda','r','intPol','slopePol'))
-pp.check(mod2,'fitSeedCount','fitSimSeedCount')
+traceplot(mod2,parameters=c('intPol','slopePol1','slopePol2','polBp'))
+# pp.check(mod2,'fitSeedCount','fitSimSeedCount')
 
 mod2samp <- mod2$sims.list #Samples from mod2
 str(mod2samp)
-hist(mod2samp$simPollenCount[50,]) #Simulated pollen (50th iteration)
-hist(mod2samp$simFertCount[50,]) #Simulated fertilized ovules (50th iteration)
+
+with(mod2samp,{
+  par(mfrow=c(2,1))
+  iter <- 51
+  # hist(simPollenCount[iter,],main='Simulated pollen',xlab='Count') #Simulated pollen (50th iteration)
+  # hist(simOvCount[iter,],main='Simulated ovules',xlab='Count') #Simulated fertilized ovules 
+  hist(simFertSeed[iter,],main='Simulated fertilized seeds',xlab='Count',breaks=seq(0,52,1)) #Simulated fertilized ovules 
+  hist(datalist$SeedCount,main='Acutual seed count',xlab='Count',breaks=seq(1,52,1))
+  print(c(intPol[iter],slopePol1[iter],slopePol2[iter],polBp[iter]))
+  par(mfrow=c(1,1))
+})
+
+pairs(data.frame(medseeds=apply(mod2samp$simFertSeed,1,median),intPol=mod2samp$intPol,slopePol1=-mod2samp$slopePol1,
+                 slopePol2=mod2samp$slopePol2,polBp=mod2samp$polBp))
 
 
 
