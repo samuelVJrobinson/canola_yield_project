@@ -83,35 +83,58 @@ temp=filter(seedsAll)
 
 #Pod weight-count modelling (JAGS) -----------------------------
 library(jagsUI)
-
+setwd('./Models')
 #Pod count model
-datalistPod=with(temp[!is.na(temp$PodCount)&temp$PodMass>0,],list(
-  Npod=length(PodCount),
-  SeedCount=PodCount,
-  PodMass=PodMass
+datalist <- with(temp[!is.na(temp$PodCount)&temp$PodCount>0,],list( #Strips NAs and 0 counts
+  Npod=length(PodCount), #Number of observed seed counts
+  Nunique=length(unique(PodCount)), #Number of unique seed counts
+  uniquePodCount=sort(unique(PodCount)),
+  NuniquePodCount=as.vector(table(PodCount)),
+  uniqueMatches=match(PodCount,sort(unique(PodCount))), #Matching index
+  SeedCount=PodCount
 ))
 
-startlist=function() list(
-  int.Pol= rnorm(1,-3.5,0.3),
-  slope.Fert = rnorm(1,0.1,0.3),
-  int.PodMass = rnorm(1,0,1), 
-  slope.PodMass = rnorm(1,0,1), 
-  prec.PodMass = rgamma(1,0.01,0.01) 
-)
+datalist <- c(datalist,with(flowersAll[!is.na(flowersAll$Pollen),],{list(
+  Npollen=length(Pollen),
+  PollenCount=Pollen
+)})) #Append pollen data to list
 
-mod2=jags(data=datalistPod,inits=startlist,
-          parameters.to.save=c(
-            'int.Pol','slope.Fert', #Seed count variables
-            'int.PodMass','slope.PodMass','prec.PodMass', #Seed weight-count variables
-            'fit.SeedCount','fit.SeedCount.new', #Post. pred checks
-            'fit.PodMass','fit.PodMass.new'),
+datalist <- c(datalist,with(plantsAll[!is.na(plantsAll$Pods)&!is.na(plantsAll$Missing)&plantsAll$Missing>0,],{list(
+  Nplants=length(Pods),
+  Pods=Pods,PodsMissing=Missing
+)})) #Append flower success data to list
+
+# startlist=function() list(
+#   int.Pol= rnorm(1,-3.5,0.3),
+#   slope.Fert = rnorm(1,0.1,0.3),
+#   int.PodMass = rnorm(1,0,1), 
+#   slope.PodMass = rnorm(1,0,1), 
+#   prec.PodMass = rgamma(1,0.01,0.01) 
+# )
+
+params <- c('lambda','r', #Params for negbin pollination process
+            # 'simPollenCount','simOvCount',
+            'intPol','slopePol',
+            'fitSeedCount','fitSimSeedCount')
+
+mod2 <- jags(data=datalist,
+          #inits=startlist,
+          parameters.to.save=params,
           model.file='pod_count_weight.txt',
-          n.chains=3,n.adapt=1000,n.iter=2000,n.thin=2,parallel=T)
+          n.chains=1,n.adapt=200,n.iter=200,n.thin=1,parallel=F)
 
 summary(mod2)
 print(mod2)
-xyplot(mod2) #Good convergence
-# traceplot(mod2)
+traceplot(mod2,parameters=c('lambda','r','intPol','slopePol'))
+pp.check(mod2,'fitSeedCount','fitSimSeedCount')
+
+mod2samp <- mod2$sims.list #Samples from mod2
+str(mod2samp)
+hist(mod2samp$simPollenCount[50,]) #Simulated pollen (50th iteration)
+hist(mod2samp$simFertCount[50,]) #Simulated fertilized ovules (50th iteration)
+
+
+
 
 #Test
 par(mfrow=c(3,1))
@@ -160,24 +183,13 @@ datalist <- c(datalist,with(plantsAll[!is.na(plantsAll$Pods)&!is.na(plantsAll$Mi
   Nplants=length(Pods),
   Pods=Pods,PodsMissing=Missing
 )})) #Append flower success data to list
-# minOvNum=12
-# maxOvNum=52
-# maxOvNum-minOvNum+1 #Rows of matrix
-# length(12:52)
-# 
-# seed=51 #Num of seeds
-# (start=ifelse(seed>minOvNum,seed-minOvNum+1,1)) #Start position
-# (end=maxOvNum-minOvNum+1)
-# 
-# (start+1):end #Indices
-# length((start+1):end) #Length of indices
-# end-start #Argument to rep_vector
 
-modPodcount = stan(file='pod_level.stan',data=datalist,iter=400,chains=3,control=list(adapt_delta=0.9),
-                   init=function() list(pollenMu=293.75,pollenPhi=0.61,intPolSurv=0,slopePolSurv=0,intPodSurv=0,slopePodSurv=2))
+modPodcount = stan(file='pod_level.stan',data=datalist,iter=400,chains=3,control=list(adapt_delta=0.8),
+                   init=function() list(intPolSurv=0,slopePolSurv=0,intPodSurv=0,slopePodSurv=2))
 print(modPodcount)
-traceplot(modPodcount) #Very poor traces, esp for pollen mu and phi. Likely what is happening is the mu and phi terms are being "influenced" by seed counts. Not sure how to separate these two, aside from heirarchical terms (?)
-#Try running model without pollen included, and use results from below for pollen input 
+traceplot(modPodcount) #Very poor traces, esp for pollen mu and phi. Likely what is happening is the mu and phi terms are being "influenced" by seed counts. Not sure how to separate these two, aside from heirarchical terms.
+#Try running model without pollen included, and use results from below for pollen input.
+#Same results occur even when using pollen. Try to run this in JAGS instead?
 
 modPolcount <- stan(file='pollenMod.stan',data=datalist[c('Npollen','PollenCount')],iter=1000,chains=3)
 print(modPolcount) #mu=293.75, phi=0.61

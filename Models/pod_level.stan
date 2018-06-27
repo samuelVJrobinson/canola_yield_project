@@ -78,18 +78,22 @@ transformed data {
 	//Limits for marginalization procedure
 	int maxPolNum = 1500; //Max number of pollen ~ 98% of nbinom density
 	int maxOvNum = 52; //Max number of ovules
-	int minOvNum = 12; //Min number of ovules
+	int minOvNum = 12; //Min number of ovules	
+	real pollenMu = 293.75; //Parameters for pollen arrival
+	real pollenPhi = 0.61;	 
 	real ovLambda = 32; //Lambda for ovule production process
-	int totalFlowers[Nplants]; //Total flowers produced by a plant
-		
+	
+	int totalFlowers[Nplants]; //Total flowers produced by a plant		
 	for(i in 1:Nplants) //Calculate total number of flowers (missing+observed pods)
 		 totalFlowers[i]= Pods[i]+PodsMissing[i]; 	
+		 
+	
 }
 
 parameters {
 	//Pollen distribution model - negative binomial
-	real<lower=0> pollenMu;
-	real<lower=0> pollenPhi;
+	// real<lower=0> pollenMu;
+	// real<lower=0> pollenPhi;
 
 	//Seed count model	
 	//(inv-logit)Proportion of pollen reaching ovules	
@@ -122,12 +126,12 @@ model {
 	intPodSurv ~ normal(0,3); 
 	slopePodSurv ~ normal(0,3);
 	//Pollen distribution
-	pollenMu ~ normal(293.75,10); // Should be about 293
-	pollenPhi ~ gamma(8,12); // Should be about 0.61
+	// pollenMu ~ normal(293.75,10); // Should be about 293
+	// pollenPhi ~ gamma(8,12); // Should be about 0.61
 	
 	//Likelihood	
 	// print("Target lpSeeds LL:",sum(lpSeeds));
-	PollenCount ~ neg_binomial_2(pollenMu,pollenPhi); //Pollen counts	
+	// PollenCount ~ neg_binomial_2(pollenMu,pollenPhi); //Pollen counts	
 	
 	PodsMissing ~ binomial(totalFlowers,probZero); //Missing pod model
 }
