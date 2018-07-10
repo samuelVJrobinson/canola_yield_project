@@ -83,52 +83,6 @@ points(c(20:45),dpois(c(20:45),32.15),col='blue') #Poisson is too wide
 plot(10:55,log(pnorm(11:56,32.15,2.66)-pnorm(10:55,32.15,2.66)),ylab='LogLik')
 
 
-# Pod-level model ------------------------------------------
-
-
- 
-# ggplot(temp,aes(PodCount))+geom_histogram(bins=45)+labs(x='Seeds per pod',y='Count')
-# ggplot(temp,aes(PodMass))+geom_histogram(bins=45)+labs(x='Weight of pod',y='Count')+xlim(0,0.2)
-# ggplot(temp,aes(PodCount,PodMass))+geom_point()+labs(x='Seeds per pod',y='Weight of pod',y='Count')
-# ggplot(temp,aes(PodCount,PodMass/PodCount))+geom_point()+labs(x='Seeds per pod',y='Weight of single seed',y='Count')+geom_smooth(method='lm')+ylim(0,0.007)
-
-#Pod count model
-# datalistPod=with(temp[!is.na(temp$PodCount)&temp$PodCount>0,],list(
-#   Npod=length(PodCount), #Length of unique seed counts
-#   Nunique=length(unique(PodCount)), #Unique seed counts
-#   uniquePodCount=sort(unique(PodCount)),
-#   SeedCount=PodCount
-#   ))
-
-# #test
-# invlogit <- function(x) exp(x)/(1+exp(x))
-# logit <- function(x) log(x/(1-x))
-# 
-# Novules <- 100
-# Nseeds <- 20
-# Nfert <- c(Nseeds:Novules)
-# fertProp <- seq(0.1,0.9,0.1)
-# seedProp <- seq(0.1,0.9,0.1)
-# prob1 <- array(rep(0,length(fertProp)*length(seedProp)),dim=c(length(fertProp),length(seedProp)))
-# 
-# for(m in 1:length(fertProp)){
-#   for(n in 1:length(seedProp)){
-#     for(i in 1:length(Nfert)){
-#       prob1[m,n] <- dbinom(Nfert[i],Novules,fertProp[m],log=T)+dbinom(Nseeds,Nfert[i],seedProp[n],log=T) + prob1[m,n]
-#     }
-#   }
-# }
-# 
-# contour(x=fertProp,y=seedProp,z=prob1,xlab='FertProp',ylab='SeedProp')
-
-# mod1=jags(data=datalistPod,inits=startlist,
-#           parameters.to.save=c('int.Pol','slope.Fert','fit','fit.new'),
-#           model.file='pod_level.txt',
-#           n.chains=3,n.adapt=1000,n.iter=11000,n.burnin=1000,n.thin=10,parallel=T)
-# summary(mod1)
-# xyplot(mod1)
-# traceplot(mod1)
-# pp.check(mod1,'fit','fit.new') #Fit is good.
 
 #Pod weight-count modelling (JAGS) -----------------------------
 library(jagsUI)
@@ -297,6 +251,7 @@ hist(rlnorm(1000,-3.04,1/sqrt(1.964)),breaks=100,xlim=c(0,0.7),main='Simulated P
 
 detach("package:jagsUI", unload=TRUE)
 
+
 #Pod weight-count modeling (Stan) ------------------------------------
 
 library(rstan)
@@ -378,6 +333,7 @@ pairs(modPodcount,pars=pars)
 # hist(rgeom(datalist$Npod,logLikGeom[[1]][1]),main=NULL,xlab='Geom',xlim=c(0,4000),breaks=seq(0,4000,20))
 # hist(rpois(datalist$Npod,logLikPois[[1]][1]),main=NULL,xlab='Pois',xlim=c(0,4000),breaks=seq(0,4000,20))
 # hist(flowersAll$Pollen[!is.na(flowersAll$Pollen)],xlim=c(0,4000),breaks=seq(0,4000,20),main=NULL,xlab='Actual pollen counts')
+
 
 # Test model to simulate seed counts --------------------------------------
 
@@ -567,6 +523,7 @@ simSeeds(maxNovules=52,coefs=c(292.9316584,0.6136358,optFit$par),plotResults=T,a
 plantsAll %>% mutate(PropMis=Missing/(Pods+Missing)) %>% filter(!is.na(PropMis),PropMis>0) %>% 
   ggplot(aes(PropMis))+geom_histogram()
 
+
 # Visitation and pollen deposition (Stan) ---------------------------------
 
 library(rstan)
@@ -584,25 +541,37 @@ datalistField <- with(fieldsAll,list(
 datalistPlot <- with(surveyAll,list(
   Nplot=length(Distance), #Number of plots
   plotIndex=as.numeric(as.factor(paste(Year,Field))), #Index for field (which field?)
-  dist=Distance,
+  dist=Distance-mean(Distance), #Centered distance
   hbeeVis=Honeybee, #Visits by honeybees
   totalTime=TotalTime/10 #Total time (mins/10)
 ))
 
-datalistFlw <- with(filter(flowersAll,!is.na(Pollen)),list(
-  Nflw=length(Distance), #Number of 
+datalistFlw <- with(flowersAll,list(
+  Nflw=length(Distance), #Number of pollen samples
   flowerIndex=as.numeric(factor(paste(Year,Field,Distance))), #Index for flower (which plot?)
-  PollenCount=Pollen
+  pollenCount=Pollen
 ))
 
-with(flowersAll,as.numeric(factor(paste(Year,Field,Distance))))
+naPollen <- is.na(datalistFlw$pollenCount) #Remove NAs from pollen counts
+datalistFlw$pollenCount <- datalistFlw$pollenCount[!naPollen]
+datalistFlw$flowerIndex <- datalistFlw$flowerIndex[!naPollen]
+datalistFlw$Nflw <- sum(!naPollen)
 
-datalist <- c(datalist,with(plantsAll[!is.na(plantsAll$Pods)&!is.na(plantsAll$Missing)&plantsAll$Missing>0,],{list(
-  Nplants=length(Pods),
-  Pods=Pods,PodsMissing=Missing
-)})) #Append flower success data to list
+datalist <- c(datalistField,datalistPlot,datalistFlw)
+str(datalist)
 
+# datalist <- c(datalist,with(plantsAll[!is.na(plantsAll$Pods)&!is.na(plantsAll$Missing)&plantsAll$Missing>0,],{list(
+#   Nplants=length(Pods),
+#   Pods=Pods,PodsMissing=Missing
+# )})) 
+#Append flower success data to list
 
+modPodcount = stan(file='visitation_pollen_model.stan',data=datalist,iter=500,chains=3,
+                   control=list(adapt_delta=0.8))
+print(modPodcount)
+pars=c('intVisit','slopeDistVis','slopeHiveVis','sigmaVisField','visitPhi',
+       'intPollen','slopeVisitPol','sigmaPolField','sigmaPolPlot','pollenPhi')
+traceplot(modPodcount,pars=pars)
 
 
 # Field-level visitation, nectar, and pollen deposition model (JAGS) -------------
