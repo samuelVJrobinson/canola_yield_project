@@ -1,3 +1,13 @@
+data{
+	for(i in 1:Nplants){
+		totalFlw[i] <- Pods[i]+PodsMissing[i] #Total flowers
+	}
+	for(i in 1:Npod){
+		zeros[i] <- 0 #For zeros trick
+		ones[i] <- 1 #For ones trick
+	}
+}
+
 model{ #Model of seed count per pod ~ pod weight relationship
 #Lognorm - bad p.pred. checks
 #Gamma - bad p. pred. checks
@@ -13,37 +23,77 @@ model{ #Model of seed count per pod ~ pod weight relationship
 # prec.PodMass ~ dgamma(0.01,0.01) #Precision of pod weight
 
 #Pollination rate
-lambda ~ dnorm(5.6,0.1) 
-r ~ dgamma(2,3)
-# lambda <- 5.685
-# r <- 0.615
+# lambda ~ dnorm(5.6,0.1) 
+# r ~ dgamma(2,3)
+lambda <- 5.685 #Fixed - for now
+r <- 0.615
 #Pollen success probability
-intPol ~ dnorm(0,10) #intercept
-slopePol1 ~ dgamma(1,1) #slope1
-slopePol2 ~ dnorm(-3.1,1) #slope2
-polBp ~ dgamma(3,8) #breakpoint location
+intPol ~ dnorm(-5,.1) #intercept
+slopePol ~ dnorm(5,.1) #slope1
+#Pod success probability
+intPod ~ dnorm(0,.1) 
+slopePod ~ dnorm(1,.1)
 
-p <- r/(r+exp(lambda)) #Transformed mean for pollination process (about 0.0022)
-		 
-	for(pol in 1:Npollen){
-		PollenCount[pol] ~ dnegbin(p,r)	#Actual pollen counts	
-	}
-	
+p <- r/(r+exp(lambda)) #Transformed mean for pollination process (about 0.0022)		 
+	# for(pol in 1:Npollen){
+		# PollenCount[pol] ~ dnegbin(p,r)	#Actual pollen counts	
+	# }		
+	meanNegBin <- (r*(1-p))/p #Mean for neg bin process
+	simPollenZero <- dnegbin(0,p,r) #Probability of zero pollen per stigma
+		
 	for(pod in 1:Npod){		
-		simPollenCount[pod] ~ dnegbin(p,r) T(1,1500) #Simulate pollen counts on stigmas (truncate between 1 and 1500)		
-		#simPollenCountZero[pod] ~ dnegbin(p,r) T(0,1) #Only zeros - doesn't generate zeros properly...
-		simOvCount[pod] ~ dpois(32) T(1,52) #Simulate ovule counts per pod (truncate between 1,52)
-		#logit(probPol[pod]) <- intPol - slopePol1*simPollenCount[pod]/10000 #Probability of pollen success	
-		log(probPol[pod]) <- ifelse(simPollenCount[pod]<polBp, #Breakpoint function for pollen receipt. 
-			intPol-slopePol1*(simPollenCount[pod]/1000),
-			polBp*(-slopePol1)+((simPollenCount[pod]/1000)-polBp)*slopePol2+intPol)
-		simFertSeed[pod]~ dpois(probPol[pod]*simPollenCount[pod]) T(1,simOvCount[pod])  #Fertilized seeds 		
-		 
-		# SeedCount[pod] ~ dpois(simFertSeed[pod]) 
-		# resSeedCount[pod] <- abs(SeedCount[pod]-probPol[pod]*simOvCount[pod]) #Diff b/w predicted and actual
-		# simSeedCount[pod] ~ dpois(probPol[pod]*simOvCount[pod])  #Simulate Fertilized seeds
-		# resSimSeedCount[pod] <- abs(simSeedCount[pod]-SeedCount[pod]) #Diff b/w simulated and actual
-	}
+		simPollenCount[pod] ~ dnegbin(p,r)T(SeedCount2[pod],) #Simulate pollen counts on stigmas (must be >= seedcount)				
+		# simOvCountN[pod] ~ dnorm(32.15,1/pow(2.66,2)) T(SeedCount2[pod],52) #Simulate ovule counts per pod 
+		# simOvCount[pod] <- dround(simOvCountN[pod],0) #Round to integer
+		simOvCount[pod] ~ dpois(32.15)T(SeedCount2[pod],) #Simulate ovule counts per pod (must be >= seedcount and <= maxOvNum)
+		scalPollen[pod] <- ((simPollenCount[pod])/1000) #Scaled & centered pollen		
+		# log(probPol[pod]) <- ifelse(scalPollen[pod]<polBp, #Breakpoint function for pollen receipt. 
+			# intPol-slopePol*scalPollen[pod],
+			# polBp*(-slopePol)+(scalPollen[pod]-polBp)*slopePol2+intPol)
+		#Probability of pollen making it to ovules
+		logit(probPol[pod]) <- intPol + slopePol*scalPollen[pod]
+		#Proability of pod survival
+		logit(probPod[pod]) <- intPod + slopePod*SeedCount[pod]		
+		
+		#2 possible scenarios:
+		#1) PollenCount > OvuleCount & OvuleCount == SeedCount : 
+		#	Binomial(SeedCount|ProbPol,Pollen) + Binomial(SeedCount+1|ProbPol,Pollen) + ... + Binomial(Pollen|ProbPol,Pollen) =
+		#   (1-pbin(SeedCount-1,probPol,PollenCount))		
+		#2) OvuleCount > SeedCount | OvuleCount == PollenCount : Binomial(SeedCount|ProbPol,Pollen)
+		
+		#LogLik of seeds being fertilized AND pod surviving		
+		LLseed[pod] <- ifelse(simOvCount[pod] == SeedCount[pod], 
+			log(1-pbin(SeedCount[pod]-1,probPol[pod],simPollenCount[pod])), #This is used about 50% of the time at higher seed counts
+			log(dbin(SeedCount[pod],probPol[pod],simPollenCount[pod])))		
+		LLpod[pod] <-log(probPod[pod]) #LogLik of pod survival
+		LL[pod]<- LLseed[pod]+LLpod[pod] #Total LogLik for seed counts		
+		zeros[pod] ~ dpois(-LL[pod]) #Zeros trick for seed likelihood
+		
+		simFertFailPod[pod] <-dbin(0,probPol[pod],simPollenCount[pod]) #Probability of 0 pollen making it to become seeds| simPollenCount				
+		
+		simPodFailPod[pod] <-dbin(SeedCount[pod],probPol[pod],simPollenCount[pod])*(1-probPod[pod]) #Probability of pollen surviving AND pod being aborted
+		
+		for(k in 1:min(simPollenCount[pod],simOvCount[pod]){
+			ifelse(simOvCount[pod]==simOvCount,
+				1-pbin(k-1,probPol[pod],simPollenCount[pod]),
+				ilogit(intPod + slopePod*k))
+		}		
+		
+		#p(no pollen deposition) + p(pollen deposition, but no pollen survival) + p(deposition+survival, but no pod survival)
+		totalPodFail[pod] <- simPollenZero+simFertFailPod[pod]+simPodFailPod[pod] 
+		# Should be about 0.276
+		lik[pod] <- dbeta(totalPodFail[pod],20,52.46) #Beta centered on 0.276		
+		ones[pod] ~ dbern(1.0E-06+(lik[pod]/10)) #Ones trick, plus small # for identifiability
+							
+		resSeedCount[pod] <- abs(SeedCount[pod]-probPol[pod]*simPollenCount[pod]) #Diff b/w predicted and actual
+		simSeedCount[pod] ~ dbin(probPol[pod],simPollenCount[pod])T(1,simOvCount[pod])  #Simulate Fertilized seeds
+		resSimSeedCount[pod] <- abs(simSeedCount[pod]-probPol[pod]*simPollenCount[pod]) #Diff b/w simulated and actual
+	}	
+	
+	# dbeta(totalPodFail,20,52.46) #Beta dist centered on 0.276 - e.g. curve(dbeta(x,20,52.46),0,1)	
+	# for(pod in 1:Nplants){
+		# PodsMissing[pod] ~ dbinom(totalPodFail,totalFlw[pod]) #Pod abortion - takes a very long time if coupled with loop above
+	# }
 
 	# for(pod in 1:Npod){
 		
@@ -75,8 +125,8 @@ p <- r/(r+exp(lambda)) #Transformed mean for pollination process (about 0.0022)
 	# }
 	
 #Posterior predictive checks
-# fitSeedCount <- sum(resSeedCount[]) #Seed count resids
-# fitSimSeedCount <- sum(resSimSeedCount[]) #Simulated seed count resids
+fitSeedCount <- sum(resSeedCount[]) #Seed count resids
+fitSimSeedCount <- sum(resSimSeedCount[]) #Simulated seed count resids
 
 # fit.PodMass <- sum(res.PodMass[]) #Pod mass
 # fit.PodMass.new <- sum(res.PodMass.new[])	

@@ -26,10 +26,10 @@ functions {
 		for(i in 1:(maxOvNum-minOvNum+1))
 			lpOv[i] = poisson_lpmf((i+minOvNum-1)|ovLambda); //Ovule production
 		for(i in 1:maxOvNum){ 		
-			lpPodAbort[i] = bernoulli_logit_lpmf(1|intPodSurv+slopePodSurv*i); //Pod abortion ~ #seeds 
+			lpPodAbort[i] = bernoulli_logit_lpmf(1|intPodSurv+slopePodSurv*i*.1); //Pod abortion ~ #seeds 
 			lpMarg[i] = rep_matrix(0,maxOvNum-minOvNum+1,maxPolNum); //Intial values for lpMarg
 			for(j in i:maxPolNum){	//Upper triangular matrix with pollen success log-probs | pollen	 
-				lpFertSeed[i,j] = binomial_logit_lpmf(i|j,intPolSurv+(slopePolSurv*j/10000)); //#Successful ovules~#Pollen (/10000)
+				lpFertSeed[i,j] = binomial_logit_lpmf(i|j,intPolSurv+slopePolSurv*j*.001); //#Successful ovules~#Pollen (/1000)
 			}		
 		}	
 		
@@ -49,7 +49,7 @@ functions {
 				//Use mixture of lps for pol==seed
 				lpMarg[seed,start,pol] = lpPollen[pol]+ //lp from pollen process
 					lpOv[start]+ //lp from ovule process				
-					(pol==seed ? lpFertSeed[seed,pol] : binomial_lccdf(seed-1|pol,inv_logit(intPolSurv+slopePolSurv*pol/10000)))+ //lp from pollination success				
+					(pol==seed ? lpFertSeed[seed,pol] : binomial_lccdf(seed-1|pol,inv_logit(intPolSurv+slopePolSurv*pol/1000)))+ //lp from pollination success				
 					//(pol==seed ? lpFertSeed[seed,pol] : log_sum_exp(lpFertSeed[,pol]))+ //lp from pollination success				
 					lpPodAbort[seed]; //lp from pod success process				
 			}		
@@ -120,11 +120,11 @@ model {
 	
 	//Priors
 	//Pollen survival	
-	intPolSurv ~ normal(0,3);
-	slopePolSurv ~ normal(0,3);
+	intPolSurv ~ normal(1,3);
+	slopePolSurv ~ normal(-3.5,3);
 	//Pod survival
-	intPodSurv ~ normal(0,3); 
-	slopePodSurv ~ normal(0,3);
+	intPodSurv ~ normal(-3,3); 
+	slopePodSurv ~ normal(3.5,3);
 	//Pollen distribution
 	// pollenMu ~ normal(293.75,10); // Should be about 293
 	// pollenPhi ~ gamma(8,12); // Should be about 0.61
