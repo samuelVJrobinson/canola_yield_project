@@ -530,20 +530,22 @@ library(rstan)
 setwd('./Models')
 rstan_options(auto_write = TRUE)
 options(mc.cores = 3)
+library(shinystan)
 
 #List structure for Stan
-datalistField <- with(fieldsAll,list(
+datalistField <- with(fieldsAll,list( #Field-level measurements
   Nfield=length(Year), #Number of fields
   fieldIndex = as.numeric(as.factor(paste(Year,Field))), #Index for each field
   numHives=NumHives #Number of hives/field
 ))
 
-datalistPlot <- with(surveyAll,list(
+datalistPlot <- with(surveyAll,list( #Plot-level measurements
   Nplot=length(Distance), #Number of plots
   plotIndex=as.numeric(as.factor(paste(Year,Field))), #Index for field (which field?)
   dist=Distance-mean(Distance), #Centered distance
   hbeeVis=Honeybee, #Visits by honeybees
   totalTime=TotalTime/10 #Total time (mins/10)
+  #plantDens=PlDens #Planting density
 ))
 
 datalistFlw <- with(flowersAll,list(
@@ -552,26 +554,77 @@ datalistFlw <- with(flowersAll,list(
   pollenCount=Pollen
 ))
 
-naPollen <- is.na(datalistFlw$pollenCount) #Remove NAs from pollen counts
-datalistFlw$pollenCount <- datalistFlw$pollenCount[!naPollen]
-datalistFlw$flowerIndex <- datalistFlw$flowerIndex[!naPollen]
-datalistFlw$Nflw <- sum(!naPollen)
+datalistPlant <- with(plantsAll,list(
+  Nplant=length(Distance), #Number of plant samples
+  podCount=Pods, #Successful pods
+  flwCount=Pods+Missing, #Pods + Missing (total flw production)
+  vegMass=VegMass, #Weight of veg tissue (no seeds) (g)
+  totalSeedMass=SeedMass, #Weight of all seeds (g)
+  plantIndex=as.numeric(factor(paste(Year,Field,Distance))) #Index for plant (which plot?)
+))
 
-datalist <- c(datalistField,datalistPlot,datalistFlw)
+datalistPod <- with(seedsAll,list(
+  Npod=length(Distance), #Number of seeds measured
+  seedCount=PodCount, #Number of seeds per pod
+  seedMass=1000*PodMass/PodCount, #Weight per seed (mg)
+  podIndex=as.numeric(factor(paste(Year,Field,Distance,Plant))) #Index for pod (which plant?)
+))
+
+# #Mismatch b/w seeds and plants, caused by removal of plant-level data
+# length(levels(with(seedsAll,factor(paste(Year,Field,Distance,Plant)))))
+# length(levels(with(plantsAll,factor(paste(Year,Field,Distance,Plant)))))
+# nrow(plantsAll)
+
+naPollen <- is.na(datalistFlw$pollenCount) #Remove NAs from pollen counts
+datalistFlw <- within(datalistFlw,{
+  pollenCount <- pollenCount[!naPollen]
+  flowerIndex <- flowerIndex[!naPollen]
+  Nflw <- sum(!naPollen)
+})
+
+naPlant <- with(datalistPlant,is.na(podCount)|is.na(flwCount)|is.na(vegMass)|is.na(totalSeedMass))
+datalistPlant <- within(datalistPlant,{
+  podCount <- podCount[!naPlant]
+  flwCount <- flwCount[!naPlant]
+  vegMass <- vegMass[!naPlant]
+  totalSeedMass <- totalSeedMass[!naPlant]
+  plantIndex <- plantIndex[!naPlant]
+  Nplant <- sum(!naPlant)
+})
+
+#If any pod measurements are NA, or missing plant above |(datalistPod$podIndex %in% which(naPlant))
+naPod <- with(datalistPod,is.na(seedCount)|is.na(seedMass))
+datalistPod <- within(datalistPod,{
+  seedCount <- seedCount[!naPod]
+  seedMass <- seedMass[!naPod]
+  podIndex <- podIndex[!naPod]
+  podIndex <- as.numeric(factor(podIndex)) #Re-index
+  Npod <- sum(!naPod)
+})
+
+datalist <- c(datalistField,datalistPlot,datalistFlw,datalistPlant,datalistPod)
+# rm(datalistField,datalistPlot,datalistFlw,datalistPlant,datalistPod,naPollen,naPlant,naPod) #Cleanup
 str(datalist)
 
-# datalist <- c(datalist,with(plantsAll[!is.na(plantsAll$Pods)&!is.na(plantsAll$Missing)&plantsAll$Missing>0,],{list(
-#   Nplants=length(Pods),
-#   Pods=Pods,PodsMissing=Missing
-# )})) 
-#Append flower success data to list
+length(unique(datalist$podIndex))
 
-modPodcount = stan(file='visitation_pollen_model.stan',data=datalist,iter=500,chains=3,
+modPodcount = stan(file='visitation_pollen_model.stan',data=datalist,iter=10,chains=1,
                    control=list(adapt_delta=0.8))
 print(modPodcount)
-pars=c('intVisit','slopeDistVis','slopeHiveVis','sigmaVisField','visitPhi',
+pars=c('intVisit','slopeDistVis','slopeHiveVis','sigmaVisField','visitPhi','zeroVisTheta',
        'intPollen','slopeVisitPol','sigmaPolField','sigmaPolPlot','pollenPhi')
-traceplot(modPodcount,pars=pars)
+traceplot(modPodcount,pars=pars) #Looks good, but trace of sigmaPolPlot is bad (low sample size, IMO)
+#Doesn't have to do with priors.
+launch_shinystan(modPodcount)
+
+pairs(modPodcount,pars=c('intVisit','slopeDistVis','slopeHiveVis','sigmaVisField','visitPhi','zeroVisTheta'),condition='energy__')
+pairs(modPodcount,pars=c('intPollen','slopeVisitPol','sigmaPolField','sigmaPolPlot','pollenPhi'),condition='energy__')
+
+
+mod2 <- extract(modPodcount)
+
+
+with(mod2,median(sigmaPolPlot/(sigmaPolPlot+sigmaPolField))) #About 43% of pollen variance is at plot level
 
 
 # Field-level visitation, nectar, and pollen deposition model (JAGS) -------------
