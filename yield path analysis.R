@@ -536,13 +536,13 @@ library(shinystan)
 datalistField <- with(fieldsAll,list( #Field-level measurements
   Nfield=length(Year), #Number of fields
   fieldIndex = as.numeric(as.factor(paste(Year,Field))), #Index for each field
-  numHives=NumHives #Number of hives/field
+  numHives=NumHives/10 #Number of hives/field, scaled by 10
 ))
 
 datalistPlot <- with(surveyAll,list( #Plot-level measurements
   Nplot=length(Distance), #Number of plots
   plotIndex=as.numeric(as.factor(paste(Year,Field))), #Index for field (which field?)
-  dist=Distance-mean(Distance), #Centered distance
+  dist=(Distance-mean(Distance))/100, #Centered distance scaled by 100
   hbeeVis=Honeybee, #Visits by honeybees
   totalTime=TotalTime/10 #Total time (mins/10)
   #plantDens=PlDens #Planting density
@@ -570,11 +570,6 @@ datalistPod <- with(seedsAll,list(
   podIndex=as.numeric(factor(paste(Year,Field,Distance,Plant))) #Index for pod (which plant?)
 ))
 
-# #Mismatch b/w seeds and plants, caused by removal of plant-level data
-# length(levels(with(seedsAll,factor(paste(Year,Field,Distance,Plant)))))
-# length(levels(with(plantsAll,factor(paste(Year,Field,Distance,Plant)))))
-# nrow(plantsAll)
-
 naPollen <- is.na(datalistFlw$pollenCount) #Remove NAs from pollen counts
 datalistFlw <- within(datalistFlw,{
   pollenCount <- pollenCount[!naPollen]
@@ -582,14 +577,15 @@ datalistFlw <- within(datalistFlw,{
   Nflw <- sum(!naPollen)
 })
 
-naPlant <- with(datalistPlant,is.na(podCount)|is.na(flwCount)|is.na(vegMass)|is.na(totalSeedMass))
+naPlant <- with(datalistPlant,is.na(podCount)|is.na(flwCount)|podCount>flwCount|
+                  is.na(vegMass)|is.na(totalSeedMass))
 datalistPlant <- within(datalistPlant,{
   podCount <- podCount[!naPlant]
   flwCount <- flwCount[!naPlant]
   vegMass <- vegMass[!naPlant]
   totalSeedMass <- totalSeedMass[!naPlant]
-  plantIndex <- plantIndex[!naPlant]
-  Nplant <- sum(!naPlant)
+  Nsurv <- sum(!naPlant) #Number of plants with complete measurements
+  plantSurvIndex <- plantIndex[!naPlant]
 })
 
 #If any pod measurements are NA, or missing plant above |(datalistPod$podIndex %in% which(naPlant))
@@ -598,28 +594,57 @@ datalistPod <- within(datalistPod,{
   seedCount <- seedCount[!naPod]
   seedMass <- seedMass[!naPod]
   podIndex <- podIndex[!naPod]
-  podIndex <- as.numeric(factor(podIndex)) #Re-index
+  # podIndex <- as.numeric(factor(podIndex)) #Re-index
   Npod <- sum(!naPod)
 })
 
 datalist <- c(datalistField,datalistPlot,datalistFlw,datalistPlant,datalistPod)
-# rm(datalistField,datalistPlot,datalistFlw,datalistPlant,datalistPod,naPollen,naPlant,naPod) #Cleanup
+rm(datalistField,datalistPlot,datalistFlw,datalistPlant,datalistPod,naPollen,naPlant,naPod) #Cleanup
 str(datalist)
 
-length(unique(datalist$podIndex))
+# mod2 <- stan_model(file='visitation_pollen_model.stan')
+# optMod2 <- optimizing(mod2,data=datalist,init=0)
+inits <- function() {
+  list(intVisit=-1,slopeDistVis=0,slopeHiveVis=0,sigmaVisField=2,visitPhi=0.4, #Visitation
+       intVisit_field=rep(0,datalist$Nfield),
+       intPollen=5.5,slopeVisitPol=0,sigmaPolField=0.5,sigmaPolPlot=0.4,pollenPhi=0.7, #Pollen deposition
+       intPollen_field=rep(0,datalist$Nfield),
+       intPollen_plot=rep(0,datalist$Nplot),
+       # intFlwSurv=0,slopeVisitSurv=0,slopePolSurv=0,sigmaFlwSurv_plot=0.5,sigmaFlwSurv_field=0.5, #Flower survival
+       # intFlwSurv_field=rep(0,datalist$Nfield),
+       # intFlwSurv_plot=rep(0,datalist$Nplot)
+       intSeedCount=3.15,slopeVisitSeedCount=0.05,slopePolSeedCount=0,seedCountPhi=21, #Seed count
+       sigmaSeedCount_plant=0.14,sigmaSeedCount_plot=0.07,sigmaSeedCount_field=0.1,
+       intSeedCount_field=rep(0,datalist$Nfield),
+       intSeedCount_plot=rep(0,datalist$Nplot),
+       intSeedCount_plant=rep(0,datalist$Nplant),
+       intSeedWeight=0,slopeVisitSeedWeight=0,slopePolSeedWeight=0,slopeSeedCount=0, #Seed weight
+       sigmaSeedWeight=0.5,sigmaSeedWeight_plant=0.5,sigmaSeedWeight_plot=0.5,sigmaSeedWeight_field=0.5,
+       intSeedWeight_field=rep(0,datalist$Nfield),
+       intSeedWeight_plot=rep(0,datalist$Nplot),
+       intSeedWeight_plant=rep(0,datalist$Nplant)
+       )
+}
 
-modPodcount = stan(file='visitation_pollen_model.stan',data=datalist,iter=10,chains=1,
-                   control=list(adapt_delta=0.8))
+modPodcount <- stan(file='visitation_pollen_model.stan',data=datalist,iter=300,chains=3,
+                   control=list(adapt_delta=0.8),init=inits)
 print(modPodcount)
-pars=c('intVisit','slopeDistVis','slopeHiveVis','sigmaVisField','visitPhi','zeroVisTheta',
-       'intPollen','slopeVisitPol','sigmaPolField','sigmaPolPlot','pollenPhi')
-traceplot(modPodcount,pars=pars) #Looks good, but trace of sigmaPolPlot is bad (low sample size, IMO)
-#Doesn't have to do with priors.
-launch_shinystan(modPodcount)
+pars=c('intVisit','slopeDistVis','slopeHiveVis','sigmaVisField','visitPhi') #Visitation
+pars=c('intPollen','slopeVisitPol','sigmaPolField','sigmaPolPlot','pollenPhi') #Pollen deposition
+# pars=c('intFlwSurv','slopeVisitSurv','slopePolSurv','sigmaFlwSurv_plot','sigmaFlwSurv_field') #Flower survival
+pars=c('intSeedCount','slopeVisitSeedCount','slopePolSeedCount','seedCountPhi',
+       'sigmaSeedCount_plant','sigmaSeedCount_plot','sigmaSeedCount_field') #Seed count
+pars=c('intSeedWeight','slopeVisitSeedWeight','slopePolSeedWeight',#Seed weight
+       'slopeSeedCount','sigmaSeedWeight','sigmaSeedWeight_plant','sigmaSeedWeight_plot',
+       'sigmaSeedWeight_field')
+
+traceplot(modPodcount,pars=pars)
+stan_hist(modPodcount,pars=pars)
+
+#Appears to be a small positive effect of visitation rate on seed count, and a negative effect on seed weight. Not sure if this is due to actual visitation, or something like plant density/plant size, which is lower at edge (i.e. abiotic conditions are worse)
 
 pairs(modPodcount,pars=c('intVisit','slopeDistVis','slopeHiveVis','sigmaVisField','visitPhi','zeroVisTheta'),condition='energy__')
 pairs(modPodcount,pars=c('intPollen','slopeVisitPol','sigmaPolField','sigmaPolPlot','pollenPhi'),condition='energy__')
-
 
 mod2 <- extract(modPodcount)
 
