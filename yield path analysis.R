@@ -558,9 +558,9 @@ datalistPlant <- with(plantsAll,list(
   Nplant=length(Distance), #Number of plant samples
   podCount=Pods, #Successful pods
   flwCount=Pods+Missing, #Pods + Missing (total flw production)
-  vegMass=VegMass, #Weight of veg tissue (no seeds) (g)
   totalSeedMass=SeedMass, #Weight of all seeds (g)
-  plantIndex=as.numeric(factor(paste(Year,Field,Distance))) #Index for plant (which plot?)
+  plantIndex=as.numeric(factor(paste(Year,Field,Distance))), #Index for plant (which plot?)
+  plantSize_obs=log(VegMass)-mean(log(VegMass),na.rm=T) #log weight of veg mass (g), centered
 ))
 
 datalistPod <- with(seedsAll,list(
@@ -578,15 +578,18 @@ datalistFlw <- within(datalistFlw,{
 })
 
 naPlant <- with(datalistPlant,is.na(podCount)|is.na(flwCount)|podCount>flwCount|
-                  is.na(vegMass)|is.na(totalSeedMass))
-datalistPlant <- within(datalistPlant,{
+                  is.na(plantSize_obs)|is.na(totalSeedMass))
+datalistPlant <-(within(datalistPlant,{
   podCount <- podCount[!naPlant]
   flwCount <- flwCount[!naPlant]
-  vegMass <- vegMass[!naPlant]
   totalSeedMass <- totalSeedMass[!naPlant]
-  Nsurv <- sum(!naPlant) #Number of plants with complete measurements
+  plantSize_obs <- plantSize_obs[!naPlant]
+  Nplant_obs <- sum(!naPlant) #Number of plants with complete measurements
   plantSurvIndex <- plantIndex[!naPlant]
-})
+  Nplant_miss <- sum(naPlant) #Number of plants with missing measurements
+  miss_ind <- which(naPlant) #Index of missing plants
+  obs_ind <- which(!naPlant) #Index of non-missing plants
+}))
 
 #If any pod measurements are NA, or missing plant above |(datalistPod$podIndex %in% which(naPlant))
 naPod <- with(datalistPod,is.na(seedCount)|is.na(seedMass))
@@ -601,6 +604,15 @@ datalistPod <- within(datalistPod,{
 datalist <- c(datalistField,datalistPlot,datalistFlw,datalistPlant,datalistPod)
 rm(datalistField,datalistPlot,datalistFlw,datalistPlant,datalistPod,naPollen,naPlant,naPod) #Cleanup
 str(datalist)
+# 
+# #Missing data model for plant size
+# modPlantSize <- stan(file='plant_weight_model.stan',data=datalist,iter=1000,chains=3,
+#                     control=list(adapt_delta=0.8),init=0)
+# print(modPlantSize)
+# 
+# traceplot(modPlantSize,pars=c('intSize','sigmaField','sigmaPlot','sigmaSize'))
+# traceplot(modPlantSize,pars=c('plantSize_miss'))
+
 
 # mod2 <- stan_model(file='visitation_pollen_model.stan')
 # optMod2 <- optimizing(mod2,data=datalist,init=0)
@@ -610,9 +622,9 @@ inits <- function() {
        intPollen=5.5,slopeVisitPol=0,sigmaPolField=0.5,sigmaPolPlot=0.4,pollenPhi=0.7, #Pollen deposition
        intPollen_field=rep(0,datalist$Nfield),
        intPollen_plot=rep(0,datalist$Nplot),
-       # intFlwSurv=0,slopeVisitSurv=0,slopePolSurv=0,sigmaFlwSurv_plot=0.5,sigmaFlwSurv_field=0.5, #Flower survival
-       # intFlwSurv_field=rep(0,datalist$Nfield),
-       # intFlwSurv_plot=rep(0,datalist$Nplot)
+       intFlwSurv=0,slopeVisitSurv=0,slopePolSurv=0,sigmaFlwSurv_plot=0.5,sigmaFlwSurv_field=0.5, #Flower survival
+       intFlwSurv_field=rep(0,datalist$Nfield),
+       intFlwSurv_plot=rep(0,datalist$Nplot),
        intSeedCount=3.15,slopeVisitSeedCount=0.05,slopePolSeedCount=0,seedCountPhi=21, #Seed count
        sigmaSeedCount_plant=0.14,sigmaSeedCount_plot=0.07,sigmaSeedCount_field=0.1,
        intSeedCount_field=rep(0,datalist$Nfield),
@@ -622,32 +634,64 @@ inits <- function() {
        sigmaSeedWeight=0.5,sigmaSeedWeight_plant=0.5,sigmaSeedWeight_plot=0.5,sigmaSeedWeight_field=0.5,
        intSeedWeight_field=rep(0,datalist$Nfield),
        intSeedWeight_plot=rep(0,datalist$Nplot),
-       intSeedWeight_plant=rep(0,datalist$Nplant)
+       intSeedWeight_plant=rep(0,datalist$Nplant),
+       plantSize_miss=rep(0,datalist$Nplant_miss),intSize=0,sigmaPlSize_field=0.3,sigmaPlSize_plot=0.3, #Plant size
+       sigmaPlSize=0.6,intSize_field=rep(0,datalist$Nfield),intSize_plot=rep(0,datalist$Nplot)
        )
 }
 
-modPodcount <- stan(file='visitation_pollen_model.stan',data=datalist,iter=300,chains=3,
+modPodcount <- stan(file='visitation_pollen_model.stan',data=datalist,iter=200,chains=3,
                    control=list(adapt_delta=0.8),init=inits)
-print(modPodcount)
+# save(modPodcount,file='modPodcount.Rdata')
+# load('modPodcount.Rdata') #Load full model
+
+# print(modPodcount)
 pars=c('intVisit','slopeDistVis','slopeHiveVis','sigmaVisField','visitPhi') #Visitation
 pars=c('intPollen','slopeVisitPol','sigmaPolField','sigmaPolPlot','pollenPhi') #Pollen deposition
-# pars=c('intFlwSurv','slopeVisitSurv','slopePolSurv','sigmaFlwSurv_plot','sigmaFlwSurv_field') #Flower survival
-pars=c('intSeedCount','slopeVisitSeedCount','slopePolSeedCount','seedCountPhi',
+pars=c('intFlwSurv','slopeVisitSurv','slopePolSurv','slopePlSizeSurv',
+       'sigmaFlwSurv_plot','sigmaFlwSurv_field') #Flower survival
+pars=c('intSeedCount','slopeVisitSeedCount','slopePolSeedCount','slopePlSizeCount','seedCountPhi',
        'sigmaSeedCount_plant','sigmaSeedCount_plot','sigmaSeedCount_field') #Seed count
 pars=c('intSeedWeight','slopeVisitSeedWeight','slopePolSeedWeight',#Seed weight
-       'slopeSeedCount','sigmaSeedWeight','sigmaSeedWeight_plant','sigmaSeedWeight_plot',
-       'sigmaSeedWeight_field')
+       'slopeSeedCount','slopePlSizeWeight',
+       'sigmaSeedWeight','sigmaSeedWeight_plant','sigmaSeedWeight_plot','sigmaSeedWeight_field')
 
 traceplot(modPodcount,pars=pars)
+stan_plot(modPodcount,pars=pars)
 stan_hist(modPodcount,pars=pars)
+launch_shinystan(modPodcount)
 
 #Appears to be a small positive effect of visitation rate on seed count, and a negative effect on seed weight. Not sure if this is due to actual visitation, or something like plant density/plant size, which is lower at edge (i.e. abiotic conditions are worse)
 
-pairs(modPodcount,pars=c('intVisit','slopeDistVis','slopeHiveVis','sigmaVisField','visitPhi','zeroVisTheta'),condition='energy__')
-pairs(modPodcount,pars=c('intPollen','slopeVisitPol','sigmaPolField','sigmaPolPlot','pollenPhi'),condition='energy__')
-
 mod2 <- extract(modPodcount)
+str(mod2)
+# 
+# predVisMu <- exp(mod2$visitMu)
+# for(i in 1:nrow(predVisMu)){
+#   predVisMu[i,] <- predVisMu[i,]*(1-mod2$zeroVisTheta[i])
+# }
 
+plot(apply(exp(mod2$visitMu),1,function(x) sum(abs(datalist$hbeeVis-x))),
+  apply(mod2$predHbeeVis,1,function(x) sum(abs(datalist$hbeeVis-x))),xlab='Actual Var',ylab='Pred Var')
+abline(0,1)
+
+
+
+
+
+
+#Invesigate bad traces for plot-level random effect for pollen
+t(with(mod2,apply(intPollen_field,2,function(x) quantile(x,c(0.5,0.025,0.975))))) %>% 
+  data.frame(.) %>% 
+  rename(med=X50.,lwr=X2.5.,upr=X97.5.) %>% 
+  mutate(site=1:length(med)) %>% 
+  ggplot(aes(site,med))+geom_pointrange(aes(ymax=upr,ymin=lwr))+labs(y='Site intercept')
+
+t(with(mod2,apply(intPollen_plot,2,function(x) quantile(x,c(0.5,0.025,0.975))))) %>% 
+  data.frame(.) %>% 
+  rename(med=X50.,lwr=X2.5.,upr=X97.5.) %>% 
+  mutate(plot=1:length(med)) %>% 
+  ggplot(aes(plot,med))+geom_pointrange(aes(ymax=upr,ymin=lwr))+labs(y='Plot intercept')
 
 with(mod2,median(sigmaPolPlot/(sigmaPolPlot+sigmaPolField))) #About 43% of pollen variance is at plot level
 
