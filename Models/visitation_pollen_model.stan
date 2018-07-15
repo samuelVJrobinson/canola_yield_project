@@ -212,7 +212,7 @@ model {
 	intSeedCount ~ normal(3,1); //Intercept
 	slopeVisitSeedCount ~ normal(0,1); //Slope of hbee visits
 	slopePolSeedCount ~ normal(0,1); //Slope of pollen deposition
-	slopePlSizeCount ~ normal(0,3); //Slope of plant size
+	slopePlSizeCount ~ normal(0,2); //Slope of plant size
 	seedCountPhi ~ gamma(21,1); //Dispersion parameter
 	sigmaSeedCount_field ~ gamma(2,20); //SD of field random effect
 	sigmaSeedCount_plot ~ gamma(2,20); //SD of plot random effect
@@ -226,7 +226,7 @@ model {
 	slopeVisitSeedWeight ~ normal(0,1); //Slope of hbee visits
 	slopePolSeedWeight ~ normal(0,1); //Slope of pollen deposition
 	slopeSeedCount ~ normal(0.005,.1); //Slope of seed count
-	slopePlSizeWeight ~ normal(0,3); //Slope of plant size
+	slopePlSizeWeight ~ normal(0,2); //Slope of plant size
 	sigmaSeedWeight ~ gamma(3,10); //SD of seed weight
 	sigmaSeedWeight_field ~ gamma(2,10); //SD of field random effect	
 	sigmaSeedWeight_plot ~ gamma(2,10); //SD of plot random effect
@@ -247,15 +247,22 @@ model {
 generated quantities{
 int predHbeeVis[Nplot]; //Predicted visits
 int predPollenCount[Nflw]; //Predicted pollen counts
+int predPodCount[Nplant_obs]; //Simulated surviving pods
+int predSeedCount[Npod]; //Simulated seeds per pod
+vector[Npod] predSeedMass; //Simulated seed weight
 
-	for(i in 1:Nplot){
-		// if(bernoulli_rng(zeroVisTheta)==1)
-			// predHbeeVis[i]=0;
-		// else		
-			predHbeeVis[i] = neg_binomial_2_log_rng(visitMu[i],visitPhi);	 //Predicted hbee visits
-			
+	for(i in 1:Nplot){		
+		predHbeeVis[i] = neg_binomial_2_log_rng(visitMu[i],visitPhi);	 //Simulated hbee visits			
 	}
 	
 	for(i in 1:Nflw)
-		predPollenCount[i] = neg_binomial_2_log_rng(pollenMu[i],pollenPhi);
+		predPollenCount[i] = neg_binomial_2_log_rng(pollenMu[i],pollenPhi); //Simulated pollen counts
+		
+	for(i in 1:Nplant_obs)
+		predPodCount[i] = binomial_rng(flwCount[i],inv_logit(flwSurv[i])); //Simulated surviving pods
+	
+	for(i in 1:Npod){ //For each pod
+		predSeedCount[i] = neg_binomial_2_log_rng(seedCountMu[i],seedCountPhi); //Seed count per pod
+		predSeedMass[i] = lognormal_rng(seedWeightMu[i],sigmaSeedWeight); //Weight per seed
+	}	
 }
