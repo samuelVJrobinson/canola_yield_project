@@ -37,6 +37,11 @@ rm(allFields,allPlants,allPollen,allSeeds,allSurvey,behav2015,visitors2016,necta
 #Remove Warnock 4 - plants/seeds observed but not field
 plantsAllSeed <- filter(plantsAllSeed,Field!='Warnock 4')
 seedsAllSeed <- filter(seedsAllSeed,Field!='Warnock 4')
+#Set 'negative' missing pods (mistake in counting) to NA.
+plantsAllComm <- mutate(plantsAllComm,Missing=ifelse(Missing<0,NA,Missing))
+plantsAllSeed <- mutate(plantsAllSeed,Missing=ifelse(Missing<0,NA,Missing))
+seedsAllComm <- mutate(seedsAllComm,Missing=ifelse(Missing<0,NA,Missing))
+seedsAllSeed <- mutate(seedsAllSeed,Missing=ifelse(Missing<0,NA,Missing))
 #Extra seed field data (from Riley W.)
 rileyExtra <- read.csv('./Seed field analysis/rileyExtra.csv')
 setwd('~/Projects/UofC/canola_yield_project')
@@ -597,29 +602,50 @@ surveyAllSeed <- plantsAllSeed %>% #Joins plot-level plant size
   left_join(unite(surveyAllSeed,ID,Field,Distance,EdgeCent,sep='_',remove=F),.,by='ID') %>% 
   dplyr::select(-ID)
 #Pod success
-
+podSuccessMod <- glmer(cbind(Pods,Missing)~(1|Field/FieldPlot),family=binomial,data=plantsAllSeed)
+plantsAllSeed$predPodSuccess <- predict(podSuccessMod,na.action=na.exclude) #NAs included
+surveyAllSeed <- plantsAllSeed %>% #Joins plot-level plant size
+  group_by(Field,Distance,EdgeCent) %>% 
+  summarize(predPodSuccess=mean(predPodSuccess,na.rm=T)) %>% 
+  unite(ID,Field,Distance,EdgeCent,sep='_') %>% 
+  left_join(unite(surveyAllSeed,ID,Field,Distance,EdgeCent,sep='_',remove=F),.,by='ID') %>% 
+  dplyr::select(-ID)
 
 #Scale data and choose only columns of interest
 temp <- surveyAllSeed %>% ungroup() %>% 
-  dplyr::select(Field,Distance,minDist,Bay,EdgeCent,TotalTime,lbee,hbee,predPol) %>% 
+  dplyr::select(Field,Distance,minDist,Bay,EdgeCent,TotalTime,lbee,hbee,predPol:predPodSuccess) %>% 
   mutate(TotalTime=ifelse(is.na(TotalTime),5,TotalTime)) %>% 
-  mutate(logDist=scale(log(Distance)),logMinDist=scale(log(minDist)),logTime=log(TotalTime)) 
-  # mutate(sqrtDist=sqrt(Distance),sqrtMinDist=sqrt(minDist)) %>% 
+  mutate(logDist=scale(log(Distance)),logMinDist=scale(log(minDist)),logTime=log(TotalTime)) %>%  #Scales predictors
+  mutate_at(vars(predPol:predPodSuccess),funs('scale')) %>% #Scales plot-level terms
+  filter(!is.na(predPlSize),!is.na(predSeedCount))
 
 visMod <- psem(
-  glmer.nb(lbee~logMinDist*logDist+Bay+EdgeCent+offset(logTime)+(1|Field),data=temp),
-  glmer.nb(hbee~logMinDist+logDist+Bay+EdgeCent+offset(logTime)+(1|Field),data=temp),
-  lmer(predPol~logMinDist+logDist+EdgeCent+lbee+hbee+(1|Field),data=temp)
+  glmer.nb(lbee~logMinDist*logDist+Bay+EdgeCent+offset(logTime)+(1|Field),
+        data=temp,control=glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=1e5))), #lbee visits
+  glmer.nb(hbee~logMinDist+logDist+Bay+EdgeCent+offset(logTime)+(1|Field),
+           data=temp,control=glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=1e5))), #hbee visits
+  lmer(predPol~logMinDist+logDist+EdgeCent+lbee+hbee+(1|Field),data=temp), #log Pollen counts
+  lmer(predSeedCount~predPol+predPlSize+EdgeCent+logDist+(1|Field),data=temp), #log Seed counts
+  lmer(predSeedSize~predPol+predPlSize+predSeedCount+(1|Field),data=temp), #log Seed size
+  lmer(predPodSuccess~predSeedCount+predPol+predPlSize+logMinDist+logDist+EdgeCent+(1|Field),data=temp) #logit pod success
 )
 
 #dSep test points to relationship b/w pollen and distance into field, independent of visitation rate. This suggests that jump lengths of pollinators matter.
+#Alternatively, it could be that the overall rate is important, and not the observed visitation rate -> pollen related to distance, but not lbee or hbee counts.
+#Seedcount model has strong effect of hbee dist, pollen, and edge/center
+#Seedsize model has only seed count
+#Podsuccess model has strong effect of seedCount, lbee and hbee dist, pollen, and edge/center. Seems to have very similar results to seedcount model, so perhaps this is actually a reflection of the same process? Need to think about this a bit more.
+
+#Next steps: 1) write "original" model in Stan, get dSep tests from PSEM, write/run dSep tests in Stan, 
+#2) write "final" model in Stan, get dSep tests from PSEM, write/run dSep tests in Stan
+
+#Summary function doesn't work, so using lapply
+lapply(visMod[1:6],summary)
+
 dSep(visMod,conserve=T)
-fisherC(visMod,conserve=T) #83.27, p<0.001
+fisherC(visMod,conserve=T) #31.37, p=0.76
 
-#Pollen residual ~ logDist
-plot(temp$logDist,resid(visMod[[3]]),xlab='Centered logDist',ylab='Pollen Residual')
-plot(temp$logMinDist,resid(visMod[[3]]),xlab='Centered logMinDist',ylab='Pollen Residual')
-
+temp %>% dplyr::select(predPol:predPodSuccess) %>% pairs()
 
 ggplot(temp,aes(exp(logDist),hbee/exp(logTime)))+geom_point()+
   labs(x='Distance',y='Visits/min')
