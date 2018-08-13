@@ -32,7 +32,11 @@ fieldsAllSeed <- allFields; plantsAllSeed <- allPlants; pollenAllSeed <- allPoll
 surveyAllSeed <- allSurvey; 
 plantsAllSeed$Field <- gsub('Unrah','Unruh',plantsAllSeed$Field) #Fixes spelling error
 seedsAllSeed$Field <- gsub('Unrah','Unruh',seedsAllSeed$Field)
+seedsAllSeed$EdgeCent <- ifelse(seedsAllSeed$EdgeCent=='Cent','Center',seedsAllSeed$EdgeCent) #Fixes cent/center
 rm(allFields,allPlants,allPollen,allSeeds,allSurvey,behav2015,visitors2016,nectar2016,folder)
+#Remove Warnock 4 - plants/seeds observed but not field
+plantsAllSeed <- filter(plantsAllSeed,Field!='Warnock 4')
+seedsAllSeed <- filter(seedsAllSeed,Field!='Warnock 4')
 #Extra seed field data (from Riley W.)
 rileyExtra <- read.csv('./Seed field analysis/rileyExtra.csv')
 setwd('~/Projects/UofC/canola_yield_project')
@@ -48,7 +52,13 @@ invLogit <- function(x){
 }
 #Linear breakpoint function - two lines with intersection "b"
 bpoint <- function(x,int1,slope1,b,slope2) ifelse(x<b,int1+slope1*x,b*slope1+(x-b)*slope2+int1)
+#Effect size for Posterior samples
+effSize <- function(x) unname(median(x)/diff(quantile(x,c(0.025,0.975))))
+#Does 95% of posterior overlap zero?
+overlap <- function(x) {r <- quantile(x,c(0.025,0.975))>=0; xor(r[1],r[2]);}
 temp <- filter(seedsAllComm)
+
+#Everything above this line run to start
 
 # Data from Wang et al 2011 - ovule counts --------------------------------
 ovDat <- read.csv('wang2011ovData.csv') %>% 
@@ -538,6 +548,87 @@ plantsAllComm %>% mutate(PropMis=Missing/(Pods+Missing)) %>% filter(!is.na(PropM
   ggplot(aes(PropMis))+geom_histogram()
 
 
+
+# Test model using piecewiseSEM -------------------------------------------
+library(piecewiseSEM)
+library(lme4)
+
+#This model is very coarse, because quantities are all modeled at plot level, but this gets the general sense of the model, and allows d-sep tests to be made
+
+#Model all sub-plot quantities at the plot level:
+#Pollen
+polMod <- glmer.nb(Pollen~(1|Field/FieldPlot),data=pollenAllSeed)
+pollenAllSeed$pred <- predict(polMod)
+surveyAllSeed <- pollenAllSeed %>% #Joins plot-level pollen
+  group_by(Field,Distance,EdgeCent) %>% 
+  summarize(predPol=first(pred)) %>% 
+  unite(ID,Field,Distance,EdgeCent,sep='_') %>% 
+  left_join(unite(surveyAllSeed,ID,Field,Distance,EdgeCent,sep='_',remove=F),.,by='ID') %>% 
+  dplyr::select(-ID)
+#Plant size
+plantsAllSeed <- plantsAllSeed %>% 
+  unite(FieldPlot,Field,Distance,EdgeCent,remove=F) #Create FieldPlot column
+plantMod <- lmer(log(VegMass)~(1|Field/FieldPlot),data=plantsAllSeed)
+plantsAllSeed$predPlSize <- predict(plantMod,na.action=na.exclude) #NAs included
+surveyAllSeed <- plantsAllSeed %>% #Joins plot-level plant size
+  group_by(Field,Distance,EdgeCent) %>% 
+  summarize(predPlSize=first(predPlSize)) %>% 
+  unite(ID,Field,Distance,EdgeCent,sep='_') %>% 
+  left_join(unite(surveyAllSeed,ID,Field,Distance,EdgeCent,sep='_',remove=F),.,by='ID') %>% 
+  dplyr::select(-ID)
+#Seeds per pod
+seedsAllSeed <- seedsAllSeed %>% 
+  unite(FieldPlot,Field,Distance,EdgeCent,remove=F) #Create FieldPlot column
+seedCountMod <- lmer(sqrt(AvPodCount)~(1|Field/FieldPlot),data=plantsAllSeed) #Uses avg seed size, but OK for now
+plantsAllSeed$predSeedCount <- predict(seedCountMod,na.action=na.exclude) #NAs included
+surveyAllSeed <- plantsAllSeed %>% #Joins plot-level plant size
+  group_by(Field,Distance,EdgeCent) %>% 
+  summarize(predSeedCount=first(predSeedCount)) %>% 
+  unite(ID,Field,Distance,EdgeCent,sep='_') %>% 
+  left_join(unite(surveyAllSeed,ID,Field,Distance,EdgeCent,sep='_',remove=F),.,by='ID') %>% 
+  dplyr::select(-ID)
+#Seed size (mg)
+seedSizeMod <- lmer((AvPodMass*1000/AvPodCount)~(1|Field/FieldPlot),data=plantsAllSeed) #Uses avg seed size, but OK for now
+plantsAllSeed$predSeedSize <- predict(seedSizeMod,na.action=na.exclude) #NAs included
+surveyAllSeed <- plantsAllSeed %>% #Joins plot-level plant size
+  group_by(Field,Distance,EdgeCent) %>% 
+  summarize(predSeedSize=first(predSeedSize)) %>% 
+  unite(ID,Field,Distance,EdgeCent,sep='_') %>% 
+  left_join(unite(surveyAllSeed,ID,Field,Distance,EdgeCent,sep='_',remove=F),.,by='ID') %>% 
+  dplyr::select(-ID)
+#Pod success
+
+
+#Scale data and choose only columns of interest
+temp <- surveyAllSeed %>% ungroup() %>% 
+  dplyr::select(Field,Distance,minDist,Bay,EdgeCent,TotalTime,lbee,hbee,predPol) %>% 
+  mutate(TotalTime=ifelse(is.na(TotalTime),5,TotalTime)) %>% 
+  mutate(logDist=scale(log(Distance)),logMinDist=scale(log(minDist)),logTime=log(TotalTime)) 
+  # mutate(sqrtDist=sqrt(Distance),sqrtMinDist=sqrt(minDist)) %>% 
+
+visMod <- psem(
+  glmer.nb(lbee~logMinDist*logDist+Bay+EdgeCent+offset(logTime)+(1|Field),data=temp),
+  glmer.nb(hbee~logMinDist+logDist+Bay+EdgeCent+offset(logTime)+(1|Field),data=temp),
+  lmer(predPol~logMinDist+logDist+EdgeCent+lbee+hbee+(1|Field),data=temp)
+)
+
+#dSep test points to relationship b/w pollen and distance into field, independent of visitation rate. This suggests that jump lengths of pollinators matter.
+dSep(visMod,conserve=T)
+fisherC(visMod,conserve=T) #83.27, p<0.001
+
+#Pollen residual ~ logDist
+plot(temp$logDist,resid(visMod[[3]]),xlab='Centered logDist',ylab='Pollen Residual')
+plot(temp$logMinDist,resid(visMod[[3]]),xlab='Centered logMinDist',ylab='Pollen Residual')
+
+
+ggplot(temp,aes(exp(logDist),hbee/exp(logTime)))+geom_point()+
+  labs(x='Distance',y='Visits/min')
+
+hbeeMod <- glmer.nb(hbee~logDist+logMinDist+Bay+EdgeCent+offset(logTime)+(1|Field),data=temp)
+summary(hbeeMod)
+plot(hbeeMod)
+
+
 # Commodity field visitation and pollen deposition (Stan) ---------------------------------
 
 library(rstan)
@@ -643,8 +734,8 @@ inits <- function() {
        )
 }
 
-# modPodcount <- stan(file='visitation_pollen_model.stan',data=datalist,iter=600,chains=3,
-#                    control=list(adapt_delta=0.8),init=inits)
+modPodcount <- stan(file='visitation_pollen_model.stan',data=datalist,iter=100,chains=3,
+                   control=list(adapt_delta=0.8),init=inits)
 # save(modPodcount,file='modPodcount.Rdata')
 # load('modPodcount.Rdata') #Load full model - takes 1.1 hrs for 600 iter
 
@@ -659,7 +750,7 @@ pars=c('intSeedWeight','slopeVisitSeedWeight','slopePolSeedWeight',#Seed weight
        'slopeSeedCount','slopePlSizeWeight',
        'sigmaSeedWeight','sigmaSeedWeight_plant','sigmaSeedWeight_plot','sigmaSeedWeight_field')
 
-traceplot(modPodcount,pars=pars,inc_warmup=F)
+traceplot(modPodcount,pars=pars)
 stan_plot(modPodcount,pars=pars)
 stan_hist(modPodcount,pars=pars)
 launch_shinystan(modPodcount)
@@ -668,7 +759,8 @@ launch_shinystan(modPodcount)
 
 mod2 <- extract(modPodcount)
 str(mod2)
-# 
+#Extract effect size and whether posterior overlaps zero
+cbind(sapply(mod2,function(x) round(median(x),2)),sapply(mod2,function(x) overlap(x)))
 # predVisMu <- exp(mod2$visitMu)
 # for(i in 1:nrow(predVisMu)){
 #   predVisMu[i,] <- predVisMu[i,]*(1-mod2$zeroVisTheta[i])
@@ -700,7 +792,6 @@ with(mod2,median(sigmaPolPlot/(sigmaPolPlot+sigmaPolField))) #About 43% of polle
 
 
 # Seed field visitation and pollen deposition (Stan) -----------------------------
-
 library(rstan)
 setwd('./Models')
 rstan_options(auto_write = TRUE)
@@ -718,13 +809,20 @@ surveyAllSeed$Field <- factor(surveyAllSeed$Field,levels=c(samFields,rileyFields
 pollenAllSeed$Field <- factor(pollenAllSeed$Field,levels=c(samFields,rileyFields))
 plantsAllSeed$Field <- factor(plantsAllSeed$Field,levels=c(samFields,rileyFields))
 seedsAllSeed$Field <- factor(seedsAllSeed$Field,levels=c(samFields,rileyFields))
-plantsAllSeed <- plantsAllSeed %>% group_by(Field,Distance,EdgeCent) %>% mutate(plantNum=1:n()) %>% ungroup()
+plantsAllSeed <- plantsAllSeed %>% group_by(Field,Distance,EdgeCent) %>% mutate(Plant=1:n()) %>% ungroup()
 
+#Joins plant ID to seedsAllSeed
+temp <- select(plantsAllSeed,Year,Field,Distance,EdgeCent,Branch,Pods,Missing,Plant) %>% 
+  unite(ID,Year:Missing)
+seedsAllSeed <- seedsAllSeed %>%
+  unite(ID,Year,Field,Distance,EdgeCent,Branch,Pods,Missing,remove=F) %>% 
+  left_join(temp,by='ID') %>%  select(-ID)
+rm(temp)
+  
 datalistField <- list( #Field-level measurements
   Nfield=length(fieldsAllSeed$Year), #Number of fields
   Nfield_extra=length(rileyFields) #Extra fields from Riley
 )
-
 datalistPlot <- with(surveyAllSeed,list( #Plot-level measurements
   Nplot=length(Distance), #Number of plots
   plotIndex=as.numeric(Field), #Index for field (which field?)
@@ -737,7 +835,7 @@ datalistPlot <- with(surveyAllSeed,list( #Plot-level measurements
   totalTime=TotalTime/10, #Total time (mins/10)
   plotList=paste(Field,Distance,Bay,EdgeCent)
 )) 
-
+datalistPlot$totalTime[is.na(datalistPlot$totalTime)] <- 0.5 #Fix one missing time point
 #Join in extra data from Riley
 datalistPlot <- c(datalistPlot,with(rileyExtra,list(
   Nplot_extra=length(ldist), #Number of extra plots
@@ -750,33 +848,33 @@ datalistPlot <- c(datalistPlot,with(rileyExtra,list(
   isFBay_extra=Bay=='Male', #Is plot from M bay?
   totalTime_extra=rep(10,length(ldist))/10 #Riley used 10 mins for everything
 )))
-
-datalistFlw <- with(pollenAllSeed,list(
+datalistFlw <- with(pollenAllSeed,list( #Pollen samples
   Nflw=length(Pollen), #Number of pollen samples
   flowerIndex=match(paste(Field,Distance,'F',EdgeCent),datalistPlot$plotList),#Index for flower (which plot?)
   pollenCount=Pollen
 ))
-
-datalistPlant <- with(plantsAllSeed,list( #Warnock 4 not included, b/c not in higher level dataframes
+datalistPlant <- with(plantsAllSeed,list(
   Nplant=length(Distance), #Number of plant samples
   podCount=Pods, #Successful pods
   flwCount=Pods+Missing, #Pods + Missing (total flw production)
   totalSeedMass=SeedMass, #Weight of all seeds (g)
   plantIndex=match(paste(Field,Distance,'F',EdgeCent),datalistPlot$plotList), #Index for plant (which plot?)
-  plantSize=log(VegMass)-mean(log(VegMass),na.rm=T), #log weight of veg mass (g), centered
-  plantList=paste(Field,Distance,'F',EdgeCent,Pods,Missing)
+  plantSize_obs=log(VegMass)-mean(log(VegMass),na.rm=T), #log weight of veg mass (g), centered
+  plantList=paste(Field,Distance,'F',EdgeCent,Plant)
 ))
-
 datalistPod <- with(seedsAllSeed,list(
   Npod=length(Distance), #Number of seeds measured
   seedCount=PodCount, #Number of seeds per pod
   seedMass=1000*PodMass/PodCount, #Weight per seed (mg)
-  podIndex=match(paste(Field,Distance,'F',EdgeCent,Pods,Missing),datalistPlant$plantList) #Index for pod (which plant?)
+  #Index for pod (which plant?)
+  podIndex=match(paste(Field,Distance,'F',EdgeCent,Plant),datalistPlant$plantList) 
 ))
+datalistPlant$plantList <- datalistPlot$plotLIst <-  NULL
 
-#No NAs in pollen - yay!
+#No NAs in pollen
 
-naPlot <- with(datalistPlot,is.na(hbee_dist_extra)|is.na(hbeeVis_extra)|is.na(lbee_dist_extra)) #Strip NAs from plot data
+#If any plot-level extra measurements are missing
+naPlot <- with(datalistPlot,is.na(hbee_dist_extra)|is.na(hbeeVis_extra)|is.na(lbee_dist_extra)) #Strip NAs from extra plot data
 datalistPlot <- within(datalistPlot,{
   plotIndex_extra <- plotIndex_extra[!naPlot]
   hbee_dist_extra <- hbee_dist_extra[!naPlot]
@@ -789,21 +887,23 @@ datalistPlot <- within(datalistPlot,{
   Nplot_extra <- sum(!naPlot)
 })
 
-#Strip NAs from plant data
-naPlant <- with(datalistPlant,is.na(podCount)|is.na(flwCount)|podCount>flwCount|is.na(totalSeedMass)|is.na(plantSize))
-sum(naPlant) #378 NAs
-datalistPlant <- within(datalistPlant,{
+#Impute missing data
+naPlant <- with(datalistPlant,is.na(podCount)|is.na(flwCount)|
+                  podCount>flwCount|is.na(plantSize_obs)|is.na(totalSeedMass))
+datalistPlant <-(within(datalistPlant,{
   podCount <- podCount[!naPlant]
   flwCount <- flwCount[!naPlant]
   totalSeedMass <- totalSeedMass[!naPlant]
-  plantIndex <- plantIndex[!naPlant]
-  plantSize <- plantSize[!naPlant]
-  Nplant <- sum(!naPlant)
-})
-datalistPlant$plantList <- NULL
+  plantSize_obs <- plantSize_obs[!naPlant]
+  Nplant_obs <- sum(!naPlant) #Number of plants with complete measurements
+  plantSurvIndex <- plantIndex[!naPlant]
+  Nplant_miss <- sum(naPlant) #Number of plants with missing measurements
+  miss_ind <- which(naPlant) #Index of missing plants
+  obs_ind <- which(!naPlant) #Index of non-missing plants
+}))
 
 #If any pod measurements are NA, or missing plant above |(datalistPod$podIndex %in% which(naPlant))
-naPod <- with(datalistPod,is.na(seedCount)|is.na(seedMass)|is.na(podIndex))
+naPod <- with(datalistPod,is.na(seedCount)|is.na(seedMass))
 datalistPod <- within(datalistPod,{
   seedCount <- seedCount[!naPod]
   seedMass <- seedMass[!naPod]
@@ -811,74 +911,114 @@ datalistPod <- within(datalistPod,{
   # podIndex <- as.numeric(factor(podIndex)) #Re-index
   Npod <- sum(!naPod)
 })
-# str(datalistPod) #Still NAs in podIndex, probably from Warnock 4
 
 datalist <- c(datalistField,datalistPlot,datalistFlw,datalistPlant,datalistPod)
 rm(datalistField,datalistPlot,datalistFlw,datalistPlant,datalistPod,naPlant,naPod) #Cleanup
 str(datalist)
-names(datalist)
 
+par(mfrow=c(3,1))
 with(datalist,plot(c(hbee_dist,hbee_dist_extra),c(hbeeVis/totalTime,hbeeVis_extra/totalTime_extra),pch=19,cex=0.5,xlab='Distance from hives (m)',ylab='Hbee visits/10 mins')) #Lots of zeros
-
 with(datalist,plot(c(lbee_dist,lbee_dist_extra),c(lbeeVis/totalTime,lbeeVis_extra/totalTime_extra),pch=19,cex=0.5,xlab='Distance from lbee shelter (m)',ylab='Lbee visits/10 mins',xlim=c(0,50))) #Lots of zeros
-
 with(datalist,plot(c(lbee_dist,lbee_dist_extra),c(hbeeVis/totalTime,hbeeVis_extra/totalTime_extra),pch=19,cex=0.5,xlab='Distance from lbee shelter (m)',ylab='Hbee visits/10 mins',xlim=c(0,50))) #Lots of zeros
+par(mfrow=c(1,1))
 
-hbeeMod <- with(datalist,{
-  data.frame(hbeeVis=c(hbeeVis/totalTime,hbeeVis_extra/totalTime_extra),hbeeDist=c(hbee_dist,hbee_dist_extra))
-}) %>% 
-  nls(hbeeVis~SSasymp(hbeeDist,Asym,R0,lrc),data=.,start=list(Asym=-0.4,R0=16.5,lrc=-6.4))
+# library(lme4)
+# #Playing around with fits for honeybee visitation
+# hbeeMod <- with(datalist,{
+#   data.frame(hbeeVis=c(hbeeVis,hbeeVis_extra),hbeeDist=c(hbee_dist,hbee_dist_extra),
+#              lbeeDist=c(lbee_dist,lbee_dist_extra),Field=factor(c(plotIndex,plotIndex_extra)),
+#              cent=c(isCent,isCent_extra),Fbay=c(isFBay,isFBay_extra),
+#              totalTime=c(totalTime,totalTime_extra))}) %>%
+#   mutate(hbeeDist=log(hbeeDist)-mean(log(hbeeDist)),lbeeDist=log(lbeeDist)-mean(log(lbeeDist))) %>% 
+#   glmer.nb(hbeeVis~offset(log(totalTime))+hbeeDist+lbeeDist+cent+Fbay+(1|Field),data=.)
+# summary(hbeeMod)
+# par(mfrow=c(2,1));plot(fitted(hbeeMod),resid(hbeeMod));qqnorm(resid(hbeeMod));qqline(resid(hbeeMod));par(mfrow=c(1,1));
+# AIC(hbeeMod)
+# 
+# #Same for leafcutter visitation
+# lbeeMod <- with(datalist,{
+#   data.frame(lbeeVis=c(lbeeVis,lbeeVis_extra),hbeeDist=c(hbee_dist,hbee_dist_extra),
+#              lbeeDist=c(lbee_dist,lbee_dist_extra),Field=factor(c(plotIndex,plotIndex_extra)),
+#              cent=c(isCent,isCent_extra),Fbay=c(isFBay,isFBay_extra),
+#              totalTime=c(totalTime,totalTime_extra))}) %>%
+#   mutate(hbeeDist=log(hbeeDist)-mean(log(hbeeDist)),lbeeDist=log(lbeeDist)-mean(log(lbeeDist))) %>% 
+#   glmer.nb(lbeeVis~offset(log(totalTime))+hbeeDist+lbeeDist+cent+Fbay+(lbeeDist|Field),data=.)
+# logLik(lbeeMod)
+# summary(lbeeMod)
+# par(mfrow=c(2,1));plot(fitted(lbeeMod),resid(lbeeMod));qqnorm(resid(lbeeMod));qqline(resid(lbeeMod));par(mfrow=c(1,1));
+# AIC(lbeeMod)
+# 
+# with(datalist,plot(c(hbee_dist,hbee_dist_extra),log(c(hbeeVis/totalTime,hbeeVis_extra/totalTime_extra)+0.5),pch=19,cex=0.5,xlab='Distance from hives (m)',ylab='Hbee visits/10 mins')) #Lots of zeros
+# lines(seq(0,800,10),predict(hbeeMod,newdata=data.frame(hbeeDist=seq(0,800,10)),interval='none'))
+# 
+# lbeeMod <- with(datalist,{
+#   data.frame(lbeeVis=c(lbeeVis/totalTime,lbeeVis_extra/totalTime_extra),
+#              lbeeDist=c(lbee_dist,lbee_dist_extra),Field=factor(c(plotIndex,plotIndex_extra)),
+#              hbeeDist=c(hbee_dist,hbee_dist_extra),
+#              cent=c(isCent,isCent_extra),Fbay=c(isFBay,isFBay_extra),
+#              totalTime=c(totalTime,totalTime_extra)) 
+# }) %>%  mutate(lbeeVis=log((lbeeVis/totalTime)+0.5),hbeeDist=log(hbeeDist)-mean(log(hbeeDist))) %>% 
+#   nlmer(lbeeVis~SSasymp(lbeeDist,Asym,R0,lrc)~ hbeeDist + (Asym|Field) ,data=.,
+#         start=c(Asym=0.7493 ,R0=4.9948,lrc=-2.9177))
+# logLik(lbeeMod)
+# plot(lbeeMod)
+# qqnorm(resid(lbeeMod)); qqline(resid(lbeeMod));
+# 
+# with(datalist,plot(c(lbee_dist,lbee_dist_extra),c(lbeeVis/totalTime,lbeeVis_extra/totalTime_extra),pch=19,cex=0.5,xlab='Distance from hives (m)',ylab='lbee visits/10 mins')) #Lots of zeros
+# lines(seq(2,800,1),exp(predict(lbeeMod,newdata=data.frame(lbeeDist=seq(2,800,1)),interval='none')+0.7),col='red')
 
-with(datalist,plot(c(hbee_dist,hbee_dist_extra),log(c(hbeeVis/totalTime,hbeeVis_extra/totalTime_extra)+0.5),pch=19,cex=0.5,xlab='Distance from hives (m)',ylab='Hbee visits/10 mins')) #Lots of zeros
-lines(seq(0,800,10),predict(hbeeMod,newdata=data.frame(hbeeDist=seq(0,800,10)),interval='none'))
 
-lbeeMod <- with(datalist,{
-  data.frame(lbeeVis=c(lbeeVis/totalTime,lbeeVis_extra/totalTime_extra),lbeeDist=c(lbee_dist,lbee_dist_extra),Field=factor(c(plotIndex,plotIndex_extra))) 
-}) %>%  
-  nlmer(log(lbeeVis+0.7)~SSasymp(lbeeDist,Asym,R0,lrc)~ R0|Field ,data=.,start=c(Asym=0.7493 ,R0=4.9948,lrc=-1.9177))
-
-lbeeMod <- with(datalist,{
-  data.frame(lbeeVis=c(lbeeVis/totalTime,lbeeVis_extra/totalTime_extra),
-             lbeeDist=c(lbee_dist,lbee_dist_extra),Field=factor(c(plotIndex,plotIndex_extra)),
-             hbeeDist=c(hbee_dist,hbee_dist_extra))
-}) %>% ggplot(aes(lbeeVis))+geom_histogram(bins=100)
-  
-  glm.nb(lbeeVis~lbeeDist+log(lbeeDist),data=.)
-qqnorm(resid(lbeeMod)); qqline(resid(lbeeMod))
-
-with(datalist,plot(c(lbee_dist,lbee_dist_extra),c(lbeeVis/totalTime,lbeeVis_extra/totalTime_extra),pch=19,cex=0.5,xlab='Distance from hives (m)',ylab='lbee visits/10 mins')) #Lots of zeros
-lines(seq(2,800,1),exp(predict(lbeeMod,newdata=data.frame(lbeeDist=seq(2,800,1)),interval='none')+0.7),col='red')
-
-
-inits <- function(){list(
+inits <- function(){with(datalist,list(
   intVisitHbee=4,slopeDistHbee=-0.1,slopeCentHbee=0,slopeFBayHbee=-0.2,slopeLbeeHbee=-0.2, #Hbees
-  sigmaHbeeVisField=0.4,visitHbeePhi=0.7,intVisitHbee_field=rep(0,datalist$Nfield+datalist$Nfield_extra),
-  zeroVisHbeeTheta=0.3,
-  intVisitLbee=2,slopeDistLbee=-0.02,
-  intVisitLbee=4,AsymLbee=1,lrcLbee=-2,#pwrLbee=1,
-  slopeCentLbee=1,slopeFBayLbee=0.1, #Lbees
-  sigmaLbeeVisField=0.8, 
-  visitLbeePhi=0.5,
-  intVisitLbee_field=rep(0,datalist$Nfield+datalist$Nfield_extra),
-  zeroVisLbeeTheta=0.1
+  sigmaHbeeVisField=0.4,visitHbeePhi=0.7,intVisitHbee_field=rep(0,Nfield+Nfield_extra),
+  zeroVisHbeeTheta=0.3,intVisitLbee=2,slopeDistLbee=-0.02,
+  intVisitLbee=4,AsymLbee=1,lrcLbee=-2,
+  slopeCentLbee=1,slopeFBayLbee=0.1,sigmaLbeeVisField=0.8,visitLbeePhi=0.5, #Lbees
+  intVisitLbee_field=rep(0,Nfield+Nfield_extra),zeroVisLbeeTheta=0.1,
+  intPol=2,slopeHbeePol=0,slopeLbeePol=0.01,pollenPhi=1, #Pollen
+  sigmaPolField=0.5,sigmaPolPlot=0.5,
+  intPol_field=rep(0,Nfield),intPol_plot=rep(0,Nplot),
+  intFlwSurv=1,slopePolSurv=1,slopePlSizeSurv=1, sigmaFlwSurv_field=0.5, #Flower survival
+  sigmaFlwSurv_plot=0.5,intFlwSurv_field=rep(0,Nfield),intFlwSurv_plot=rep(0,Nplot),
+  intSeedCount=2,slopePolSeedCount=0,slopePlSizeCount=0, #Seed count
+  seedCountPhi=20,sigmaSeedCount_field=0.5,sigmaSeedCount_plot=0.5,sigmaSeedCount_plant=0.5,
+  intSeedCount_field=rep(0,Nfield),intSeedCount_plot=rep(0,Nplot),intSeedCount_plant=rep(0,Nplant),
+  intSeedWeight=1,slopePolSeedWeight=0,slopeSeedCount=0,slopePlSizeWeight=0,#Seed weight
+  sigmaSeedWeight=0.3,sigmaSeedWeight_field=0.5,sigmaSeedWeight_plot=0.5,
+  sigmaSeedWeight_plant=0.5,intSeedWeight_field=rep(0,Nfield),intSeedWeight_plot=rep(0,Nplot),
+  intSeedWeight_plant=rep(0,Nplant)),
+  #Plant size,
+  plantSize_miss=rep(0,Nplant_miss),intSize=0,sigmaPlSize_field=0.5,
+  sigmaPlSize_plot=0.5,sigmaPlSize=0.5,
+  intSize_field=rep(0,Nfield),intSize_plot=rep(0,Nplot)
 )}
 
-modPodcount_seed <- stan(file='visitation_pollen_model_seed.stan',data=datalist,iter=500,chains=3,
+modPodcount_seed <- stan(file='visitation_pollen_model_seed.stan',data=datalist,iter=600,chains=3,
                    control=list(adapt_delta=0.8),init=inits)
-# save(modPodcount_seed,file='modPodcount_seed.Rdata')
+save(modPodcount_seed,file='modPodcount_seed.Rdata')
 # load('modPodcount_seed.Rdata')
-
+pars=c('intSize','sigmaPlSize_field','sigmaPlSize_plot','sigmaPlSize')
+#Bad traces for sigmaPlot. 
 pars=c('intVisitHbee','slopeDistHbee','slopeCentHbee','slopeFBayHbee','slopeDistLbee',
        'visitHbeePhi','sigmaHbeeVisField','zeroVisHbeeTheta')
-pars=c('intVisitLbee',
-      'slopeHbeeDistLbee',
-      'AsymLbee','lrcLbee',
-      'slopeCentLbee','slopeFBayLbee',
-      'visitLbeePhi',
-      'sigmaLbeeVisField','zeroVisLbeeTheta')
-traceplot(modPodcount_seed,pars=pars)
+pars=c('intVisitLbee','slopeHbeeDistLbee',
+      'AsymLbee','lrcLbee','slopeCentLbee','slopeFBayLbee',
+      'visitLbeePhi','sigmaLbeeVisField','zeroVisLbeeTheta')
+pars=c('intPol','slopeHbeePol','slopeLbeePol','pollenPhi',
+       'sigmaPolField','sigmaPolPlot')
+pars=c('intFlwSurv','slopePolSurv','slopePlSizeSurv', #Flower survival
+       'sigmaFlwSurv_field','sigmaFlwSurv_plot')
+pars=c('intSeedCount','slopePolSeedCount','slopePlSizeCount',
+       'seedCountPhi','sigmaSeedCount_field','sigmaSeedCount_plot',
+       'sigmaSeedCount_plant')
+pars=c('intSeedWeight','slopePolSeedWeight','slopeSeedCount',
+       'slopePlSizeWeight','sigmaSeedWeight','sigmaSeedWeight_field',
+       'sigmaSeedWeight_plot','sigmaSeedWeight_plant')
+stan_dens(modPodcount_seed,pars=pars)
 
 mod3 <- extract(modPodcount_seed)
+#Extract effect size and whether posterior overlaps zero
+cbind(round(sapply(mod3,function(x) effSize(x)),2),sapply(mod3,function(x) overlap(x)))
 
 #hbee visits
 # data.frame(actual=with(datalist,c(hbeeVis,hbeeVis_extra)),predicted=apply(mod3$predHbeeVis_all,2,median)) %>%
@@ -901,7 +1041,6 @@ data.frame(actual=mod3$lbeeVis_resid,predicted=mod3$predLbeeVis_resid) %>%
 #Asymptotic and Weibull curves don't work.
 #Not sure what type of curves to try next.
 #Zero-inflation term doesn't appear to add anything for negbin (for leafcutters). 
-
 
 # Field-level visitation, nectar, and pollen deposition model (JAGS) -------------
 

@@ -25,93 +25,93 @@ prestheme=theme(legend.position='right',
 theme_set(theme_classic()+prestheme) #Sets graph theme to B/Ws + prestheme
 rm(prestheme)
 
-setwd("C:\\Users\\Samuel\\Documents\\Projects\\UofC\\canola_yield_project\\Seed field analysis")
-load("seedfieldDataAll.RData")
+setwd("~/Projects/UofC/canola_yield_project/Seed field analysis")
+# load("seedfieldDataAll.RData")
 
-# # Load 2015 data ----------------------------------------------------------
-# 
-# load("C:\\Users\\Samuel\\Documents\\Projects\\UofC\\Seed field analysis\\seedfieldData2015.RData")
-# 
-# rm(lbees,hbees,flowers,figs)
-# 
-# fields2015=mutate(fields,Year=2015,Variety='3007C',Treatment=factor(Treatment,levels=c('control','double tent','double tent+bees'),labels=c('Control','Double tent','Double tent\n+bees')))
-# plants2015=mutate(plants,Year=2015,Variety='3007C',Treatment=factor(Treatment,levels=c('control','double tent','double tent+bees'),labels=c('Control','Double tent','Double tent\n+bees')))
-# pollen2015=mutate(pollen,Year=2015,Variety='3007C',Treatment=factor(Treatment,levels=c('control','double tent','double tent+bees'),labels=c('Control','Double tent','Double tent\n+bees')))
-# seeds2015=mutate(seeds,Year=2015,Variety='3007C',Treatment=factor(Treatment,levels=c('control','double tent','double tent+bees'),labels=c('Control','Double tent','Double tent\n+bees')))
-# behav2015=filter(hbeesWide,EdgeCent!='Center') %>% #Temporary dataframe with side/top, nectar/pollen working info
-#   select(Field:Bay,Surveyed,Treatment,SideNecVis,TopNecVis,TopPolVis)
-# survey2015=mutate(survey,Year=2015,Variety='3007C',Treatment=factor(Treatment,levels=c('control','double tent','double tent+bees'),labels=c('Control','Double tent','Double tent\n+bees'))) %>%
-#   bind_cols(transmute(hbeesWide,hbeePol=TopPolVis,hbeeNec=SideNecVis+TopNecVis))
-# 
-# rm(fields,plants,hbeesWide,pollen,seeds,survey)
-# 
-# # Load 2016 data ----------------------------------------------------------
-# 
-# load("C:\\Users\\Samuel\\Documents\\Projects\\UofC\\Seed field analysis\\seedfieldData2016.RData")
-# 
-# fields2016=mutate(fields,Year=2016,Treatment=factor(Treatment,levels=c('Control','Double tent','Double tent and bee'),labels=c('Control','Double tent','Double tent\n+bees')))
-# plants2016=mutate(plants,Year=2016,
-#                   Treatment=factor(Treatment,labels=c('Control','Double tent','Double tent\n+bees')))
-# seeds2016=mutate(seeds,Year=2016,
-#                  Treatment=factor(Treatment,labels=c('Control','Double tent','Double tent\n+bees')))
-# nectar2016=nectar
-# pollen2016=mutate(pollen,Year=2016,Treatment=factor(Treatment,levels=c('Control','Double tent','Double tent and bee'),labels=c('Control','Double tent','Double tent\n+bees')))
-# survey2016=mutate(survey,Year=2016,Treatment=factor(Treatment,levels=c('Control','Double tent','Double tent and bee'),labels=c('Control','Double tent','Double tent\n+bees')))
-# visitors2016=visitors %>%
-#   mutate(Treatment=factor(Treatment,levels=c('Control','Double tent','Double tent and bee'),labels=c('Control','Double tent','Double tent\n+bees')))
-# 
-# rm(fields,nectar,pollen,survey,visitors,plants,seeds)
-# rm(AICc,deltaAIC,DIC,plotFixedTerms,se,varComp,zeroCheck)
-# 
-# # Put 2015 and 2016 together ----------------------------------------------
-# 
-# #Field data
-# allFields=bind_rows(transmute(fields2015,Field,Area=Hectares,Variety,Treatment,Surveyed,Harvested,WindSp=Wind,AirTemp,RH,Year),
-#                     transmute(fields2016,Field,Area,Variety,Treatment,Surveyed,Harvested,WindSp,AirTemp=Temp,RH,Year)) %>%
-#   mutate(Field=factor(Field),Variety=factor(Variety),Surveyed=as.Date(Surveyed,format='%b %d, %Y'),
-#          Harvested=as.Date(Harvested,format='%b %d, %Y'))
-# rm(fields2015,fields2016)
-# 
-# #Survey data
-# allSurvey=bind_rows(transmute(survey2015,Field,Treatment,Variety,Distance,minDist=minShelter,Bay,EdgeCent,EdgeDir,StartTime,
-#                               TotalTime=TotalTime,FlDens,
-#                               lbee=Leafbee,hbee=Honeybee,hbeePol,hbeeNec,otherBee=Otherbee,hFly=Hoverfly,
-#                               AirTemp,WindSp=Wind,RH,Year),
-#                     transmute(survey2016,Field,Treatment,Variety,Distance,minDist,Bay,EdgeCent=Edge.Cent,EdgeDir,StartTime,
-#                               TotalTime=10,FlDens,
-#                               lbee=Leafcutterbee,hbee=HoneybeePollen+HoneybeeNectar,hbeePol=HoneybeePollen,
-#                               hbeeNec=HoneybeeNectar,
-#                               otherBee=Otherbee,hFly=Hoverfly,
-#                               AirTemp=Temp,WindSp,RH,Year)) %>%
-#   mutate(EdgeCent=sub('Center','Cent',EdgeCent),EdgeCent=sub('Cent','Center',EdgeCent)) %>%
-#   mutate(Field=factor(Field),Variety=factor(Variety),EdgeCent=factor(EdgeCent))
-# rm(survey2015,survey2016)
-# 
-# #Pollen data
-# allPollen=bind_rows(transmute(pollen2015,Field,Distance,Treatment,Variety,minDist=minShelter,EdgeCent,Pollen,Year),
-#                     transmute(pollen2016,Field,Distance,Treatment,Variety,minDist,EdgeCent=Edge.Cent,Pollen=Count,Year)) %>%
-#   mutate(FieldPlot=paste(Field,Distance,EdgeCent,sep='_')) %>%
-#   mutate(EdgeCent=sub('Center','Cent',EdgeCent),EdgeCent=sub('Cent','Center',EdgeCent)) %>%
-#   mutate(Field=factor(Field),Variety=factor(Variety),EdgeCent=factor(EdgeCent))
-# rm(pollen2015,pollen2016)
-# 
-# #Plant data
-# allPlants=bind_rows(transmute(plants2015,Year,Field,Distance,EdgeCent,EdgeDir,Variety,VegMass,SeedMass,Branch,Pods,Missing,AvPodCount,AvPodMass,lbee=Leafbee,hbee=Honeybee,TotalTime=5),
-#                     transmute(plants2016,Year,Field,Distance,EdgeCent,EdgeDir,Variety,VegMass,SeedMass,Branch,Pods,Missing,AvPodCount,AvPodMass,lbee=Leafcutterbee,hbee=HoneybeeNectar+HoneybeePollen,TotalTime=10)) %>%
-#   mutate(Field=factor(Field),EdgeCent=factor(ifelse(EdgeCent=='Cent','Center',EdgeCent))) %>%
-#   mutate(EdgeDir=factor(ifelse(nchar(EdgeDir)>2,substr(EdgeDir,1,1),EdgeDir))) %>%
-#   mutate(Variety=factor(Variety))
-# rm(plants2015,plants2016)
-# 
-# #Seed data 
-# allSeeds=bind_rows(transmute(seeds2015,Year,Field,Distance,EdgeCent,EdgeDir,Variety,VegMass,SeedMass,Branch,Pods,Missing,Pod,PodCount,PodMass,lbee=Leafbee,hbee=Honeybee,TotalTime=5),
-#                    transmute(seeds2016,Year,Field,Distance,EdgeCent,EdgeDir,Variety,VegMass,SeedMass,Branch,Pods,Missing,Pod,PodCount,PodMass,lbee=Leafcutterbee,hbee=HoneybeeNectar+HoneybeePollen,TotalTime=10))
-# rm(seeds2015,seeds2016)
-# 
-# folder="C:\\Users\\Samuel\\Documents\\Projects\\UofC\\Seed field analysis\\Figures"
-# 
-# # Save workspace
-# save.image("C:\\Users\\Samuel\\Documents\\Projects\\UofC\\Seed field analysis\\seedfieldDataAll.RData")
+# Load 2015 data ----------------------------------------------------------
+
+load("./seedfieldData2015.RData")
+
+rm(lbees,hbees,flowers,figs)
+
+fields2015=mutate(fields,Year=2015,Variety='3007C',Treatment=factor(Treatment,levels=c('control','double tent','double tent+bees'),labels=c('Control','Double tent','Double tent\n+bees')))
+plants2015=mutate(plants,Year=2015,Variety='3007C',Treatment=factor(Treatment,levels=c('control','double tent','double tent+bees'),labels=c('Control','Double tent','Double tent\n+bees')))
+pollen2015=mutate(pollen,Year=2015,Variety='3007C',Treatment=factor(Treatment,levels=c('control','double tent','double tent+bees'),labels=c('Control','Double tent','Double tent\n+bees')))
+seeds2015=mutate(seeds,Year=2015,Variety='3007C',Treatment=factor(Treatment,levels=c('control','double tent','double tent+bees'),labels=c('Control','Double tent','Double tent\n+bees')))
+behav2015=filter(hbeesWide,EdgeCent!='Center') %>% #Temporary dataframe with side/top, nectar/pollen working info
+  select(Field:Bay,Surveyed,Treatment,SideNecVis,TopNecVis,TopPolVis)
+survey2015=mutate(survey,Year=2015,Variety='3007C',Treatment=factor(Treatment,levels=c('control','double tent','double tent+bees'),labels=c('Control','Double tent','Double tent\n+bees'))) %>%
+  bind_cols(transmute(hbeesWide,hbeePol=TopPolVis,hbeeNec=SideNecVis+TopNecVis))
+
+rm(fields,plants,hbeesWide,pollen,seeds,survey)
+
+# Load 2016 data ----------------------------------------------------------
+
+load("./seedfieldData2016.RData")
+
+fields2016=mutate(fields,Year=2016,Treatment=factor(Treatment,levels=c('Control','Double tent','Double tent and bee'),labels=c('Control','Double tent','Double tent\n+bees')))
+plants2016=mutate(plants,Year=2016,
+                  Treatment=factor(Treatment,labels=c('Control','Double tent','Double tent\n+bees')))
+seeds2016=mutate(seeds,Year=2016,
+                 Treatment=factor(Treatment,labels=c('Control','Double tent','Double tent\n+bees')))
+nectar2016=nectar
+pollen2016=mutate(pollen,Year=2016,Treatment=factor(Treatment,levels=c('Control','Double tent','Double tent and bee'),labels=c('Control','Double tent','Double tent\n+bees')))
+survey2016=mutate(survey,Year=2016,Treatment=factor(Treatment,levels=c('Control','Double tent','Double tent and bee'),labels=c('Control','Double tent','Double tent\n+bees')))
+visitors2016=visitors %>%
+  mutate(Treatment=factor(Treatment,levels=c('Control','Double tent','Double tent and bee'),labels=c('Control','Double tent','Double tent\n+bees')))
+
+rm(fields,nectar,pollen,survey,visitors,plants,seeds)
+rm(AICc,deltaAIC,DIC,plotFixedTerms,se,varComp,zeroCheck)
+
+# Put 2015 and 2016 together ----------------------------------------------
+
+#Field data
+allFields=bind_rows(transmute(fields2015,Field,Area=Hectares,Variety,Treatment,Surveyed,Harvested,WindSp=Wind,AirTemp,RH,Year),
+                    transmute(fields2016,Field,Area,Variety,Treatment,Surveyed,Harvested,WindSp,AirTemp=Temp,RH,Year)) %>%
+  mutate(Field=factor(Field),Variety=factor(Variety),Surveyed=as.Date(Surveyed,format='%b %d, %Y'),
+         Harvested=as.Date(Harvested,format='%b %d, %Y'))
+rm(fields2015,fields2016)
+
+#Survey data
+allSurvey=bind_rows(transmute(survey2015,Field,Treatment,Variety,Distance,minDist=minShelter,Bay,EdgeCent,EdgeDir,StartTime,
+                              TotalTime=as.double(TotalTime,units='mins'),FlDens,
+                              lbee=Leafbee,hbee=Honeybee,hbeePol,hbeeNec,otherBee=Otherbee,hFly=Hoverfly,
+                              AirTemp,WindSp=Wind,RH,Year),
+                    transmute(survey2016,Field,Treatment,Variety,Distance,minDist,Bay,EdgeCent=Edge.Cent,EdgeDir,StartTime,
+                              TotalTime=10,FlDens,
+                              lbee=Leafcutterbee,hbee=HoneybeePollen+HoneybeeNectar,hbeePol=HoneybeePollen,
+                              hbeeNec=HoneybeeNectar,
+                              otherBee=Otherbee,hFly=Hoverfly,
+                              AirTemp=Temp,WindSp,RH,Year)) %>%
+  mutate(EdgeCent=sub('Center','Cent',EdgeCent),EdgeCent=sub('Cent','Center',EdgeCent)) %>%
+  mutate(Field=factor(Field),Variety=factor(Variety),EdgeCent=factor(EdgeCent))
+rm(survey2015,survey2016)
+
+#Pollen data
+allPollen=bind_rows(transmute(pollen2015,Field,Distance,Treatment,Variety,minDist=minShelter,EdgeCent,Pollen,Year),
+                    transmute(pollen2016,Field,Distance,Treatment,Variety,minDist,EdgeCent=Edge.Cent,Pollen=Count,Year)) %>%
+  mutate(FieldPlot=paste(Field,Distance,EdgeCent,sep='_')) %>%
+  mutate(EdgeCent=sub('Center','Cent',EdgeCent),EdgeCent=sub('Cent','Center',EdgeCent)) %>%
+  mutate(Field=factor(Field),Variety=factor(Variety),EdgeCent=factor(EdgeCent))
+rm(pollen2015,pollen2016)
+
+#Plant data
+allPlants=bind_rows(transmute(plants2015,Year,Field,Distance,EdgeCent,EdgeDir,Variety,VegMass,SeedMass,Branch,Pods,Missing,AvPodCount,AvPodMass,lbee=Leafbee,hbee=Honeybee,TotalTime=5),
+                    transmute(plants2016,Year,Field,Distance,EdgeCent,EdgeDir,Variety,VegMass,SeedMass,Branch,Pods,Missing,AvPodCount,AvPodMass,lbee=Leafcutterbee,hbee=HoneybeeNectar+HoneybeePollen,TotalTime=10)) %>%
+  mutate(Field=factor(Field),EdgeCent=factor(ifelse(EdgeCent=='Cent','Center',EdgeCent))) %>%
+  mutate(EdgeDir=factor(ifelse(nchar(EdgeDir)>2,substr(EdgeDir,1,1),EdgeDir))) %>%
+  mutate(Variety=factor(Variety))
+rm(plants2015,plants2016)
+
+#Seed data
+allSeeds=bind_rows(transmute(seeds2015,Year,Field,Distance,EdgeCent,EdgeDir,Variety,VegMass,SeedMass,Branch,Pods,Missing,Pod,PodCount,PodMass,lbee=Leafbee,hbee=Honeybee,TotalTime=5),
+                   transmute(seeds2016,Year,Field,Distance,EdgeCent,EdgeDir,Variety,VegMass,SeedMass,Branch,Pods,Missing,Pod,PodCount,PodMass,lbee=Leafcutterbee,hbee=HoneybeeNectar+HoneybeePollen,TotalTime=10))
+rm(seeds2015,seeds2016)
+
+folder="C:\\Users\\Samuel\\Documents\\Projects\\UofC\\Seed field analysis\\Figures"
+
+# Save workspace
+save.image("~/Projects/UofC/canola_yield_project/Seed field analysis/seedfieldDataAll.RData")
 
 # Nectar production -------------------------------------------------------
 #PREDICTIONS: 

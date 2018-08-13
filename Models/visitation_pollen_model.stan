@@ -97,11 +97,13 @@ parameters {
 	//Plant size
 	vector[Nplant_miss] plantSize_miss; //Imputed data for missing values	
 	real intSize; //Global intercept
+	real slopePolPlSize; //Effect of pollination on plant size
 	real<lower=0> sigmaPlSize_field; //Sigma for field
 	real<lower=0> sigmaPlSize_plot; //Sigma for plot
 	real<lower=0> sigmaPlSize; //Sigma for within-plot	(residual)
 	vector[Nfield] intSize_field; //Random intercept for field
 	vector[Nplot] intSize_plot; //Random intercept for plot	
+	
 }
 
 transformed parameters {		
@@ -126,11 +128,11 @@ transformed parameters {
 		visitMu[i] = intVisit + intVisit_field[plotIndex[i]] + slopeDistVis*dist[i] + slopeHiveVis*numHives[plotIndex[i]] + log(totalTime[i]); 
 		
 		//Expected value for pollen = intercept + random int field + random int plot + hbee visits/10
-		pollenPlot[i] = intPollen + intPollen_field[plotIndex[i]] + intPollen_plot[i] + slopeVisitPol*exp(visitMu[i])/10; //Plot level pollen
+		pollenPlot[i] = intPollen + intPollen_field[plotIndex[i]] + intPollen_plot[i] + slopeVisitPol*(hbeeVis[i]/totalTime[i]); //Plot level pollen
 		
 		//Flower survival = intercept + random int field + random int plot + hbee visits + pollen deposition/1000
 		flwSurvPlot[i] = intFlwSurv + intFlwSurv_field[plotIndex[i]] + intFlwSurv_plot[i] + 
-			slopeVisitSurv*exp(visitMu[i])/10 + slopePolSurv*(exp(pollenPlot[i])/1000);
+			slopeVisitSurv*(hbeeVis[i]/totalTime[i]) + slopePolSurv*(exp(pollenPlot[i])/1000);
 	}
 		
 	for(i in 1:Nflw) //For each flower stigma
@@ -142,16 +144,16 @@ transformed parameters {
 	for(i in 1:Nplant){ //For each plant (complete measurements or not)		
 		//Seed count per pod = intercept + random int field + random int plot + random int plant + hbee visits + pollen deposition/1000 + plant size
 		seedCountMuPlant[i] = intSeedCount + intSeedCount_field[plotIndex[plantIndex[i]]] + intSeedCount_plot[plantIndex[i]] + intSeedCount_plant[i] + 
-			slopeVisitSeedCount*exp(visitMu[plantIndex[i]])/10 + slopePolSeedCount*(exp(pollenPlot[plantIndex[i]])/1000) + 
+			slopeVisitSeedCount*(hbeeVis[plantIndex[i]]/totalTime[plantIndex[i]]) + slopePolSeedCount*(exp(pollenPlot[plantIndex[i]])/1000) + 
 			slopePlSizeCount*plantSize[i];
 			
 		//Weight per seed = intercept + random int field + random int plot + random int plant + hbee visits + pollen deposition/1000
 		seedWeightPlantMu[i] = intSeedWeight + intSeedWeight_field[plotIndex[plantIndex[i]]] + intSeedWeight_plot[plantIndex[i]] + intSeedWeight_plant[i] +
-			slopeVisitSeedWeight*exp(visitMu[plantIndex[i]])/10 + slopePolSeedWeight*(exp(pollenPlot[plantIndex[i]])/1000)+
+			slopeVisitSeedWeight*(hbeeVis[plantIndex[i]]/totalTime[plantIndex[i]]) + slopePolSeedWeight*(exp(pollenPlot[plantIndex[i]])/1000)+
 			slopePlSizeWeight*plantSize[i]; //Plant-level effect		
 			
 		//Predicted plant size = intercept + random int field + random int plot	
-		plSizeMu[i] = intSize + intSize_field[plotIndex[plantIndex[i]]] + intSize_plot[plantIndex[i]]; 
+		plSizeMu[i] = intSize + intSize_field[plotIndex[plantIndex[i]]] + intSize_plot[plantIndex[i]] + slopePolPlSize*(exp(pollenPlot[plantIndex[i]])/1000); 
 	}
 	
 	for(i in 1:Npod){ //For each pod
@@ -200,7 +202,7 @@ model {
 	
 	//Flower survival - informative priors
 	intFlwSurv ~ normal(1.2,1); //Intercept
-	slopeVisitSurv ~ normal(0,1); //Slope of hbee visits
+	slopeVisitSurv ~ normal(0,0.02); //Slope of hbee visits
 	slopePolSurv ~ normal(-0.5,1); //Slope of pollen deposition
 	slopePlSizeSurv ~ normal(0,3); //Slope of plant size
 	sigmaFlwSurv_field ~ gamma(1.5,5); //SD of field random effect
@@ -210,9 +212,9 @@ model {
 	
 	//Seed count - informative priors
 	intSeedCount ~ normal(3,1); //Intercept
-	slopeVisitSeedCount ~ normal(0,1); //Slope of hbee visits
+	slopeVisitSeedCount ~ normal(0,0.01); //Slope of hbee visits
 	slopePolSeedCount ~ normal(0,1); //Slope of pollen deposition
-	slopePlSizeCount ~ normal(0,2); //Slope of plant size
+	slopePlSizeCount ~ normal(0.04,0.05); //Slope of plant size
 	seedCountPhi ~ gamma(21,1); //Dispersion parameter
 	sigmaSeedCount_field ~ gamma(2,20); //SD of field random effect
 	sigmaSeedCount_plot ~ gamma(2,20); //SD of plot random effect
@@ -223,10 +225,10 @@ model {
 	
 	//Weight per seed - informative priors
 	intSeedWeight ~ normal(1,1); //Intercept
-	slopeVisitSeedWeight ~ normal(0,1); //Slope of hbee visits
+	slopeVisitSeedWeight ~ normal(0,0.01); //Slope of hbee visits
 	slopePolSeedWeight ~ normal(0,1); //Slope of pollen deposition
-	slopeSeedCount ~ normal(0.005,.1); //Slope of seed count
-	slopePlSizeWeight ~ normal(0,2); //Slope of plant size
+	slopeSeedCount ~ normal(0.005,.01); //Slope of seed count
+	slopePlSizeWeight ~ normal(0.02,0.02); //Slope of plant size
 	sigmaSeedWeight ~ gamma(3,10); //SD of seed weight
 	sigmaSeedWeight_field ~ gamma(2,10); //SD of field random effect	
 	sigmaSeedWeight_plot ~ gamma(2,10); //SD of plot random effect
@@ -237,6 +239,7 @@ model {
 
 	//Plant size - informative priors
 	intSize ~ normal(0,1); //Intercept
+	slopePolPlSize ~ normal(0,1); //Effect of pollen on plant size
 	sigmaPlSize_field ~ gamma(2,6); //Sigma for random field 
 	sigmaPlSize_plot ~ gamma(2,7); //Sigma for random plot
 	sigmaPlSize ~ gamma(3,5); //Sigma for residual	

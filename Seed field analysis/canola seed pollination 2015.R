@@ -25,228 +25,229 @@ rm(prestheme)
 
 # Load and organize data  ---------------------------------------------------------
 
-load("C:\\Users\\Samuel\\Documents\\Projects\\UofC\\Seed field analysis\\seedfieldData2015.RData")
+# load("~/Projects/UofC/canola_yield_project/Seed field analysis/seedfieldData2015.RData")
 
-# fields=read.csv("C:\\Users\\Samuel\\Documents\\Projects\\UofC\\csv files\\field info 2015.csv",stringsAsFactors=F,strip.white=T,na.strings = c("",'NA'))
-#
-# survey=read.csv("C:\\Users\\Samuel\\Documents\\Projects\\UofC\\csv files\\survey data 2015.csv",stringsAsFactors=F,strip.white=T,na.strings = c("",'NA'))
-#
-# plants=read.csv("C:\\Users\\Samuel\\Documents\\Projects\\UofC\\csv files\\plant info 2015 seed.csv",stringsAsFactors=T,strip.white=T,na.strings = c("",'NA'))
-#
-# se=function(x) sd(x)/sqrt(length(x)) #Convenience SE function
-#
-# AICc=function(model,...){ #Second-order bias corrected AIC
-#   #require(plyr)
-#   corAIC=function(x){
-#     k=length(coef(x))
-#     n=length(residuals(x))
-#     return(AIC(x)+(2*k*k-1)/(n-k-1))
-#   }
-#   if(missing(...)){
-#     return(corAIC(model))
-#   }
-#   else{
-#     mlist=list(model,...)
-#     len=plyr::laply(mlist,function(x) length(residuals(x)))
-#     if(length(len)!=sum(len %in% len[1]))
-#       warning('Models use different # data points. Comparing AICc values is invalid')
-#     forms=sapply(mlist, function(x) paste(formula(x)))
-#     data.frame(row.names=paste(forms[2,],forms[1,],forms[3,]),AICc=plyr::laply(mlist,corAIC))
-#   }
-# }
-#
-# deltaAIC=function(m1,m2,...,correct=TRUE){
-#   if(correct) a=AICc(m1,m2,...) else a=AIC(m1,m2,...)
-#   a$delta_AICc=round(a$AICc-min(a$AICc),4)
-#   a$w_i=round(exp(-0.5*a$delta_AICc)/sum(exp(-0.5*a$delta_AICc)),4) #Model Probabilities (Akaike weights)
-#   a
-# }
-#
-# DIC=function(m1,...){ #Convenience function to extract DIC values from MCMCglmm models
-#   modlist=list(m1,...)
-#   dicvals=unlist(lapply(modlist,'[[',c('DIC')))
-#   fixeffs=as.character(lapply((lapply(modlist,'[[','Fixed')),'[[','formula'))
-#   raneffs=as.character(lapply((lapply(modlist,'[[','Random')),'[[','formula'))
-#   data.frame(Fixed=fixeffs,Random=raneffs,DIC=dicvals,deltaDIC=dicvals-min(dicvals))
-# }
-#
-# plotFixedTerms=function(m1){ #Convenience function to plot 95% distributions for MCMCglmm fixed effects
-#   dat=as.data.frame(summary(m1)$solutions)
-#   dat$params=as.factor(rownames(dat))
-#   colnames(dat)[c(2,3)]=c('lwr','upr')
-#   ggplot(dat,aes(x=params,y=post.mean,ymax=upr,ymin=lwr))+geom_pointrange()+labs(x='Fixed Effects',y='Posterior Mean')+geom_hline(yintercept=0,colour='red')
-# }
-#
-# zeroCheck=function(mod,dat) { #Posterior predictive checks for zero-inflation (MCMCglmm course notes pg. 104)
-#   require(MCMCglmm)
-#   require(ggplot2)
-#   try(if(is.null(mod$X)) stop("Needs fixed effect design matrix (use saveX=T in MCMCglmm arguments)"))
-#   nz=1:nrow(mod$Sol) #Number of samples to hold
-#   oz=sum(dat[as.character(mod$Fixed$formula[2])]==0) #Actual number of 0s in the dataset
-#   for (i in 1:nrow(mod$Sol)) {
-#     pred.l <- rnorm(nrow(dat), (mod$X %*% mod$Sol[i,])@x, sqrt(mod$VCV[i])) #Predicted mean
-#     nz[i] <- sum(rpois(nrow(dat), exp(pred.l)) == 0)} #Expected number under poisson
-#   qplot(nz,xlab='Expected number of zeros')+geom_vline(aes(xintercept=oz))
-#   #Expected zeros, given the overdispersed poisson model
-#   }
-#
-# varComp=function(mod,units=T) { #Tabulates variance components of random effects for MCMCglmm models
-#   VCV=mod$VCV
-#   if(units==F) VCV=VCV[,c(1:ncol(VCV)-1)] #Strips out "units" column (for binomial models)
-#   round(data.frame(mode=posterior.mode(VCV/rowSums(VCV)),HPDinterval(VCV/rowSums(VCV))),3)
-# }
-#
-# #Load data
-#
-# #field-level data
-# fields=filter(fields,Type=='Seed') %>% #Strips out commodity field data
-#   select(Field,Deg.N,Deg.W,Hectares,Treatment,NumHives=Number.of.Hives, #Selects columns of interest
-#          Surveyed,Start.Time,End.Time,BowlStart,BowlEnd,
-#          AirTemp=Temperature,Wind=Wind.Speed.km.hr.,RH=Humidity,Harvested) %>%
-#   mutate(Start.Time=as.POSIXct(paste(Surveyed,Start.Time),format='%b %d, %Y %H:%M'), #Converts dates to single format
-#          End.Time=as.POSIXct(paste(Surveyed,End.Time),format='%b %d, %Y %H:%M'),
-#          BowlStart=as.POSIXct(paste(Surveyed,BowlStart),format='%b %d, %Y %H:%M'),
-#          BowlEnd=as.POSIXct(paste(Surveyed,BowlEnd),format='%b %d, %Y %H:%M'),
-#          SurveyTime=End.Time-Start.Time, #Time spent on survey
-#          BowlTime=BowlEnd-BowlStart, #Hours that bowl traps were used
-#          SurveyStart=Start.Time) %>%
-#   select(-BowlEnd,-Start.Time,-End.Time) #Removes end times for bowls and survey
-#
-# #plot-level data
-#
-# #Bag numbers and associated data to match with plants
-# survey=filter(survey,Type=='Seed') %>% #Strips out commodity field data
-#   select(Field,Distance,Bay:EndTime,FlDens=Fls.50cm.2,HoneyTP=HoneybeeTopPollen,HoneyTN=HoneybeeTopNectar, #Selects columns of interest
-#          HoneySP=HoneybeeSidePollen,HoneySN=HoneybeeSideNectar,NumHTP:NumHSN,
-#          Leafbee=Leafcutterbee,NumLeafbee=NumLeafcutterbee,Otherbee:NumFly,Len1:Len5,Microcap.volume,
-#          Soilwater:MountingOK,PlDens=Plants.m.2,Bags=BagNumbers)
-#
-# #Temporary plot-level dataframe (saved for converting to flower-level data)
-# flowers=survey
-#
-# survey=transmute(rowwise(survey),Field,Distance,Bay,EdgeCent=Edge.Cent,EdgeDir,StartTime,EndTime,
-#                  FlDens,HoneyTP,HoneyTN,HoneySP,HoneySN,NumHTP,NumHTN,NumHSP,NumHSN,
-#                  Leafbee,NumLeafbee,Otherbee,NumOtherbee,Hoverfly,NumHoverfly,Fly,NumFly,
-#                  AvLen=mean(Len1,Len2,Len3,Len4,Len5,na.rm=T), #Avg Nectar(uL)
-#                  hasNectar=sum(cbind(Len1,Len2,Len3,Len4,Len5)>0), #Number of nectar samples >0
-#                  Soilwater,minShelter=min(LeafShelter1,LeafShelter2,LeafShelter3,LeafShelter4,na.rm=T), #Distance to closest leafcutter shelter
-#                  AvgPol=mean(as.numeric(Pollen1,Pollen2,Pollen3,Pollen4,Pollen5)), #Average pollen per stigma -
-#                  #WEIRD PROBLEM: previous line doesn't work unless casted to numeric
-#                  #http://stackoverflow.com/questions/29224719/dplyr-error-strange-issue-when-combining-group-by-mutate-and-ifelse-is-it-a-b
-#                  hasPol=rowSums(cbind(Pollen1,Pollen2,Pollen3,Pollen4,Pollen5)>0), #Number of stigmas with pollen >0
-#                  PlDens,Bags,FieldPlot=paste(Field,Distance,Bay,Edge.Cent,sep=',')) %>%  #Plant density, and unique ID
-#   left_join(select(fields,Field,Hectares:Surveyed,AirTemp:RH),by='Field') %>% #Joins field-level data
-#   mutate(StartTime=as.POSIXct(paste(Surveyed,StartTime),format='%b %d, %Y %H:%M'),
-#          EndTime=as.POSIXct(paste(Surveyed,EndTime),format='%b %d, %Y %H:%M'),TotalTime=EndTime-StartTime) %>%
-#   select(-EndTime)
-#
-# #Honeybee-only dataframe to examine behaviour (top/side-working & nectar/pollen)
-# hbees=select(survey,Field:EdgeCent,FieldPlot,HoneyTP:NumHSN) %>%
-#   unite(Top_Pollen,HoneyTP,NumHTP) %>% unite(Top_Nectar,HoneyTN,NumHTN) %>%  #Unite 8 honeybee columns into 4
-#   unite(Side_Pollen,HoneySP,NumHSP) %>% unite(Side_Nectar,HoneySN,NumHSN) %>%
-#   gather(Behaviour,Count,-Field:-FieldPlot) %>% # Gather into 1 long column
-#   separate(Count,c('Visits','Count'),convert=T) %>% #Separate into visits and counts
-#   separate(Behaviour,c('Approach','Foraging'),remove=F) %>% #Separates Top/Side and Nectar/Pollen
-#   mutate(Approach=as.factor(Approach),Foraging=as.factor(Foraging)) %>% #Converts new columns to factor
-#   left_join(select(survey,FieldPlot,StartTime,FlDens,Leafbee,NumLeafbee,minShelter,AvgPol,hasPol,Hectares:RH),
-#             by='FieldPlot') %>% #Joins in leafcutter visits (could add other visitors later), along with other variables
-#   select(-FieldPlot)
-#
-# survey=survey %>%
-#   mutate(Honeybee=sum(HoneyTP,HoneyTN,HoneySP,HoneySN),NumHoneybee=sum(NumHTP,NumHTN,NumHSP,NumHSN)) %>%
-#   select(-HoneyTP:-NumHSN) #Cleans up main survey dataframe (removes honeybee behaviour info)
-#
-# #flower-level data - Pollen and nectar dataframes could be avoided using the strategy from hbees (i.e. unite, gather, separate)
-# flowers=rowwise(flowers)%>%
-#   mutate(StartTime=as.POSIXct(StartTime,format='%H:%M'), #Start time
-#                TotalTime=as.POSIXct(EndTime,format='%H:%M')-as.POSIXct(StartTime,format='%H:%M'), #Total time
-#                minShelter=min(LeafShelter1,LeafShelter2,LeafShelter3,LeafShelter4,na.rm=T)) %>% #Closest leafcutter shelter
-#   select(Field:EdgeDir,minShelter,FlDens:Soilwater,Pollen1:Pollen5,PlDens) %>% #Cuts out lat/lon, individual leafcutter distances
-#   rename(EdgeCent=Edge.Cent) %>%
-#   unite(FieldPlot,Field,Distance,Bay,EdgeCent,sep=',',remove=F) %>% #Unique ID for join with flower-level data
-#   unite(LenPol1,Len1,Pollen1) %>% unite(LenPol2,Len2,Pollen2) %>% #Unite 10 pollen/nectar cols into 5
-#   unite(LenPol3,Len3,Pollen3) %>% unite(LenPol4,Len4,Pollen4) %>% unite(LenPol5,Len5,Pollen5) %>%
-#   gather(Flower,Count,LenPol1:LenPol5) %>%
-#   separate(Count,c('Length','Pollen'),sep='_',convert=T) %>% #Separate into visits and counts
-#   mutate(Flower=as.numeric(Flower)) %>%
-#   left_join(select(survey,FieldPlot:NumHoneybee),by='FieldPlot') %>% #Joins plot-level data
-#   select(-HoneyTP:-NumHSN) #Removes unique ID, and honeybee behavioural data
-#
-# #Makes honeybee-only dataframe
-# hbees=filter(hbees,Behaviour!='Side_Pollen') %>% #There were no side-working pollen foragers anywhere.
-#   mutate(Field=as.factor(Field),Bay=as.factor(Bay),EdgeCent=as.factor(EdgeCent))
-#
-# #Makes wide-form dataframe for comparing proportions of visitors
-# hbeesWide=unite(hbees,Visits_Count,Visits,Count) %>%
-#   select(-Approach,-Foraging) %>%
-#   spread(Behaviour,Visits_Count) %>%
-#   separate(Top_Pollen,c('TopPolVis','TopPolCount'),sep='_',convert=T) %>% #Top working pollen, Visits and Counts
-#   separate(Top_Nectar,c('TopNecVis','TopNecCount'),sep='_',convert=T) %>% #Top working nectar, Visits and Counts
-#   separate(Side_Nectar,c('SideNecVis','SideNecCount'),sep='_',convert=T) %>% #Side working nectar, Visits and Counts
-#   rowwise() %>%
-#   mutate(hbeeVis=TopPolVis+TopNecVis+SideNecVis,hbeeCount=TopPolCount+TopNecCount+SideNecCount,
-#          VisCount=hbeeVis/hbeeCount) #Totals of everything
-#
-# #Leafcutter bees only
-# lbees=select(hbeesWide,Field:RH,hbeeVis:hbeeCount,VisCount) %>%
-#   rename(hbeeVisCount=VisCount,lbeeVis=Leafbee,lbeeCount=NumLeafbee) %>%
-#   ungroup()
-#
-# #Plant data
-# bagdat=filter(survey,Bay=='F') %>%
-#   select(Bags,Field,Distance,EdgeCent,EdgeDir,Leafbee:NumFly,minShelter,AvgPol,PlDens,Hectares,Treatment,NumHives,Honeybee,NumHoneybee) %>% #Data to merge from survey dataframe
-#   separate(Bags,c('Bag1','Bag2','Bag3','Bag4','Bag5'),convert=T) %>%
-#   gather(BagNum,Bag,1:5) %>%
-#   select(-BagNum) %>%
-#   rename(BagNum=Bag)
-#
-# plants=rename(plants,BagNum=Bag.) %>%
-#   arrange(FieldName,BagNum) #Re-orders plant measurements
-#
-# seeds=transmute(plants,Field=FieldName,BagNum,VegMass=TotalMass-SeedMass,SeedMass,Branch,
-#                 Pods=Pods+Bag+BagTscar,Missing=Missing-Bag,
-#                 Pod1,Pod2,Pod3,Pod4,Pod5,
-#                 Weigh1,Weigh2,Weigh3,Weigh4,Weigh5,SeedCount) %>% #Selects correct columns
-#   gather('Pod','Value',Pod1:Weigh5) %>% #Melts pod count and pod weight
-#   separate(Pod,into=c('Param','PodNum'),sep=-2) %>%
-#   mutate(Param=as.factor(Param),PodNum=as.numeric(PodNum)) %>%
-#   spread(Param,Value) %>% #Casts pod count and pod weight back
-#   rename(PodCount=Pod,PodMass=Weigh,Pod=PodNum) %>%
-#   group_by(Field,BagNum,Pod)
-#
-# plants=summarise_each(group_by(seeds,Field,BagNum),funs(mean,se))%>% #Mean and SE of metrics for each plant (all mean values except for pod measurements will equal plant-level metrics)
-#   select(Field,BagNum,VegMass=VegMass_mean,SeedMass=SeedMass_mean,
-#          Branch=Branch_mean,Pods=Pods_mean,Missing=Missing_mean,SeedCount=SeedCount_mean,
-#          AvPodCount=PodCount_mean,SEPodCount=PodCount_se,AvPodMass=PodMass_mean,SEPodMass=PodMass_se)
-#
-# #Merges Distances and other data into seed and plant dataframes
-# seeds=left_join(seeds,select(bagdat,-Field),by='BagNum') %>%
-#   rename(Plant=BagNum) %>%
-#   arrange(Field,Distance,Plant) %>%
-#   ungroup()%>%
-#   unite(FieldPlot,Field,Distance,EdgeCent,remove=F)%>%
-#   mutate(FieldPlot=as.factor(FieldPlot))%>%
-#   filter(!is.na(VegMass))
-#
-# plants=left_join(plants,select(bagdat,-Field),by='BagNum') %>%
-#   rename(Plant=BagNum) %>%
-#   arrange(Field,Distance,Plant) %>%
-#   ungroup() %>%
-#   unite(FieldPlot,Field,Distance,EdgeCent,remove=F) %>%
-#   mutate(FieldPlot=as.factor(FieldPlot)) %>%
-#   filter(!is.na(VegMass))
-#
-# pollen=filter(flowers,Bay=='F') %>%
-#   select(Field,Distance,EdgeCent,minShelter,Leafbee:NumLeafbee,Flower,Pollen,Treatment,Honeybee:NumHoneybee) %>%
-#   mutate(FieldPlot=paste(Field,Distance,sep='_')) #Unique plot names (for random effect)
-#
-# rm(bagdat) #Remove distance
-#
-# #Folder to store figures/graphs:
-# figs="C:\\Users\\Samuel\\Documents\\Projects\\UofC\\Seed field analysis\\Figures"
-#
-# # Save workspace
-# save.image("C:\\Users\\Samuel\\Documents\\Projects\\UofC\\Seed field analysis\\seedfieldData2015.RData")
+fields=read.csv("C:\\Users\\Samuel\\Documents\\Projects\\UofC\\csv files\\field info 2015.csv",stringsAsFactors=F,strip.white=T,na.strings = c("",'NA'))
+
+survey=read.csv("C:\\Users\\Samuel\\Documents\\Projects\\UofC\\csv files\\survey data 2015.csv",stringsAsFactors=F,strip.white=T,na.strings = c("",'NA'))
+
+plants=read.csv("C:\\Users\\Samuel\\Documents\\Projects\\UofC\\csv files\\plant info 2015 seed.csv",stringsAsFactors=T,strip.white=T,na.strings = c("",'NA'))
+
+se=function(x) sd(x)/sqrt(length(x)) #Convenience SE function
+
+AICc=function(model,...){ #Second-order bias corrected AIC
+  #require(plyr)
+  corAIC=function(x){
+    k=length(coef(x))
+    n=length(residuals(x))
+    return(AIC(x)+(2*k*k-1)/(n-k-1))
+  }
+  if(missing(...)){
+    return(corAIC(model))
+  }
+  else{
+    mlist=list(model,...)
+    len=plyr::laply(mlist,function(x) length(residuals(x)))
+    if(length(len)!=sum(len %in% len[1]))
+      warning('Models use different # data points. Comparing AICc values is invalid')
+    forms=sapply(mlist, function(x) paste(formula(x)))
+    data.frame(row.names=paste(forms[2,],forms[1,],forms[3,]),AICc=plyr::laply(mlist,corAIC))
+  }
+}
+
+deltaAIC=function(m1,m2,...,correct=TRUE){
+  if(correct) a=AICc(m1,m2,...) else a=AIC(m1,m2,...)
+  a$delta_AICc=round(a$AICc-min(a$AICc),4)
+  a$w_i=round(exp(-0.5*a$delta_AICc)/sum(exp(-0.5*a$delta_AICc)),4) #Model Probabilities (Akaike weights)
+  a
+}
+
+DIC=function(m1,...){ #Convenience function to extract DIC values from MCMCglmm models
+  modlist=list(m1,...)
+  dicvals=unlist(lapply(modlist,'[[',c('DIC')))
+  fixeffs=as.character(lapply((lapply(modlist,'[[','Fixed')),'[[','formula'))
+  raneffs=as.character(lapply((lapply(modlist,'[[','Random')),'[[','formula'))
+  data.frame(Fixed=fixeffs,Random=raneffs,DIC=dicvals,deltaDIC=dicvals-min(dicvals))
+}
+
+plotFixedTerms=function(m1){ #Convenience function to plot 95% distributions for MCMCglmm fixed effects
+  dat=as.data.frame(summary(m1)$solutions)
+  dat$params=as.factor(rownames(dat))
+  colnames(dat)[c(2,3)]=c('lwr','upr')
+  ggplot(dat,aes(x=params,y=post.mean,ymax=upr,ymin=lwr))+geom_pointrange()+labs(x='Fixed Effects',y='Posterior Mean')+geom_hline(yintercept=0,colour='red')
+}
+
+zeroCheck=function(mod,dat) { #Posterior predictive checks for zero-inflation (MCMCglmm course notes pg. 104)
+  require(MCMCglmm)
+  require(ggplot2)
+  try(if(is.null(mod$X)) stop("Needs fixed effect design matrix (use saveX=T in MCMCglmm arguments)"))
+  nz=1:nrow(mod$Sol) #Number of samples to hold
+  oz=sum(dat[as.character(mod$Fixed$formula[2])]==0) #Actual number of 0s in the dataset
+  for (i in 1:nrow(mod$Sol)) {
+    pred.l <- rnorm(nrow(dat), (mod$X %*% mod$Sol[i,])@x, sqrt(mod$VCV[i])) #Predicted mean
+    nz[i] <- sum(rpois(nrow(dat), exp(pred.l)) == 0)} #Expected number under poisson
+  qplot(nz,xlab='Expected number of zeros')+geom_vline(aes(xintercept=oz))
+  #Expected zeros, given the overdispersed poisson model
+  }
+
+varComp=function(mod,units=T) { #Tabulates variance components of random effects for MCMCglmm models
+  VCV=mod$VCV
+  if(units==F) VCV=VCV[,c(1:ncol(VCV)-1)] #Strips out "units" column (for binomial models)
+  round(data.frame(mode=posterior.mode(VCV/rowSums(VCV)),HPDinterval(VCV/rowSums(VCV))),3)
+}
+
+#Load data
+
+#field-level data
+fields=filter(fields,Type=='Seed') %>% #Strips out commodity field data
+  select(Field,Deg.N,Deg.W,Hectares,Treatment,NumHives=Number.of.Hives, #Selects columns of interest
+         Surveyed,Start.Time,End.Time,BowlStart,BowlEnd,
+         AirTemp=Temperature,Wind=Wind.Speed.km.hr.,RH=Humidity,Harvested) %>%
+  mutate(Start.Time=as.POSIXct(paste(Surveyed,Start.Time),format='%b %d, %Y %H:%M'), #Converts dates to single format
+         End.Time=as.POSIXct(paste(Surveyed,End.Time),format='%b %d, %Y %H:%M'),
+         BowlStart=as.POSIXct(paste(Surveyed,BowlStart),format='%b %d, %Y %H:%M'),
+         BowlEnd=as.POSIXct(paste(Surveyed,BowlEnd),format='%b %d, %Y %H:%M'),
+         SurveyTime=End.Time-Start.Time, #Time spent on survey
+         BowlTime=BowlEnd-BowlStart, #Hours that bowl traps were used
+         SurveyStart=Start.Time) %>%
+  select(-BowlEnd,-Start.Time,-End.Time) #Removes end times for bowls and survey
+
+#plot-level data
+
+#Bag numbers and associated data to match with plants
+survey=filter(survey,Type=='Seed') %>% #Strips out commodity field data
+  select(Field,Distance,Bay:EndTime,FlDens=Fls.50cm.2,HoneyTP=HoneybeeTopPollen,HoneyTN=HoneybeeTopNectar, #Selects columns of interest
+         HoneySP=HoneybeeSidePollen,HoneySN=HoneybeeSideNectar,NumHTP:NumHSN,
+         Leafbee=Leafcutterbee,NumLeafbee=NumLeafcutterbee,Otherbee:NumFly,Len1:Len5,Microcap.volume,
+         Soilwater:MountingOK,PlDens=Plants.m.2,Bags=BagNumbers)
+
+#Temporary plot-level dataframe (saved for converting to flower-level data)
+flowers=survey
+
+survey=transmute(rowwise(survey),Field,Distance,Bay,EdgeCent=Edge.Cent,EdgeDir,StartTime,EndTime,
+                 FlDens,HoneyTP,HoneyTN,HoneySP,HoneySN,NumHTP,NumHTN,NumHSP,NumHSN,
+                 Leafbee,NumLeafbee,Otherbee,NumOtherbee,Hoverfly,NumHoverfly,Fly,NumFly,
+                 AvLen=mean(Len1,Len2,Len3,Len4,Len5,na.rm=T), #Avg Nectar(uL)
+                 hasNectar=sum(cbind(Len1,Len2,Len3,Len4,Len5)>0), #Number of nectar samples >0
+                 Soilwater,minShelter=min(LeafShelter1,LeafShelter2,LeafShelter3,LeafShelter4,na.rm=T), #Distance to closest leafcutter shelter
+                 AvgPol=mean(as.numeric(Pollen1,Pollen2,Pollen3,Pollen4,Pollen5)), #Average pollen per stigma -
+                 #WEIRD PROBLEM: previous line doesn't work unless casted to numeric
+                 #http://stackoverflow.com/questions/29224719/dplyr-error-strange-issue-when-combining-group-by-mutate-and-ifelse-is-it-a-b
+                 hasPol=rowSums(cbind(Pollen1,Pollen2,Pollen3,Pollen4,Pollen5)>0), #Number of stigmas with pollen >0
+                 PlDens,Bags,FieldPlot=paste(Field,Distance,Bay,Edge.Cent,sep=',')) %>%  #Plant density, and unique ID
+  left_join(select(fields,Field,Hectares:Surveyed,AirTemp:RH),by='Field') %>% #Joins field-level data
+  mutate(StartTime=as.POSIXct(paste(Surveyed,StartTime),format='%b %d, %Y %H:%M'),
+         EndTime=as.POSIXct(paste(Surveyed,EndTime),format='%b %d, %Y %H:%M'),TotalTime=EndTime-StartTime) %>%
+  select(-EndTime)
+
+#Honeybee-only dataframe to examine behaviour (top/side-working & nectar/pollen)
+hbees=select(survey,Field:EdgeCent,FieldPlot,HoneyTP:NumHSN) %>%
+  unite(Top_Pollen,HoneyTP,NumHTP) %>% unite(Top_Nectar,HoneyTN,NumHTN) %>%  #Unite 8 honeybee columns into 4
+  unite(Side_Pollen,HoneySP,NumHSP) %>% unite(Side_Nectar,HoneySN,NumHSN) %>%
+  gather(Behaviour,Count,-Field:-FieldPlot) %>% # Gather into 1 long column
+  separate(Count,c('Visits','Count'),convert=T) %>% #Separate into visits and counts
+  separate(Behaviour,c('Approach','Foraging'),remove=F) %>% #Separates Top/Side and Nectar/Pollen
+  mutate(Approach=as.factor(Approach),Foraging=as.factor(Foraging)) %>% #Converts new columns to factor
+  left_join(select(survey,FieldPlot,StartTime,FlDens,Leafbee,NumLeafbee,minShelter,AvgPol,hasPol,Hectares:RH),
+            by='FieldPlot') %>% #Joins in leafcutter visits (could add other visitors later), along with other variables
+  select(-FieldPlot)
+
+survey=survey %>%
+  mutate(Honeybee=sum(HoneyTP,HoneyTN,HoneySP,HoneySN),NumHoneybee=sum(NumHTP,NumHTN,NumHSP,NumHSN)) %>%
+  select(-HoneyTP:-NumHSN) #Cleans up main survey dataframe (removes honeybee behaviour info)
+
+#flower-level data - Pollen and nectar dataframes could be avoided using the strategy from hbees (i.e. unite, gather, separate)
+flowers=rowwise(flowers)%>%
+  mutate(StartTime=as.POSIXct(StartTime,format='%H:%M'), #Start time
+               TotalTime=as.POSIXct(EndTime,format='%H:%M')-as.POSIXct(StartTime,format='%H:%M'), #Total time
+               minShelter=min(LeafShelter1,LeafShelter2,LeafShelter3,LeafShelter4,na.rm=T)) %>% #Closest leafcutter shelter
+  select(Field:EdgeDir,minShelter,FlDens:Soilwater,Pollen1:Pollen5,PlDens) %>% #Cuts out lat/lon, individual leafcutter distances
+  rename(EdgeCent=Edge.Cent) %>%
+  unite(FieldPlot,Field,Distance,Bay,EdgeCent,sep=',',remove=F) %>% #Unique ID for join with flower-level data
+  unite(LenPol1,Len1,Pollen1) %>% unite(LenPol2,Len2,Pollen2) %>% #Unite 10 pollen/nectar cols into 5
+  unite(LenPol3,Len3,Pollen3) %>% unite(LenPol4,Len4,Pollen4) %>% unite(LenPol5,Len5,Pollen5) %>%
+  gather(Flower,Count,LenPol1:LenPol5) %>%
+  separate(Count,c('Length','Pollen'),sep='_',convert=T) %>% #Separate into visits and counts
+  mutate(Flower=as.numeric(Flower)) %>%
+  left_join(select(survey,FieldPlot:NumHoneybee),by='FieldPlot') %>% #Joins plot-level data
+  select(-HoneyTP:-NumHSN) #Removes unique ID, and honeybee behavioural data
+
+#Makes honeybee-only dataframe
+hbees=filter(hbees,Behaviour!='Side_Pollen') %>% #There were no side-working pollen foragers anywhere.
+  mutate(Field=as.factor(Field),Bay=as.factor(Bay),EdgeCent=as.factor(EdgeCent))
+
+#Makes wide-form dataframe for comparing proportions of visitors
+hbeesWide=unite(hbees,Visits_Count,Visits,Count) %>%
+  select(-Approach,-Foraging) %>%
+  spread(Behaviour,Visits_Count) %>%
+  separate(Top_Pollen,c('TopPolVis','TopPolCount'),sep='_',convert=T) %>% #Top working pollen, Visits and Counts
+  separate(Top_Nectar,c('TopNecVis','TopNecCount'),sep='_',convert=T) %>% #Top working nectar, Visits and Counts
+  separate(Side_Nectar,c('SideNecVis','SideNecCount'),sep='_',convert=T) %>% #Side working nectar, Visits and Counts
+  rowwise() %>%
+  mutate(hbeeVis=TopPolVis+TopNecVis+SideNecVis,hbeeCount=TopPolCount+TopNecCount+SideNecCount,
+         VisCount=hbeeVis/hbeeCount) #Totals of everything
+
+#Leafcutter bees only
+lbees=select(hbeesWide,Field:RH,hbeeVis:hbeeCount,VisCount) %>%
+  rename(hbeeVisCount=VisCount,lbeeVis=Leafbee,lbeeCount=NumLeafbee) %>%
+  ungroup()
+
+#Plant data
+bagdat=filter(survey,Bay=='F') %>%
+  select(Bags,Field,Distance,EdgeCent,EdgeDir,Leafbee:NumFly,minShelter,AvgPol,PlDens,Hectares,Treatment,NumHives,Honeybee,NumHoneybee) %>% #Data to merge from survey dataframe
+  separate(Bags,c('Bag1','Bag2','Bag3','Bag4','Bag5'),convert=T) %>%
+  gather(BagNum,Bag,1:5) %>%
+  select(-BagNum) %>%
+  rename(BagNum=Bag)
+
+plants=rename(plants,BagNum=Bag.) %>%
+  arrange(FieldName,BagNum) #Re-orders plant measurements
+
+seeds=transmute(plants,Field=FieldName,BagNum,VegMass=TotalMass-SeedMass,SeedMass,Branch,
+                Pods=Pods+Bag+BagTscar,Missing=Missing-Bag,
+                Pod1,Pod2,Pod3,Pod4,Pod5,
+                Weigh1,Weigh2,Weigh3,Weigh4,Weigh5,SeedCount) %>% #Selects correct columns
+  gather('Pod','Value',Pod1:Weigh5) %>% #Melts pod count and pod weight
+  separate(Pod,into=c('Param','PodNum'),sep=-1) %>%
+  
+  mutate(Param=as.factor(Param),PodNum=as.numeric(PodNum)) %>%
+  spread(Param,Value) %>% #Casts pod count and pod weight back
+  rename(PodCount=Pod,PodMass=Weigh,Pod=PodNum) %>%
+  group_by(Field,BagNum,Pod)
+
+plants=summarise_all(group_by(seeds,Field,BagNum),funs(mean,se))%>% #Mean and SE of metrics for each plant (all mean values except for pod measurements will equal plant-level metrics)
+  select(Field,BagNum,VegMass=VegMass_mean,SeedMass=SeedMass_mean,
+         Branch=Branch_mean,Pods=Pods_mean,Missing=Missing_mean,SeedCount=SeedCount_mean,
+         AvPodCount=PodCount_mean,SEPodCount=PodCount_se,AvPodMass=PodMass_mean,SEPodMass=PodMass_se) 
+  
+#Merges Distances and other data into seed and plant dataframes
+seeds=left_join(seeds,select(bagdat,-Field),by='BagNum') %>%
+  rename(Plant=BagNum) %>%
+  arrange(Field,Distance,Plant) %>%
+  ungroup()%>%
+  unite(FieldPlot,Field,Distance,EdgeCent,remove=F)%>%
+  mutate(FieldPlot=as.factor(FieldPlot))%>%
+  filter(!is.na(VegMass))
+
+plants=left_join(plants,select(bagdat,-Field),by='BagNum') %>%
+  rename(Plant=BagNum) %>%
+  arrange(Field,Distance,Plant) %>%
+  ungroup() %>%
+  unite(FieldPlot,Field,Distance,EdgeCent,remove=F) %>%
+  mutate(FieldPlot=as.factor(FieldPlot)) %>%
+  filter(!is.na(VegMass))
+
+pollen=filter(flowers,Bay=='F') %>%
+  select(Field,Distance,EdgeCent,minShelter,Leafbee:NumLeafbee,Flower,Pollen,Treatment,Honeybee:NumHoneybee) %>%
+  mutate(FieldPlot=paste(Field,Distance,sep='_')) #Unique plot names (for random effect)
+
+rm(bagdat) #Remove distance
+
+#Folder to store figures/graphs:
+figs="C:\\Users\\Samuel\\Documents\\Projects\\UofC\\Seed field analysis\\Figures"
+
+# Save workspace
+save.image("~/Projects/UofC/canola_yield_project/Seed field analysis/seedfieldData2015.RData")
 
 # Honeybee visitation ---------------------------------------
 
