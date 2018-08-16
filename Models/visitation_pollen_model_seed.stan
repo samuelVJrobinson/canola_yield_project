@@ -57,14 +57,17 @@ transformed data {
 	int Nplot_all = Nplot + Nplot_extra; //Number of plots
 	int plotIndex_all[Nplot_all]; //Plot index - which field is plot from?
 	int lbeeStocking_all[Nplot_all]; //Half leafcutter stocking?
-	vector[Nplot_all] hbee_dist_all; //Distance from hbee hives
+	vector[Nplot_all] hbee_dist_all; //Distance from hbee hives (edge)
 	int hbeeVis_all[Nplot_all]; //Visits from hbees
 	vector[Nplot_all] lbee_dist_all; //Distance from lbee shelters
 	int lbeeVis_all[Nplot_all]; //Visits from lbees
 	int isCent_all[Nplot_all]; //Is plot from center of bay?
 	int isFBay_all[Nplot_all]; //Is plot from female bay?
 	vector[Nplot_all] totalTime_all; //Minutes of observation/10
-	
+	vector[Nplot_all] logTime_all; //Log transform of observation time
+	vector[Nplot_all] logHbeeDist_all; //Log-distance from hbee hives (edge)
+	vector[Nplot_all] logLbeeDist_all; //Log-distance from lbee shelters
+		
 	plotIndex_all[1:Nplot] = plotIndex;
 	plotIndex_all[Nplot+1:Nplot_all] = plotIndex_extra;
 	lbeeStocking_all[1:Nplot] = lbeeStocking;
@@ -83,6 +86,9 @@ transformed data {
 	isFBay_all[Nplot+1:Nplot_all] = isFBay_extra;
 	totalTime_all[1:Nplot] = totalTime;
 	totalTime_all[Nplot+1:Nplot_all] = totalTime_extra;
+	logHbeeDist_all=log(hbee_dist_all); //Log-transform distances
+	logLbeeDist_all=log(lbee_dist_all);
+	logTime_all=log(totalTime_all); //Log-transform time	
 }
 
 parameters {
@@ -100,12 +106,12 @@ parameters {
 	//lbee Visitation
 	real intVisitLbee; //Intercept - R0 in SSasymp
 	real slopeHbeeDistLbee; //Slope of honeybee distance (field edge)
-	real slopeLbeeDistLbee; //Slope of leafcutter distance (shelter)	
-	// real AsymLbee; //Horizontal asymptote - nonlinear form
-	// real lrcLbee; //ln(rate constant)	
+	real slopeLbeeDistLbee; //Slope of leafcutter distance (shelter)		
 	real slopeCentLbee; //Effect of bay position (center)
-	real slopeCentHbeeDistLbee; //Bay position : honeybee distance interaction term
 	real slopeFBayLbee; //Effect of female bay	
+	real slopeStocking; //Effect of half-stocking leafcutter bees
+	real slopeCentHbeeDistLbee; //Bay position : honeybee distance interaction term
+	real slopeStockingHbeeDistLbee; //Half-stocking:hbee distance interaction	
 	real<lower=0.1> sigmaLbeeVisField; //SD of field random intercepts
 	real<lower=0.1> visitLbeePhi; //Dispersion parameter	
 	vector[Nfield_all] intVisitLbee_field; //field-level random intercepts	
@@ -167,8 +173,8 @@ parameters {
 transformed parameters {			
 	//Expected values
 	//Plot-level
-	vector[Nplot_all] visitMu_lbee; //lbee visits - all plots
 	vector[Nplot_all] visitMu_hbee; //hbee visits - all plot
+	vector[Nplot_all] visitMu_lbee; //lbee visits - all plots	
 	// vector[Nplot] pollenMu_plot; //Plot level pollen
 	// vector[Nflw] pollenMu; //Expected pollen - flower level
 	// vector[Nplot] flwSurvPlot; //Plot-level flower survival
@@ -186,19 +192,20 @@ transformed parameters {
 	
 	for(i in 1:Nplot_all){ 		
 		//Expected value for hbee visits = intercept + random int + distance + bay position + bay type + time offset
-		visitMu_hbee[i] = intVisitHbee + intVisitHbee_field[plotIndex_all[i]] + 
-			slopeHbeeDistHbee*log(hbee_dist_all[i]) + 
-			slopeLbeeDistHbee*log(lbee_dist_all[i]) +
-			slopeCentHbee*isCent_all[i] + slopeFBayHbee*isFBay_all[i] + log(totalTime_all[i]); 			
-		//Expected value for lbee visits = intercept + random int + distance to shelter + distance to honeybees (edge) + bay position + bay:hbee dist + bay type + time offset	
-		visitMu_lbee[i] = intVisitLbee + intVisitLbee_field[plotIndex_all[i]] + slopeLbeeDistLbee*log(lbee_dist_all[i]) +
-			slopeHbeeDistLbee*log(hbee_dist_all[i]) + slopeCentLbee*isCent_all[i] + slopeCentHbeeDistLbee*isCent_all[i]*log(hbee_dist_all[i]) + 
-			slopeFBayLbee*isFBay_all[i] + log(totalTime_all[i]); 
-		// visitMu_lbee[i] = //Random intercept for each field is rolled in with AsymLbee parameter
-			// ((AsymLbee+intVisitLbee_field[plotIndex_all[i]])+((intVisitLbee)-(AsymLbee+intVisitLbee_field[plotIndex_all[i]]))*
-			// exp(-exp(lrcLbee)*sqrt(lbee_dist_all[i]))) + //Nonlinear slope
-			// slopeHbeeDistLbee*log(hbee_dist_all[i]) + //Honeybee distance
-			// slopeCentLbee*isCent_all[i] + slopeFBayLbee*isFBay_all[i] + log(totalTime_all[i]); 	
+		visitMu_hbee[i] = intVisitHbee + intVisitHbee_field[plotIndex_all[i]] + logTime_all[i] + //Intercepts + offset
+			slopeHbeeDistHbee*logHbeeDist_all[i] +  //hbee distance
+			slopeLbeeDistHbee*logLbeeDist_all[i] + //lbee distance
+			slopeCentHbee*isCent_all[i] + //bay center effect
+			slopeFBayHbee*isFBay_all[i]; //F bay effect 			
+		//Expected value for lbee visits = intercept + random int + distance to shelter + distance to honeybees (edge) + bay position + bay:hbee dist + stocking:hbee dist + bay type + time offset	
+		visitMu_lbee[i] = intVisitLbee + intVisitLbee_field[plotIndex_all[i]] + logTime_all[i] + //intercepts + offset
+			slopeLbeeDistLbee*logLbeeDist_all[i] + //lbee distance
+			slopeHbeeDistLbee*logHbeeDist_all[i] + //hbee distance
+			slopeCentLbee*isCent_all[i] + //bay center
+			slopeStocking*lbeeStocking_all[i]+	//half-stocking
+			slopeFBayLbee*isFBay_all[i] + //F bay
+			slopeCentHbeeDistLbee*isCent_all[i]*logHbeeDist_all[i] + //hbee dist: bay center interaction			
+			slopeStockingHbeeDistLbee*lbeeStocking_all[i]*logHbeeDist_all[i];  //hbee dist: half stocking interaction						 	
 	}
 	
 	// for(i in 1:Nplot){
@@ -258,29 +265,28 @@ model {
 			
 	// Priors
 	// Hbee Visitation - informative priors
-	intVisitHbee ~ normal(2.5,1); //Intercept
-	sigmaHbeeVisField ~ gamma(1.5,5); //Sigma for random field 
+	intVisitHbee ~ normal(2.5,1); //Intercept	
 	slopeHbeeDistHbee ~ normal(-0.1,0.5); //Slope of distance effect on hbee visits
+	slopeLbeeDistHbee ~ normal(0.4,0.5); //Effect of leafcutter shelter distance	
 	slopeCentHbee ~ normal(-0.3,0.5); //Effect of center of bay
 	slopeFBayHbee ~ normal(-0.1,0.5); //Effect of female bay
-	slopeLbeeDistHbee ~ normal(0.4,0.5); //Effect of leafcutter shelter distance
-	visitHbeePhi ~ gamma(3.5,5); //Dispersion parameter	
-	intVisitHbee_field ~ normal(0,sigmaHbeeVisField); //Random field int
+	sigmaHbeeVisField ~ gamma(1.5,5); //Sigma for random field 
+	visitHbeePhi ~ gamma(3.5,5); //Dispersion parameter		
 	zeroVisHbeeTheta ~ beta(3,7); //Zero-inflation parameter
+	intVisitHbee_field ~ normal(0,sigmaHbeeVisField); //Random field int
 	
 	// Lbee Visitation - informative priors
-	intVisitLbee ~ normal(4,4); //Intercept
-	// AsymLbee ~ normal(0.5,1); //Horizontal asymptote	
-	// lrcLbee ~ normal(-1,1); //ln(rate constant)	
-	sigmaLbeeVisField ~ gamma(2,2); //Sigma for random field 
+	intVisitLbee ~ normal(4,4); //Intercept	
 	slopeHbeeDistLbee ~ normal(-0.15,0.3); //Slope of honeybee distance on lbee visits
 	slopeLbeeDistLbee ~ normal(-0.8,0.3); //Slope of shelter distance on lbee visits
 	slopeCentLbee ~ normal(-0.6,0.3); //Effect of center of bay
-	slopeCentHbeeDistLbee ~ normal(-0.2,0.3); //Bay center: hbee distance interaction
 	slopeFBayLbee ~ normal(0,0.5); //Effect of female bay
+	slopeStocking ~ normal(0,0.5); //Effect of half-stocking
+	slopeCentHbeeDistLbee ~ normal(-0.2,0.3); //Bay center: hbee distance interaction
+	slopeStockingHbeeDistLbee ~ normal(0.2,0.3); //Half-stocking: hbee distance interaction		
+	sigmaLbeeVisField ~ gamma(2,2); //Sigma for random field 
 	visitLbeePhi ~ gamma(2,5); //Dispersion parameter	
-	intVisitLbee_field ~ normal(0,sigmaLbeeVisField); //Random field int
-	zeroVisLbeeTheta ~ beta(1.1,9); //Zero-inflation parameter	
+	intVisitLbee_field ~ normal(0,sigmaLbeeVisField); //Random field intercepts	
 	
 	// // Pollen deposition - informative priors
 	// intPol ~ normal(2.5,1); //Intercept	
