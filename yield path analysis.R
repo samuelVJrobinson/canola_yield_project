@@ -631,7 +631,7 @@ visMod1 <- psem( #Original model
   lmer(predPodSuccess~predPol+predPlSize+(1|Field),data=temp) #logit pod success
 )
 
-lbeeVis~hbeeDist*cent+lbeeDist+lbeeStocking*hbeeDist+Fbay
+# lbeeVis~hbeeDist*cent+lbeeDist+lbeeStocking*hbeeDist+Fbay
 
 visMod2 <- psem( #Updated model
   glmer.nb(lbee~logDist*EdgeCent+logMinDist+Stocking*logDist+Bay+offset(logTime)+(1|Field),
@@ -654,10 +654,10 @@ visMod2 <- psem( #Updated model
 #2) write "final" model in Stan, get dSep tests from PSEM, write/run dSep tests in Stan
 
 #Summary function doesn't work, so using lapply
-lapply(visMod[1:6],summary)
+lapply(visMod2[1:6],summary)
 
-dSep(visMod1,direction=c('lbee -> hbee'),conditioning=F)
-fisherC(visMod1,conserve=T) #31.37, p=0.77
+dSep(visMod2,direction=c('lbee -> hbee'),conditioning=F)
+fisherC(visMod2,conserve=T) #31.37, p=0.77
 
 temp %>% dplyr::select(predPol:predPodSuccess) %>% pairs()
 
@@ -1060,8 +1060,6 @@ str(datalist)
 #   labs(x='hbee Distance',y='Visitation rate')+xlim(0,400)+ylim(0,30)+
 #   scale_colour_manual(values=c('red','blue'))
 
-
-
 inits <- function(){with(datalist,list(
   intVisitHbee=1.5,slopeHbeeDistHbee=-0.1,slopeCentHbee=0.3,slopeFBayHbee=0.1,slopeLbeeDistHbee=0.4, #Hbees
   sigmaHbeeVisField=0.4,visitHbeePhi=0.7,intVisitHbee_field=rep(0,Nfield+Nfield_extra),zeroVisHbeeTheta=0.3,
@@ -1087,9 +1085,45 @@ inits <- function(){with(datalist,list(
   intSize_field=rep(0,Nfield),intSize_plot=rep(0,Nplot)
 )}
 
-modPodcount_seed <- stan(file='visitation_pollen_model_seed.stan',data=datalist,iter=500,chains=3,
-                   control=list(adapt_delta=0.8),init=inits)
+# #Full model
+# modPodcount_seed <- stan(file='visitation_pollen_model_seed.stan',data=datalist,iter=500,chains=3,
+#                    control=list(adapt_delta=0.8),init=inits)
 
+#Models for independence claims
+# modPodcount_claims1 <- stan(file='Seed model claims 1/seedModel_claims1.stan',data=datalist,iter=500,chains=3,
+#                            control=list(adapt_delta=0.8),init=inits)
+# modPodcount_claims2 <- stan(file='Seed model claims 1/seedModel_claims2.stan',data=datalist,iter=500,chains=3,
+#                            control=list(adapt_delta=0.8),init=inits)
+# modPodcount_claims3 <- stan(file='Seed model claims 1/seedModel_claims3.stan',data=datalist,iter=500,chains=3,
+#                            control=list(adapt_delta=0.8),init=inits)
+# modPodcount_claims4 <- stan(file='Seed model claims 1/seedModel_claims4.stan',data=datalist,iter=300,chains=4,
+#                            control=list(adapt_delta=0.8),init=inits)
+# modPodcount_claims5 <- stan(file='Seed model claims 1/seedModel_claims5.stan',data=datalist,iter=300,chains=4,
+#                            control=list(adapt_delta=0.8),init=inits)
+# modPodcount_claims6 <- stan(file='Seed model claims 1/seedModel_claims6.stan',data=datalist,iter=300,chains=4,
+#                            control=list(adapt_delta=0.8),init=inits)
+# modPodcount_claims7 <- stan(file='Seed model claims 1/seedModel_claims7.stan',data=datalist,iter=300,chains=4,
+#                            control=list(adapt_delta=0.8),init=inits)
+# modPodcount_claims8 <- stan(file='Seed model claims 1/seedModel_claims8.stan',data=datalist,iter=300,chains=4,
+#                          control=list(adapt_delta=0.8),init=inits)
+modPodcount_claims9 <- stan(file='Seed model claims 1/seedModel_claims9.stan',data=datalist,
+                            iter=100,chains=1,control=list(adapt_delta=0.8),init=inits)
+
+# save(modPodcount_claims4,modPodcount_claims5,modPodcount_claims6,modPodcount_claims7,modPodcount_claims8,file='tempClaims.Rdata')
+
+print(modPodcount_claims1,pars=pars)
+traceplot(modPodcount_claims6,pars=pars)
+traceplot(modPodcount_claims6,pars=c(pars,'slopeLbeeDistPol'))
+claims <- extract(modPodcount_claims1)
+# min(sum(claims[[1]]>0)/length(claims[[1]]),
+#     sum(claims[[1]]<0)/length(claims[[1]])) #0 overlap
+2*(1-pnorm(abs(mean(claims[[1]])/sd(claims[[1]])),0,1)) #p-val
+
+
+
+
+
+#Back to full model
 save(modPodcount_seed,file='modPodcount_seed.Rdata')
 # load('modPodcount_seed.Rdata')
 pars=c('intSize','sigmaPlSize_field','sigmaPlSize_plot','sigmaPlSize')
