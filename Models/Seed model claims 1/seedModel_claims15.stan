@@ -181,7 +181,7 @@ transformed parameters {
 	vector[Npod] seedWeightMu; //Pod-level weight per seed	
 	vector[Nplant] plSizeMu; //Plant size
 
-	Imputed missing data;
+	// Imputed missing data;
 	vector[Nplant] plantSize;
 	plantSize[obs_ind]=plantSize_obs;
 	plantSize[miss_ind]=plantSize_miss;		
@@ -254,6 +254,8 @@ model {
 	plantSize ~ normal(plSizeMu,sigmaPlSize); //Plant size
 			
 	// Priors
+	slopeCentSeedWeight ~ normal(0,1); //Claim
+	
 	// Hbee Visitation - informative priors
 	intVisitHbee ~ normal(2.5,1); //Intercept	
 	slopeHbeeDistHbee ~ normal(-0.1,0.5); //Slope of distance effect on hbee visits
@@ -328,7 +330,7 @@ generated quantities{
 	real predSeedWeight_resid=0; //Residual of seed weight	
 		
 	for(i in 1:Npod){ //Predicted (log) weight per seed
-		predSeedWeight[i] = normal_rng(seedCountMu[i],sigmaSeedWeight); //Predicted value drawn from lognormal distribution		
+		predSeedWeight[i] = normal_rng(seedWeightMu[i],sigmaSeedWeight); //Predicted value drawn from lognormal distribution		
 		seedWeight_resid = seedWeight_resid + fabs(seedWeightMu[i]-logSeedMass[i]); //Residual for actual value
 		predSeedWeight_resid = predSeedWeight_resid + fabs(seedWeightMu[i]-predSeedWeight[i]); //Residual for predicted value		
 	}	

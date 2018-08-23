@@ -835,7 +835,7 @@ with(mod2,median(sigmaPolPlot/(sigmaPolPlot+sigmaPolField))) #About 43% of polle
 library(rstan)
 setwd('./Models')
 rstan_options(auto_write = TRUE)
-options(mc.cores = 3)
+options(mc.cores = 4)
 library(shinystan)
 
 #List structure for Stan
@@ -1061,23 +1061,29 @@ str(datalist)
 #   scale_colour_manual(values=c('red','blue'))
 
 inits <- function(){with(datalist,list(
-  intVisitHbee=1.5,slopeHbeeDistHbee=-0.1,slopeCentHbee=0.3,slopeFBayHbee=0.1,slopeLbeeDistHbee=0.4, #Hbees
+  #Hbees
+  intVisitHbee=1.5,slopeHbeeDistHbee=-0.1,slopeCentHbee=0.3,slopeFBayHbee=0.1,slopeLbeeDistHbee=0.4, 
   sigmaHbeeVisField=0.4,visitHbeePhi=0.7,intVisitHbee_field=rep(0,Nfield+Nfield_extra),zeroVisHbeeTheta=0.3,
-  intVisitLbee=2,slopeDistLbee=-0.02,#Lbees
+  #Lbees
+  intVisitLbee=2,slopeDistLbee=-0.02,
   slopeHbeeDistLbee=0,slopeLbeeDistLbee=0,slopeCentHbeeDistLbee=0,
   slopeCentLbee=1,slopeFBayLbee=0.1,sigmaLbeeVisField=0.8,visitLbeePhi=0.5, 
   intVisitLbee_field=rep(0,Nfield+Nfield_extra),zeroVisLbeeTheta=0.1,
-  intPol=2,slopeHbeePol=0,slopeLbeePol=0.01,pollenPhi=1, #Pollen
+  #Pollen
+  intPol=2,slopeHbeePol=0,slopeLbeePol=0.01,pollenPhi=1, 
   sigmaPolField=0.5,sigmaPolPlot=0.5,
   intPol_field=rep(0,Nfield),intPol_plot=rep(0,Nplot),
-  intFlwSurv=1,slopePolSurv=1,slopePlSizeSurv=1, sigmaFlwSurv_field=0.5, #Flower survival
+  #Flower survival
+  intFlwSurv=1,slopePolSurv=1,slopePlSizeSurv=1, sigmaFlwSurv_field=0.5, 
   sigmaFlwSurv_plot=0.5,intFlwSurv_field=rep(0,Nfield),intFlwSurv_plot=rep(0,Nplot),
-  intSeedCount=2,slopePolSeedCount=0,slopePlSizeCount=0, #Seed count
+  #Seed count
+  intSeedCount=2,slopePolSeedCount=0,slopePlSizeCount=0, 
   seedCountPhi=20,sigmaSeedCount_field=0.5,sigmaSeedCount_plot=0.5,sigmaSeedCount_plant=0.5,
   intSeedCount_field=rep(0,Nfield),intSeedCount_plot=rep(0,Nplot),intSeedCount_plant=rep(0,Nplant),
-  intSeedWeight=1,slopePolSeedWeight=0,slopeSeedCount=0,slopePlSizeWeight=0,#Seed weight
-  sigmaSeedWeight=0.3,sigmaSeedWeight_field=0.5,sigmaSeedWeight_plot=0.5,
-  sigmaSeedWeight_plant=0.5,intSeedWeight_field=rep(0,Nfield),intSeedWeight_plot=rep(0,Nplot),
+  #Seed weight
+  intSeedWeight=1.4,slopePolSeedWeight=0,slopeSeedCount=-0.01,slopePlSizeWeight=0.06,
+  sigmaSeedWeight=0.4,sigmaSeedWeight_field=0.1,sigmaSeedWeight_plot=0.1,
+  sigmaSeedWeight_plant=0.1,intSeedWeight_field=rep(0,Nfield),intSeedWeight_plot=rep(0,Nplot),
   intSeedWeight_plant=rep(0,Nplant)),
   #Plant size,
   plantSize_miss=rep(0,Nplant_miss),intSize=0,sigmaPlSize_field=0.5,
@@ -1106,25 +1112,60 @@ inits <- function(){with(datalist,list(
 #                            control=list(adapt_delta=0.8),init=inits)
 # modPodcount_claims8 <- stan(file='Seed model claims 1/seedModel_claims8.stan',data=datalist,iter=300,chains=4,
 #                          control=list(adapt_delta=0.8),init=inits)
-modPodcount_claims9 <- stan(file='Seed model claims 1/seedModel_claims9.stan',data=datalist,
-                            iter=100,chains=1,control=list(adapt_delta=0.8),init=inits)
+# modPodcount_claims9 <- stan(file='Seed model claims 1/seedModel_claims9.stan',data=datalist,
+#                             iter=100,chains=4,control=list(adapt_delta=0.8),init=inits)
+# modPodcount_claims10 <- stan(file='Seed model claims 1/seedModel_claims10.stan',data=datalist,
+#                             iter=100,chains=4,control=list(adapt_delta=0.8),init=inits)
+# modPodcount_claims11 <- stan(file='Seed model claims 1/seedModel_claims11.stan',data=datalist,
+#                             iter=100,chains=4,control=list(adapt_delta=0.8),init=inits)
+# modPodcount_claims12 <- stan(file='Seed model claims 1/seedModel_claims12.stan',data=datalist,
+#                             iter=100,chains=4,control=list(adapt_delta=0.8),init=inits)
+# modPodcount_claims13 <- stan(file='Seed model claims 1/seedModel_claims13.stan',data=datalist,
+#                             iter=100,chains=4,control=list(adapt_delta=0.8),init=inits)
+# modPodcount_claims14 <- stan(file='Seed model claims 1/seedModel_claims14.stan',data=datalist,
+#                             iter=100,chains=4,control=list(adapt_delta=0.8),init=inits)
+# modPodcount_claims15 <- stan(file='Seed model claims 1/seedModel_claims15.stan',data=datalist,
+#                              iter=100,chains=4,control=list(adapt_delta=0.8),init=inits)
+# modPodcount_claims16 <- stan(file='Seed model claims 1/seedModel_claims16.stan',data=datalist,
+#                              iter=100,chains=4,control=list(adapt_delta=0.8),init=inits)
+# modPodcount_claims17 <- stan(file='Seed model claims 1/seedModel_claims17.stan',data=datalist,
+#                              iter=100,chains=4,control=list(adapt_delta=0.8),init=inits)
+# modPodcount_claims18 <- stan(file='Seed model claims 1/seedModel_claims18.stan',data=datalist,
+#                              iter=100,chains=4,control=list(adapt_delta=0.8),init=inits)
+# modPodcount_claims19 <- stan(file='Seed model claims 1/seedModel_claims19.stan',data=datalist,
+#                              iter=100,chains=4,control=list(adapt_delta=0.8),init=inits)
+# modPodcount_claims20 <- stan(file='Seed model claims 1/seedModel_claims20.stan',data=datalist,
+#                              iter=150,chains=4,control=list(adapt_delta=0.8),init=inits)
+modPodcount_claims21 <- stan(file='Seed model claims 1/seedModel_claims21.stan',data=datalist,
+                             iter=100,chains=3,control=list(adapt_delta=0.8),init=inits)
+modPodcount_claims22 <- stan(file='Seed model claims 1/seedModel_claims22.stan',data=datalist,
+                             iter=150,chains=4,control=list(adapt_delta=0.8),init=inits)
+modPodcount_claims23 <- stan(file='Seed model claims 1/seedModel_claims23.stan',data=datalist,
+                             iter=150,chains=4,control=list(adapt_delta=0.8),init=inits)
+modPodcount_claims24 <- stan(file='Seed model claims 1/seedModel_claims24.stan',data=datalist,
+                             iter=150,chains=4,control=list(adapt_delta=0.8),init=inits)
+modPodcount_claims25 <- stan(file='Seed model claims 1/seedModel_claims25.stan',data=datalist,
+                             iter=150,chains=4,control=list(adapt_delta=0.8),init=inits)
+modPodcount_claims26 <- stan(file='Seed model claims 1/seedModel_claims26.stan',data=datalist,
+                             iter=150,chains=4,control=list(adapt_delta=0.8),init=inits)
+modPodcount_claims27 <- stan(file='Seed model claims 1/seedModel_claims27.stan',data=datalist,
+                             iter=150,chains=4,control=list(adapt_delta=0.8),init=inits)
+modPodcount_claims28 <- stan(file='Seed model claims 1/seedModel_claims28.stan',data=datalist,
+                             iter=150,chains=4,control=list(adapt_delta=0.8),init=inits)
+
 
 # save(modPodcount_claims4,modPodcount_claims5,modPodcount_claims6,modPodcount_claims7,modPodcount_claims8,file='tempClaims.Rdata')
 
-print(modPodcount_claims1,pars=pars)
-traceplot(modPodcount_claims6,pars=pars)
-traceplot(modPodcount_claims6,pars=c(pars,'slopeLbeeDistPol'))
-claims <- extract(modPodcount_claims1)
-# min(sum(claims[[1]]>0)/length(claims[[1]]),
-#     sum(claims[[1]]<0)/length(claims[[1]])) #0 overlap
+print(modPodcount_claims21,pars=pars)
+traceplot(modPodcount_claims21,pars=c(pars,'slopeCentFlwSurv'))
+claims <- extract(modPodcount_claims21)
 2*(1-pnorm(abs(mean(claims[[1]])/sd(claims[[1]])),0,1)) #p-val
+plot(claims$flwSurv_resid,claims$predFlwSurv_resid) #Posterior predictive checks. Beta-binomial better than binomial, but still not the best
+abline(0,1)
 
 
-
-
-
-#Back to full model
-save(modPodcount_seed,file='modPodcount_seed.Rdata')
+# #Back to full model
+# save(modPodcount_seed,file='modPodcount_seed.Rdata')
 # load('modPodcount_seed.Rdata')
 pars=c('intSize','sigmaPlSize_field','sigmaPlSize_plot','sigmaPlSize')
 #Bad traces for sigmaPlot. 
@@ -1133,14 +1174,14 @@ pars=c('intVisitHbee','slopeHbeeDistHbee','slopeLbeeDistHbee','slopeCentHbee','s
 pars=c('intVisitLbee','slopeHbeeDistLbee','slopeLbeeDistLbee','slopeCentLbee','slopeFBayLbee', #Lbee vis
        'slopeStocking','slopeCentHbeeDistLbee','slopeStockingHbeeDistLbee','sigmaLbeeVisField',
        'visitLbeePhi')
-pars=c('intPol','slopeHbeePol','slopeLbeePol','pollenPhi',
+pars=c('intPol','slopeHbeePol','slopeLbeePol','pollenPhi', #Pollen
        'sigmaPolField','sigmaPolPlot')
 pars=c('intFlwSurv','slopePolSurv','slopePlSizeSurv', #Flower survival
-       'sigmaFlwSurv_field','sigmaFlwSurv_plot')
-pars=c('intSeedCount','slopePolSeedCount','slopePlSizeCount',
+       'sigmaFlwSurv_field','sigmaFlwSurv_plot','podCountPhi')
+pars=c('intSeedCount','slopePolSeedCount','slopePlSizeCount', #Seeds per pod
        'seedCountPhi','sigmaSeedCount_field','sigmaSeedCount_plot',
        'sigmaSeedCount_plant')
-pars=c('intSeedWeight','slopePolSeedWeight','slopeSeedCount',
+pars=c('intSeedWeight','slopePolSeedWeight','slopeSeedCount', #Weight per seed
        'slopePlSizeWeight','sigmaSeedWeight','sigmaSeedWeight_field',
        'sigmaSeedWeight_plot','sigmaSeedWeight_plant')
 # stan_dens(modPodcount_seed,pars=pars)

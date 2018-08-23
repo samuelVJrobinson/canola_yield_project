@@ -232,7 +232,7 @@ model {
 			
 	// Priors	
 	//Claim
-	slopeHbeeDistSeedCount ~ normal(0,1);
+	slopeLbeeDistSeedCount ~ normal(0,1);
 	
 	// Hbee Visitation - informative priors
 	intVisitHbee ~ normal(2.5,1); //Intercept	
