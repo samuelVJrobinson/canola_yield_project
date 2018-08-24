@@ -139,6 +139,7 @@ parameters {
 	real<lower=0> sigmaFlwSurv_field; //SD of field random intercepts
 	vector[Nfield] intFlwSurv_field; //field-level random intercepts
 	vector[Nplot] intFlwSurv_plot; //plot-level random intercepts
+	real<lower=0> flwSurvTheta; //Dispersion parameter for beta-binomial
 	
 	//Seed count
 	real intSeedCount; //Intercept	
@@ -264,7 +265,7 @@ model {
 	}		
 	lbeeVis_all ~ neg_binomial_2_log(visitMu_lbee,visitLbeePhi); //Lbee visitation rate
 	pollenCount ~ neg_binomial_2_log(pollenMu,pollenPhi); //Pollination rate	
-	podCount ~ binomial_logit(flwCount,flwSurv); //Flower survival
+	podCount ~ beta_binomial(flwCount,inv_logit(flwSurv)*flwSurvTheta,(1-inv_logit(flwSurv))*flwSurvTheta); //Flower survival
 	seedCount ~ neg_binomial_2_log(seedCountMu,seedCountPhi); //Seed count per pod
 	logSeedMass ~ normal(seedWeightMu,sigmaSeedWeight); //Weight per seed
 	plantSize ~ normal(plSizeMu,sigmaPlSize); //Plant size
@@ -315,6 +316,7 @@ model {
 	sigmaFlwSurv_plot ~ gamma(5,10); //SD of plot random effect	
 	intFlwSurv_field ~ normal(0,sigmaFlwSurv_field); //field-level random intercepts
 	intFlwSurv_plot ~ normal(0,sigmaFlwSurv_plot); //plot-level random intercepts			
+	flwSurvTheta ~ gamma(27,1); //Dispersion parameter for beta-binomial (phi = (1-theta)/theta)	
 	
 	// Seed count 
 	intSeedCount ~ normal(2.7,1); //Intercept	
@@ -351,14 +353,23 @@ model {
 }
 
 generated quantities{
-	vector[Nplant_obs] predFlwSurv_all; //Predicted pod survival (proportion)
+	real predFlwSurv_all[Nplant_obs]; //Predicted pod survival (proportion)
 	real flwSurv_resid=0; //Residual of hbeeVis
 	real predFlwSurv_resid=0; //Residual of generated hbeeVis
 	
-	for(i in 1:Nplant_obs){		
+	for(i in 1:Nplant_obs){
+		real actualProp; //Actual proportion of successful flowers
+		real predProp;
+		real propSurv = inv_logit(flwSurv[i]);
+		
+		actualProp = podCount[i];
+		actualProp = actualProp/flwCount[i];		
+		
 		//Predicted flower survival (proportion)		
-		flwSurv_resid=flwSurv_resid+fabs(inv_logit(flwSurv[i])-podCount[i]/flwCount[i]); //Residual for actual value
-		predFlwSurv_all[i] = binomial_rng(flwCount[i],inv_logit(flwSurv[i]))/flwCount[i]; //Predicted value drawn from binomial distribution		
-		predFlwSurv_resid=predFlwSurv_resid+fabs(inv_logit(flwSurv[i])-predFlwSurv_all[i]); //Residual for predicted value		
+		flwSurv_resid=flwSurv_resid+fabs(inv_logit(flwSurv[i])-actualProp); //Residual for actual value
+		predFlwSurv_all[i] = beta_binomial_rng(flwCount[i],propSurv*flwSurvTheta,(1-propSurv)*flwSurvTheta); //Predicted value drawn from binomial distribution
+		predProp = predFlwSurv_all[i];
+		predProp = predProp/flwCount[i];		
+		predFlwSurv_resid=predFlwSurv_resid+fabs(inv_logit(flwSurv[i])-predProp); //Residual for predicted value		
 	}
 }

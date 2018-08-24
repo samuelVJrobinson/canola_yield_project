@@ -139,7 +139,7 @@ parameters {
 	real<lower=0> sigmaFlwSurv_field; //SD of field random intercepts
 	vector[Nfield] intFlwSurv_field; //field-level random intercepts
 	vector[Nplot] intFlwSurv_plot; //plot-level random intercepts
-	real<lower=0> podCountPhi; //Dispersion parameter for beta-binomial
+	real<lower=0> flwSurvTheta; //Dispersion parameter for beta-binomial
 	
 	//Seed count
 	real intSeedCount; //Intercept	
@@ -265,8 +265,7 @@ model {
 	}		
 	lbeeVis_all ~ neg_binomial_2_log(visitMu_lbee,visitLbeePhi); //Lbee visitation rate
 	pollenCount ~ neg_binomial_2_log(pollenMu,pollenPhi); //Pollination rate	
-	// podCount ~ binomial_logit(flwCount,flwSurv); //Flower survival
-	podCount ~ beta_binomial(flwCount,inv_logit(flwSurv)*podCountPhi,(1-inv_logit(flwSurv))*podCountPhi); //Flower survival
+	podCount ~ beta_binomial(flwCount,inv_logit(flwSurv)*flwSurvTheta,(1-inv_logit(flwSurv))*flwSurvTheta); //Flower survival
 	seedCount ~ neg_binomial_2_log(seedCountMu,seedCountPhi); //Seed count per pod
 	logSeedMass ~ normal(seedWeightMu,sigmaSeedWeight); //Weight per seed
 	plantSize ~ normal(plSizeMu,sigmaPlSize); //Plant size
@@ -317,7 +316,7 @@ model {
 	sigmaFlwSurv_plot ~ gamma(5,10); //SD of plot random effect	
 	intFlwSurv_field ~ normal(0,sigmaFlwSurv_field); //field-level random intercepts
 	intFlwSurv_plot ~ normal(0,sigmaFlwSurv_plot); //plot-level random intercepts			
-	podCountPhi ~ gamma(27,1); //Dispersion parameter for beta-binomial (phi = (1-theta)/theta)	
+	flwSurvTheta ~ gamma(27,1); //Dispersion parameter for beta-binomial (theta = (1-phi)/phi)	
 	
 	// Seed count 
 	intSeedCount ~ normal(2.7,1); //Intercept	
@@ -361,14 +360,14 @@ generated quantities{
 	for(i in 1:Nplant_obs){
 		real actualProp; //Actual proportion of successful flowers
 		real predProp;
-		real<lower=0,upper=1> propSurv = inv_logit(flwSurv[i]);
+		real propSurv = inv_logit(flwSurv[i]);
 		
 		actualProp = podCount[i];
 		actualProp = actualProp/flwCount[i];		
 		
 		//Predicted flower survival (proportion)		
 		flwSurv_resid=flwSurv_resid+fabs(inv_logit(flwSurv[i])-actualProp); //Residual for actual value
-		predFlwSurv_all[i] = beta_binomial_rng(flwCount[i],propSurv*podCountPhi,(1-propSurv)*podCountPhi); //Predicted value drawn from binomial distribution
+		predFlwSurv_all[i] = beta_binomial_rng(flwCount[i],propSurv*flwSurvTheta,(1-propSurv)*flwSurvTheta); //Predicted value drawn from binomial distribution
 		predProp = predFlwSurv_all[i];
 		predProp = predProp/flwCount[i];		
 		predFlwSurv_resid=predFlwSurv_resid+fabs(inv_logit(flwSurv[i])-predProp); //Residual for predicted value		

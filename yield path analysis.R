@@ -1136,8 +1136,8 @@ inits <- function(){with(datalist,list(
 #                              iter=100,chains=4,control=list(adapt_delta=0.8),init=inits)
 # modPodcount_claims20 <- stan(file='Seed model claims 1/seedModel_claims20.stan',data=datalist,
 #                              iter=150,chains=4,control=list(adapt_delta=0.8),init=inits)
-modPodcount_claims21 <- stan(file='Seed model claims 1/seedModel_claims21.stan',data=datalist,
-                             iter=100,chains=3,control=list(adapt_delta=0.8),init=inits)
+# modPodcount_claims21 <- stan(file='Seed model claims 1/seedModel_claims21.stan',data=datalist,
+#                              iter=150,chains=4,control=list(adapt_delta=0.8),init=inits)
 modPodcount_claims22 <- stan(file='Seed model claims 1/seedModel_claims22.stan',data=datalist,
                              iter=150,chains=4,control=list(adapt_delta=0.8),init=inits)
 modPodcount_claims23 <- stan(file='Seed model claims 1/seedModel_claims23.stan',data=datalist,
@@ -1157,11 +1157,10 @@ modPodcount_claims28 <- stan(file='Seed model claims 1/seedModel_claims28.stan',
 # save(modPodcount_claims4,modPodcount_claims5,modPodcount_claims6,modPodcount_claims7,modPodcount_claims8,file='tempClaims.Rdata')
 
 print(modPodcount_claims21,pars=pars)
-traceplot(modPodcount_claims21,pars=c(pars,'slopeCentFlwSurv'))
-claims <- extract(modPodcount_claims21)
+traceplot(modPodcount_claims28,pars=c(pars,'slopeStockingFlwSurv'))
+claims <- extract(modPodcount_claims28)
 2*(1-pnorm(abs(mean(claims[[1]])/sd(claims[[1]])),0,1)) #p-val
-plot(claims$flwSurv_resid,claims$predFlwSurv_resid) #Posterior predictive checks. Beta-binomial better than binomial, but still not the best
-abline(0,1)
+with(claims,plot(flwSurv_resid,predFlwSurv_resid));abline(0,1) #Posterior predictive checks. Beta-binomial much better than binomial. Predicted slightly higher, but looks OK for now.
 
 
 # #Back to full model
@@ -1177,7 +1176,7 @@ pars=c('intVisitLbee','slopeHbeeDistLbee','slopeLbeeDistLbee','slopeCentLbee','s
 pars=c('intPol','slopeHbeePol','slopeLbeePol','pollenPhi', #Pollen
        'sigmaPolField','sigmaPolPlot')
 pars=c('intFlwSurv','slopePolSurv','slopePlSizeSurv', #Flower survival
-       'sigmaFlwSurv_field','sigmaFlwSurv_plot','podCountPhi')
+       'sigmaFlwSurv_field','sigmaFlwSurv_plot','flwSurvTheta')
 pars=c('intSeedCount','slopePolSeedCount','slopePlSizeCount', #Seeds per pod
        'seedCountPhi','sigmaSeedCount_field','sigmaSeedCount_plot',
        'sigmaSeedCount_plant')
