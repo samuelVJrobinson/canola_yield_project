@@ -877,7 +877,7 @@ datalistPlot <- with(surveyAllSeed,list( #Plot-level measurements
   isFBay=Bay=='M', #Is plot from M bay?
   totalTime=TotalTime/10, #Total time (mins/10)
   plotList=paste(Field,Distance,Bay,EdgeCent),
-  flDens=FlDens, #Flower count/m2
+  flDens=FlDens*4, #Flower count/m2
   plDens=PlDens
 )) 
 datalistPlot$totalTime[is.na(datalistPlot$totalTime)] <- 0.5 #Fix one missing time point
@@ -1072,7 +1072,8 @@ inits <- function(){with(datalist,list(
   #Lbees
   intVisitLbee=2,slopeDistLbee=-0.02,
   slopeHbeeDistLbee=0,slopeLbeeDistLbee=0,slopeCentHbeeDistLbee=0,
-  slopeCentLbee=1,slopeFBayLbee=0.1,sigmaLbeeVisField=0.8,visitLbeePhi=0.5, 
+  slopeCentLbee=1,slopeFBayLbee=0.1,slopePlsizeLbee=1.5,
+  sigmaLbeeVisField=0.8,visitLbeePhi=0.5, 
   intVisitLbee_field=rep(0,Nfield+Nfield_extra),zeroVisLbeeTheta=0.1,
   #Pollen
   intPol=2,slopeHbeePol=0,slopeLbeePol=0.01,pollenPhi=1, 
@@ -1095,10 +1096,6 @@ inits <- function(){with(datalist,list(
   sigmaPlSize_plot=0.5,sigmaPlSize=0.5,
   intSize_field=rep(0,Nfield),intSize_plot=rep(0,Nplot)
 )}
-
-# #Full model
-# modPodcount_seed <- stan(file='visitation_pollen_model_seed.stan',data=datalist,iter=500,chains=3,
-#                    control=list(adapt_delta=0.8),init=inits)
 
 #Models for independence claims
 # modPodcount_claims1 <- stan(file='Seed model claims 1/seedModel_claims1.stan',data=datalist,iter=500,chains=3,
@@ -1143,22 +1140,20 @@ inits <- function(){with(datalist,list(
 #                              iter=150,chains=4,control=list(adapt_delta=0.8),init=inits)
 # modPodcount_claims21 <- stan(file='Seed model claims 1/seedModel_claims21.stan',data=datalist,
 #                              iter=150,chains=4,control=list(adapt_delta=0.8),init=inits)
-modPodcount_claims22 <- stan(file='Seed model claims 1/seedModel_claims22.stan',data=datalist,
-                             iter=150,chains=4,control=list(adapt_delta=0.8),init=inits)
-modPodcount_claims23 <- stan(file='Seed model claims 1/seedModel_claims23.stan',data=datalist,
-                             iter=150,chains=4,control=list(adapt_delta=0.8),init=inits)
-modPodcount_claims24 <- stan(file='Seed model claims 1/seedModel_claims24.stan',data=datalist,
-                             iter=150,chains=4,control=list(adapt_delta=0.8),init=inits)
-modPodcount_claims25 <- stan(file='Seed model claims 1/seedModel_claims25.stan',data=datalist,
-                             iter=150,chains=4,control=list(adapt_delta=0.8),init=inits)
-modPodcount_claims26 <- stan(file='Seed model claims 1/seedModel_claims26.stan',data=datalist,
-                             iter=150,chains=4,control=list(adapt_delta=0.8),init=inits)
-modPodcount_claims27 <- stan(file='Seed model claims 1/seedModel_claims27.stan',data=datalist,
-                             iter=150,chains=4,control=list(adapt_delta=0.8),init=inits)
-modPodcount_claims28 <- stan(file='Seed model claims 1/seedModel_claims28.stan',data=datalist,
-                             iter=150,chains=4,control=list(adapt_delta=0.8),init=inits)
-
-
+# modPodcount_claims22 <- stan(file='Seed model claims 1/seedModel_claims22.stan',data=datalist,
+#                              iter=150,chains=4,control=list(adapt_delta=0.8),init=inits)
+# modPodcount_claims23 <- stan(file='Seed model claims 1/seedModel_claims23.stan',data=datalist,
+#                              iter=150,chains=4,control=list(adapt_delta=0.8),init=inits)
+# modPodcount_claims24 <- stan(file='Seed model claims 1/seedModel_claims24.stan',data=datalist,
+#                              iter=150,chains=4,control=list(adapt_delta=0.8),init=inits)
+# modPodcount_claims25 <- stan(file='Seed model claims 1/seedModel_claims25.stan',data=datalist,
+#                              iter=150,chains=4,control=list(adapt_delta=0.8),init=inits)
+# modPodcount_claims26 <- stan(file='Seed model claims 1/seedModel_claims26.stan',data=datalist,
+#                              iter=150,chains=4,control=list(adapt_delta=0.8),init=inits)
+# modPodcount_claims27 <- stan(file='Seed model claims 1/seedModel_claims27.stan',data=datalist,
+#                              iter=150,chains=4,control=list(adapt_delta=0.8),init=inits)
+# modPodcount_claims28 <- stan(file='Seed model claims 1/seedModel_claims28.stan',data=datalist,
+#                              iter=150,chains=4,control=list(adapt_delta=0.8),init=inits)
 # save(modPodcount_claims4,modPodcount_claims5,modPodcount_claims6,modPodcount_claims7,modPodcount_claims8,file='tempClaims.Rdata')
 
 print(modPodcount_claims21,pars=pars)
@@ -1167,17 +1162,18 @@ claims <- extract(modPodcount_claims28)
 2*(1-pnorm(abs(mean(claims[[1]])/sd(claims[[1]])),0,1)) #p-val
 with(claims,plot(flwSurv_resid,predFlwSurv_resid));abline(0,1) #Posterior predictive checks. Beta-binomial much better than binomial. Predicted slightly higher, but looks OK for now.
 
+#Full model
+modPodcount_seed <- stan(file='visitation_pollen_model_seed.stan',data=datalist,iter=300,chains=3,
+                         control=list(adapt_delta=0.8),init=inits)
 
-# #Back to full model
 # save(modPodcount_seed,file='modPodcount_seed.Rdata')
 # load('modPodcount_seed.Rdata')
-pars=c('intSize','sigmaPlSize_field','sigmaPlSize_plot','sigmaPlSize')
-#Bad traces for sigmaPlot. 
+
 pars=c('intVisitHbee','slopeHbeeDistHbee','slopeLbeeDistHbee','slopeCentHbee','slopeFBayHbee', #Hbee vis
   'sigmaHbeeVisField','visitHbeePhi','zeroVisHbeeTheta')
 pars=c('intVisitLbee','slopeHbeeDistLbee','slopeLbeeDistLbee','slopeCentLbee','slopeFBayLbee', #Lbee vis
-       'slopeStocking','slopeCentHbeeDistLbee','slopeStockingHbeeDistLbee','sigmaLbeeVisField',
-       'visitLbeePhi')
+       'slopeStocking','slopeCentHbeeDistLbee','slopeStockingHbeeDistLbee','slopePlsizeLbee',
+       'sigmaLbeeVisField','visitLbeePhi')
 pars=c('intPol','slopeHbeePol','slopeLbeePol','pollenPhi', #Pollen
        'sigmaPolField','sigmaPolPlot')
 pars=c('intFlwSurv','slopePolSurv','slopePlSizeSurv', #Flower survival
@@ -1188,12 +1184,19 @@ pars=c('intSeedCount','slopePolSeedCount','slopePlSizeCount', #Seeds per pod
 pars=c('intSeedWeight','slopePolSeedWeight','slopeSeedCount', #Weight per seed
        'slopePlSizeWeight','sigmaSeedWeight','sigmaSeedWeight_field',
        'sigmaSeedWeight_plot','sigmaSeedWeight_plant')
+pars=c('intSize','slopeHbeeDistPlSize','
+       sigmaPlSize_field','sigmaPlSize_plot','sigmaPlSize') #Plant size
 # stan_dens(modPodcount_seed,pars=pars)
-traceplot(modPodcount_seed,pars=pars)
+traceplot(modPodcount_seed,pars=pars)+geom_hline(yintercept=0,linetype='dashed')
 
 mod3 <- extract(modPodcount_seed)
 #Extract effect size and whether posterior overlaps zero
 cbind(round(sapply(mod3,function(x) effSize(x)),2),sapply(mod3,function(x) overlap(x)))
+
+#plant size
+with(mod3,plot(plSize_resid,predPlSize_resid)); abline(0,1); #PP plot - good
+plot(datalist$plantSize_obs,apply(mod3$predPlSize,2,median)[datalist$obs_ind], #Predicted vs Actual - good
+     ylab='Predicted plant size',xlab='Actual plant size'); abline(0,1); 
 
 #hbee visits
 data.frame(actual=with(datalist,c(hbeeVis,hbeeVis_extra)),predicted=apply(mod3$predHbeeVis_all,2,median)) %>%
@@ -1206,13 +1209,20 @@ data.frame(actual=apply(mod3$hbeeVis_resid,1,median),predicted=apply(mod3$predHb
 
 #lbee visits
 data.frame(actual=with(datalist,c(lbeeVis,lbeeVis_extra)),predicted=apply(mod3$predLbeeVis_all,2,median)) %>% 
-  ggplot(aes(actual,predicted))+geom_point()+geom_abline(slope=1,intercept=0) #Predicted values are fairly small
+  ggplot(aes(actual,predicted))+geom_point()+geom_abline(slope=1,intercept=0) #Predicted vs actual - OK
 
-#Residual variance using negbin (ZI or regular) is good, but Poisson (ZI or regular) is far worse, and traces for intercept are bad. Sticking with regular NB for now.
+#PP plots - OK, but not good
+# Negbin (ZI or regular) is not good, but Poisson (ZI or regular) is far worse, and traces for intercept are bad. Sticking with regular NB for now.
 data.frame(actual=mod3$lbeeVis_resid,predicted=mod3$predLbeeVis_resid) %>% 
-  ggplot(aes(actual,predicted))+geom_point()+geom_abline(slope=1,intercept=0) 
+  ggplot(aes(actual,predicted))+geom_point()+geom_abline(slope=1,intercept=0)
 
-with(datalist,data.frame())
+data.frame(actual=mod3$lbeeVis_resid,predicted=mod3$predLbeeVis_resid) %>% gather('Resid_type','meas',1:2) %>% 
+  ggplot(aes(meas))+geom_histogram(aes(fill=Resid_type))+labs(x='Summed residual')
+
+
+
+
+
 
 intVisitLbee + intVisitLbee_field[plotIndex_all[i]] + slopeLbeeDistLbee*log(lbee_dist_all[i]) +
   slopeHbeeDistLbee*log(hbee_dist_all[i]) + slopeCentLbee*isCent_all[i] + slopeCentHbeeDistLbee*isCent_all[i]*log(hbee_dist_all[i]) + 
