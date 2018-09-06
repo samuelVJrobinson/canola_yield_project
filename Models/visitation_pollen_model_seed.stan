@@ -13,6 +13,7 @@ data {
 	int isCent[Nplot]; //Is plot in center of bay?
 	int isFBay[Nplot]; //Is plot in female bay?
 	vector[Nplot] totalTime; //Minutes spent observing/10 
+	vector[Nplot] flDens; //Flower density (flowers/m2)
 	//Extra plots/fields from Riley (visitation data)
 	int Nfield_extra;	
 	int Nplot_extra; 
@@ -25,6 +26,7 @@ data {
 	int isCent_extra[Nplot_extra];
 	int isFBay_extra[Nplot_extra];
 	vector[Nplot_extra] totalTime_extra; 
+	vector[Nplot_extra] flDens_extra;
 	
 	//Flower level
 	int Nflw; //Number of flowers (stigmas)

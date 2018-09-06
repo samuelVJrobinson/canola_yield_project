@@ -614,16 +614,17 @@ surveyAllSeed <- plantsAllSeed %>% #Joins plot-level plant size
 #Scale data and choose only columns of interest
 temp <- surveyAllSeed %>% ungroup() %>% 
   mutate(Stocking=ifelse(Treatment=='Double tent','Half','Full')) %>% 
-  dplyr::select(Field,Distance,minDist,Bay,EdgeCent,Stocking,TotalTime,lbee,hbee,predPol:predPodSuccess) %>% 
+  dplyr::select(Field,Distance,minDist,Bay,EdgeCent,Stocking,TotalTime,FlDens,lbee,hbee,predPol:predPodSuccess) %>% 
   mutate(TotalTime=ifelse(is.na(TotalTime),5,TotalTime)) %>% 
   mutate(logDist=scale(log(Distance)),logMinDist=scale(log(minDist)),logTime=log(TotalTime)) %>%  #Scales predictors
-  mutate_at(vars(predPol:predPodSuccess),funs('scale')) %>% #Scales plot-level terms
-  filter(!is.na(predPlSize),!is.na(predSeedCount))
+  mutate(sqrtFlDens=sqrt(FlDens)) %>% 
+  mutate_at(vars(sqrtFlDens,predPol:predPodSuccess),funs('scale')) %>% #Scales plot-level terms
+  filter(!is.na(predPlSize),!is.na(predSeedCount),!is.na(FlDens))
 
 visMod1 <- psem( #Original model
-  glmer.nb(lbee~logMinDist+Bay+EdgeCent+Stocking+offset(logTime)+(1|Field),
+  glmer.nb(lbee~sqrtFlDens+logMinDist+Bay+EdgeCent+Stocking+offset(logTime)+(1|Field),
            data=temp,control=glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=1e5))), #lbee visits
-  glmer.nb(hbee~logMinDist+logDist+Bay+EdgeCent+Stocking+offset(logTime)+(1|Field),
+  glmer.nb(hbee~sqrtFlDens+logMinDist+logDist+Bay+EdgeCent+Stocking+offset(logTime)+(1|Field),
            data=temp,control=glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=1e5))), #hbee visits
   lmer(predPol~lbee+hbee+(1|Field),data=temp), #log Pollen counts
   lmer(predSeedCount~predPol+predPlSize+(1|Field),data=temp), #log Seed counts
@@ -634,7 +635,8 @@ visMod1 <- psem( #Original model
 # lbeeVis~hbeeDist*cent+lbeeDist+lbeeStocking*hbeeDist+Fbay
 
 visMod2 <- psem( #Updated model
-  glmer.nb(lbee~logDist*EdgeCent+logMinDist+Stocking*logDist+Bay+offset(logTime)+(1|Field),
+  lmer(sqrtFlDens~logDist+logMinDist+(1|Field),data=temp),
+  glmer.nb(lbee~sqrtFlDens+logDist*EdgeCent+logMinDist+Stocking*logDist+Bay+offset(logTime)+(1|Field),
         data=temp,control=glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=1e5))), #lbee visits
   glmer.nb(hbee~logMinDist+logDist+Bay+EdgeCent+offset(logTime)+(1|Field),
            data=temp,control=glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=1e5))), #hbee visits
@@ -874,7 +876,9 @@ datalistPlot <- with(surveyAllSeed,list( #Plot-level measurements
   isCent=EdgeCent=='Center', #Is plot from center?
   isFBay=Bay=='M', #Is plot from M bay?
   totalTime=TotalTime/10, #Total time (mins/10)
-  plotList=paste(Field,Distance,Bay,EdgeCent)
+  plotList=paste(Field,Distance,Bay,EdgeCent),
+  flDens=FlDens, #Flower count/m2
+  plDens=PlDens
 )) 
 datalistPlot$totalTime[is.na(datalistPlot$totalTime)] <- 0.5 #Fix one missing time point
 #Join in extra data from Riley
@@ -888,7 +892,8 @@ datalistPlot <- c(datalistPlot,with(rileyExtra,list(
   lbeeVis_extra=lbee_vis,
   isCent_extra=rep(FALSE,length(ldist)), #Riley's plots were at edge of bay
   isFBay_extra=Bay=='Male', #Is plot from M bay?
-  totalTime_extra=rep(10,length(ldist))/10 #Riley used 10 mins for everything
+  totalTime_extra=rep(10,length(ldist))/10, #Riley used 10 mins for everything
+  flDens_extra=flDens #Flower count
 )))
 datalistFlw <- with(pollenAllSeed,list( #Pollen samples
   Nflw=length(Pollen), #Number of pollen samples
@@ -965,7 +970,7 @@ str(datalist)
 # with(datalist,plot(c(lbee_dist,lbee_dist_extra),c(hbeeVis/totalTime,hbeeVis_extra/totalTime_extra),pch=19,cex=0.5,xlab='Distance from lbee shelter (m)',ylab='Hbee visits/10 mins',xlim=c(0,50))) #Lots of zeros
 # par(mfrow=c(1,1))
 
-#Playing around with fits for honeybee visitation
+# #Playing around with fits for honeybee visitation
 # library(lme4)
 # temp <- with(datalist,{
 #   data.frame(hbeeVis=c(hbeeVis,hbeeVis_extra),hbeeDist=c(hbee_dist,hbee_dist_extra),
@@ -974,7 +979,7 @@ str(datalist)
 #              lbeeStocking=c(lbeeStocking,lbeeStocking_extra),
 #              totalTime=c(totalTime,totalTime_extra))}) %>%
 #   mutate(hbeeDist=log(hbeeDist)-mean(log(hbeeDist)),lbeeDist=log(lbeeDist)-mean(log(lbeeDist)))
-# hbeeMod <-glmer.nb(hbeeVis~offset(log(totalTime))+hbeeDist+lbeeDist+cent+Fbay+lbeeStocking+(1|Field),data=temp)
+# hbeeMod <-glmer.nb(hbeeVis~offset(log(totalTime))+hbeeDist*lbeeDist+cent+Fbay+lbeeStocking+(1|Field),data=temp)
 # summary(hbeeMod)
 # AIC(hbeeMod)
 # #Marginal plots
@@ -997,8 +1002,8 @@ str(datalist)
 #   ggplot(aes(x=hbeeDist,col=cent))+geom_point(aes(y=exp(pred+res)))+geom_line(aes(y=exp(pred)))+
 #   labs(x='hbee Distance',y='Visitation rate')+xlim(0,400)+
 #   scale_colour_manual(values=c('red','blue'))
-# 
-# 
+
+
 # #Same for leafcutter visitation
 # temp <- with(datalist,{
 #   data.frame(lbeeVis=c(lbeeVis,lbeeVis_extra),hbeeDist=c(hbee_dist,hbee_dist_extra),

@@ -76,13 +76,13 @@ rm(fields2015,fields2016)
 allSurvey=bind_rows(transmute(survey2015,Field,Treatment,Variety,Distance,minDist=minShelter,Bay,EdgeCent,EdgeDir,StartTime,
                               TotalTime=as.double(TotalTime,units='mins'),FlDens,
                               lbee=Leafbee,hbee=Honeybee,hbeePol,hbeeNec,otherBee=Otherbee,hFly=Hoverfly,
-                              AirTemp,WindSp=Wind,RH,Year),
+                              AirTemp,WindSp=Wind,RH,Year,PlDens),
                     transmute(survey2016,Field,Treatment,Variety,Distance,minDist,Bay,EdgeCent=Edge.Cent,EdgeDir,StartTime,
                               TotalTime=10,FlDens,
                               lbee=Leafcutterbee,hbee=HoneybeePollen+HoneybeeNectar,hbeePol=HoneybeePollen,
                               hbeeNec=HoneybeeNectar,
                               otherBee=Otherbee,hFly=Hoverfly,
-                              AirTemp=Temp,WindSp,RH,Year)) %>%
+                              AirTemp=Temp,WindSp,RH,Year,PlDens=Plants.m.2)) %>%
   mutate(EdgeCent=sub('Center','Cent',EdgeCent),EdgeCent=sub('Cent','Center',EdgeCent)) %>%
   mutate(Field=factor(Field),Variety=factor(Variety),EdgeCent=factor(EdgeCent))
 rm(survey2015,survey2016)
