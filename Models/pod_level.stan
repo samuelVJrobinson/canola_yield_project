@@ -1,3 +1,5 @@
+/* This chunk of code was written to experiment with creating a PDF for canola seed counts that would predict both pod success and seed count. Ultimately I think this is interesting but it takes way too long to run (>2hrs). Perhaps if the math was simplified or optimized somehow it could be better. R does an OK job at finding the ML estimate, but perhaps this is too complicated for a Bayesian framework. */
+
 functions {
 
 	//Returns log probability for seeds 1:maxOvNum, given:

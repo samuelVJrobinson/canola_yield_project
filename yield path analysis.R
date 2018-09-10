@@ -970,51 +970,51 @@ str(datalist)
 # with(datalist,plot(c(lbee_dist,lbee_dist_extra),c(hbeeVis/totalTime,hbeeVis_extra/totalTime_extra),pch=19,cex=0.5,xlab='Distance from lbee shelter (m)',ylab='Hbee visits/10 mins',xlim=c(0,50))) #Lots of zeros
 # par(mfrow=c(1,1))
 
-#Playing around with fits for honeybee visitation
-library(lme4)
-temp <- with(datalist,{
-  data.frame(hbeeVis=c(hbeeVis,hbeeVis_extra),hbeeDist=c(hbee_dist,hbee_dist_extra),
-             lbeeDist=c(lbee_dist,lbee_dist_extra),Field=factor(c(plotIndex,plotIndex_extra)),
-             cent=c(isCent,isCent_extra),Fbay=c(isFBay,isFBay_extra),
-             lbeeStocking=c(lbeeStocking,lbeeStocking_extra),
-             totalTime=c(totalTime,totalTime_extra))}) %>%
-  mutate(hbeeDist=log(hbeeDist)-mean(log(hbeeDist)),lbeeDist=log(lbeeDist)-mean(log(lbeeDist)))
-hbeeMod <-glmer.nb(hbeeVis~offset(log(totalTime))+hbeeDist*lbeeDist+cent+Fbay+lbeeStocking+(1|Field),data=temp)
-summary(hbeeMod)
-AIC(hbeeMod)
-#Marginal plots
-mm1 <- data.frame(model.matrix(hbeeMod))
-data.frame(model.matrix(hbeeMod)) %>% #Lbee dist
-  mutate_at(vars(-lbeeDist),funs(mean)) %>%
-  transmute(pred=as.vector(as.matrix(.) %*% unname(fixef(hbeeMod))),res=resid(hbeeMod),
-            lbeeDist=with(datalist,c(lbee_dist,lbee_dist_extra))) %>%
-  arrange(lbeeDist) %>%
-  ggplot(aes(x=lbeeDist))+geom_point(aes(y=exp(pred+res)))+geom_line(aes(y=exp(pred)),col='red')+
-  labs(x='lbee Distance',y='Visitation rate')+xlim(0,50)
-
-data.frame(model.matrix(hbeeMod)) %>% #hbee dist/bay center
-  mutate_at(vars(-hbeeDist,-centTRUE),funs(mean)) %>%
-  transmute(pred=as.vector(as.matrix(.) %*% unname(fixef(hbeeMod))),res=resid(hbeeMod),
-            hbeeDist=with(datalist,c(hbee_dist,hbee_dist_extra)),
-            cent=with(datalist,c(isCent,isCent_extra))) %>%
-  mutate(cent=factor(cent,labels=c('Edge','Center'))) %>%
-  arrange(cent,hbeeDist) %>%
-  ggplot(aes(x=hbeeDist,col=cent))+geom_point(aes(y=exp(pred+res)))+geom_line(aes(y=exp(pred)))+
-  labs(x='hbee Distance',y='Visitation rate')+xlim(0,400)+
-  scale_colour_manual(values=c('red','blue'))
-
-#Same for leafcutter visitation
-temp <- with(datalist,{
-  data.frame(lbeeVis=c(lbeeVis,lbeeVis_extra),hbeeDist=c(hbee_dist,hbee_dist_extra),
-             lbeeDist=c(lbee_dist,lbee_dist_extra),Field=factor(c(plotIndex,plotIndex_extra)),
-             cent=c(isCent,isCent_extra),Fbay=c(isFBay,isFBay_extra),
-             lbeeStocking=c(lbeeStocking,lbeeStocking_extra),
-             totalTime=c(totalTime,totalTime_extra))}) %>%
-  mutate(hbeeDist=log(hbeeDist)-mean(log(hbeeDist)),lbeeDist=log(lbeeDist)-mean(log(lbeeDist)))
-lbeeMod <- glmer.nb(lbeeVis~offset(log(totalTime))+hbeeDist*cent+lbeeDist+lbeeStocking+lbeeStocking:hbeeDist+Fbay+(1|Field),data=temp)
-summary(lbeeMod)
-par(mfrow=c(2,1));plot(fitted(lbeeMod),resid(lbeeMod));qqnorm(resid(lbeeMod));qqline(resid(lbeeMod));par(mfrow=c(1,1));
-AIC(lbeeMod)
+# #Playing around with fits for honeybee visitation
+# library(lme4)
+# temp <- with(datalist,{
+#   data.frame(hbeeVis=c(hbeeVis,hbeeVis_extra),hbeeDist=c(hbee_dist,hbee_dist_extra),
+#              lbeeDist=c(lbee_dist,lbee_dist_extra),Field=factor(c(plotIndex,plotIndex_extra)),
+#              cent=c(isCent,isCent_extra),Fbay=c(isFBay,isFBay_extra),
+#              lbeeStocking=c(lbeeStocking,lbeeStocking_extra),
+#              totalTime=c(totalTime,totalTime_extra))}) %>%
+#   mutate(hbeeDist=log(hbeeDist)-mean(log(hbeeDist)),lbeeDist=log(lbeeDist)-mean(log(lbeeDist)))
+# hbeeMod <-glmer.nb(hbeeVis~offset(log(totalTime))+hbeeDist*lbeeDist+cent+Fbay+lbeeStocking+(1|Field),data=temp)
+# summary(hbeeMod)
+# AIC(hbeeMod)
+# #Marginal plots
+# mm1 <- data.frame(model.matrix(hbeeMod))
+# data.frame(model.matrix(hbeeMod)) %>% #Lbee dist
+#   mutate_at(vars(-lbeeDist),funs(mean)) %>%
+#   transmute(pred=as.vector(as.matrix(.) %*% unname(fixef(hbeeMod))),res=resid(hbeeMod),
+#             lbeeDist=with(datalist,c(lbee_dist,lbee_dist_extra))) %>%
+#   arrange(lbeeDist) %>%
+#   ggplot(aes(x=lbeeDist))+geom_point(aes(y=exp(pred+res)))+geom_line(aes(y=exp(pred)),col='red')+
+#   labs(x='lbee Distance',y='Visitation rate')+xlim(0,50)
+# 
+# data.frame(model.matrix(hbeeMod)) %>% #hbee dist/bay center
+#   mutate_at(vars(-hbeeDist,-centTRUE),funs(mean)) %>%
+#   transmute(pred=as.vector(as.matrix(.) %*% unname(fixef(hbeeMod))),res=resid(hbeeMod),
+#             hbeeDist=with(datalist,c(hbee_dist,hbee_dist_extra)),
+#             cent=with(datalist,c(isCent,isCent_extra))) %>%
+#   mutate(cent=factor(cent,labels=c('Edge','Center'))) %>%
+#   arrange(cent,hbeeDist) %>%
+#   ggplot(aes(x=hbeeDist,col=cent))+geom_point(aes(y=exp(pred+res)))+geom_line(aes(y=exp(pred)))+
+#   labs(x='hbee Distance',y='Visitation rate')+xlim(0,400)+
+#   scale_colour_manual(values=c('red','blue'))
+# 
+# #Same for leafcutter visitation
+# temp <- with(datalist,{
+#   data.frame(lbeeVis=c(lbeeVis,lbeeVis_extra),hbeeDist=c(hbee_dist,hbee_dist_extra),
+#              lbeeDist=c(lbee_dist,lbee_dist_extra),Field=factor(c(plotIndex,plotIndex_extra)),
+#              cent=c(isCent,isCent_extra),Fbay=c(isFBay,isFBay_extra),
+#              lbeeStocking=c(lbeeStocking,lbeeStocking_extra),
+#              totalTime=c(totalTime,totalTime_extra))}) %>%
+#   mutate(hbeeDist=log(hbeeDist)-mean(log(hbeeDist)),lbeeDist=log(lbeeDist)-mean(log(lbeeDist)))
+# lbeeMod <- glmer.nb(lbeeVis~offset(log(totalTime))+hbeeDist*cent+lbeeDist+lbeeStocking+lbeeStocking:hbeeDist+Fbay+(1|Field),data=temp)
+# summary(lbeeMod)
+# par(mfrow=c(2,1));plot(fitted(lbeeMod),resid(lbeeMod));qqnorm(resid(lbeeMod));qqline(resid(lbeeMod));par(mfrow=c(1,1));
+# AIC(lbeeMod)
 # 
 # with(datalist,plot(c(hbee_dist,hbee_dist_extra),log(c(hbeeVis/totalTime,hbeeVis_extra/totalTime_extra)+0.5),pch=19,cex=0.5,xlab='Distance from hives (m)',ylab='Hbee visits/10 mins')) #Lots of zeros
 # lines(seq(0,800,10),predict(hbeeMod,newdata=data.frame(hbeeDist=seq(0,800,10)),interval='none'))
@@ -1076,10 +1076,9 @@ inits <- function(){with(datalist,list(
   slopeStocking=0,slopeStockingHbeeDistLbee=0,
   sigmaLbeeVisField=0.8,visitLbeePhi=0.5, 
   intVisitLbee_field=rep(0,Nfield+Nfield_extra),zeroVisLbeeTheta=0.1,
-  
   #Pollen
-  intPol=2,slopeHbeePol=0,slopeLbeePol=0.01,pollenPhi=1, 
-  sigmaPolField=0.5,sigmaPolPlot=0.5,
+  intPol=2,slopeHbeePol=0,slopeLbeePol=0.02,slopeCentPol=-0.5,slopeHbeeDistPol=-0.2, 
+  sigmaPolField=0.5,sigmaPolPlot=0.5,pollenPhi=0.75,
   intPol_field=rep(0,Nfield),intPol_plot=rep(0,Nplot),
   #Flower survival
   intFlwSurv=1,slopePolSurv=1,slopePlSizeSurv=1, sigmaFlwSurv_field=0.5, 
@@ -1157,28 +1156,27 @@ inits <- function(){with(datalist,list(
 # modPodcount_claims28 <- stan(file='Seed model claims 1/seedModel_claims28.stan',data=datalist,
 #                              iter=150,chains=4,control=list(adapt_delta=0.8),init=inits)
 # save(modPodcount_claims4,modPodcount_claims5,modPodcount_claims6,modPodcount_claims7,modPodcount_claims8,file='tempClaims.Rdata')
-
-print(modPodcount_claims21,pars=pars)
-traceplot(modPodcount_claims28,pars=c(pars,'slopeStockingFlwSurv'))
-claims <- extract(modPodcount_claims28)
-2*(1-pnorm(abs(mean(claims[[1]])/sd(claims[[1]])),0,1)) #p-val
-with(claims,plot(flwSurv_resid,predFlwSurv_resid));abline(0,1) #Posterior predictive checks. Beta-binomial much better than binomial. Predicted slightly higher, but looks OK for now.
+# 
+# print(modPodcount_claims21,pars=pars)
+# traceplot(modPodcount_claims28,pars=c(pars,'slopeStockingFlwSurv'))
+# claims <- extract(modPodcount_claims28)
+# 2*(1-pnorm(abs(mean(claims[[1]])/sd(claims[[1]])),0,1)) #p-val
+# with(claims,plot(flwSurv_resid,predFlwSurv_resid));abline(0,1) #Posterior predictive checks. Beta-binomial much better than binomial. Predicted slightly higher, but looks OK for now.
 
 #Full model
-modPodcount_seed <- stan(file='visitation_pollen_model_seed.stan',data=datalist,iter=300,chains=3,
+modPodcount_seed <- stan(file='visitation_pollen_model_seed.stan',data=datalist,iter=200,chains=3,
                          control=list(adapt_delta=0.8),init=inits)
 
 # save(modPodcount_seed,file='modPodcount_seed.Rdata')
 # load('modPodcount_seed.Rdata')
-
 pars=c('intVisitHbee','slopeHbeeDistHbee','slopeLbeeDistHbee','slopeLbeeHbeeDistHbee', #Hbee vis
-       'slopeLbeeVisHbee','slopeCentHbee','slopeFBayHbee')
-    #'sigmaHbeeVisField','visitHbeePhi','zeroVisHbeeTheta')
+       'slopeLbeeVisHbee','slopeCentHbee','slopeFBayHbee',
+       'sigmaHbeeVisField','visitHbeePhi','zeroVisHbeeTheta')
 pars=c('intVisitLbee','slopeHbeeDistLbee','slopeLbeeDistLbee','slopeCentLbee','slopeFBayLbee', #Lbee vis
-       'slopeStocking','slopeCentHbeeDistLbee','slopeStockingHbeeDistLbee','slopePlsizeLbee')
-       #'sigmaLbeeVisField','visitLbeePhi')
-pars=c('intPol','slopeHbeePol','slopeLbeePol','pollenPhi', #Pollen
-       'sigmaPolField','sigmaPolPlot')
+       'slopeStocking','slopeCentHbeeDistLbee','slopeStockingHbeeDistLbee','slopePlsizeLbee',
+       'sigmaLbeeVisField','visitLbeePhi')
+pars=c('intPol','slopeHbeePol','slopeLbeePol','slopeCentPol','slopeHbeeDistPol', #Pollen
+       'pollenPhi','sigmaPolField','sigmaPolPlot')
 pars=c('intFlwSurv','slopePolSurv','slopePlSizeSurv', #Flower survival
        'sigmaFlwSurv_field','sigmaFlwSurv_plot','flwSurvTheta')
 pars=c('intSeedCount','slopePolSeedCount','slopePlSizeCount', #Seeds per pod
@@ -1192,9 +1190,9 @@ pars=c('intSize','slopeHbeeDistPlSize', #Plant size
 # stan_dens(modPodcount_seed,pars=pars)
 traceplot(modPodcount_seed,pars=pars)+geom_hline(yintercept=0,linetype='dashed')
 
+pairs(modPodcount_seed,pars=c(pars,'lp__'))
+
 mod3 <- extract(modPodcount_seed)
-#Extract effect size and whether posterior overlaps zero
-cbind(round(sapply(mod3,function(x) effSize(x)),2),sapply(mod3,function(x) overlap(x)))
 
 #Check model fit:
 
@@ -1208,6 +1206,11 @@ plot(datalist$plantSize_obs,apply(mod3$predPlSize,2,median)[datalist$obs_ind], #
 data.frame(actual=with(datalist,c(hbeeVis,hbeeVis_extra)),predicted=apply(mod3$predHbeeVis_all,2,median)) %>%
   ggplot(aes(actual,predicted))+geom_jitter()+geom_abline(slope=1,intercept=0) #Predicted values are fairly small
 
+with(mod3,plot(apply(hbeeVis_resid,1,function(x) sum(abs(x))),
+               apply(predHbeeVis_resid,1,function(x) sum(abs(x))))); abline(0,1); #PP plot - OK
+
+hist(apply(mod3$hbeeVis_resid,2,median),main='Median',xlab='resid') #Median residuals
+
 #lbee visits
 data.frame(actual=with(datalist,c(lbeeVis,lbeeVis_extra)),predicted=apply(mod3$predLbeeVis_all,2,median)) %>% 
   ggplot(aes(actual,predicted))+geom_point()+geom_abline(slope=1,intercept=0) #Predicted vs actual - OK
@@ -1217,31 +1220,54 @@ data.frame(actual=with(datalist,c(lbeeVis,lbeeVis_extra)),predicted=apply(mod3$p
 with(mod3,plot(apply(lbeeVis_resid,1,function(x) sum(abs(x))),
                apply(predLbeeVis_resid,1,function(x) sum(abs(x))))); abline(0,1); #PP plot - not so good
 
-data.frame(actual=mod3$lbeeVis_resid,predicted=mod3$predLbeeVis_resid) %>% gather('Resid_type','meas',1:2) %>% 
+data.frame(actual=apply(mod3$lbeeVis_resid,1,function(x) sum(abs(x))),predicted=apply(mod3$predLbeeVis_resid,1,function(x) sum(abs(x)))) %>% 
+  gather('Resid_type','meas',1:2) %>% 
   ggplot(aes(meas))+geom_histogram(aes(fill=Resid_type))+labs(x='Summed residual',fill='Residual\nType')
 
-#Plots of results:
+#pollen
+data.frame(actual=datalist$pollenCount,predicted=apply(mod3$predPollenCount,2,median)) %>% 
+  ggplot(aes(actual,predicted))+geom_point()+geom_abline(slope=1,intercept=0) #Predicted vs actual - good
+
+with(mod3,plot(apply(pollen_resid,1,function(x) sum(abs(x))),
+               apply(predPollen_resid,1,function(x) sum(abs(x))))); abline(0,1); #PP plot - good
+
+#Extract effect size and whether posterior overlaps zero
+cbind(round(sapply(mod3,function(x) effSize(x)),2),sapply(mod3,function(x) overlap(x)))
+
+
+#Plots of hbee:
 
 #Model matrix
 modMat1 <- with(datalist,data.frame(intercept=1,hbeeDist=log(c(hbee_dist,hbee_dist_extra)),lbeeDist=log(c(lbee_dist,lbee_dist_extra)),
-                         lbeeHbeeDist=log(c(hbee_dist,hbee_dist_extra))*log(c(lbee_dist,lbee_dist_extra)),
+                         # lbeeHbeeDist=log(c(hbee_dist,hbee_dist_extra))*log(c(lbee_dist,lbee_dist_extra)),
+                         lbeeHbeeDist=NA,
                          lbeeVis=c(lbeeVis,lbeeVis_extra),
                          cent=c(isCent,isCent_extra),Fbay=c(isFBay,isFBay_extra),
                          logTime=log(c(totalTime,totalTime_extra)))) 
-# coef1 <- c(sapply(mod3[c(1:7)],mean),1) #Coefs for hbee visits
+resid1 <- apply(mod3$hbeeVis_resid,2,mean) #Mean residual for each point
 coef1 <- matrix(unlist(mod3[c(1:7)]),ncol=7,dimnames=list(c(1:length(mod3[[1]])),names(mod3)[1:7]))
+
+#Marginal effect of hbee dist
+modMat1 %>% mutate_at(vars(lbeeDist,lbeeVis,cent,Fbay),mean) %>% mutate(lbeeHbeeDist=hbeeDist*lbeeDist,logTime=0) %>% 
+  mutate(lbeeVis=log(lbeeVis+0.1)) %>%  #Not sure if this should be logged
+  mutate(expVal=exp(apply(exp(as.matrix(.) %*% t(cbind(coef1,1)))*(1-mean(mod3$zeroVisHbeeTheta)),1,median))) %>% 
+  mutate(resid=resid1) %>% 
+  ggplot(aes(exp(hbeeDist),expVal))+geom_line(size=1)+
+  geom_point(aes(y=expVal+resid),position=position_jitter(width=3))+
+  xlim(0,400)+labs(x='Distane from edge of field',y='Honeybee visits/10 mins')
+
+#Marginal effect of lbee dist
+modMat1 %>% mutate_at(vars(hbeeDist,lbeeVis,cent,Fbay),mean) %>% mutate(lbeeHbeeDist=hbeeDist*lbeeDist,logTime=0) %>% 
+  mutate(expVal=exp(apply(exp(as.matrix(.) %*% t(cbind(coef1,1)))*(1-mean(mod3$zeroVisHbeeTheta)),1,median))) %>% 
+  mutate(resid=resid1) %>% 
+  ggplot(aes(exp(hbeeDist),expVal))+geom_line(size=1)+
+  geom_point(aes(y=expVal+resid),position=position_jitter(width=3))+
+  xlim(0,400)+labs(x='Distane from edge of field',y='Honeybee visits/10 mins')
+  
+  
+
+
 modMat1$expVal <- apply(exp(as.matrix(modMat1) %*% t(cbind(coef1,1)))*(1-mean(mod3$zeroVisHbeeTheta)),1,median)
-
-#Hbee visits increase with distance from shelter
-modMat2 <- expand.grid(intercept=1,hbeeDist=log(c(1,10,30,50,100,400)),lbeeDist=log(seq(1,70,1))) %>% 
-  mutate(lbeeHbeeDist=hbeeDist*lbeeDist,lbeeVis=mean(modMat1$lbeeVis),cent=mean(modMat1$cent),Fbay=mean(modMat1$Fbay),logTime=0)
-modMat2$expVal <- exp(as.matrix(modMat2) %*% coef1)*(1-mean(mod3$zeroVisHbeeTheta))
-ggplot(modMat2,aes(exp(lbeeDist),expVal,col=factor(exp(hbeeDist),labels=c(1,10,30,50,100,400))))+geom_line(size=2)+
-  # geom_point(data=modMat1,aes(x=exp(lbeeDist),y=with(datalist,c(hbeeVis,hbeeVis_extra)),
-  #            col=cut(exp(hbeeDist),breaks=c(1,10,30,50,100,400,1000),labels=c(1,10,30,50,100,400))))+
-  # xlim(0,70)+ylim(0,30)+
-  labs(x='Distance from Shelter',y='Honeybee Visits/hr',col='Distance\nto Hives')
-
 
 
 
