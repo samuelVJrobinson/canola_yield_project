@@ -734,8 +734,8 @@ datalistPlant <-(within(datalistPlant,{
   Nplant_obs <- sum(!naPlant) #Number of plants with complete measurements
   plantSurvIndex <- plantIndex[!naPlant]
   Nplant_miss <- sum(naPlant) #Number of plants with missing measurements
-  miss_ind <- which(naPlant) #Index of missing plants
-  obs_ind <- which(!naPlant) #Index of non-missing plants
+  missPlant_ind <- which(naPlant) #Index of missing plants
+  obsPlant_ind <- which(!naPlant) #Index of non-missing plants
 }))
 
 #If any pod measurements are NA, or missing plant above |(datalistPod$podIndex %in% which(naPlant))
@@ -877,8 +877,8 @@ datalistPlot <- with(surveyAllSeed,list( #Plot-level measurements
   isFBay=Bay=='M', #Is plot from M bay?
   totalTime=TotalTime/10, #Total time (mins/10)
   plotList=paste(Field,Distance,Bay,EdgeCent),
-  flDens=FlDens*4, #Flower count/m2
-  plDens=PlDens
+  flDens=sqrt(FlDens*4), #Flower count/m2 - sqrt transform to normality
+  plDens=sqrt(PlDens) #Plant density - sqrt transformed
 )) 
 datalistPlot$totalTime[is.na(datalistPlot$totalTime)] <- 0.5 #Fix one missing time point
 #Join in extra data from Riley
@@ -893,7 +893,7 @@ datalistPlot <- c(datalistPlot,with(rileyExtra,list(
   isCent_extra=rep(FALSE,length(ldist)), #Riley's plots were at edge of bay
   isFBay_extra=Bay=='Male', #Is plot from M bay?
   totalTime_extra=rep(10,length(ldist))/10, #Riley used 10 mins for everything
-  flDens_extra=flDens #Flower count
+  flDens_extra=sqrt(flDens) #Flower count - sqrt transform
 )))
 datalistFlw <- with(pollenAllSeed,list( #Pollen samples
   Nflw=length(Pollen), #Number of pollen samples
@@ -932,10 +932,29 @@ datalistPlot <- within(datalistPlot,{
   isCent_extra <- isCent_extra[!naPlot]
   isFBay_extra <- isFBay_extra[!naPlot]
   totalTime_extra <- totalTime_extra[!naPlot]
-  Nplot_extra <- sum(!naPlot)
+  #Parameters for data imputation
+  #Flower density
+  Nplot_flsObs <- sum(!is.na(flDens)) #Number of plots observed
+  Nplot_flsMiss <- sum(is.na(flDens)) #Number of plots missing
+  obsFls_ind <- which(!is.na(flDens)) #Index for observed
+  missFls_ind <- which(is.na(flDens)) #Index for missing
+  flDens_obs <- flDens[!is.na(flDens)] #Observed flower density
+  #Plant density
+  Nplot_densObs <- sum(!is.na(plDens)) #Number of plots observed
+  Nplot_densMiss <- sum(is.na(plDens)) #Number of plots missing
+  obsPlDens_ind <- which(!is.na(plDens)) #Index for observed 
+  missPlDens_ind <- which(is.na(plDens)) #Index for missing
+  plDens_obs <- plDens[!is.na(plDens)] #Observed number of plants
+  #Extra flower density
+  Nplot_flsObs_extra <- sum(!is.na(flDens_extra))
+  Nplot_flsMiss_extra <- sum(is.na(flDens_extra))
+  obsFls_ind_extra <- which(!is.na(flDens_extra))
+  missFls_ind_extra <- which(is.na(flDens_extra))
+  flDens_obs_extra <- flDens_extra[!is.na(flDens_extra)] 
+  Nplot_extra <- sum(!naPlot) #Revises number of plots
 })
 
-#Impute missing data
+#Impute missing plant data
 naPlant <- with(datalistPlant,is.na(podCount)|is.na(flwCount)|
                   podCount>flwCount|is.na(plantSize_obs)|is.na(totalSeedMass))
 datalistPlant <-(within(datalistPlant,{
@@ -946,8 +965,8 @@ datalistPlant <-(within(datalistPlant,{
   Nplant_obs <- sum(!naPlant) #Number of plants with complete measurements
   plantSurvIndex <- plantIndex[!naPlant]
   Nplant_miss <- sum(naPlant) #Number of plants with missing measurements
-  miss_ind <- which(naPlant) #Index of missing plants
-  obs_ind <- which(!naPlant) #Index of non-missing plants
+  missPlant_ind <- which(naPlant) #Index of missing plants
+  obsPlant_ind <- which(!naPlant) #Index of non-missing plants
 }))
 
 #If any pod measurements are NA, or missing plant above |(datalistPod$podIndex %in% which(naPlant))
@@ -1093,9 +1112,9 @@ inits <- function(){with(datalist,list(
   sigmaSeedWeight_plant=0.1,intSeedWeight_field=rep(0,Nfield),intSeedWeight_plot=rep(0,Nplot),
   intSeedWeight_plant=rep(0,Nplant)),
   #Plant size,
-  plantSize_miss=rep(0,Nplant_miss),intSize=0,sigmaPlSize_field=0.5,
+  plantSize_miss=rep(0,Nplant_miss),intPlSize=0,sigmaPlSize_field=0.5,
   slopeHbeeDistPlSize=0,
-  sigmaPlSize_plot=0.5,sigmaPlSize=0.5,intSize_field=rep(0,Nfield),intSize_plot=rep(0,Nplot)
+  sigmaPlSize_plot=0.5,sigmaPlSize=0.5,intPlSize_field=rep(0,Nfield),intPlSize_plot=rep(0,Nplot)
 )}
 
 #Models for independence claims
@@ -1164,7 +1183,7 @@ inits <- function(){with(datalist,list(
 # with(claims,plot(flwSurv_resid,predFlwSurv_resid));abline(0,1) #Posterior predictive checks. Beta-binomial much better than binomial. Predicted slightly higher, but looks OK for now.
 
 #Full model
-modPodcount_seed <- stan(file='visitation_pollen_model_seed.stan',data=datalist,iter=200,chains=3,
+modPodcount_seed <- stan(file='visitation_pollen_model_seed.stan',data=datalist,iter=10,chains=1,
                          control=list(adapt_delta=0.8),init=inits)
 
 # save(modPodcount_seed,file='modPodcount_seed.Rdata')
@@ -1185,7 +1204,7 @@ pars=c('intSeedCount','slopePolSeedCount','slopePlSizeCount', #Seeds per pod
 pars=c('intSeedWeight','slopePolSeedWeight','slopeSeedCount', #Weight per seed
        'slopePlSizeWeight','sigmaSeedWeight','sigmaSeedWeight_field',
        'sigmaSeedWeight_plot','sigmaSeedWeight_plant')
-pars=c('intSize','slopeHbeeDistPlSize', #Plant size
+pars=c('intPlSize','slopeHbeeDistPlSize', #Plant size
        'sigmaPlSize_field','sigmaPlSize_plot','sigmaPlSize') 
 # stan_dens(modPodcount_seed,pars=pars)
 traceplot(modPodcount_seed,pars=pars)+geom_hline(yintercept=0,linetype='dashed')
@@ -1199,7 +1218,7 @@ mod3 <- extract(modPodcount_seed)
 #plant size
 with(mod3,plot(apply(plSize_resid,1,function(x) sum(abs(x))),
                apply(predPlSize_resid,1,function(x) sum(abs(x))))); abline(0,1); #PP plot - good
-plot(datalist$plantSize_obs,apply(mod3$predPlSize,2,median)[datalist$obs_ind], #Predicted vs Actual - good
+plot(datalist$plantSize_obs,apply(mod3$predPlSize,2,median)[datalist$obsPlant_ind], #Predicted vs Actual - good
      ylab='Predicted plant size',xlab='Actual plant size'); abline(0,1); 
 
 #hbee visits
