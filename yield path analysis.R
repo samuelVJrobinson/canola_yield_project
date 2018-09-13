@@ -877,8 +877,8 @@ datalistPlot <- with(surveyAllSeed,list( #Plot-level measurements
   isFBay=Bay=='M', #Is plot from M bay?
   totalTime=TotalTime/10, #Total time (mins/10)
   plotList=paste(Field,Distance,Bay,EdgeCent),
-  flDens=sqrt(FlDens*4), #Flower count/m2 - sqrt transform to normality
-  plDens=sqrt(PlDens) #Plant density - sqrt transformed
+  flDens=sqrt(FlDens*4)-22, #Flower density/m2 - sqrt transform and centered
+  plDens=sqrt(PlDens)-mean(sqrt(PlDens),na.rm=T) #Plant density - sqrt transformed and centered
 )) 
 datalistPlot$totalTime[is.na(datalistPlot$totalTime)] <- 0.5 #Fix one missing time point
 #Join in extra data from Riley
@@ -893,7 +893,7 @@ datalistPlot <- c(datalistPlot,with(rileyExtra,list(
   isCent_extra=rep(FALSE,length(ldist)), #Riley's plots were at edge of bay
   isFBay_extra=Bay=='Male', #Is plot from M bay?
   totalTime_extra=rep(10,length(ldist))/10, #Riley used 10 mins for everything
-  flDens_extra=sqrt(flDens) #Flower count - sqrt transform
+  flDens_extra=sqrt(flDens)-22 #Flower density - sqrt transformed and centered
 )))
 datalistFlw <- with(pollenAllSeed,list( #Pollen samples
   Nflw=length(Pollen), #Number of pollen samples
@@ -932,6 +932,7 @@ datalistPlot <- within(datalistPlot,{
   isCent_extra <- isCent_extra[!naPlot]
   isFBay_extra <- isFBay_extra[!naPlot]
   totalTime_extra <- totalTime_extra[!naPlot]
+  flDens_extra <- flDens_extra[!naPlot]
   #Parameters for data imputation
   #Flower density
   Nplot_flsObs <- sum(!is.na(flDens)) #Number of plots observed
@@ -1086,12 +1087,11 @@ str(datalist)
 inits <- function(){with(datalist,list(
   #Hbees
   intVisitHbee=1.5,slopeHbeeDistHbee=-0.1,slopeCentHbee=0.3,slopeFBayHbee=0.1,slopeLbeeDistHbee=0.4,
-  slopeLbeeHbeeDistHbee = 0,slopeLbeeVisHbee=0,
+  slopeLbeeHbeeDistHbee = 0,slopeLbeeVisHbee=0,slopeFlDensHbee=0,
   sigmaHbeeVisField=0.4,visitHbeePhi=0.7,intVisitHbee_field=rep(0,Nfield+Nfield_extra),zeroVisHbeeTheta=0.3,
   #Lbees
-  intVisitLbee=2,slopeDistLbee=-0.02,
-  slopeHbeeDistLbee=0,slopeLbeeDistLbee=0,slopeCentHbeeDistLbee=0,
-  slopeCentLbee=1,slopeFBayLbee=0.1,slopePlsizeLbee=1.5,
+  intVisitLbee=2,slopeDistLbee=-0.02,slopeHbeeDistLbee=0,slopeLbeeDistLbee=0,slopeCentHbeeDistLbee=0,
+  slopeCentLbee=1,slopeFBayLbee=0.1,slopePlsizeLbee=1.5,slopeFlDensLbee=0,
   slopeStocking=0,slopeStockingHbeeDistLbee=0,
   sigmaLbeeVisField=0.8,visitLbeePhi=0.5, 
   intVisitLbee_field=rep(0,Nfield+Nfield_extra),zeroVisLbeeTheta=0.1,
@@ -1111,10 +1111,20 @@ inits <- function(){with(datalist,list(
   sigmaSeedWeight=0.4,sigmaSeedWeight_field=0.1,sigmaSeedWeight_plot=0.1,
   sigmaSeedWeight_plant=0.1,intSeedWeight_field=rep(0,Nfield),intSeedWeight_plot=rep(0,Nplot),
   intSeedWeight_plant=rep(0,Nplant)),
+  #Flower count per plant
+  intFlwCount=6,slopePlSizeFlwCount=0.56,sigmaFlwCount_field=0.26,sigmaFlwCount_plot=0.21,
+  intFlwCount_field=rep(0,Nfield),intFlwCount_plot=rep(0,Nplot),flwCountPhi=5.1,
   #Plant size,
-  plantSize_miss=rep(0,Nplant_miss),intPlSize=0,sigmaPlSize_field=0.5,
-  slopeHbeeDistPlSize=0,
-  sigmaPlSize_plot=0.5,sigmaPlSize=0.5,intPlSize_field=rep(0,Nfield),intPlSize_plot=rep(0,Nplot)
+  plantSize_miss=rep(0,Nplant_miss),
+  intPlSize=1.5,slopePlDensPlSize=-0.24,
+  sigmaPlSize_field=0.1,sigmaPlSize_plot=0.1,sigmaPlSize=0.6,
+  intPlSize_field=rep(0,Nfield),intPlSize_plot=rep(0,Nplot),
+  #Planting density
+  plDens_miss=rep(0,Nplot_densMiss),
+  intPlDens=6,slopeHbeeDistPlDens=0.17,sigmaPlDens=0.8,sigmaPlDens_field=1,intPlDens_field=rep(0,Nfield),
+  #Flower density per plot
+  flDens_miss=rep(0,Nplot_flsMiss),flDens_extra_miss=rep(0,Nplot_flsMiss_extra),
+  intFlDens=5,slopePlSizeFlDens=10,intFlDens_field=rep(0,Nfield),sigmaFlDens=5,sigmaFlDens_field=4
 )}
 
 #Models for independence claims
@@ -1183,19 +1193,21 @@ inits <- function(){with(datalist,list(
 # with(claims,plot(flwSurv_resid,predFlwSurv_resid));abline(0,1) #Posterior predictive checks. Beta-binomial much better than binomial. Predicted slightly higher, but looks OK for now.
 
 #Full model
-modPodcount_seed <- stan(file='visitation_pollen_model_seed.stan',data=datalist,iter=10,chains=1,
-                         control=list(adapt_delta=0.8),init=inits)
+modPodcount_seed <- stan(file='visitation_pollen_model_seed.stan',data=datalist,
+                         iter=200,chains=3,control=list(adapt_delta=0.8),init=inits)
 
 # save(modPodcount_seed,file='modPodcount_seed.Rdata')
 # load('modPodcount_seed.Rdata')
 pars=c('intVisitHbee','slopeHbeeDistHbee','slopeLbeeDistHbee','slopeLbeeHbeeDistHbee', #Hbee vis
-       'slopeLbeeVisHbee','slopeCentHbee','slopeFBayHbee',
+       'slopeLbeeVisHbee','slopeCentHbee','slopeFBayHbee','slopeFlDensHbee',
        'sigmaHbeeVisField','visitHbeePhi','zeroVisHbeeTheta')
 pars=c('intVisitLbee','slopeHbeeDistLbee','slopeLbeeDistLbee','slopeCentLbee','slopeFBayLbee', #Lbee vis
-       'slopeStocking','slopeCentHbeeDistLbee','slopeStockingHbeeDistLbee','slopePlsizeLbee',
+       'slopeStocking','slopeCentHbeeDistLbee','slopeStockingHbeeDistLbee','slopePlsizeLbee','slopeFlDensLbee',
        'sigmaLbeeVisField','visitLbeePhi')
 pars=c('intPol','slopeHbeePol','slopeLbeePol','slopeCentPol','slopeHbeeDistPol', #Pollen
        'pollenPhi','sigmaPolField','sigmaPolPlot')
+pars=c('intFlwCount','slopePlSizeFlwCount', #Flower count per plant
+      'sigmaFlwCount_field','sigmaFlwCount_plot','flwCountPhi') 
 pars=c('intFlwSurv','slopePolSurv','slopePlSizeSurv', #Flower survival
        'sigmaFlwSurv_field','sigmaFlwSurv_plot','flwSurvTheta')
 pars=c('intSeedCount','slopePolSeedCount','slopePlSizeCount', #Seeds per pod
@@ -1204,10 +1216,13 @@ pars=c('intSeedCount','slopePolSeedCount','slopePlSizeCount', #Seeds per pod
 pars=c('intSeedWeight','slopePolSeedWeight','slopeSeedCount', #Weight per seed
        'slopePlSizeWeight','sigmaSeedWeight','sigmaSeedWeight_field',
        'sigmaSeedWeight_plot','sigmaSeedWeight_plant')
-pars=c('intPlSize','slopeHbeeDistPlSize', #Plant size
+pars=c('intPlSize','slopePlDensPlSize', #Plant size
        'sigmaPlSize_field','sigmaPlSize_plot','sigmaPlSize') 
+pars=c('intPlDens','slopeHbeeDistPlDens','sigmaPlDens','sigmaPlDens_field') #Planting density
+pars=c('intFlDens','slopePlSizeFlDens','sigmaFlDens','sigmaFlDens_field') #Flower density
 # stan_dens(modPodcount_seed,pars=pars)
-traceplot(modPodcount_seed,pars=pars)+geom_hline(yintercept=0,linetype='dashed')
+traceplot(modPodcount_seed,pars=pars)#+geom_hline(yintercept=0,linetype='dashed')
+print(modPodcount_seed,pars=pars)
 
 pairs(modPodcount_seed,pars=c(pars,'lp__'))
 
