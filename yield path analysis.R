@@ -1194,13 +1194,13 @@ inits <- function(){with(datalist,list(
 
 #Full model
 modPodcount_seed <- stan(file='visitation_pollen_model_seed.stan',data=datalist,
-                         iter=500,chains=4,control=list(adapt_delta=0.8),init=inits)
+                         iter=1000,chains=3,control=list(adapt_delta=0.8),init=inits)
 # save(modPodcount_seed,file='modPodcount_seed.Rdata')
 # 1: There were 2400 transitions after warmup that exceeded the maximum treedepth. Increase max_treedepth above 10. See
 # http://mc-stan.org/misc/warnings.html#maximum-treedepth-exceeded 
 # 2: There were 4 chains where the estimated Bayesian Fraction of Missing Information was low. See
 # http://mc-stan.org/misc/warnings.html#bfmi-low 
-# load('./Models/modPodcount_seed.Rdata')
+# load('modPodcount_seed.Rdata')
 #MODEL IS HAVING TROUBLE WITH RANDOM EFFECTS FOR PLANT SIZE. I SUSPECT THIS IS DUE TO A BAD DISTRIBUTIONAL ASSUMPTION.
 
 
@@ -1212,8 +1212,8 @@ modPodcount_seed <- stan(file='visitation_pollen_model_seed.stan',data=datalist,
 #        'sigmaHbeeVisField','visitHbeePhi','zeroVisHbeeTheta')
 # pars=c('intPol','slopeHbeePol','slopeLbeePol','slopeCentPol','slopeHbeeDistPol', #Pollen
 #        'pollenPhi','sigmaPolField','sigmaPolPlot')
-pars=c('intFlwCount','slopePlSizeFlwCount', #Flower count per plant
-      'sigmaFlwCount_field','sigmaFlwCount_plot','flwCountPhi') 
+# pars=c('intFlwCount','slopePlSizeFlwCount', #Flower count per plant
+#       'sigmaFlwCount_field','sigmaFlwCount_plot','flwCountPhi') 
 # pars=c('intFlwSurv','slopePolSurv','slopePlSizeSurv', #Flower survival
 #        'slopeEdgeCentSurv','slopeSeedCountSurv','slopeSeedSizeSurv',
 #        'sigmaFlwSurv_field','sigmaFlwSurv_plot')
@@ -1224,41 +1224,28 @@ pars=c('intFlwCount','slopePlSizeFlwCount', #Flower count per plant
 #        'slopePlSizeWeight','sigmaSeedWeight','sigmaSeedWeight_field',
 #        'sigmaSeedWeight_plot','sigmaSeedWeight_plant')
 pars=c('intPlSize','slopePlDensPlSize','slopeDistPlDens','slopePlDensDistPlSize', #Plant size
-       'sigmaPlSize_field','sigmaPlSize_plot',
+       'sigmaPlSize_field',#'sigmaPlSize_plot', #Random effect for plot doesn't converge well
        'sigmaPlSize') 
-pars=c('intPlDens','slopeHbeeDistPlDens','sigmaPlDens','sigmaPlDens_field') #Planting density
-pars=c('intFlDens','slopePlSizeFlDens','sigmaFlDens','sigmaFlDens_field') #Flower density
+pars=c('intPlDens','slopeHbeeDistPlDens','sigmaPlDens','sigmaPlDens_field','nuPlDens') #Planting density - good
+# pars=c('intFlDens','slopePlSizeFlDens','sigmaFlDens','sigmaFlDens_field') #Flower density
 # stan_dens(modPodcount_seed,pars=pars)
-traceplot(modPodcount_seed,pars=pars)#+geom_hline(yintercept=0,linetype='dashed')
+# traceplot(modPodcount_seed,pars=pars)+geom_hline(yintercept=0,linetype='dashed')
 traceplot(modPodcount_seed,pars=c(pars,'lp__'))
+
+pairs(modPodcount_seed,pars=c(pars,'lp__'),condition='energy__')
 
 mod3 <- extract(modPodcount_seed)
 
-#Random effects from 
-with(mod3,data.frame(meas=c(apply(plSize_resid,2,median),apply(intPlSize_plot,2,median),apply(intPlSize_field,2,median)))) %>%
-  mutate(type=c(rep('resid',ncol(mod3$plSize_resid)),
-                rep('plot',ncol(mod3$intPlSize_plot)),rep('field',ncol(mod3$intPlSize_field)))) %>% 
-  filter(type!='resid') %>% 
-  ggplot(aes(meas))+geom_histogram(bins=60)+facet_wrap(~type,ncol=1)
-
-
-
-
-#Plant size intercepts (plot/field level)
-data.frame(field=1:dim(mod3$intPlSize_plot)[2],
-           t(apply(mod3$intPlSize_plot,2,function(x) quantile(x,c(0.5,0.95,0.05))))) %>% 
-  rename(med=X50.,upr=X95.,lwr=X5.) %>% 
-  # ggplot(aes(med))+geom_density()
-  ggplot(aes(field,med,ymax=upr,ymin=lwr))+geom_point()
-
-data.frame(field=1:dim(mod3$intPlSize_field)[2],
-           t(apply(mod3$intPlSize_field,2,function(x) quantile(x,c(0.5,0.95,0.05))))) %>% 
-  rename(med=X50.,upr=X95.,lwr=X5.) %>%
-  ggplot(aes(sample=med))+geom_qq()
-
-  
 
 #Check model fit:
+#planting density
+with(mod3,plot(apply(plDens_resid,1,function(x) sum(abs(x))),
+               apply(predPlDens_resid,1,function(x) sum(abs(x))))); abline(0,1); #PP plot - not the best
+plot(datalist$plDens_obs,apply(mod3$predPlDens,2,median)[datalist$obsPlDens_ind], #Predicted vs Actual - poor for small plants
+     ylab='Predicted plant density',xlab='Actual plant density'); abline(0,1); 
+
+hist(apply(mod3$predPlDens_resid,2,mean))
+
 
 #plant size
 with(mod3,plot(apply(plSize_resid,1,function(x) sum(abs(x))),
