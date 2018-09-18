@@ -207,24 +207,24 @@ parameters {
 	vector[Nplant_miss] plantSize_miss; //Vector for imputing missing values	
 	real intPlSize; //Global intercept
 	real slopePlDensPlSize; //Slope of planting density
-	real slopeDistPlDens; //Slope of distance (edge of field has small plants)
-	real slopePlDensDistPlSize; //Distance-density interaction 
+	real slopeDistPlDens; //Slope of distance (edge of field has small plants)	
 	// real slopePolPlSize; //Slope of pollen deposition
-	real<lower=0.001> sigmaPlSize_field; //Sigma for field
+	// real<lower=0.001> sigmaPlSize_field; //Sigma for field
 	// real<lower=0.001> sigmaPlSize_plot; //Sigma for plot
 	real<lower=0.001> sigmaPlSize; //Sigma for within-plot (residual)
-	vector[Nfield_all] intPlSize_field; //Random intercept for field
-	// vector[Nplot_all] intPlSize_plot; //Random intercept for plot		
-	real nuPlDens; //Skew of distribution
+	// vector[Nfield_all] intPlSize_field; //Random intercept for field
+	// vector[Nplot_all] intPlSize_plot; //Random intercept for plot			
 	
 	//Plant density
 	//Vector for imputing missing plant density values (missing values from my data + all of Riley's data)
-	vector<lower=0.01>[Nplot_densMiss+Nplot_extra] plDens_miss; 
+	vector[Nplot_densMiss+Nplot_extra] plDens_miss; 
 	real intPlDens; //Global intercept
 	real slopeHbeeDistPlDens; //Slope of distance into field
+	real slopeHbeeDistSqPlDens; //Slope of distance squared
 	real<lower=0.01> sigmaPlDens; //Sigma for within-field (residual)
 	real<lower=0.01> sigmaPlDens_field; //Sigma for field
 	vector[Nfield_all] intPlDens_field; //Random intercept for field
+	// real<lower=0> lambdaPlDens; //Skew of distribution
 	
 	// //Flower density
 	// vector<lower=0.01>[Nplot_flsMiss] flDens_miss; //Vectors for imputing missing values
@@ -280,15 +280,15 @@ transformed parameters {
 		
 		//Plant density = intercept + random field int + hbee distance effect
 		plDensMu[i] = intPlDens + intPlDens_field[plotIndex_all[i]] + 
-			slopeHbeeDistPlDens*logHbeeDist_all[i]; //Distance effect	
+			slopeHbeeDistPlDens*logHbeeDist_all[i] + //Distance effect	
+			slopeHbeeDistSqPlDens*(logHbeeDist_all[i]^2); //Distance squared
 			
 		//Plant size (plot-level) = intercept + random field int + random plot int + distance + planting density effect 
-		plSizePlot[i] = intPlSize + intPlSize_field[plotIndex_all[i]] + //intPlSize_plot[i] + 			
+		//Density distance interaction is basically 0, so leaving it out
+		plSizePlot[i] = intPlSize + //intPlSize_field[plotIndex_all[i]] + //intPlSize_plot[i] + 			
 			slopeDistPlDens*logHbeeDist_all[i] + //Distance effect (edge of field has smaller plants)			
-			slopePlDensPlSize*plDens[i] + //Planting density effect
-			slopePlDensDistPlSize*logHbeeDist_all[i]*plDens[i];  //Distance-density interaction			
-			// slopePolPlSize*(exp(pollenMu_plot[i])/1000) + //Effect of pollen on plant size (plot level) - creates cyclical association
-			
+			slopePlDensPlSize*plDens[i]; //Planting density effect			
+			// slopePolPlSize*(exp(pollenMu_plot[i])/1000) + //Effect of pollen on plant size (plot level) - creates cyclical association			
 	
 		// // Expected value for lbee visits = intercept + random int + distance to shelter + distance to honeybees (edge) + bay position + bay:hbee dist + stocking:hbee dist + bay type + time offset	
 		// visitMu_lbee[i] = intVisitLbee + intVisitLbee_field[plotIndex_all[i]] + logTime_all[i] + //intercepts + time offset
@@ -382,7 +382,8 @@ model {
 	// seedCount ~ neg_binomial_2_log(seedCountMu,seedCountPhi); //Seed count per pod
 	// seedMass ~ lognormal(seedWeightMu,sigmaSeedWeight); //Weight per seed
 	plantSize ~ normal(plSizeMu,sigmaPlSize); //Plant size
-	plDens ~ skew_normal(plDensMu,sigmaPlDens,nuPlDens); //Plant density per plot
+	// plDens ~ exp_mod_normal(plDensMu,sigmaPlDens,lambdaPlDens); //Plant density per plot - exp normal
+	plDens ~ normal(plDensMu,sigmaPlDens); //Plant density per plot
 	// flDens ~ normal(flDensMu,sigmaFlDens); //Flower density per plot
 			
 	// Priors
@@ -478,24 +479,24 @@ model {
 	// intSeedWeight_plant ~ normal(0,sigmaSeedWeight_plant); //plant-level random intercepts
 
 	//Plant size - informative priors
-	intPlSize ~ normal(0.1,0.5); //Intercept
-	slopePlDensPlSize ~ normal(-0.2,0.1); //Planting density
-	slopeDistPlDens ~ normal(0.07,.1); //Distance effect
-	slopePlDensDistPlSize ~ normal(0,1); //Density-distance interaction
+	intPlSize ~ normal(0.05,0.2); //Intercept
+	slopePlDensPlSize ~ normal(-0.6,0.5); //Planting density
+	slopeDistPlDens ~ normal(0.07,.1); //Distance effect	
 	// slopePolPlSize ~ normal(0,1); //Pollen effect
-	sigmaPlSize_field ~ gamma(1.2,10); //Sigma for random field 
+	// sigmaPlSize_field ~ gamma(1.2,10); //Sigma for random field 
 	// sigmaPlSize_plot ~ gamma(1,1); //Sigma for random plot
 	sigmaPlSize ~ gamma(6,10); //Sigma for residual	
-	intPlSize_field ~ normal(0,sigmaPlSize_field); //Random field int
+	// intPlSize_field ~ normal(0,sigmaPlSize_field); //Random field int
 	// intPlSize_plot ~ normal(0,sigmaPlSize_plot); //Random int plot	
 	
 	//Planting density
-	intPlDens ~ normal(0.5,0.5); //Intercept
-	slopeHbeeDistPlDens ~ normal(0.15,0.1); //Distance into field	
-	sigmaPlDens ~ gamma(10,10); //Sigma for within-field (residual)
-	sigmaPlDens_field ~ gamma(8,10); //Sigma for field
+	intPlDens ~ normal(0,0.5); //Intercept
+	slopeHbeeDistPlDens ~ normal(0.05,0.1); //Distance into field	
+	slopeHbeeDistSqPlDens ~ normal(-0.01,0.1); //Distance into field squared	
+	sigmaPlDens ~ gamma(2,10); //Sigma for within-field (residual)
+	sigmaPlDens_field ~ gamma(4,10); //Sigma for field
 	intPlDens_field ~ normal(0,sigmaPlDens_field); //Random intercept for field
-	nuPlDens ~ normal(0,1); // Skew for 
+	// lambdaPlDens ~ gamma(10,1); // df for t-distribution	
 	
 	// // Flower density	
 	// intFlDens ~ normal(0,1); //Intercept
@@ -576,14 +577,12 @@ generated quantities{
 	
 	for(i in 1:Nplot){
 		//plant density
-		// plDens_resid[i] = plDens[i] - plDensMu[i]; //Residual for actual value
-		// predPlDens[i]= normal_rng(plDensMu[i],sigmaPlDens); //Generated value from normal		
-		// predPlDens_resid[i] = predPlDens[i] - plDensMu[i]; //Residual for predicted value	
-		
-		plDens_resid[i] = plDens[i] - (plDensMu[i]+sigmaPlDens*(nuPlDens/sqrt(1+nuPlDens^2))*sqrt(2/pi())); //Residual for actual value
-		predPlDens[i]= skew_normal_rng(plDensMu[i],sigmaPlDens,nuPlDens); //Generated value from normal		
-		predPlDens_resid[i] = predPlDens[i] - (plDensMu[i]+sigmaPlDens*(nuPlDens/sqrt(1+nuPlDens^2))*sqrt(2/pi())); //Residual for predicted value				
-		//xi = plDensMu, omega = sigmaPlDens, alpha = nuPlDens
+		// plDens_resid[i] = plDens[i] - (plDensMu[i]+(1/lambdaPlDens)); //Residual for actual value
+		// predPlDens[i]= exp_mod_normal_rng(plDensMu[i],sigmaPlDens,lambdaPlDens); //Generated value from exp-normal
+		// predPlDens_resid[i] = predPlDens[i] - (plDensMu[i]+(1/lambdaPlDens)); //Residual for predicted value							
+		plDens_resid[i] = plDens[i] - plDensMu[i]; //Residual for actual value
+		predPlDens[i]= normal_rng(plDensMu[i],sigmaPlDens); //Generated value from exp-normal
+		predPlDens_resid[i] = predPlDens[i] - plDensMu[i]; //Residual for predicted value							
 	}		
 	
 	// for(i in 1:Nflw){
