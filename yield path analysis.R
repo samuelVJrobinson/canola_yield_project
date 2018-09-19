@@ -1194,7 +1194,8 @@ inits <- function(){with(datalist,list(
 
 #Full model
 modPodcount_seed <- stan(file='visitation_pollen_model_seed.stan',data=datalist,
-                         iter=500,chains=3,control=list(adapt_delta=0.8),init=inits)
+                         iter=400,chains=4,control=list(adapt_delta=0.8),init=inits)
+#23 mins for 100 iterations
 # save(modPodcount_seed,file='modPodcount_seed.Rdata')
 # 1: There were 2400 transitions after warmup that exceeded the maximum treedepth. Increase max_treedepth above 10. See
 # http://mc-stan.org/misc/warnings.html#maximum-treedepth-exceeded 
@@ -1203,81 +1204,115 @@ modPodcount_seed <- stan(file='visitation_pollen_model_seed.stan',data=datalist,
 # load('modPodcount_seed.Rdata')
 #MODEL IS HAVING TROUBLE WITH RANDOM EFFECTS FOR PLANT SIZE. I SUSPECT THIS IS DUE TO A BAD DISTRIBUTIONAL ASSUMPTION.
 
-# pars=c('intVisitLbee','slopeHbeeDistLbee','slopeLbeeDistLbee','slopeCentLbee','slopeFBayLbee', #Lbee vis
-#        'slopeStocking','slopeCentHbeeDistLbee','slopeStockingHbeeDistLbee','slopePlsizeLbee','slopeFlDensLbee',
-#        'sigmaLbeeVisField','visitLbeePhi')
-# pars=c('intVisitHbee','slopeHbeeDistHbee','slopeLbeeDistHbee','slopeLbeeHbeeDistHbee', #Hbee vis
-#        'slopeLbeeVisHbee','slopeCentHbee','slopeFlDensHbee','slopeFBayHbee',
-#        'sigmaHbeeVisField','visitHbeePhi','zeroVisHbeeTheta')
-# pars=c('intPol','slopeHbeePol','slopeLbeePol','slopeCentPol','slopeHbeeDistPol', #Pollen
-#        'pollenPhi','sigmaPolField','sigmaPolPlot')
-# pars=c('intFlwCount','slopePlSizeFlwCount', #Flower count per plant
-#       'sigmaFlwCount_field','sigmaFlwCount_plot','flwCountPhi') 
-# pars=c('intFlwSurv','slopePolSurv','slopePlSizeSurv', #Flower survival
-#        'slopeEdgeCentSurv','slopeSeedCountSurv','slopeSeedSizeSurv',
-#        'sigmaFlwSurv_field','sigmaFlwSurv_plot')
-# pars=c('intSeedCount','slopePolSeedCount','slopePlSizeCount', #Seeds per pod
-#        'slopeEdgeCentSeedCount','slopeHbeeSeedCount','slopeLbeeSeedCount','slopeLbeeDistSeedCount',
-#        'seedCountPhi','sigmaSeedCount_field','sigmaSeedCount_plot','sigmaSeedCount_plant')
-# pars=c('intSeedWeight','slopePolSeedWeight','slopeSeedCount', #Weight per seed
-#        'slopePlSizeWeight','sigmaSeedWeight','sigmaSeedWeight_field',
-#        'sigmaSeedWeight_plot','sigmaSeedWeight_plant')
+pars=c('intVisitLbee','slopeHbeeDistLbee','slopeLbeeDistLbee','slopeCentLbee','slopeFBayLbee', #Lbee vis
+       'slopeStocking','slopeCentHbeeDistLbee','slopeStockingHbeeDistLbee','slopePlsizeLbee','slopeFlDensLbee',
+       'sigmaLbeeVisField','visitLbeePhi')
+pars=c('intVisitHbee','slopeHbeeDistHbee','slopeLbeeDistHbee','slopeLbeeHbeeDistHbee', #Hbee vis 
+       'slopeLbeeVisHbee','slopeCentHbee','slopeFlDensHbee','slopeFBayHbee', 
+       #'sigmaHbeeVisField', #Random effects don't converge well
+       'visitHbeePhi','zeroVisHbeeTheta') 
+pars=c('intPol','slopeHbeePol','slopeLbeePol','slopeCentPol','slopeHbeeDistPol', #Pollen
+       'pollenPhi','sigmaPolField','sigmaPolPlot')
+pars=c('intFlwCount','slopePlSizeFlwCount', #Flower count per plant
+      'sigmaFlwCount_field','sigmaFlwCount_plot','flwCountPhi') #Plot-level random effect having trouble converging
+pars=c('intFlwSurv','slopePolSurv','slopePlSizeSurv', #Flower survival
+       'slopeEdgeCentSurv','slopeSeedCountSurv','slopeSeedSizeSurv', #Not sure why slopeSeedCountSurv is so high. Might this mean something else?
+       'sigmaFlwSurv_field','sigmaFlwSurv_plot')
+pars=c('intSeedCount','slopePolSeedCount','slopePlSizeCount', #Seeds per pod
+       #Plot-level random effect having trouble converging
+       'slopeEdgeCentSeedCount','slopeHbeeSeedCount','slopeLbeeSeedCount','slopeLbeeDistSeedCount',
+       'seedCountPhi','sigmaSeedCount_field','sigmaSeedCount_plot','sigmaSeedCount_plant')
+pars=c('intSeedWeight','slopePolSeedWeight','slopeSeedCount', #Weight per seed
+       'slopePlSizeWeight','sigmaSeedWeight','sigmaSeedWeight_field', #Random effects for plot don't converge well 
+       'sigmaSeedWeight_plot','sigmaSeedWeight_plant')
 pars=c('intPlSize','slopePlDensPlSize','slopeDistPlDens',#'slopePlDensDistPlSize', #Plant size
-       'sigmaPlSize_field',#'sigmaPlSize_plot', #Random effects for plot/field don't converge well
-       'sigmaPlSize') 
-pars=c('intPlDens','slopeHbeeDistPlDens','slopeHbeeDistSqPlDens',
-       'sigmaPlDens','sigmaPlDens_field','lambdaPlDens') #Planting density - good
-# pars=c('intFlDens','slopePlSizeFlDens','sigmaFlDens','sigmaFlDens_field') #Flower density
+       #'sigmaPlSize_field','sigmaPlSize_plot', #Random effects for plot/field don't converge well
+       'sigmaPlSize')
+pars=c('intPlDens','slopeHbeeDistPlDens','slopeHbeeDistSqPlDens', #Planting density
+       'sigmaPlDens','sigmaPlDens_field') 
+pars=c('intFlDens','slopePlSizeFlDens','sigmaFlDens','sigmaFlDens_field') #Flower density
 # stan_dens(modPodcount_seed,pars=pars)
-traceplot(modPodcount_seed,pars=pars)#+geom_hline(yintercept=0,linetype='dashed')
+traceplot(modPodcount_seed,pars=pars)+geom_hline(yintercept=0,linetype='dashed')
 # traceplot(modPodcount_seed,pars=c(pars,'lp__'))
 print(modPodcount_seed,pars=pars)
 
-pairs(modPodcount_seed,pars=c(pars,'lp__'),condition='energy__')
+# pairs(modPodcount_seed,pars=c(pars,'lp__'),condition='energy__')
 
 #Check model fit:
 mod3 <- extract(modPodcount_seed)
-#planting density - normal is better
-with(mod3,plot(apply(plDens_resid,1,function(x) sum(abs(x))),
-               apply(predPlDens_resid,1,function(x) sum(abs(x))))); abline(0,1); #PP plot - good
+par(mfrow=c(2,1))
+#planting density - good
+with(mod3,plot(apply(plDens_resid,1,function(x) sum(abs(x))), #PP plot - good
+               apply(predPlDens_resid,1,function(x) sum(abs(x))),
+               xlab='Sum residuals',ylab='Sum simulated residuals',main='Planting density'))
+abline(0,1) 
 plot(datalist$plDens_obs,apply(mod3$predPlDens,2,median)[datalist$obsPlDens_ind], #Predicted vs Actual
      ylab='Predicted plant density',xlab='Actual plant density'); abline(0,1);
-hist(apply(mod3$predPlDens_resid,2,mean)) #(mean) Residual plot
 
-#plant size
+#plant size - good
 with(mod3,plot(apply(plSize_resid,1,function(x) sum(abs(x))),
-               apply(predPlSize_resid,1,function(x) sum(abs(x))))); abline(0,1); #PP plot - good
+               apply(predPlSize_resid,1,function(x) sum(abs(x))),
+               xlab='Sum residuals',ylab='Sum simulated residuals',main='Plant size')) 
+abline(0,1); #PP plot - good
 plot(datalist$plantSize_obs,apply(mod3$predPlSize,2,median)[datalist$obsPlant_ind], #Predicted vs Actual - good
      ylab='Predicted plant size',xlab='Actual plant size'); abline(0,1); 
 
-#hbee visits
-data.frame(actual=with(datalist,c(hbeeVis,hbeeVis_extra)),predicted=apply(mod3$predHbeeVis_all,2,median)) %>%
-  ggplot(aes(actual,predicted))+geom_jitter()+geom_abline(slope=1,intercept=0) #Predicted values are fairly small
-
+#hbee visits - not the best, but OK
 with(mod3,plot(apply(hbeeVis_resid,1,function(x) sum(abs(x))),
-               apply(predHbeeVis_resid,1,function(x) sum(abs(x))))); abline(0,1); #PP plot - OK
+               apply(predHbeeVis_resid,1,function(x) sum(abs(x))),
+               xlab='Sum residuals',ylab='Sum simulated residuals',main='Hbee visits')) 
+abline(0,1); #PP plot - OK
+plot(with(datalist,c(hbeeVis,hbeeVis_extra)),apply(mod3$predHbeeVis_all,2,median), #Predicted vs Actual - good
+     ylab='Predicted visits',xlab='Actual visits')
+abline(0,1); 
 
-hist(apply(mod3$hbeeVis_resid,2,median),main='Median',xlab='resid') #Median residuals
-
-#lbee visits
-data.frame(actual=with(datalist,c(lbeeVis,lbeeVis_extra)),predicted=apply(mod3$predLbeeVis_all,2,median)) %>% 
-  ggplot(aes(actual,predicted))+geom_point()+geom_abline(slope=1,intercept=0) #Predicted vs actual - OK
-
+#lbee visits - not the best, but OK
 #PP plots - OK, but not the best
 # Negbin (ZI or regular) is not good, but Poisson (ZI or regular) is far worse, and traces for intercept are bad. Sticking with regular NB for now.
 with(mod3,plot(apply(lbeeVis_resid,1,function(x) sum(abs(x))),
-               apply(predLbeeVis_resid,1,function(x) sum(abs(x))))); abline(0,1); #PP plot - not so good
+               apply(predLbeeVis_resid,1,function(x) sum(abs(x))),
+               xlab='Sum residuals',ylab='Sum simulated residuals',main='Lbee visits')); 
+abline(0,1); #PP plot - not so good
 
-data.frame(actual=apply(mod3$lbeeVis_resid,1,function(x) sum(abs(x))),predicted=apply(mod3$predLbeeVis_resid,1,function(x) sum(abs(x)))) %>% 
-  gather('Resid_type','meas',1:2) %>% 
-  ggplot(aes(meas))+geom_histogram(aes(fill=Resid_type))+labs(x='Summed residual',fill='Residual\nType')
+plot(with(datalist,c(lbeeVis,lbeeVis_extra)),apply(mod3$predLbeeVis_all,2,median), #Predicted vs Actual - OK
+     ylab='Predicted visits',xlab='Actual visits');abline(0,1) #PP plot - not so good
 
-#pollen
-data.frame(actual=datalist$pollenCount,predicted=apply(mod3$predPollenCount,2,median)) %>% 
-  ggplot(aes(actual,predicted))+geom_point()+geom_abline(slope=1,intercept=0) #Predicted vs actual - good
-
+#pollen - good
 with(mod3,plot(apply(pollen_resid,1,function(x) sum(abs(x))),
-               apply(predPollen_resid,1,function(x) sum(abs(x))))); abline(0,1); #PP plot - good
+              apply(predPollen_resid,1,function(x) sum(abs(x))),
+              xlab='Sum residuals',ylab='Sum simulated residuals',main='Pollen counts')) 
+abline(0,1) #PP plot
+plot(datalist$pollenCount,apply(mod3$predPollenCount,2,median), #Predicted vs Actual - OK
+     ylab='Predicted pollen',xlab='Actual pollen'); abline(0,1) #PP plot - not so good
+
+#seeds per pod - OK
+with(mod3,plot(apply(seedCount_resid,1,function(x) sum(abs(x))),
+               apply(predSeedCount_resid,1,function(x) sum(abs(x))))); abline(0,1); #PP plot - not the best
+
+plot(datalist$seedCount,apply(mod3$predSeedCount,2,median), #Predicted vs Actual - good
+     ylab='Predicted seed count',xlab='Actual seed count'); abline(0,1); 
+
+#weight per seed - bad
+with(mod3,plot(apply(seedMass_resid,1,function(x) sum(abs(x))),
+               apply(predSeedMass_resid,1,function(x) sum(abs(x))))); abline(0,1); #PP plot - bad
+
+plot(datalist$seedMass,apply(mod3$predSeedMass,2,median), #Predicted vs Actual - OK, but weird outliers: check data
+     ylab='Predicted seed weight',xlab='Actual seed weight'); abline(0,1); 
+
+#Flower count
+with(mod3,plot(apply(flwCount_resid,1,function(x) sum(abs(x))),
+               apply(predFlwCount_resid,1,function(x) sum(abs(x))))); abline(0,1); #PP plot - good
+
+plot(datalist$flwCount,apply(mod3$predFlwCount,2,median), #Predicted vs Actual - good, but variance increases
+     ylab='Predicted flower count',xlab='Actual flower count'); abline(0,1); 
+
+#flower survival (pod count)
+with(mod3,plot(apply(podCount_resid,1,function(x) sum(abs(x))),
+               apply(predPodCount_resid,1,function(x) sum(abs(x))))); abline(0,1); #PP plot - good
+
+plot(datalist$podCount,apply(mod3$predPodCount,2,median), #Predicted vs Actual - good
+     ylab='Predicted number of pods',xlab='Actual number of pods'); abline(0,1); 
+
 
 #Extract effect size and whether posterior overlaps zero
 cbind(round(sapply(mod3,function(x) effSize(x)),2),sapply(mod3,function(x) overlap(x)))
