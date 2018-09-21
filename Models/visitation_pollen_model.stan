@@ -1,21 +1,31 @@
 data {
 	//Field level
-	int Nfield; //Number of fields
-	int<lower=1,upper=Nfield> fieldIndex[Nfield]; //Index for fields
+	int Nfield; //Number of fields	
 	real numHives[Nfield]; //Number of hives present
 	
 	//Plot level	
 	int Nplot; //Number of plots	
 	int<lower=1,upper=Nfield> plotIndex[Nplot]; //Index for plots - which field? 
-	real dist[Nplot]; //Distance from edge - centered
+	vector[Nplot] hbee_dist; //Distance from edge
 	int hbeeVis[Nplot]; //Number of honeybee visits per plot	
-	real totalTime[Nplot]; //Time taken for observation
-	//int plantDens[Nplot]; //Plants per m2 - some missing values, so might want to do data imputation
+	real totalTime[Nplot]; //Time taken for observation/10
+	//Missing data from plot level
+	int Nplot_flsObs; //Number of plots where flower density observed
+	int Nplot_flsMiss; //Number of plots where flower density missing 
+	vector[Nplot_flsObs] flDens_obs; //Observed flower density (flowers/m2)
+	int<lower=1,upper=Nplot> obsFls_ind[Nplot_flsObs]; //Index for observed flower density
+	int<lower=1,upper=Nplot> missFls_ind[Nplot_flsMiss]; //Index for missing flower density	
+	//Plant density (stems/m2)
+	int Nplot_densObs; //Number of plots where plant density was observed
+	int Nplot_densMiss; //Number of plots with plant density missing 
+	vector[Nplot_densObs] plDens_obs; //Observed plant density (stems/m2)
+	int<lower=1,upper=Nplot> obsPlDens_ind[Nplot_densObs]; //Index for observed plant density
+	int<lower=1,upper=Nplot> missPlDens_ind[Nplot_densMiss]; //Index for missing plant density	
 	
 	//Flower level
 	int Nflw; //Number of flowers
-	int<lower=1,upper=Nplot>  flowerIndex[Nflw]; 
-	int pollenCount[Nflw]; //Number of pollen grains per stigma
+	int<lower=1,upper=Nplot>  flowerIndex[Nflw];  //Index for flowers - which plot?
+	int pollenCount[Nflw]; //Pollen count
 
 	//Plant level
 	int Nplant; //Number of all plants (some measurements missing)
@@ -28,8 +38,7 @@ data {
 	int<lower=1,upper=Nplot> plantIndex[Nplant]; //Index for all plants - which plot?	
 	int<lower=1,upper=Nplot> plantSurvIndex[Nplant_obs]; //Index for "complete" plants 
 	int<lower=1,upper=Nplant> obs_ind[Nplant_obs]; //Index for observed plants
-	int<lower=1,upper=Nplant> miss_ind[Nplant_miss]; //Index for missing plants
-	
+	int<lower=1,upper=Nplant> miss_ind[Nplant_miss]; //Index for missing plants	
 	
 	//Pod level
 	int Npod; //Number of pods
@@ -38,22 +47,55 @@ data {
 	int<lower=1> podIndex[Npod]; //Index for pods - which plant?	
 }
 
+transformed parameters {
+	//Transformations
+	logHbeeDist=log(hbee_dist); //Log-transform distances	
+	logTime=log(totalTime); //Log-transform time	
+}
+
 parameters {
+	//Plant density	
+	vector[Nplot_densMiss] plDens_miss; 
+	real intPlDens; //Global intercept
+	real slopeDistPlDens; //Slope of distance into field	
+	real<lower=0.01> sigmaPlDens; //Sigma for within-field (residual)
+	real<lower=0.01> sigmaPlDens_field; //Sigma for field
+	vector[Nfield_all] intPlDens_field; //Random intercept for field
+		
+	//Flower density per plot
+	vector<lower=0.01>[Nplot_flsMiss] flDens_miss; //Vector for missing values	
+	real intFlDens; //Global intercept
+	real slopePlSizeFlDens; //Slope of plant size on flower density
+	real<lower=0.01> sigmaFlDens; //Sigma for within-field (residual)
+	real<lower=0.01> sigmaFlDens_field; //Sigma for field
+	vector[Nfield_all] intFlDens_field; //Random intercept for field	
+
+	//Plant size
+	vector[Nplant_miss] plantSize_miss; //Imputed data for missing values	
+	real intSize; //Global intercept
+	real slopePolPlSize; //Effect of pollination on plant size
+	real<lower=0> sigmaPlSize_field; //Sigma for field
+	real<lower=0> sigmaPlSize_plot; //Sigma for plot
+	real<lower=0> sigmaPlSize; //Sigma for within-plot	(residual)
+	vector[Nfield] intSize_field; //Random intercept for field
+	vector[Nplot] intSize_plot; //Random intercept for plot	
+
 	//hbee Visitation
 	real intVisit; //Intercept 
+	real slopeYear2015Vis; //Effect of 2015 - probably negative
 	real slopeDistVis; //Slope of distance
 	real slopeHiveVis; //Slope of hive number
-	real<lower=0.2> sigmaVisField; //SD of field random intercepts
-	real<lower=0.2> visitPhi; //Dispersion parameter	
+	real<lower=0> sigmaVisField; //SD of field random intercepts
+	real<lower=0> visitPhi; //Dispersion parameter	
 	vector[Nfield] intVisit_field; //field-level random intercepts
-	// real<lower=0,upper=1> zeroVisTheta; //Zero-inflation parameter - chance that zero is not from neg.bin. - about 0.2, but doesn't improve traces
+	real<lower=0,upper=1> zeroVisTheta; //Zero-inflation parameter - chance that zero is not from neg.bin. - about 0.2, but doesn't improve traces
 	
 	//Pollen deposition
 	real intPollen; //Intercept
 	real slopeVisitPol; //Slope of hbee visits
-	real<lower=0.2> sigmaPolField; //SD of field random intercepts
-	real<lower=0.2> sigmaPolPlot; //SD of plot random intercepts
-	real<lower=0.2> pollenPhi; //Dispersion parameter
+	real<lower=0> sigmaPolField; //SD of field random intercepts
+	real<lower=0> sigmaPolPlot; //SD of plot random intercepts
+	real<lower=0> pollenPhi; //Dispersion parameter
 	vector[Nfield] intPollen_field; //field-level random intercepts
 	vector[Nplot] intPollen_plot; //plot-level random intercepts
 	
@@ -92,18 +134,7 @@ parameters {
 	real<lower=0> sigmaSeedWeight_field; //SD of field random effect	
 	vector[Nfield] intSeedWeight_field; //field-level random intercepts	
 	vector[Nplot] intSeedWeight_plot; //plot-level random intercepts	
-	vector[Nplant] intSeedWeight_plant; //plant-level random intercepts	
-	
-	//Plant size
-	vector[Nplant_miss] plantSize_miss; //Imputed data for missing values	
-	real intSize; //Global intercept
-	real slopePolPlSize; //Effect of pollination on plant size
-	real<lower=0> sigmaPlSize_field; //Sigma for field
-	real<lower=0> sigmaPlSize_plot; //Sigma for plot
-	real<lower=0> sigmaPlSize; //Sigma for within-plot	(residual)
-	vector[Nfield] intSize_field; //Random intercept for field
-	vector[Nplot] intSize_plot; //Random intercept for plot	
-	
+	vector[Nplant] intSeedWeight_plant; //plant-level random intercepts		
 }
 
 transformed parameters {		
@@ -144,16 +175,17 @@ transformed parameters {
 	for(i in 1:Nplant){ //For each plant (complete measurements or not)		
 		//Seed count per pod = intercept + random int field + random int plot + random int plant + hbee visits + pollen deposition/1000 + plant size
 		seedCountMuPlant[i] = intSeedCount + intSeedCount_field[plotIndex[plantIndex[i]]] + intSeedCount_plot[plantIndex[i]] + intSeedCount_plant[i] + 
-			slopeVisitSeedCount*(hbeeVis[plantIndex[i]]/totalTime[plantIndex[i]]) + slopePolSeedCount*(exp(pollenPlot[plantIndex[i]])/1000) + 
+			slopeVisitSeedCount*(visitMu[plantIndex[i]]+log(1-zeroVisHbeeTheta)) + 
+			slopePolSeedCount*pollenPlot[plantIndex[i]] + 
 			slopePlSizeCount*plantSize[i];
 			
 		//Weight per seed = intercept + random int field + random int plot + random int plant + hbee visits + pollen deposition/1000
 		seedWeightPlantMu[i] = intSeedWeight + intSeedWeight_field[plotIndex[plantIndex[i]]] + intSeedWeight_plot[plantIndex[i]] + intSeedWeight_plant[i] +
-			slopeVisitSeedWeight*(hbeeVis[plantIndex[i]]/totalTime[plantIndex[i]]) + slopePolSeedWeight*(exp(pollenPlot[plantIndex[i]])/1000)+
+			slopeVisitSeedWeight*(visitMu[plantIndex[i]]+log(1-zeroVisHbeeTheta)) + slopePolSeedWeight*pollenPlot[plantIndex[i]]+
 			slopePlSizeWeight*plantSize[i]; //Plant-level effect		
 			
 		//Predicted plant size = intercept + random int field + random int plot	
-		plSizeMu[i] = intSize + intSize_field[plotIndex[plantIndex[i]]] + intSize_plot[plantIndex[i]] + slopePolPlSize*(exp(pollenPlot[plantIndex[i]])/1000); 
+		plSizeMu[i] = intSize + intSize_field[plotIndex[plantIndex[i]]] + intSize_plot[plantIndex[i]] + slopePolPlSize*pollenPlot[plantIndex[i]]; 
 	}
 	
 	for(i in 1:Npod){ //For each pod
@@ -163,18 +195,17 @@ transformed parameters {
 	}
 	
 model {
-	// vector[2] bernLL; //pre-calculate LL for zero inflation process
-	// bernLL[1]=bernoulli_lpmf(0|zeroVisTheta); //LL of no extra zero
-	// bernLL[2]=bernoulli_lpmf(1|zeroVisTheta); //LL of extra zero
-	// for(i in 1:Nplot){ //Zero-inflated negbin for visitation frequency
-		// if(hbeeVis[i]==0)
-			// target += log_sum_exp(bernLL[2],bernLL[1]+neg_binomial_2_log_lpmf(0|visitMu[i],visitPhi));
-		// else
-			// target += bernLL[1]+neg_binomial_2_log_lpmf(hbeeVis[i]|visitMu[i],visitPhi);	
-	// }		
+	vector[2] bernLL; //pre-calculate LL for zero inflation process
+	bernLL[1]=bernoulli_lpmf(0|zeroVisTheta); //LL of no extra zero
+	bernLL[2]=bernoulli_lpmf(1|zeroVisTheta); //LL of extra zero
+	for(i in 1:Nplot){ //Zero-inflated negbin for visitation frequency
+		if(hbeeVis[i]==0)
+			target += log_sum_exp(bernLL[2],bernLL[1]+neg_binomial_2_log_lpmf(0|visitMu[i],visitPhi));
+		else
+			target += bernLL[1]+neg_binomial_2_log_lpmf(hbeeVis[i]|visitMu[i],visitPhi);	
+	}		
 		
-	//Likelihood
-	hbeeVis ~ neg_binomial_2_log(visitMu,visitPhi);	//Visitation rate	
+	//Likelihood		
 	pollenCount ~ neg_binomial_2_log(pollenMu,pollenPhi); //Pollination rate	
 	podCount ~ binomial_logit(flwCount,flwSurv); //Flower survival
 	seedCount ~ neg_binomial_2_log(seedCountMu,seedCountPhi); //Seed count per pod
