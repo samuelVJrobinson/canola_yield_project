@@ -279,24 +279,104 @@ model {
 }
 
 generated quantities{
-int predHbeeVis[Nplot]; //Predicted visits
-int predPollenCount[Nflw]; //Predicted pollen counts
-int predPodCount[Nplant_obs]; //Simulated surviving pods
-int predSeedCount[Npod]; //Simulated seeds per pod
-vector[Npod] predSeedMass; //Simulated seed weight
-
-	for(i in 1:Nplot){		
-		predHbeeVis[i] = neg_binomial_2_log_rng(visitMu[i],visitPhi);	 //Simulated hbee visits			
-	}
+//Plot-level quantities
+	//plant density
+	real predPlDens[Nplot]; //Generated
+	real plDens_resid[Nplot]; //Residual
+	real predPlDens_resid[Nplot]; //Residual of generated
+	//flower density
+	real predFlDens[Nplot]; //Generated
+	real flDens_resid[Nplot]; //Residual
+	real predFlDens_resid[Nplot]; //Residual of generated	
+	//hbeeVis
+	int predHbeeVis_all[Nplot]; //Generated
+	real hbeeVis_resid[Nplot]; //Residual 
+	real predHbeeVis_resid[Nplot]; //Residual of generated 	
 	
-	for(i in 1:Nflw)
-		predPollenCount[i] = neg_binomial_2_log_rng(pollenMu[i],pollenPhi); //Simulated pollen counts
+	// //Flower-level
+	// //pollen deposition
+	// int predPollenCount[Nflw]; //Generated 
+	// real pollen_resid[Nflw]; //residual
+	// real predPollen_resid[Nflw]; //residual of generated
+	
+	//Plant-level	
+	//plantSize
+	real predPlSize[Nplant]; //Generated
+	real plSize_resid[Nplant]; //Residual
+	real predPlSize_resid[Nplant]; //Residual of generated
+	// //flower count per plant (potential pods)
+	// int predFlwCount[Nplant_obs]; //Generated
+	// real flwCount_resid[Nplant_obs]; //Residual
+	// real predFlwCount_resid[Nplant_obs]; //Residual of generated	
+	// //flower survival (surviving pods)
+	// int predPodCount[Nplant_obs]; //Generated
+	// real podCount_resid[Nplant_obs]; //Residual
+	// real predPodCount_resid[Nplant_obs]; //Residual of generated
+	
+	// //Pod-level
+	// //seeds per pod
+	// int predSeedCount[Npod]; //Generated
+	// real seedCount_resid[Npod]; //Residual
+	// real predSeedCount_resid[Npod]; //Residual of generated	
+	// //weight per seed
+	// real predSeedMass[Npod]; //Generated
+	// real seedMass_resid[Npod]; //Residual
+	// real predSeedMass_resid[Npod]; //Residual of generated
 		
-	for(i in 1:Nplant_obs)
-		predPodCount[i] = binomial_rng(flwCount[i],inv_logit(flwSurv[i])); //Simulated surviving pods
+	for(i in 1:Nplot){
+		//plant density		
+		plDens_resid[i] = plDens[i] - plDensMu[i]; //Residual for actual value
+		predPlDens[i]= normal_rng(plDensMu[i],sigmaPlDens); //Generated value from normal
+		predPlDens_resid[i] = predPlDens[i] - plDensMu[i]; //Residual for predicted value							
 	
-	for(i in 1:Npod){ //For each pod
-		predSeedCount[i] = neg_binomial_2_log_rng(seedCountMu[i],seedCountPhi); //Seed count per pod
-		predSeedMass[i] = lognormal_rng(seedWeightMu[i],sigmaSeedWeight); //Weight per seed
-	}	
+		//flower density
+		flDens_resid[i] = flDens[i]-flDensMu[i]; //Residual for actual value
+		predFlDens[i] = normal_rng(flDensMu[i],sigmaFlDens); //Generated value from normal
+		predFlDens_resid[i] = predFlDens[i] - flDensMu[i]; //Residual for predicted value	
+	
+		//bee visits
+		hbeeVis_resid[i]=hbeeVis_all[i]-(exp(visitMu_hbee[i])*(1-zeroVisHbeeTheta)); //Residual for actual value x offset
+		if(bernoulli_rng(zeroVisHbeeTheta)==1) //If zeroVisHbeeTheta generates an extra zero
+			predHbeeVis_all[i] = 0; //Predicted value is automatically zero
+		else //Otherwise
+			predHbeeVis_all[i] = neg_binomial_2_log_rng(visitMu_hbee[i],visitHbeePhi); //Predicted value drawn from neg.bin		
+		predHbeeVis_resid[i]=predHbeeVis_all[i]-(exp(visitMu_hbee[i])*(1-zeroVisHbeeTheta)); //Residual for predicted value			
+		
+	}
+		
+	
+	// for(i in 1:Nflw){
+		// //pollen deposition
+		// pollen_resid[i]= exp(pollenMu[i]) - pollenCount[i]; //Residual for actual value
+		// predPollenCount[i] = neg_binomial_2_log_rng(pollenMu[i],pollenPhi); //Simulate pollen counts
+		// predPollen_resid[i] = exp(pollenMu[i]) - predPollenCount[i]; //Residual for predicted		
+	// }
+			
+	for(i in 1:Nplant){
+		//plant size
+		plSize_resid[i]= plantSize[i] - plSizeMu[i]; //Residual for actual
+		predPlSize[i] = normal_rng(plSizeMu[i],sigmaPlSize); //Generates new value from normal dist.
+		predPlSize_resid[i] = predPlSize[i] - plSizeMu[i]; //Residual for new value
+	}
+	// for(i in 1:Nplant_obs){
+		// //flower number per plant
+		// flwCount_resid[i] = flwCount[i] - exp(flwCountMu[i]); //Residual for actual
+		// predFlwCount[i] = neg_binomial_2_log_rng(flwCountMu[i],flwCountPhi); //Generates new value from neg. bin.
+		// predFlwCount_resid[i] = predFlwCount[i] - exp(flwCountMu[i]); //Residual for new value
+		// //pod count (surviving pods)
+		// podCount_resid[i] = podCount[i] - (flwCount[i]*inv_logit(flwSurv[i])); //Residual for actual
+		// predPodCount[i] = binomial_rng(flwCount[i],inv_logit(flwSurv[i])); //Generates new value from binomial
+		// predPodCount_resid[i] = predPodCount[i] - (flwCount[i]*inv_logit(flwSurv[i])); //Residual for new value		
+	// }
+	
+	// for(i in 1:Npod){ //For each pod
+		// //Seed count per pod
+		// seedCount_resid[i] = seedCount[i] - exp(seedCountMu[i]);
+		// predSeedCount[i] = neg_binomial_2_log_rng(seedCountMu[i],seedCountPhi); 
+		// predSeedCount_resid[i] = predSeedCount[i] - exp(seedCountMu[i]);
+		// //weight per seed
+		// seedMass_resid[i] = seedMass[i] - exp(seedWeightMu[i]+(pow(sigmaSeedWeight,2)/2)); 
+		// predSeedMass[i] = lognormal_rng(seedWeightMu[i],sigmaSeedWeight); 
+		// predSeedMass_resid[i] = predSeedMass[i] - exp(seedWeightMu[i]+(pow(sigmaSeedWeight,2)/2));
+	// }	
 }
