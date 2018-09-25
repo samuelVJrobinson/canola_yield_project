@@ -604,10 +604,7 @@ generated quantities{
 		seedCount_resid[i] = seedCount[i] - exp(seedCountMu[i]);
 		predSeedCount[i] = neg_binomial_2_log_rng(seedCountMu[i],seedCountPhi); 
 		predSeedCount_resid[i] = predSeedCount[i] - exp(seedCountMu[i]);
-		//weight per seed - normal and lognormal distributions don't really work, trying exp-normal
-		// seedMass_resid[i] = seedMass[i] - exp(seedWeightMu[i]+(pow(sigmaSeedWeight,2)/2)); 
-		// predSeedMass[i] = lognormal_rng(seedWeightMu[i],sigmaSeedWeight); 
-		// predSeedMass_resid[i] = predSeedMass[i] - exp(seedWeightMu[i]+(pow(sigmaSeedWeight,2)/2));
+		//weight per seed - exp-normal works well		
 		seedMass_resid[i] = seedMass[i] - (seedWeightMu[i]+(1/lambdaSeedWeight)); 
 		predSeedMass[i] = exp_mod_normal_rng(seedWeightMu[i],sigmaSeedWeight,lambdaSeedWeight); 
 		predSeedMass_resid[i] = predSeedMass[i] - (seedWeightMu[i]+(1/lambdaSeedWeight));

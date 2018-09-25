@@ -1308,6 +1308,69 @@ plot(with(datalist,c(lbeeVis,lbeeVis_extra)),apply(mod3$predLbeeVis_all,2,median
      ylab='Predicted visits',xlab='Actual visits')
 abline(0,1,col='red') #PP plot - not so good
 
+#Partial plots - Chris' advice
+
+#Model matrix + actual + resid
+modMat <- with(datalist,data.frame(intercept=1,logHbeeDist=log(c(hbee_dist,hbee_dist_extra)),
+                        logLbeeDist=log(c(lbee_dist,lbee_dist_extra)),
+                        isCent=c(isCent,isCent_extra),Fbay=c(isFBay,isFBay_extra),
+                        stocking=c(lbeeStocking,lbeeStocking_extra),
+                        centHbeeDist=c(isCent,isCent_extra),
+                        stockingHbeeDist=c(lbeeStocking,lbeeStocking_extra)*
+                          log(c(hbee_dist,hbee_dist_extra)),
+                        flDens=apply(mod3$flDens,2,median),
+                        lbeeVis=c(lbeeVis,lbeeVis_extra),
+                        resid=apply(mod3$lbeeVis_resid,2,median)))
+#Slope estimates
+estimates <- as.matrix(with(mod3,data.frame(intVisitLbee,slopeHbeeDistLbee,slopeLbeeDistLbee,slopeCentLbee,
+                    slopeFBayLbee,slopeStocking,slopeCentHbeeDistLbee,slopeStockingHbeeDistLbee,slopeFlDensLbee)))
+
+#Hbee dist effect
+#Bay center
+modMat2 <- as.matrix(modMat[,c(1:9)])
+keep <- colnames(modMat2) %in% c("intercept","logHbeeDist","isCent","centHbeeDist")
+modMat2[,!keep] <- matrix(rep(colMeans(modMat2[,!keep]),each=nrow(modMat2)),nrow=nrow(modMat2)) #Marginalize
+modMat2 <- data.frame(pred=t(apply(modMat2 %*% t(estimates),1,function(x) exp(quantile(x,c(0.5,0.025,0.975)))))) %>% 
+  cbind(modMat2[,keep]) %>% mutate(resid=modMat$resid) 
+arrange(modMat2,logHbeeDist,isCent) %>% 
+  mutate(isCent=factor(isCent,labels=c('Edge','Cent'))) %>%
+  ggplot(aes(exp(logHbeeDist),pred.50.,col=isCent))+geom_line(size=1)+
+  geom_ribbon(aes(ymax=pred.97.5.,ymin=pred.2.5.,col=NULL,fill=isCent),alpha=0.3)+
+  labs(x='Distance from Edge',y='Visits/10 mins')+xlim(0,400)
+
+#Stocking
+modMat2 <- as.matrix(modMat[,c(1:9)])
+keep <- colnames(modMat2) %in% c("intercept","logHbeeDist","stocking","stockingHbeeDist")
+modMat2[,!keep] <- matrix(rep(colMeans(modMat2[,!keep]),each=nrow(modMat2)),nrow=nrow(modMat2)) #Marginalize
+modMat2 <- data.frame(pred=t(apply(modMat2 %*% t(estimates),1,function(x) exp(quantile(x,c(0.5,0.025,0.975)))))) %>% 
+  cbind(modMat2[,keep]) %>% mutate(resid=modMat$resid) 
+arrange(modMat2,logHbeeDist,stocking) %>% 
+  mutate(stocking=factor(stocking,labels=c('Half','Full'))) %>%
+  ggplot(aes(exp(logHbeeDist),pred.50.,col=stocking))+geom_line(size=1)+
+  geom_ribbon(aes(ymax=pred.97.5.,ymin=pred.2.5.,col=NULL,fill=stocking),alpha=0.3)+
+  labs(x='Distance from Edge',y='Visits/10 mins')+
+  xlim(0,400)
+
+#Lbee dist
+modMat2 <- as.matrix(modMat[,c(1:9)])
+keep <- colnames(modMat2) %in% c("intercept","logLbeeDist")
+modMat2[,!keep] <- matrix(rep(colMeans(modMat2[,!keep]),each=nrow(modMat2)),nrow=nrow(modMat2)) #Marginalize
+modMat2 <- data.frame(pred=t(apply(modMat2 %*% t(estimates),1,function(x) exp(quantile(x,c(0.5,0.025,0.975)))))) %>% 
+  cbind(modMat2[,keep]) %>% mutate(resid=modMat$resid) 
+arrange(modMat2,logLbeeDist) %>% 
+  # mutate(stocking=factor(stocking,labels=c('Half','Full'))) %>%
+  ggplot(aes(exp(logLbeeDist),pred.50.))+geom_line(size=1)+
+  geom_ribbon(aes(ymax=pred.97.5.,ymin=pred.2.5.),alpha=0.3)+
+  geom_point(aes(y=pred.50.-resid))+
+  labs(x='Distance from Shelter',y='Visits/10 mins')+
+  xlim(0,50)+ylim(-5,100)
+
+# mutate(stocking=factor(stocking,labels=c('Half','Full'))) %>%
+
+
+sort(names(mod3))
+
+
 #pollen - good
 with(mod3,plot(apply(pollen_resid,1,function(x) sum(abs(x))),
               apply(predPollen_resid,1,function(x) sum(abs(x))),
