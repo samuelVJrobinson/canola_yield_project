@@ -786,7 +786,7 @@ inits <- function() { with(datalist,
    ))
 }
 
-modPodcount <- stan(file='visitation_pollen_model.stan',data=datalist,iter=100,chains=2,
+modPodcount <- stan(file='visitation_pollen_model.stan',data=datalist,iter=300,chains=2,
                    control=list(adapt_delta=0.8),init=inits)
 # 13 mins for 100 iter
 # save(modPodcount,file='modPodcount.Rdata')
@@ -939,17 +939,47 @@ plantlev <- with(datalist,data.frame(plant=1:Nplant,plot=plantIndex[1:Nplant],
                            field=plotIndex[plantIndex[1:Nplant]],plantSize=NA,podCount,flwCount,
                            avgSeedCount=NA,avgSeedWeight=NA,visit=log(0.5+hbeeVis/totalTime)[plantIndex],
                            distance=dist[plantIndex[1:Nplant]],pollen=NA))
+#Plant size
 plantlev$plantSize[datalist$obsPl_ind] <- datalist$plantSize_obs
+#Average seed number
 plantlev$avgSeedCount[unique(datalist$podIndex)] <- tapply(datalist$seedCount,datalist$podIndex,mean)
+#Average weight per seed
 plantlev$avgSeedWeight[unique(datalist$podIndex)] <- tapply(datalist$seedMass,datalist$podIndex,mean)
+#Average pollen per plot
 plantlev$pollen <-tapply(datalist$pollen,datalist$flowerIndex,function(x) log(mean(x)))[match(plantlev$plot,as.numeric(names(tapply(datalist$pollen,datalist$flowerIndex,mean))))]
 
 library(lme4)
 mod1 <- glmer(cbind(podCount,flwCount)~visit+scale(pollen)+plantSize+scale(log(distance))+
                 (1|field)+(1|plot)+(1|plant),data=plantlev,family='binomial')
 summary(mod1)
-#Pod-level
 
+#Pod-level
+podlev <- with(datalist,data.frame(pod=1:Npod,plant=podIndex[1:Npod],
+                           plot=plantIndex[podIndex[1:Npod]],
+                           field=plotIndex[plantIndex[podIndex[1:Npod]]],
+                           plantSize=NA,avgFlwSurv=NA,
+                           seedCount=seedCount,seedMass=seedMass,
+                           visit=log(0.5+hbeeVis/totalTime)[plantIndex[podIndex[1:Npod]]],
+                           distance=dist[plantIndex[podIndex[1:Npod]]],pollen=NA))
+#Plant size
+podlev$plantSize <- with(datalist,plantSize_obs[obsPl_ind[podIndex[podlev$pod]]])
+#Pollen
+podlev$pollen <- with(datalist,tapply(pollenCount,flowerIndex,mean))[match(podlev$plot,sort(unique(datalist$flowerIndex)))]
+#Pod survival (logit)
+podlev$avgFlwSurv <- logit(with(datalist,(podCount/flwCount))[podlev$plant])
+
+podlev <- mutate_at(podlev,vars(pod,plant,plot,field),factor) %>% 
+  
+
+mod2 <- lmer(seedMass~scale(seedCount)+pollen+plantSize+(1|field)+(1|plot)+(1|plant),data=podlev)
+summary(mod2)
+drop1(mod2,test='Chisq')
+
+mod3 <- lmer(log(seedCount)~scale(seedMass)+scale(pollen)+plantSize+(1|field)+(1|plot)+(1|plant),data=podlev)
+summary(mod3)
+
+#Average pollen per plot
+plantlev$pollen <-tapply(datalist$pollen,datalist$flowerIndex,function(x) log(mean(x)))[match(plantlev$plot,as.numeric(names(tapply(datalist$pollen,datalist$flowerIndex,mean))))]
 
 
 
