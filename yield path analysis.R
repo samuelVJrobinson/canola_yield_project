@@ -743,9 +743,7 @@ datalistPod <- seedsAllComm %>% ungroup() %>%
   seedMass=(PodMass/PodCount)*1000, #Weight per seed (mg)
   podIndex=podIndex) #Index for pod (which plant?)
 )
-
-datalist$seedMass[datalist$seedMass>8] <- with(datalist,seedMass[seedMass>8]/10) #Fixes weird outliers
-
+datalistPod$seedMass[datalistPod$seedMass>8] <- with(datalistPod,seedMass[seedMass>8]/10) #Fixes weird outliers
 datalist <- c(datalistField,datalistPlot,datalistFlw,datalistPlant,datalistPod)
 rm(datalistField,datalistPlot,datalistFlw,datalistPlant,datalistPod,a,b,keep) #Cleanup
 str(datalist)
@@ -783,13 +781,13 @@ inits <- function() { with(datalist,
    ))
 }
 
-modPodcount <- stan(file='visitation_pollen_model.stan',data=datalist,iter=300,chains=3,
+modPodcount <- stan(file='visitation_pollen_model.stan',data=datalist,iter=2000,chains=3,
                    control=list(adapt_delta=0.8),init=inits)
 beep(1)
 
 # 13 mins for 100 iter
 # save(modPodcount,file='modPodcount.Rdata')
-# load('modPodcount.Rdata') #Load full model - takes 1.1 hrs for 600 iter
+# load('modPodcount.Rdata') #Load full model - takes 3.9 hrs for 1000 iter, including all random effects
 
 # print(modPodcount)
 pars=c('intPlDens','slopeDistPlDens','sigmaPlDens','sigmaPlDens_field') #Planting density
@@ -799,7 +797,11 @@ pars=c('intFlDens','slopePlSizeFlDens','sigmaFlDens','sigmaFlDens_field') #Flowe
 pars=c('intVisit','slopeYearVis','slopeGpVis',#'slopeYearGpVis',
        'slopeDistVis','slopeHiveVis','slopeFlDens', #Visitation
        'sigmaVisField','visitHbeePhi','zeroVisHbeeTheta') 
-pars=c('intPollen','slopeVisitPol','sigmaPolField','pollenPhi') #Pollen deposition
+pars=c('intPollen',#'slopeVisitPol','sigmaPolField',
+       'pollenPhi') #Pollen deposition
+
+#n_eff is low, Rhat is high for sigmaPolField. Plot level intercepts look ok distributionally, so perhaps no info at this level?
+
 pars=c('intFlwSurv','slopeVisitSurv','slopePolSurv','slopePlSizeSurv',
        'sigmaFlwSurv_plot','sigmaFlwSurv_field') #Flower survival
 pars=c('intSeedCount','slopeVisitSeedCount','slopePolSeedCount','slopePlSizeCount','seedCountPhi',
@@ -808,18 +810,19 @@ pars=c('intSeedWeight','slopeVisitSeedWeight','slopePolSeedWeight',#Seed weight
        'slopeSeedCount','slopePlSizeWeight',
        'sigmaSeedWeight','sigmaSeedWeight_plant',
        'sigmaSeedWeight_plot','sigmaSeedWeight_field','lambdaSeedWeight')
-
 traceplot(modPodcount,pars=c(pars),inc_warmup=F)
 traceplot(modPodcount,pars=c(pars,'lp__'),inc_warmup=F)
-stan_hist(modPodcount,pars=pars)
-launch_shinystan(modPodcount)
+stan_hist(modPodcount,pars=pars)+geom_vline(xintercept=0,linetype='dashed')
+# launch_shinystan(modPodcount)
+print(modPodcount,pars=pars)
+# pairs(modPodcount,pars=pars)
 
 #Appears to be a small positive effect of visitation rate on seed count, and a negative effect on seed weight. Not sure if this is due to actual visitation, or something like plant density/plant size, which is lower at edge (i.e. abiotic conditions are worse)
 
 print(modPodcount,pars=pars)
 
 mod3 <- extract(modPodcount)
-pairs(mod3[pars],lower.panel=function(x,y){
+pairs(mod3[c(pars,'lp__')],lower.panel=function(x,y){
   par(usr=c(0,1,0,1)) 
   text(0.5, 0.5, round(cor(x,y),2), cex = 1 * exp(abs(cor(x,y))))})
 
@@ -851,24 +854,29 @@ plot(with(datalist,hbeeVis/totalTime),jitter(apply(mod3$predHbeeVis,2,median)), 
      ylab='Predicted visits',xlab='Actual visits')
 abline(0,1,col='red')
 
-#Results
-res <- with(mod3,data.frame(intVisit,slopeYearVis,slopeGpVis,slopeYearGpVis,slopeDistVis,slopeHiveVis,slopeFlDens))
+# #Results
+# res <- with(mod3,data.frame(intVisit,slopeYearVis,slopeGpVis,slopeYearGpVis,slopeDistVis,slopeHiveVis,slopeFlDens))
+# 
+# #Model matrix
+# temp <- with(datalist,data.frame(int=1,year=is2015[plotIndex],area=isGP[plotIndex],
+#                                  areaYear=is2015[plotIndex]*isGP[plotIndex],
+#                                  dist,numHives=numHives[plotIndex],flDens))
 
-#Model matrix
-temp <- with(datalist,data.frame(int=1,year=is2015[plotIndex],area=isGP[plotIndex],
-                                 areaYear=is2015[plotIndex]*isGP[plotIndex],
-                                 dist,numHives=numHives[plotIndex],flDens))
-
-#pollen - not great, but OK
+#pollen - OK
 with(mod3,plot(apply(pollen_resid,1,function(x) sum(abs(x))),
                apply(predPollen_resid,1,function(x) sum(abs(x))),
                xlab='Sum residuals',ylab='Sum simulated residuals',main='Pollen counts')) 
 abline(0,1,col='red') #PP plot
+
+with(mod3,{x <- sum(apply(pollen_resid,1,function(x) sum(abs(x)))<
+             apply(predPollen_resid,1,function(x) sum(abs(x))))/nrow(predPollen_resid)
+  legend('topleft',paste('p =',round(min(x,1-x),3)))})
+
 plot(datalist$pollenCount,apply(mod3$predPollenCount,2,median), #Predicted vs Actual 
      ylab='Predicted pollen',xlab='Actual pollen')
 abline(0,1,col='red') #PP plot
 
-#seeds per pod
+#seeds per pod - bad
 with(mod3,plot(apply(seedCount_resid,1,function(x) sum(abs(x))),
                apply(predSeedCount_resid,1,function(x) sum(abs(x))),
                xlab='Sum residuals',ylab='Sum simulated residuals',main='Seeds per pod')) 
@@ -876,7 +884,7 @@ abline(0,1,col='red') #PP plot - not good
 plot(datalist$seedCount,apply(mod3$predSeedCount,2,median), #Predicted vs Actual - good
      ylab='Predicted seed count',xlab='Actual seed count'); abline(0,1,col='red')
 
-#weight per seed
+#weight per seed - good
 with(mod3,plot(apply(seedMass_resid,1,function(x) sum(abs(x))),
                apply(predSeedMass_resid,1,function(x) sum(abs(x))),
                xlab='Sum residuals',ylab='Sum simulated residuals',main='Weight per seed'))
