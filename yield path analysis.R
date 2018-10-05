@@ -63,7 +63,7 @@ effSize <- function(x) unname(median(x)/diff(quantile(x,c(0.025,0.975))))
 overlap <- function(x) {r <- quantile(x,c(0.025,0.975))>=0; xor(r[1],r[2]);}
 temp <- filter(seedsAllComm)
 
-#Everything above○ this line run to start
+#Everything above this line run to start
 
 # Data from Wang et al 2011 - ovule counts --------------------------------
 ovDat <- read.csv('wang2011ovData.csv') %>% 
@@ -679,7 +679,7 @@ options(mc.cores = 4)
 library(shinystan)
 
 #List structure for Stan
-datalistField <- with(fieldsAllComm,list( #Field-level measurements
+datalistField <- with(arrange(fieldsAllComm,as.factor(paste(Year,Field))),list( #Field-level measurements
   Nfield=length(Year), #Number of fields
   #fieldIndex = as.numeric(as.factor(paste(Year,Field))), #Index for each field
   numHives=NumHives, #Number of hives/field
@@ -688,7 +688,7 @@ datalistField <- with(fieldsAllComm,list( #Field-level measurements
   isIrrigated=Irrigated=='Irrigated' #Is field irrigated?
 ))
 
-datalistPlot <- with(surveyAllComm,list( #Plot-level measurements
+datalistPlot <- with(arrange(surveyAllComm,factor(paste(Year,Field,Distance))),list( #Plot-level measurements
   Nplot=length(Distance), #Number of plots
   plotIndex=as.numeric(as.factor(paste(Year,Field))), #Index for field (which field?)
   dist=Distance, #Distance from edge
@@ -705,6 +705,7 @@ datalistPlot <- with(surveyAllComm,list( #Plot-level measurements
 
 datalistFlw <- flowersAllComm %>% 
   mutate(flowerIndex=as.numeric(factor(paste(Year,Field,Distance)))) %>% 
+  arrange(flowerIndex) %>% 
   filter(!is.na(Pollen)) %>% 
   with(list(Nflw=sum(!is.na(Pollen)), #Number of pollen samples
   flowerIndex=flowerIndex, #Index for flower (which plot?)
@@ -713,6 +714,7 @@ datalistFlw <- flowersAllComm %>%
 
 datalistPlant <- plantsAllComm %>% ungroup() %>% 
   mutate(plantIndex=as.numeric(factor(paste(Year,Field,Distance)))) %>% #Index for plant (which plot?)
+  arrange(plantIndex) %>% 
   filter(!is.na(Pods),!is.na(Missing)) %>% 
   with(list(Nplant=length(VegMass), #Number of plant samples (some missing)
   Nplant_obs=sum(!is.na(VegMass)), #Observed plants
@@ -735,7 +737,8 @@ keep <- which(a$index %in% b$index) #Plants to keep from seeds plants dataset
 
 datalistPod <- seedsAllComm %>% ungroup() %>% 
   mutate(podIndex=as.numeric(factor(paste(Year,Field,Distance,Plant)))) %>%   
-  filter(podIndex %in% keep) %>% 
+  arrange(podIndex) %>% 
+  filter(podIndex %in% keep) %>%
   filter(!is.na(Plant)&!is.na(PodCount)&PodCount>0&!is.na(PodMass)) %>% 
   filter(!is.na(Pods),!is.na(Missing)) %>% #Remove plants from plant level
   with(list(Npod=length(Distance), #Number of seeds measured
@@ -757,8 +760,8 @@ inits <- function() { with(datalist,
     intPlSize_field=rep(0,Nfield),intPlSize_plot=rep(0,Nplot),
     intFlDens=1,slopePlSizeFlDens=0, #Flower density
     sigmaFlDens=0.5,sigmaFlDens_field=0.5,intFlDens_field=rep(0,Nfield),
-    intVisit=-1,slopeDistVis=0,slopeYearVis=0,slopeHiveVis=0,slopeFlDens=0,  #Visitation
-    sigmaVisField=2,visitHbeePhi=0.4,intVisit_field=rep(0,Nfield),zeroVisHbeeTheta=0.2,
+    intVisit=-1,slopeYearVis=0,slopeGpVis=0,slopeYearGpVis=1.5,slopeDistVis=0, #Visitation
+    slopeHiveVis=0.5,slopeFlDens=0,sigmaVisField=2,visitHbeePhi=0.7,intVisit_field=rep(0,Nfield),zeroVisHbeeTheta=0.2,
     intPollen=5.5,slopeVisitPol=0,sigmaPolField=0.5,sigmaPolPlot=0.4,pollenPhi=0.7, #Pollen deposition
     intPollen_field=rep(0,datalist$Nfield),
     intPollen_plot=rep(0,datalist$Nplot),
@@ -766,7 +769,7 @@ inits <- function() { with(datalist,
     intFlwSurv_plot=rep(0,Nplot),intFlwCount_field=rep(0,Nfield),flwCountPhi=1,
     intFlwSurv=0,slopeVisitSurv=0,slopePolSurv=0,slopePlSizeSurv=0, #Flower survival
     sigmaFlwSurv_plot=0.5,sigmaFlwSurv_field=0.5, 
-    intFlwSurv_field=rep(0,Nfield),intFlwSurv_plot=rep(0,Nplot),
+    intFlwSurv_field=rep(0,Nfield),intFlwSurv_plot=rep(0,Nplot),flwSurvPhi=1,
     intSeedCount=3.15,slopeVisitSeedCount=0.05,slopePolSeedCount=0,seedCountPhi=21, #Seed count
     slopePlSizeCount=0, sigmaSeedCount_plant=0.14,
     sigmaSeedCount_plot=0.07,sigmaSeedCount_field=0.1,
@@ -781,29 +784,28 @@ inits <- function() { with(datalist,
    ))
 }
 
-modPodcount <- stan(file='visitation_pollen_model.stan',data=datalist,iter=2000,chains=3,
+modPodcount <- stan(file='visitation_pollen_model.stan',data=datalist,iter=400,chains=3,
                    control=list(adapt_delta=0.8),init=inits)
 beep(1)
 
 # 13 mins for 100 iter
 # save(modPodcount,file='modPodcount.Rdata')
-# load('modPodcount.Rdata') #Load full model - takes 3.9 hrs for 1000 iter, including all random effects
+# load('modPodcount.Rdata') #Load full model - takes 3.9 hrs to run 1000 iterations, including all random effects
 
 # print(modPodcount)
 pars=c('intPlDens','slopeDistPlDens','sigmaPlDens','sigmaPlDens_field') #Planting density
 pars=c('intPlSize','slopePlDensPlSize','slopeDistPlSize','slopeGpPlSize', #Plant size
-       'slopeIrrigPlSize','slope2015PlSize','sigmaPlSize_field','sigmaPlSize')
+       'slopeIrrigPlSize','slope2015PlSize','sigmaPlSize_field','sigmaPlSize_plot','sigmaPlSize')
 pars=c('intFlDens','slopePlSizeFlDens','sigmaFlDens','sigmaFlDens_field') #Flower density
-pars=c('intVisit','slopeYearVis','slopeGpVis',#'slopeYearGpVis',
+pars=c('intVisit','slopeYearVis','slopeGpVis','slopeYearGpVis',
        'slopeDistVis','slopeHiveVis','slopeFlDens', #Visitation
-       'sigmaVisField','visitHbeePhi','zeroVisHbeeTheta') 
-pars=c('intPollen',#'slopeVisitPol','sigmaPolField',
+       'sigmaVisField','visitHbeePhi')#,'zeroVisHbeeTheta') 
+pars=c('intPollen','slopeVisitPol','sigmaPolField',#'sigmaPolPlot',
        'pollenPhi') #Pollen deposition
-
-#n_eff is low, Rhat is high for sigmaPolField. Plot level intercepts look ok distributionally, so perhaps no info at this level?
-
+pars=c('intFlwCount','slopePlSizeFlwCount', #Flower count per plant
+       'sigmaFlwCount_field','sigmaFlwCount_plot','flwCountPhi')
 pars=c('intFlwSurv','slopeVisitSurv','slopePolSurv','slopePlSizeSurv',
-       'sigmaFlwSurv_plot','sigmaFlwSurv_field') #Flower survival
+       'sigmaFlwSurv_plot','sigmaFlwSurv_field','flwSurvPhi') #Flower survival
 pars=c('intSeedCount','slopeVisitSeedCount','slopePolSeedCount','slopePlSizeCount','seedCountPhi',
        'sigmaSeedCount_plant','sigmaSeedCount_plot','sigmaSeedCount_field') #Seed count
 pars=c('intSeedWeight','slopeVisitSeedWeight','slopePolSeedWeight',#Seed weight
@@ -811,23 +813,23 @@ pars=c('intSeedWeight','slopeVisitSeedWeight','slopePolSeedWeight',#Seed weight
        'sigmaSeedWeight','sigmaSeedWeight_plant',
        'sigmaSeedWeight_plot','sigmaSeedWeight_field','lambdaSeedWeight')
 traceplot(modPodcount,pars=c(pars),inc_warmup=F)
-traceplot(modPodcount,pars=c(pars,'lp__'),inc_warmup=F)
-stan_hist(modPodcount,pars=pars)+geom_vline(xintercept=0,linetype='dashed')
+stan_hist(modPodcount,pars=pars)#+geom_vline(xintercept=0,linetype='dashed')
 # launch_shinystan(modPodcount)
 print(modPodcount,pars=pars)
 # pairs(modPodcount,pars=pars)
 
 #Appears to be a small positive effect of visitation rate on seed count, and a negative effect on seed weight. Not sure if this is due to actual visitation, or something like plant density/plant size, which is lower at edge (i.e. abiotic conditions are worse)
 
-print(modPodcount,pars=pars)
-
 mod3 <- extract(modPodcount)
 pairs(mod3[c(pars,'lp__')],lower.panel=function(x,y){
   par(usr=c(0,1,0,1)) 
   text(0.5, 0.5, round(cor(x,y),2), cex = 1 * exp(abs(cor(x,y))))})
 
-#Check model fit:
+t(apply(mod3$intPollen_plot,2,function(x) quantile(x,c(0.5,0.975,0.025)))) %>% 
+  as.data.frame() %>% rename(median='50%',upr='97.5%',lwr='2.5%') %>% arrange(median) %>% 
+  mutate(row=1:nrow(.)) %>% ggplot(aes(row,median))+geom_pointrange(aes(ymax=upr,ymin=lwr))+geom_hline(yintercept=0,col='red')
 
+#Check model fit:
 par(mfrow=c(2,1))
 #planting density - good
 with(mod3,plot(apply(plDens_resid,1,function(x) sum(abs(x))), #PP plot - good
@@ -845,7 +847,7 @@ abline(0,1,col='red'); #PP plot - good
 plot(datalist$plantSize,apply(mod3$predPlSize,2,median)[datalist$obsPl_ind], #Predicted vs Actual - good
      ylab='Predicted plant size',xlab='Actual plant size'); abline(0,1,col='red')
 
-#hbee visits - OK
+#hbee visits - good
 with(mod3,plot(apply(hbeeVis_resid,1,function(x) sum(abs(x))),
                apply(predHbeeVis_resid,1,function(x) sum(abs(x))),
                xlab='Sum residuals',ylab='Sum simulated residuals',main='Hbee visits')) 
@@ -862,7 +864,7 @@ abline(0,1,col='red')
 #                                  areaYear=is2015[plotIndex]*isGP[plotIndex],
 #                                  dist,numHives=numHives[plotIndex],flDens))
 
-#pollen - OK
+#pollen - OK, but plot level random effects throw off PP checks
 with(mod3,plot(apply(pollen_resid,1,function(x) sum(abs(x))),
                apply(predPollen_resid,1,function(x) sum(abs(x))),
                xlab='Sum residuals',ylab='Sum simulated residuals',main='Pollen counts')) 
@@ -919,33 +921,22 @@ ggplot(temp2,aes(seedCount,median))+geom_ribbon(aes(ymax=upr,ymin=lwr),fill='red
   geom_line(size=1,col='red')+ylab('Weight per seed (mg)')+xlab('Seeds per pod')
   
   
-  
-
-
-
-
-
-
-
-
-
-#Flower count
+#Flower count - bad
 with(mod3,plot(apply(flwCount_resid,1,function(x) sum(abs(x))),
                apply(predFlwCount_resid,1,function(x) sum(abs(x))),
                xlab='Sum residuals',ylab='Sum simulated residuals',main='Flower count per plant'))
-abline(0,1,col='red');  #PP plot - OK
-plot(datalist$flwCount,apply(mod3$predFlwCount,2,median), #Predicted vs Actual - good, but variance increases
-     ylab='Predicted flower count',xlab='Actual flower count',ylim=c(0,3000))  
+abline(0,1,col='red');  #PP plot 
+plot(datalist$flwCount,apply(mod3$predFlwCount,2,median), #Predicted vs Actual - good
+     ylab='Predicted flower count',xlab='Actual flower count')  
 abline(0,1,col='red')
 
-#flower survival (pod count)
+#flower survival (pod count) - better with a beta-binomial, but still not the best
 with(mod3,plot(apply(podCount_resid,1,function(x) sum(abs(x))),
                apply(predPodCount_resid,1,function(x) sum(abs(x))),
                xlab='Sum residuals',ylab='Sum simulated residuals',main='Pods per plant'))
 abline(0,1,col='red') #PP plot - good
 plot(datalist$podCount,apply(mod3$predPodCount,2,median), #Predicted vs Actual - good
      ylab='Predicted number of pods',xlab='Actual number of pods'); abline(0,1,col='red')
-
 par(mfrow=c(1,1))
 
 
@@ -1017,7 +1008,8 @@ plotlev <- plotlev %>%  drop_na() %>% mutate_at(vars(plot,field),factor) %>%
   mutate(logVisRate=log(hbeeVis+0.5/totalTime)) %>% 
   mutate(pollen=scale(pollen))
 
-mod1 <- psem(lmer(plSize~plantDens+isIrrig+isGP+is2015+(1|field),data=plotlev),
+mod1 <- psem(lmer(plantDens~logDist+(1|field),data=plotlev),
+             lmer(plSize~plantDens+isIrrig+isGP+is2015+(1|field),data=plotlev),
              lmer(flDens~plSize+isIrrig+isGP+is2015+(1|field),data=plotlev),
              # glmer.nb(hbeeVis~offset(log(totalTime))+logDist+is2015+isGP+(1|field),data=plotlev),
              lmer(logVisRate~logDist+is2015+isGP+(1|field),data=plotlev),
