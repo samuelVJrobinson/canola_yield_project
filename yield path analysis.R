@@ -727,6 +727,9 @@ datalistPlant <- plantsAllComm %>% ungroup() %>%
   obsPl_ind=which(!is.na(VegMass)),missPl_ind=which(is.na(VegMass))
 ))
 
+# sort(unique(with(plantsAllComm,paste(Year,Field,Distance,Plant)))) %in%
+#   sort(unique(with(seedsAllComm,paste(Year,Field,Distance,Plant))))
+
 #Problem: plots exist at the pod level which do not exist at plant level
 a <- plantsAllComm %>% ungroup() %>% filter(!is.na(Pods),!is.na(Missing)) %>%
   transmute(index=factor(paste(Year,Field,Distance,Plant))) %>% distinct() #Index for plant (which plot?)
@@ -767,8 +770,8 @@ inits <- function() { with(datalist,
     intPollen_plot=rep(0,datalist$Nplot),
     intFlwCount=1,slopePlSizeFlwCount=0,sigmaFlwCount_field=0.5,sigmaFlwSurv_plot=0.5, #Flower count per plant
     intFlwSurv_plot=rep(0,Nplot),intFlwCount_field=rep(0,Nfield),flwCountPhi=1,
-    intFlwSurv=0,slopeVisitSurv=0,slopePolSurv=0,slopePlSizeSurv=0, #Flower survival
-    sigmaFlwSurv_plot=0.5,sigmaFlwSurv_field=0.5, 
+    intFlwSurv=1,slopeVisitSurv=0,slopePolSurv=0,slopePlSizeSurv=0.02, #Flower survival
+    sigmaFlwSurv_plot=0.3,sigmaFlwSurv_field=0.3, 
     intFlwSurv_field=rep(0,Nfield),intFlwSurv_plot=rep(0,Nplot),flwSurvPhi=1,
     intSeedCount=3.15,slopeVisitSeedCount=0.05,slopePolSeedCount=0,seedCountPhi=21, #Seed count
     slopePlSizeCount=0, sigmaSeedCount_plant=0.14,
@@ -783,10 +786,17 @@ inits <- function() { with(datalist,
     lambdaSeedWeight=1.5
    ))
 }
-
-modPodcount <- stan(file='visitation_pollen_model.stan',data=datalist,iter=400,chains=3,
-                   control=list(adapt_delta=0.8),init=inits)
+claims1 <- stan(file='./Commodity model claims 1/commodity_claims26.stan',data=datalist,iter=200,chains=3,
+                control=list(adapt_delta=0.8),init=inits)
+# modPodcount <- stan(file='visitation_pollen_model.stan',data=datalist,iter=300,chains=3,
+#                    control=list(adapt_delta=0.8),init=inits)
 beep(1)
+newpar='slope2015SeedCount'
+stan_hist(claims1,pars=c(pars,newpar))+geom_vline(xintercept=0,linetype='dashed')
+# traceplot(claims1,pars=c(pars,newpar),inc_warmup=F)
+mod1 <- extract(claims1)
+2*(1-pnorm(abs(mean(mod1[[1]])/sd(mod1[[1]])),0,1)) #p-val for claim (2-tailed)
+print(claims1,pars=c(pars,newpar)) 
 
 # 13 mins for 100 iter
 # save(modPodcount,file='modPodcount.Rdata')
@@ -799,24 +809,25 @@ pars=c('intPlSize','slopePlDensPlSize','slopeDistPlSize','slopeGpPlSize', #Plant
 pars=c('intFlDens','slopePlSizeFlDens','sigmaFlDens','sigmaFlDens_field') #Flower density
 pars=c('intVisit','slopeYearVis','slopeGpVis','slopeYearGpVis',
        'slopeDistVis','slopeHiveVis','slopeFlDens', #Visitation
-       'sigmaVisField','visitHbeePhi')#,'zeroVisHbeeTheta') 
+       'sigmaVisField','visitHbeePhi') 
 pars=c('intPollen','slopeVisitPol','sigmaPolField',#'sigmaPolPlot',
        'pollenPhi') #Pollen deposition
 pars=c('intFlwCount','slopePlSizeFlwCount', #Flower count per plant
        'sigmaFlwCount_field','sigmaFlwCount_plot','flwCountPhi')
-pars=c('intFlwSurv','slopeVisitSurv','slopePolSurv','slopePlSizeSurv',
-       'sigmaFlwSurv_plot','sigmaFlwSurv_field','flwSurvPhi') #Flower survival
+pars=c('intFlwSurv','slopeVisitSurv','slopePolSurv','slopePlSizeSurv','sigmaFlwSurv_plot',
+       'sigmaFlwSurv_field','flwSurvPhi') #Flower survival
 pars=c('intSeedCount','slopeVisitSeedCount','slopePolSeedCount','slopePlSizeCount','seedCountPhi',
-       'sigmaSeedCount_plant','sigmaSeedCount_plot','sigmaSeedCount_field') #Seed count
+       'sigmaSeedCount_plant','sigmaSeedCount_field') #Seed count
 pars=c('intSeedWeight','slopeVisitSeedWeight','slopePolSeedWeight',#Seed weight
        'slopeSeedCount','slopePlSizeWeight',
        'sigmaSeedWeight','sigmaSeedWeight_plant',
-       'sigmaSeedWeight_plot','sigmaSeedWeight_field','lambdaSeedWeight')
+       'sigmaSeedWeight_field','lambdaSeedWeight')
 traceplot(modPodcount,pars=c(pars),inc_warmup=F)
 stan_hist(modPodcount,pars=pars)#+geom_vline(xintercept=0,linetype='dashed')
 # launch_shinystan(modPodcount)
 print(modPodcount,pars=pars)
 # pairs(modPodcount,pars=pars)
+
 
 #Appears to be a small positive effect of visitation rate on seed count, and a negative effect on seed weight. Not sure if this is due to actual visitation, or something like plant density/plant size, which is lower at edge (i.e. abiotic conditions are worse)
 
@@ -825,9 +836,12 @@ pairs(mod3[c(pars,'lp__')],lower.panel=function(x,y){
   par(usr=c(0,1,0,1)) 
   text(0.5, 0.5, round(cor(x,y),2), cex = 1 * exp(abs(cor(x,y))))})
 
-t(apply(mod3$intPollen_plot,2,function(x) quantile(x,c(0.5,0.975,0.025)))) %>% 
+t(apply(mod3$intFlwSurv_field,2,function(x) quantile(x,c(0.5,0.975,0.025)))) %>% 
   as.data.frame() %>% rename(median='50%',upr='97.5%',lwr='2.5%') %>% arrange(median) %>% 
   mutate(row=1:nrow(.)) %>% ggplot(aes(row,median))+geom_pointrange(aes(ymax=upr,ymin=lwr))+geom_hline(yintercept=0,col='red')
+
+qqline(apply(mod3$intFlwSurv_field,2,median))
+
 
 #Check model fit:
 par(mfrow=c(2,1))
@@ -921,7 +935,7 @@ ggplot(temp2,aes(seedCount,median))+geom_ribbon(aes(ymax=upr,ymin=lwr),fill='red
   geom_line(size=1,col='red')+ylab('Weight per seed (mg)')+xlab('Seeds per pod')
   
   
-#Flower count - bad
+#Flower count - good predictions, but slightly overdispersed
 with(mod3,plot(apply(flwCount_resid,1,function(x) sum(abs(x))),
                apply(predFlwCount_resid,1,function(x) sum(abs(x))),
                xlab='Sum residuals',ylab='Sum simulated residuals',main='Flower count per plant'))
