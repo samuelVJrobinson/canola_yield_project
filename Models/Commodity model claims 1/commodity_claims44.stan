@@ -73,7 +73,7 @@ transformed data {
 
 parameters {
 	//Claim: seed weight ~ pod survival
-	real slopeSurvSeedWeight;
+	real slopeStockingSeedWeight;
 
 	//Plant density	
 	vector[Nplot_densMiss] plDens_miss; 
@@ -156,7 +156,8 @@ transformed parameters {
 		//Plot-level seed weight = intercept + random int field + random int plot + 	
 		seedWeightMuPlot[i] = intSeedWeight + intSeedWeight_field[plotIndex[i]] + 
 			slopeVisitSeedWeight*logHbeeVis[i] + //(log) hbee visits 
-			slopePolSeedWeight*pollenPlot[i]; //pollen deposition - large correlation b/w slopePolSeedWeight and intFlwSurv			
+			slopePolSeedWeight*pollenPlot[i] + //pollen deposition - large correlation b/w slopePolSeedWeight and intFlwSurv	
+			slopeStockingSeedWeight*propFlwSurv[plotIndex[i]]; //Pod survival			
 	}
 		
 	for(i in 1:Nflw) //For each flower stigma
@@ -168,8 +169,8 @@ transformed parameters {
 			
 		// Weight per seed = plot-level effect + random int plant + 
 		seedWeightPlantMu[i] = seedWeightMuPlot[plantIndex[i]] + intSeedWeight_plant[i] +			
-			slopePlSizeWeight*plantSize[i] + //Plant size
-			slopeSurvSeedWeight*propFlwSurv[i]; //Pod survival
+			slopePlSizeWeight*plantSize[i]; //Plant size
+			
 	}
 	
 	for(i in 1:Npod){ //For each pod		
@@ -187,7 +188,7 @@ model {
 		
 	//Priors	
 	//Claim
-	slopeSurvSeedWeight ~ normal(0,1);
+	slopeStockingSeedWeight ~ normal(0,0.02);
 	
 	//Plant density	- informative priors
 	intPlDens ~ normal(0,0.1); //Global intercept

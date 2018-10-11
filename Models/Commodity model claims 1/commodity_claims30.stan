@@ -185,7 +185,7 @@ model {
 			
 	//Priors	
 	//Claim
-	slopeHbeeDistSeedCount ~ normal(0,1);
+	slopePlDensSeedCount ~ normal(0,1);
 	
 	//Plant density	- informative priors
 	intPlDens ~ normal(0,0.1); //Global intercept
@@ -226,51 +226,11 @@ model {
 }
 
 generated quantities{
-//Plot-level quantities
-	//planting density
-	real predPlDens[Nplot]; //Generated
-	real plDens_resid[Nplot]; //Residual
-	real predPlDens_resid[Nplot]; //Residual of generated
-	
-	//Flower-level
-	//pollen deposition
-	int predPollenCount[Nflw]; //Generated 
-	real pollen_resid[Nflw]; //residual
-	real predPollen_resid[Nflw]; //residual of generated
-	
-	//Plant-level	
-	//plantSize
-	real predPlSize[Nplant]; //Generated
-	real plSize_resid[Nplant]; //Residual
-	real predPlSize_resid[Nplant]; //Residual of generated
-
 	//Pod-level
 	//seeds per pod
 	int predSeedCount[Npod]; //Generated
 	real seedCount_resid[Npod]; //Residual
 	real predSeedCount_resid[Npod]; //Residual of generated	
-			
-	for(i in 1:Nplot){
-		// plant density		
-		plDens_resid[i] = plDens[i] - plDensMu[i]; //Residual for actual value
-		predPlDens[i]= normal_rng(plDensMu[i],sigmaPlDens); //Generated value from normal
-		predPlDens_resid[i] = predPlDens[i] - plDensMu[i]; //Residual for predicted value							
-	
-	}		
-	
-	for(i in 1:Nflw){
-		//pollen deposition
-		pollen_resid[i]= exp(pollenMu[i]) - pollenCount[i]; //Residual for actual value
-		predPollenCount[i] = neg_binomial_2_log_rng(pollenMu[i],pollenPhi); //Simulate pollen counts
-		predPollen_resid[i] = exp(pollenMu[i]) - predPollenCount[i]; //Residual for predicted		
-	}
-			
-	for(i in 1:Nplant){
-		//plant size
-		plSize_resid[i]= plantSize[i] - plSizeMu[i]; //Residual for actual
-		predPlSize[i] = normal_rng(plSizeMu[i],sigmaPlSize); //Generates new value from normal dist.
-		predPlSize_resid[i] = predPlSize[i] - plSizeMu[i]; //Residual for new value			
-	}
 	
 	for(i in 1:Npod){ //For each pod
 		//Seed count per pod - doesn't work well due to weird generating process

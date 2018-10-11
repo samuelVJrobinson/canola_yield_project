@@ -91,6 +91,8 @@ transformed data {
 	vector[Nplot_all] logHbeeVis_all; //Log-visitation rate for hbees
 	vector[Nplot_all] logLbeeVis_all; //Log-visitation rate for lbees
 	vector[Nplot] logPolCountPlot; //Log-average pollen count at plot level
+	vector[Nplant_obs] propFlwSurv_obs; //(logit) proportion flower survival	
+	
 	//Assign values
 	plotIndex_all[1:Nplot] = plotIndex; 
 	plotIndex_all[Nplot+1:Nplot_all] = plotIndex_extra;
@@ -119,6 +121,20 @@ transformed data {
 		logLbeeVis_all[i] = log(0.1+(lbeeVis_all[i]/totalTime_all[i]));			
 	}
 	logPolCountPlot=polCountPlot; //Log-transforms average pollen counts
+	
+	for(i in 1:Nplant_obs){
+		//Necessary for promoting integers to reals. Otherwise does integer division.
+		propFlwSurv_obs[i] = podCount[i]; 
+		propFlwSurv_obs[i] = propFlwSurv_obs[i]/flwCount[i]; //Proportion surviving pods		
+		if(propFlwSurv_obs[i]<=0) //Deal with weird 100% and 0% plants
+			propFlwSurv_obs[i]=0.01;
+		else if(propFlwSurv_obs[i]>=1)
+			propFlwSurv_obs[i]=0.99;		
+	}
+	//Logit transform 
+	propFlwSurv_obs=logit(propFlwSurv_obs);		
+	
+	
 }
 
 parameters {  
@@ -171,13 +187,12 @@ parameters {
 	real intFlwSurv; //Intercept	
 	real slopePolSurv; //Slope of pollen deposition
 	real slopePlSizeSurv; //Slope of plant size
-	real slopeEdgeCentSurv; //Slope of edge effect
-	// real slopeSeedCountSurv; //Slope of seed count
+	real slopeEdgeCentSurv; //Slope of edge effect	
 	real slopeSeedSizeSurv; //Slope of seed size	
 	real<lower=0.01> sigmaFlwSurv_plot; //SD of plot random intercepts	
 	real<lower=0.01> sigmaFlwSurv_field; //SD of field random intercepts
 	vector[Nfield] intFlwSurv_field; //field-level random intercepts
-	vector[Nplot] intFlwSurv_plot; //plot-level random intercepts
+	vector[Nplot] intFlwSurv_plot; //plot-level random intercepts	
 		
 	//Seed count - random effects at plot level weren't converging
 	real intSeedCount; //Intercept	
@@ -248,7 +263,8 @@ transformed parameters {
 	vector[Nplot] pollenMu_plot; //Plot level pollen
 	vector[Nflw] pollenMu; //Expected pollen - flower level
 	vector[Nplot] flwSurvPlot; //Plot-level flower survival
-	vector[Nplant] flwSurv; //Flower survival rate (logit)	
+	vector[Nplant] flwSurv; //Flower survival rate (logit)
+	vector[Nplant] propFlwSurv; //(logit) observed flower survival	
 	vector[Nplant] seedCountMuPlant; //Plant-level seed count	
 	vector[Npod] seedCountMu; //Pod-level seed counts	
 	vector[Nplant] seedWeightPlantMu; //Plant-level weight per seed
@@ -269,7 +285,10 @@ transformed parameters {
  	for(i in 1:Nplot_flsObs_extra) //For each extra observed plot
 		flDens[obsFls_ind_extra[i]+Nplot]=flDens_obs_extra[i];	//Add it to index in flDens
 	for(i in 1:Nplot_flsMiss_extra) //For each extra missing plot
-		flDens[missFls_ind_extra[i]+Nplot]=flDens_extra_miss[i];		
+		flDens[missFls_ind_extra[i]+Nplot]=flDens_extra_miss[i];			
+	//(logit) proportion observed flower survival
+	propFlwSurv[obsPlant_ind]=propFlwSurv_obs;
+	propFlwSurv[missPlant_ind]=flwSurv[missPlant_ind]; //Direct imputation from predicted values
 	
 	for(i in 1:Nplot_all){		
 		//Plant density = intercept + random field int + hbee distance effect
