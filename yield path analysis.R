@@ -670,30 +670,19 @@ inits <- function() { with(datalist,
 }
 
 #Claims list
-claims1 <- stan(file='./Commodity model claims 1/commodity_claims42.stan',data=datalist,iter=800,chains=4,
-                control=list(adapt_delta=0.8),init=inits)
-claims2 <- stan(file='./Commodity model claims 1/commodity_claims43.stan',data=datalist,iter=800,chains=4,
-                control=list(adapt_delta=0.8),init=inits)
-claims3 <- stan(file='./Commodity model claims 1/commodity_claims44.stan',data=datalist,iter=800,chains=4,
-                control=list(adapt_delta=0.8),init=inits)
-claims4 <- stan(file='./Commodity model claims 1/commodity_claims48.stan',data=datalist,iter=800,chains=4,
-                control=list(adapt_delta=0.8),init=inits)
-claims5 <- stan(file='./Commodity model claims 1/commodity_claims49.stan',data=datalist,iter=800,chains=4,
-                control=list(adapt_delta=0.8),init=inits)
 claims6 <- stan(file='./Commodity model claims 1/commodity_claims50.stan',data=datalist,iter=800,chains=4,
                 control=list(adapt_delta=0.8),init=inits)
-
 beep(1)
-newpar='slopeFlwCountSurv'
-stan_hist(claims1,pars=c(pars,newpar))+geom_vline(xintercept=0,linetype='dashed')
-traceplot(claims1,pars=c(pars,newpar),inc_warmup=F)+geom_hline(yintercept=0,linetype='dashed')
-mod1 <- extract(claims1)
+newpar='slopeFlwCountFlDens'
+stan_hist(claims6,pars=c(pars,newpar))+geom_vline(xintercept=0,linetype='dashed')
+traceplot(claims6,pars=c(pars,newpar),inc_warmup=F)+geom_hline(yintercept=0,linetype='dashed')
+mod1 <- extract(claims6)
 2*(1-pnorm(abs(mean(mod1[[1]])/sd(mod1[[1]])),0,1)) #p-val for claim (2-tailed)
 print(claims1,pars=c(pars,newpar))
 
-#Full model
-modPodcount <- stan(file='visitation_pollen_model.stan',data=datalist,iter=2000,chains=3,
-                   control=list(adapt_delta=0.8),init=inits)
+# #Full model
+# modPodcount <- stan(file='visitation_pollen_model.stan',data=datalist,iter=2000,chains=3,
+#                    control=list(adapt_delta=0.8),init=inits)
 beep(5)
 # 13 mins for 100 iter
 # save(modPodcount,file='modPodcount.Rdata')
