@@ -141,6 +141,9 @@ transformed data {
 }
 
 parameters { 
+	//Claim
+	real XXX; 
+
 	//Plant density
 	//Vector for imputing missing plant density values (missing values from my data + all of Riley's data)
 	vector[Nplot_densMiss] plDens_miss; //My fields
@@ -414,7 +417,10 @@ model {
 	// seedCount ~ neg_binomial_2_log(seedCountMu,seedCountPhi); //Seed count per pod
 	// seedMass ~ exp_mod_normal(seedWeightMu,sigmaSeedWeight,lambdaSeedWeight); //Weight per seed	
 			
-	// Priors
+	// Priors	
+	//Claim
+	XXX ~ normal(0,1); 
+	
 	//Planting density
 	intPlDens ~ normal(0,0.5); //Intercept
 	slopeHbeeDistPlDens ~ normal(0.05,0.1); //Distance into field	
