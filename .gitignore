@@ -2,3 +2,5 @@
 .Rhistory
 .RData
 .Ruserdata
+yield path analysis.R
+*.rds

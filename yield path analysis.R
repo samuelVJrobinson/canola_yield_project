@@ -1191,15 +1191,15 @@ str(datalist)
 
 inits <- function(){with(datalist,list(
   #Planting density
-  plDens_miss=rep(0,Nplot_densMiss),plDens_miss_extra=rep(0,Nplot_exra),
+  plDens_miss=rep(0,Nplot_densMiss),plDens_miss_extra=rep(0,Nplot_extra),
   intPlDens=0.1,slopeHbeeDistPlDens=0.07,
-  sigmaPlDens=0.3,sigmaPlDens_field=0.35,intPlDens_field=rep(0,Nfield),
+  sigmaPlDens=0.3,sigmaPlDens_field=0.35,intPlDens_field=rep(0,Nfield+Nfield_extra),
   #Plant size,
   plantSize_miss=rep(0,Nplant_miss),intPlSize=0.4,slopePlDensPlSize=-0.75,
   slopeDistPlSize=0.07,sigmaPlSize=0.6,slope2016PlSize=0,
   #Flower density per plot
   flDens_miss=rep(0,Nplot_flsMiss),flDens_extra_miss=rep(0,Nplot_flsMiss_extra),
-  intFlDens=0,slopePlSizeFlDens=8,intFlDens_field=rep(0,Nfield),sigmaFlDens=5,sigmaFlDens_field=4,
+  intFlDens=0,slopePlSizeFlDens=8,intFlDens_field=rep(0,Nfield+Nfield_extra),sigmaFlDens=5,sigmaFlDens_field=4,
   #Hbees
   intVisitHbee=1.9,slopeHbeeDistHbee=-0.25,slopeLbeeDistHbee=0.4,slopeLbeeHbeeDistHbee=0,
   slopeLbeeVisHbee=0,slopeCentHbee=0.35,slopeFlDensHbee=0,slopeFBayHbee=0.1,
@@ -1230,25 +1230,34 @@ inits <- function(){with(datalist,list(
   sigmaSeedWeight_plant=0.1,intSeedWeight_field=rep(0,Nfield),intSeedWeight_plot=rep(0,Nplot),
   intSeedWeight_plant=rep(0,Nplant)),lambdaSeedWeight=3
 )}
-
-#Full model
-modPodcount_seed <- stan(file='visitation_pollen_model_seed.stan',data=datalist,
-                         iter=1000,chains=3,control=list(adapt_delta=0.8))
-                                                 # init=inits)
+# #Full model
+# modPodcount_seed <- stan(file='visitation_pollen_model_seed.stan',data=datalist,
+#                          iter=1000,chains=3,control=list(adapt_delta=0.8),init=inits)
 # save(modPodcount_seed,file='modPodcount_seed2.Rdata')
 #Setting max_treedepth=15 takes about 2-3x as long to run model. Use with care.
 # modPodcount_seed2 <- optimizing(stan_model(file='visitation_pollen_model_seed.stan'),data=datalist,init=inits)
 # str(modPodcount_seed2)
+
+#Claims list
+claims1 <- stan(file='./Seed model claims 1/seedModel_claims35.stan',data=datalist,
+                iter=800,chains=4,init=inits)
+
+claimTerm <- 'slopePolFlwCount'
+stan_hist(claims8,pars=c(claimTerm,pars))+geom_vline(xintercept=0,linetype='dashed')
+mod1 <- extract(claims8)
+2*(1-pnorm(abs(mean(mod1[[1]])/sd(mod1[[1]])),0,1)) #p-val
+
+
 pars=c('intPlDens','slopeHbeeDistPlDens',#'slopeHbeeDistSqPlDens', #Planting density
        'sigmaPlDens','sigmaPlDens_field') 
 pars=c('intPlSize','slopePlDensPlSize','slope2016PlSize',
-       'slopeDistPlSize','sigmaPlSize') #Plant size
+       'sigmaPlSize') #Plant size
 pars=c('intFlDens','slopePlSizeFlDens','sigmaFlDens','sigmaFlDens_field') #Flower density
 pars=c('intVisitLbee','slopeHbeeDistLbee','slopeLbeeDistLbee','slopeCentLbee','slopeFBayLbee', #Lbee vis
        'slopeStocking','slopeCentHbeeDistLbee','slopeStockingHbeeDistLbee',#'slopePlsizeLbee',
        'slopeFlDensLbee','sigmaLbeeVisField','visitLbeePhi')
-pars=c('intVisitHbee','slopeHbeeDistHbee','slopeLbeeDistHbee','slopeLbeeHbeeDistHbee', #Hbee vis 
-       'slopeLbeeVisHbee','slopeCentHbee','slopeFlDensHbee','slopeFBayHbee', 
+pars=c('intVisitHbee','slopeHbeeDistHbee','slopeLbeeDistHbee',#'slopeLbeeHbeeDistHbee','slopeLbeeVisHbee', #Hbee vis 
+       'slopeCentHbee','slopeFlDensHbee','slopeFBayHbee', 
        'visitHbeePhi','zeroVisHbeeTheta') 
 pars=c('intPol','slopeHbeePol','slopeLbeePol','slopeCentPol','slopeHbeeDistPol', #Pollen
        'pollenPhi','sigmaPolField','sigmaPolPlot')

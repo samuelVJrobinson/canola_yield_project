@@ -141,8 +141,8 @@ transformed data {
 }
 
 parameters { 
-	//Claim: PlDens ~ EdgeCent
-	real slopeEdgeCentPlDens; 
+	//Claim: PlSize ~ distance to leafcutter shelter
+	real slopeMinDistPlSize; 
 
 	//Plant density
 	//Vector for imputing missing plant density values (missing values from my data + all of Riley's data)
@@ -153,43 +153,76 @@ parameters {
 	real<lower=0.01> sigmaPlDens; //Sigma for within-field (residual)
 	real<lower=0.01> sigmaPlDens_field; //Sigma for field
 	vector[Nfield_all] intPlDens_field; //Random intercept for field
+	
+	//Plant size - random effects at plot/field level weren't converging
+	vector[Nplant_miss] plantSize_miss; //Vector for imputing missing values	
+	real intPlSize; //Global intercept
+	real slopePlDensPlSize; //Slope of planting density	
+	// real slopeDistPlSize; //Slope of distance (edge of field has small plants)		
+	real slope2016PlSize; //Effect of 2016 on plant size
+	real<lower=0> sigmaPlSize; //Sigma for within-plot (residual)	
 }
 
 transformed parameters {			
 	//Expected values
 	//Plot-level
 	vector[Nplot_all] plDensMu; //Expected plant density	
+	vector[Nplot_all] plSizePlotMu; //Plot-level plant size
+	vector[Nplant] plSizeMu; //Expected plant size	
 	
 	//Imputed missing data;
-	vector[Nplot_all] plDens; //Vector for all values
-	
+	vector[Nplant] plantSize; //Vector for all values
+	vector[Nplot_all] plDens;	
+	//Combine observed with imputed		
 	//Plant density
 	plDens[obsPlDens_ind]=plDens_obs; //Observed plant density from my fields
 	plDens[missPlDens_ind]=plDens_miss[1:Nplot_densMiss]; //Missing data from my fields
-	plDens[(Nplot+1):Nplot_all] = plDens_miss_extra; //Riley's fields		
+	plDens[(Nplot+1):Nplot_all] = plDens_miss_extra; //Riley's fields	
+	//Plant size
+	plantSize[obsPlant_ind]=plantSize_obs;  //Observed plant size
+	plantSize[missPlant_ind]=plantSize_miss; //Imputed plant size				
 	
 	for(i in 1:Nplot_all){		
 		//Plant density = intercept + random field int + hbee distance effect
 		plDensMu[i] = intPlDens + intPlDens_field[plotIndex_all[i]] + 
-			slopeHbeeDistPlDens*logHbeeDist_all[i] + //Distance effect				
-			slopeEdgeCentPlDens*isCent_all[i]; //Center of bay effect	
-	}			
-		
+			slopeHbeeDistPlDens*logHbeeDist_all[i]; //Distance effect				
+			
+		//Plant size (plot-level) = intercept + random field int + random plot int + distance + planting density effect 
+		//Density distance interaction is basically 0, so leaving it out
+		plSizePlotMu[i] = intPlSize + //intPlSize_field[plotIndex_all[i]] + //intPlSize_plot[i] + 			
+			// slopeDistPlSize*logHbeeDist_all[i] + //Distance effect (edge of field has smaller plants)			
+			slopePlDensPlSize*plDens[i] + //Planting density effect			
+			slope2016PlSize*is2016_all[i] + //Effect of 2016
+			slopeMinDistPlSize*logLbeeDist_all[i]; //Effect of leafcutter distance
+	}	
+			
+	for(i in 1:Nplant){	
+		//Predicted plant size (taken from plot level measurements above)
+		plSizeMu[i] = plSizePlotMu[plantIndex[i]];				
+	}	
 }
 	
 model {	
 	plDens ~ normal(plDensMu,sigmaPlDens); //Plant density per plot
-			
-	// Priors
+	plantSize ~ normal(plSizeMu,sigmaPlSize); //Plant size		
+				
+	// Priors	
 	//Claim
-	slopeEdgeCentPlDens ~ normal(0,1); 	
+	slopeMinDistPlSize ~ normal(0,1); 
 	
 	//Planting density
 	intPlDens ~ normal(0,0.5); //Intercept
 	slopeHbeeDistPlDens ~ normal(0.05,0.1); //Distance into field		
 	sigmaPlDens ~ gamma(2,10); //Sigma for within-field (residual)
 	sigmaPlDens_field ~ gamma(4,10); //Sigma for field
-	intPlDens_field ~ normal(0,sigmaPlDens_field); //Random intercept for field		
+	intPlDens_field ~ normal(0,sigmaPlDens_field); //Random intercept for field	
+	
+	//Plant size - informative priors
+	intPlSize ~ normal(0,0.2); //Intercept
+	slopePlDensPlSize ~ normal(-0.75,0.5); //Planting density
+	// slopeDistPlSize ~ normal(0.07,.1); //Distance effect
+	slope2016PlSize	~ normal(0,1); //Year effect
+	sigmaPlSize ~ gamma(6,10); //Sigma for residual				
 }
 
 generated quantities{
@@ -197,12 +230,26 @@ generated quantities{
 	//plant density
 	real predPlDens[Nplot]; //Generated
 	real plDens_resid[Nplot]; //Residual
-	real predPlDens_resid[Nplot]; //Residual of generated
+	real predPlDens_resid[Nplot]; //Residual of generated	
+	
+	//Plant-level	
+	//plantSize
+	real predPlSize[Nplant]; //Generated
+	real plSize_resid[Nplant]; //Residual
+	real predPlSize_resid[Nplant]; //Residual of generated	
 			
+	
 	for(i in 1:Nplot){
 		//plant density		
 		plDens_resid[i] = plDens[i] - plDensMu[i]; //Residual for actual value
 		predPlDens[i]= normal_rng(plDensMu[i],sigmaPlDens); //Generated value from normal
 		predPlDens_resid[i] = predPlDens[i] - plDensMu[i]; //Residual for predicted value							
-	}			
+	}		
+				
+	for(i in 1:Nplant){
+		//plant size
+		plSize_resid[i]= plantSize[i] - plSizeMu[i]; //Residual for actual
+		predPlSize[i] = normal_rng(plSizeMu[i],sigmaPlSize); //Generates new value from normal dist.
+		predPlSize_resid[i] = predPlSize[i] - plSizeMu[i]; //Residual for new value
+	}	
 }

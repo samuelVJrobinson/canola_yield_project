@@ -170,33 +170,7 @@ parameters {
 	real<lower=0> sigmaFlDens; //Sigma for within-field (residual)
 	real<lower=0> sigmaFlDens_field; //Sigma for field
 	vector[Nfield_all] intFlDens_field; //Random intercept for field
- 
-	// hbee Visitation - random effects at field level weren't converging
-	real intVisitHbee; //Intercept	
-	real slopeFlDensHbee; //Slope of flower density
-	real slopeHbeeDistHbee; //Slope of (log) distance
-	real slopeLbeeDistHbee; //Slope of leafcutter distance
-	// real slopeLbeeHbeeDistHbee; //Interaction b/w leafcutter & honeybee distance
-	// real slopeLbeeVisHbee; //Direct effect of leafcutter visitation	
-	real slopeFBayHbee; //Effect of female bay		
-	real slopeCentHbee; //Effect of bay position (center)	
-	real<lower=0> visitHbeePhi; //Dispersion parameter		
-	real<lower=0,upper=1> zeroVisHbeeTheta; //Zero-inflation parameter - chance that zero is not from neg.bin. 
-	
-	// lbee Visitation
-	real intVisitLbee; //Intercept
-	real slopeFlDensLbee; //Slope of flower density
-	real slopeLbeeDistLbee; //Slope of leafcutter distance (shelter)		
-	real slopeHbeeDistLbee; //Slope of honeybee distance (field edge)
-	real slopeFBayLbee; //Effect of female bay	
-	real slopeCentLbee; //Effect of bay position (center)	
-	real slopeStockingLbee; //Effect of half-stocking leafcutter bees
-	// real slopeCentHbeeDistLbee; //Bay position : honeybee distance interaction term
-	// real slopeStockingHbeeDistLbee; //Half-stocking:hbee distance interaction			
-	real<lower=0> sigmaLbeeVisField; //SD of field random intercepts
-	real<lower=0> visitLbeePhi; //Dispersion parameter	
-	vector[Nfield_all] intVisitLbee_field; //field-level random intercepts	
-	
+ 	
 	// // Pollen deposition
 	// real intPol; //Intercept	
 	// real slopeHbeePol; //Slope of hbee visits 
@@ -225,36 +199,7 @@ parameters {
 	// real<lower=0> sigmaFlwSurv_plot; //SD of plot random intercepts	
 	// real<lower=0> sigmaFlwSurv_field; //SD of field random intercepts
 	// vector[Nfield] intFlwSurv_field; //field-level random intercepts
-	// vector[Nplot] intFlwSurv_plot; //plot-level random intercepts	
-		
-	// // Seed count - random effects at plot level weren't converging
-	// real intSeedCount; //Intercept	
-	// real slopePolSeedCount; //Slope of pollen deposition
-	// real slopePlSizeCount; //Slope of plant size
-	// // real slopeEdgeCentSeedCount; // Slope of edge effect on seed count 
-	// // real slopeHbeeSeedCount; //Slope of honeybee visitation on seed count
-	// // real slopeLbeeSeedCount; //Slope of leafcutter visitation on seed count
-	// // real slopeHbeeDistSeedCount; //Slope of leafcutter distance on seed count - correlated 	
-	// // real slopeSurvSeedCount; //Slope of plant-level survival on seed count
-	// real<lower=0> seedCountPhi; //Dispersion parameter
-	// real<lower=0> sigmaSeedCount_plant; //SD of plant random effect
-	// real<lower=0> sigmaSeedCount_field; //SD of field random effect
-	// vector[Nfield] intSeedCount_field; //field-level random intercepts		
-	// vector[Nplant] intSeedCount_plant; //plant-level random intercepts
-	
-	// // Weight per seed
-	// real intSeedWeight; //Intercept	
-	// real slopePolSeedWeight; //Slope of pollen deposition
-	// real slopeSeedCount; //Slope of seed count
-	// real slopePlSizeSeedWeight; //Slope of plant size
-	// real<lower=0> sigmaSeedWeight; //SD of seed weight
-	// real<lower=0> sigmaSeedWeight_plant; //SD of plant random effect
-	// real<lower=0> sigmaSeedWeight_plot; //SD of plot random effect
-	// real<lower=0> sigmaSeedWeight_field; //SD of field random effect	
-	// vector[Nfield] intSeedWeight_field; //field-level random intercepts	
-	// vector[Nplot] intSeedWeight_plot; //plot-level random intercepts	
-	// vector[Nplant] intSeedWeight_plant; //plant-level random intercepts		
-	// real<lower=0> lambdaSeedWeight; //Lambda term for exponential process
+	// vector[Nplot] intFlwSurv_plot; //plot-level random intercepts				
 }
 
 transformed parameters {			

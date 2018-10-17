@@ -141,68 +141,70 @@ transformed data {
 }
 
 parameters { 
-	//Claim: PlDens ~ EdgeCent
-	real slopeEdgeCentPlDens; 
-
-	//Plant density
-	//Vector for imputing missing plant density values (missing values from my data + all of Riley's data)
-	vector[Nplot_densMiss] plDens_miss; //My fields
-	vector[Nplot_extra] plDens_miss_extra; //Riley's fields	
-	real intPlDens; //Global intercept
-	real slopeHbeeDistPlDens; //Slope of distance into field	
-	real<lower=0.01> sigmaPlDens; //Sigma for within-field (residual)
-	real<lower=0.01> sigmaPlDens_field; //Sigma for field
-	vector[Nfield_all] intPlDens_field; //Random intercept for field
+	//Claim: Pollen ~ bay position
+	real slopeEdgeCentPol; 
+	
+	// Pollen deposition
+	real intPol; //Intercept	
+	real slopeHbeePol; //Slope of hbee visits 
+	real slopeLbeePol; //Slope of lbee visits 
+	// real slopeCentPol; //Bay center effect
+	// real slopeHbeeDistPol; //(log) hbee distance effect
+	real<lower=0> pollenPhi; //Dispersion parameter for pollen deposition
+	real<lower=0> sigmaPolField; //Sigma for field-level intercept
+	real<lower=0> sigmaPolPlot; //Sigma for plot-level intercept
+	vector[Nfield] intPol_field; //Field-level random intercept
+	vector[Nplot] intPol_plot; //Plot-level random intercept			
 }
 
 transformed parameters {			
 	//Expected values
-	//Plot-level
-	vector[Nplot_all] plDensMu; //Expected plant density	
+	//Plot-level	
+	vector[Nplot] pollenMu_plot; //Plot level pollen
+	vector[Nflw] pollenMu; //Expected pollen - flower level			
 	
-	//Imputed missing data;
-	vector[Nplot_all] plDens; //Vector for all values
-	
-	//Plant density
-	plDens[obsPlDens_ind]=plDens_obs; //Observed plant density from my fields
-	plDens[missPlDens_ind]=plDens_miss[1:Nplot_densMiss]; //Missing data from my fields
-	plDens[(Nplot+1):Nplot_all] = plDens_miss_extra; //Riley's fields		
-	
-	for(i in 1:Nplot_all){		
-		//Plant density = intercept + random field int + hbee distance effect
-		plDensMu[i] = intPlDens + intPlDens_field[plotIndex_all[i]] + 
-			slopeHbeeDistPlDens*logHbeeDist_all[i] + //Distance effect				
-			slopeEdgeCentPlDens*isCent_all[i]; //Center of bay effect	
-	}			
-		
+	for(i in 1:Nplot){
+		// Pollen per plot = intercept + random field int + random plot int + leafcutter effect + honeybee effect + bay center effect + hbee dist effect
+		pollenMu_plot[i] = intPol + intPol_field[plotIndex[i]] + intPol_plot[i] + //Intercept + field/plot level random effects 
+			slopeLbeePol*logLbeeVis_all[i] +  //Effect of (log) leafcutter visits			
+			slopeHbeePol*logHbeeVis_all[i] +  //Effect of (log) honeybee visits 
+			slopeEdgeCentPol*isCent[i]; //Bay position
+	}
+	for(i in 1:Nflw) 
+		pollenMu[i] = pollenMu_plot[flowerIndex[i]]; //Assigns plot level pollen mu to Nflw long vector			
 }
 	
-model {	
-	plDens ~ normal(plDensMu,sigmaPlDens); //Plant density per plot
+model {		
+	pollenCount ~ neg_binomial_2_log(pollenMu,pollenPhi); //Pollination rate	
 			
-	// Priors
+	// Priors	
 	//Claim
-	slopeEdgeCentPlDens ~ normal(0,1); 	
-	
-	//Planting density
-	intPlDens ~ normal(0,0.5); //Intercept
-	slopeHbeeDistPlDens ~ normal(0.05,0.1); //Distance into field		
-	sigmaPlDens ~ gamma(2,10); //Sigma for within-field (residual)
-	sigmaPlDens_field ~ gamma(4,10); //Sigma for field
-	intPlDens_field ~ normal(0,sigmaPlDens_field); //Random intercept for field		
+	slopeEdgeCentPol ~ normal(0,1); 
+				
+	// Pollen deposition - informative priors
+	intPol ~ normal(3,1); //Intercept		
+	slopeHbeePol ~ normal(-0.4,0.5); //hbee Visitation effect
+	slopeLbeePol ~ normal(0.2,0.5); //lbee Visitation effect
+	// slopeCentPol~ normal(-0.4,0.5); //Bay center effect
+	// slopeHbeeDistPol ~ normal(-0.2,0.5); //(log) hbee distance effect	
+	sigmaPolField ~ gamma(9,10); //Sigma for random field
+	sigmaPolPlot ~ gamma(6,10); //Sigma for random plot	
+	pollenPhi ~ gamma(4,5); //Dispersion parameter
+	intPol_field ~ normal(0,sigmaPolField); //Random field int
+	intPol_plot ~ normal(0,sigmaPolPlot); //Random plot int	
 }
 
-generated quantities{
-	//Plot-level quantities
-	//plant density
-	real predPlDens[Nplot]; //Generated
-	real plDens_resid[Nplot]; //Residual
-	real predPlDens_resid[Nplot]; //Residual of generated
-			
-	for(i in 1:Nplot){
-		//plant density		
-		plDens_resid[i] = plDens[i] - plDensMu[i]; //Residual for actual value
-		predPlDens[i]= normal_rng(plDensMu[i],sigmaPlDens); //Generated value from normal
-		predPlDens_resid[i] = predPlDens[i] - plDensMu[i]; //Residual for predicted value							
-	}			
+generated quantities{	
+	// Flower-level
+	// pollen deposition
+	int predPollenCount[Nflw]; //Generated 
+	real pollen_resid[Nflw]; //residual
+	real predPollen_resid[Nflw]; //residual of generated
+	
+	for(i in 1:Nflw){
+		//pollen deposition
+		pollen_resid[i]= exp(pollenMu[i]) - pollenCount[i]; //Residual for actual value
+		predPollenCount[i] = neg_binomial_2_log_rng(pollenMu[i],pollenPhi); //Simulate pollen counts
+		predPollen_resid[i] = exp(pollenMu[i]) - predPollenCount[i]; //Residual for predicted		
+	}
 }

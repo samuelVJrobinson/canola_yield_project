@@ -141,8 +141,8 @@ transformed data {
 }
 
 parameters { 
-	//Claim: PlDens ~ EdgeCent
-	real slopeEdgeCentPlDens; 
+	//Claim: PlDens ~ leafcutter dist
+	real slopeMinDistPlDens; 
 
 	//Plant density
 	//Vector for imputing missing plant density values (missing values from my data + all of Riley's data)
@@ -172,7 +172,7 @@ transformed parameters {
 		//Plant density = intercept + random field int + hbee distance effect
 		plDensMu[i] = intPlDens + intPlDens_field[plotIndex_all[i]] + 
 			slopeHbeeDistPlDens*logHbeeDist_all[i] + //Distance effect				
-			slopeEdgeCentPlDens*isCent_all[i]; //Center of bay effect	
+			slopeMinDistPlDens*logLbeeDist_all[i]; //Distance from lbee shelter
 	}			
 		
 }
@@ -182,7 +182,7 @@ model {
 			
 	// Priors
 	//Claim
-	slopeEdgeCentPlDens ~ normal(0,1); 	
+	slopeMinDistPlDens ~ normal(0,1); 	
 	
 	//Planting density
 	intPlDens ~ normal(0,0.5); //Intercept
