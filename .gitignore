@@ -1,6 +1,8 @@
-.Rproj.user
-.Rhistory
-.RData
-.Ruserdata
+*.Rproj.user
+*.Rhistory
+*.RData
+*.Ruserdata
 yield path analysis.R
 *.rds
+.~lock.*.csv#
+.Rproj.user

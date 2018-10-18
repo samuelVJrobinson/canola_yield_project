@@ -1190,6 +1190,7 @@ str(datalist)
 # with(claims,plot(flwSurv_resid,predFlwSurv_resid));abline(0,1) #Posterior predictive checks. Beta-binomial much better than binomial. Predicted slightly higher, but looks OK for now.
 
 inits <- function(){with(datalist,list(
+  slopeFlDensSeedCount=-0.01,
   #Planting density
   plDens_miss=rep(0,Nplot_densMiss),plDens_miss_extra=rep(0,Nplot_extra),
   intPlDens=0.1,slopeHbeeDistPlDens=0.07,
@@ -1239,14 +1240,17 @@ inits <- function(){with(datalist,list(
 # str(modPodcount_seed2)
 
 #Claims list
-claims1 <- stan(file='./Seed model claims 1/seedModel_claims35.stan',data=datalist,
-                iter=800,chains=4,init=inits)
-
-claimTerm <- 'slopePolFlwCount'
-stan_hist(claims8,pars=c(claimTerm,pars))+geom_vline(xintercept=0,linetype='dashed')
-mod1 <- extract(claims8)
+claims1 <- stan(file='./Seed model claims 1/seedModel_claims61.stan',data=datalist,
+                iter=50,chains=2,init=inits)
+claims2 <- stan(file='./Seed model claims 1/seedModel_claims62.stan',data=datalist,
+                iter=50,chains=2,init=inits)
+claims3 <- stan(file='./Seed model claims 1/seedModel_claims63.stan',data=datalist,
+                iter=50,chains=2,init=inits)
+beep(1)
+claimTerm <- 'slopeLbeeVisSeedCount'
+stan_hist(claims3,pars=c(claimTerm,pars))+geom_vline(xintercept=0,linetype='dashed')
+mod1 <- extract(claims3)
 2*(1-pnorm(abs(mean(mod1[[1]])/sd(mod1[[1]])),0,1)) #p-val
-
 
 pars=c('intPlDens','slopeHbeeDistPlDens',#'slopeHbeeDistSqPlDens', #Planting density
        'sigmaPlDens','sigmaPlDens_field') 

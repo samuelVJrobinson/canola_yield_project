@@ -138,8 +138,8 @@ transformed data {
 }
 
 parameters { 
-	//Claim: Survival ~ bay position
-	real slopeEdgeCentSurv; 
+	//Claim: flower survival ~ planting density
+	real slopePlDensSurv; 
 
 	//Plant density
 	//Vector for imputing missing plant density values (missing values from my data + all of Riley's data)
@@ -158,7 +158,7 @@ parameters {
 	// real slopeDistPlSize; //Slope of distance (edge of field has small plants)		
 	real slope2016PlSize; //Effect of 2016 on plant size
 	real<lower=0> sigmaPlSize; //Sigma for within-plot (residual)
-	
+	 	
 	// Pollen deposition
 	real intPol; //Intercept	
 	real slopeHbeePol; //Slope of hbee visits 
@@ -208,9 +208,9 @@ transformed parameters {
 			slopeHbeeDistPlDens*logHbeeDist_all[i]; //Distance effect				
 			
 		//Plant size (plot-level) = intercept + random field int + random plot int + distance + planting density effect 		
-		plSizePlotMu[i] = intPlSize + //intPlSize_field[plotIndex_all[i]] + //intPlSize_plot[i] + 		
+		plSizePlotMu[i] = intPlSize + //intPlSize_field[plotIndex_all[i]] + //intPlSize_plot[i] + 						
 			slopePlDensPlSize*plDens[i] + //Planting density effect			
-			slope2016PlSize*is2016_all[i];			
+			slope2016PlSize*is2016_all[i]; //Year effect
 	}	
 	
 	for(i in 1:Nplot){
@@ -222,7 +222,7 @@ transformed parameters {
 		//Flower survival = intercept + random int field + random int plot +
 		flwSurvPlot[i] = intFlwSurv + intFlwSurv_field[plotIndex[i]] + intFlwSurv_plot[i] + 						
 			slopePolSurv*pollenMu_plot[i] + //Pollen deposition (plot level average)
-			slopeEdgeCentSurv*isCent[i]; //Bay center effect
+			slopePlDensSurv*plDens[i]; //Planting density effect
 	}	
 				
 	for(i in 1:Nflw) 
@@ -239,13 +239,13 @@ transformed parameters {
 	
 model {	
 	plDens ~ normal(plDensMu,sigmaPlDens); //Plant density per plot
-	plantSize ~ normal(plSizeMu,sigmaPlSize); //Plant size		
+	plantSize ~ normal(plSizeMu,sigmaPlSize); //Plant size			
 	pollenCount ~ neg_binomial_2_log(pollenMu,pollenPhi); //Pollination rate	
 	podCount ~ binomial_logit(flwCount,flwSurv[obsPlant_ind]); //Flower survival	
 			
 	// Priors	
 	//Claim
-	slopeEdgeCentSurv ~ normal(0,1); 
+	slopePlDensSurv ~ normal(0,1); 
 	
 	//Planting density
 	intPlDens ~ normal(0,0.5); //Intercept
@@ -258,7 +258,7 @@ model {
 	intPlSize ~ normal(0,0.2); //Intercept
 	slopePlDensPlSize ~ normal(-0.75,0.5); //Planting density	
 	slope2016PlSize	~ normal(0,1); //Year effect
-	sigmaPlSize ~ gamma(6,10); //Sigma for residual			
+	sigmaPlSize ~ gamma(6,10); //Sigma for residual				
 	
 	// Pollen deposition - informative priors
 	intPol ~ normal(3,1); //Intercept		

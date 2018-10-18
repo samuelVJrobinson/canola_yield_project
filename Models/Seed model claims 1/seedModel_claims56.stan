@@ -92,7 +92,8 @@ transformed data {
 	vector[Nplot_all] logHbeeDist_all; //Log-distance from hbee hives (edge)
 	vector[Nplot_all] logLbeeDist_all; //Log-distance from lbee shelters
 	vector[Nplot_all] logHbeeVis_all; //Log-visitation rate for hbees
-	vector[Nplot_all] logLbeeVis_all; //Log-visitation rate for lbees	
+	vector[Nplot_all] logLbeeVis_all; //Log-visitation rate for lbees
+	vector[Nplot] logPolCountPlot; //Log-average pollen count at plot level
 	vector[Nplant_obs] propFlwSurv_obs; //(logit) proportion flower survival	
 	
 	//Assign values
@@ -123,7 +124,9 @@ transformed data {
 	for(i in 1:Nplot_all){
 		logHbeeVis_all[i] = log(1+(hbeeVis_all[i]/totalTime_all[i])); //Log-transforms observed visitation rates 
 		logLbeeVis_all[i] = log(1+(lbeeVis_all[i]/totalTime_all[i]));			
-	}	
+	}
+	logPolCountPlot=polCountPlot; //Log-transforms average pollen counts
+	
 	for(i in 1:Nplant_obs){
 		//Necessary for promoting integers to reals. Otherwise does integer division.
 		propFlwSurv_obs[i] = podCount[i]; 
@@ -138,27 +141,12 @@ transformed data {
 }
 
 parameters { 
-	//Claim: Survival ~ bay position
-	real slopeEdgeCentSurv; 
-
-	//Plant density
-	//Vector for imputing missing plant density values (missing values from my data + all of Riley's data)
-	vector[Nplot_densMiss] plDens_miss; //My fields
-	vector[Nplot_extra] plDens_miss_extra; //Riley's fields	
-	real intPlDens; //Global intercept
-	real slopeHbeeDistPlDens; //Slope of distance into field	
-	real<lower=0> sigmaPlDens; //Sigma for within-field (residual)
-	real<lower=0> sigmaPlDens_field; //Sigma for field
-	vector[Nfield_all] intPlDens_field; //Random intercept for field
+	//Claim: seed count ~ bay position
+	real slopeMinDistSeedCount; 	
 	
 	//Plant size - random effects at plot/field level weren't converging
 	vector[Nplant_miss] plantSize_miss; //Vector for imputing missing values	
-	real intPlSize; //Global intercept
-	real slopePlDensPlSize; //Slope of planting density	
-	// real slopeDistPlSize; //Slope of distance (edge of field has small plants)		
-	real slope2016PlSize; //Effect of 2016 on plant size
-	real<lower=0> sigmaPlSize; //Sigma for within-plot (residual)
-	
+			
 	// Pollen deposition
 	real intPol; //Intercept	
 	real slopeHbeePol; //Slope of hbee visits 
@@ -168,129 +156,96 @@ parameters {
 	real<lower=0> sigmaPolPlot; //Sigma for plot-level intercept
 	vector[Nfield] intPol_field; //Field-level random intercept
 	vector[Nplot] intPol_plot; //Plot-level random intercept
-		
-	// Flower survival
-	real intFlwSurv; //Intercept	
-	real slopePolSurv; //Slope of pollen deposition
-	real slopePlSizeSurv; //Slope of plant size	
-	real<lower=0> sigmaFlwSurv_plot; //SD of plot random intercepts	
-	real<lower=0> sigmaFlwSurv_field; //SD of field random intercepts
-	vector[Nfield] intFlwSurv_field; //field-level random intercepts
-	vector[Nplot] intFlwSurv_plot; //plot-level random intercepts
-}	
+					
+	// Seed count - random effects at plot level weren't converging
+	real intSeedCount; //Intercept	
+	real slopePolSeedCount; //Slope of pollen deposition
+	real slopePlSizeCount; //Slope of plant size	
+	real<lower=0> seedCountPhi; //Dispersion parameter
+	real<lower=0> sigmaSeedCount_plant; //SD of plant random effect
+	real<lower=0> sigmaSeedCount_field; //SD of field random effect
+	vector[Nfield] intSeedCount_field; //field-level random intercepts		
+	vector[Nplant] intSeedCount_plant; //plant-level random intercepts	
+}
 
 transformed parameters {			
 	//Expected values
-	//Plot-level
-	vector[Nplot_all] plDensMu; //Expected plant density	
-	vector[Nplot_all] plSizePlotMu; //Plot-level plant size
-	vector[Nplant] plSizeMu; //Expected plant size	
+	// Plot-level	
 	vector[Nplot] pollenMu_plot; //Plot level pollen
-	vector[Nflw] pollenMu; //Expected pollen - flower level
-	vector[Nplot] flwSurvPlot; //Plot-level flower survival
-	vector[Nplant] flwSurv; //Flower survival rate (logit)
+	vector[Nflw] pollenMu; //Expected pollen - flower level		
+	vector[Nplant] seedCountMuPlant; //Plant-level seed count	
+	vector[Npod] seedCountMu; //Pod-level seed counts		
 	
 	//Imputed missing data;
-	vector[Nplant] plantSize; //Vector for all values
-	vector[Nplot_all] plDens;	
-	//Combine observed with imputed		
-	//Plant density
-	plDens[obsPlDens_ind]=plDens_obs; //Observed plant density from my fields
-	plDens[missPlDens_ind]=plDens_miss[1:Nplot_densMiss]; //Missing data from my fields
-	plDens[(Nplot+1):Nplot_all] = plDens_miss_extra; //Riley's fields	
+	vector[Nplant] plantSize; //Vector for all values		
+	//Combine observed with imputed			
 	//Plant size
 	plantSize[obsPlant_ind]=plantSize_obs;  //Observed plant size
-	plantSize[missPlant_ind]=plantSize_miss; //Imputed plant size				
-	
-	for(i in 1:Nplot_all){		
-		//Plant density = intercept + random field int + hbee distance effect
-		plDensMu[i] = intPlDens + intPlDens_field[plotIndex_all[i]] + 
-			slopeHbeeDistPlDens*logHbeeDist_all[i]; //Distance effect				
-			
-		//Plant size (plot-level) = intercept + random field int + random plot int + distance + planting density effect 		
-		plSizePlotMu[i] = intPlSize + //intPlSize_field[plotIndex_all[i]] + //intPlSize_plot[i] + 		
-			slopePlDensPlSize*plDens[i] + //Planting density effect			
-			slope2016PlSize*is2016_all[i];			
-	}	
+	plantSize[missPlant_ind]=plantSize_miss; //Imputed plant size							
 	
 	for(i in 1:Nplot){
 		// Pollen per plot = intercept + random field int + random plot int + leafcutter effect + honeybee effect + bay center effect + hbee dist effect
 		pollenMu_plot[i] = intPol + intPol_field[plotIndex[i]] + intPol_plot[i] + //Intercept + field/plot level random effects 
 			slopeLbeePol*logLbeeVis_all[i] +  //Effect of (log) leafcutter visits			
-			slopeHbeePol*logHbeeVis_all[i]; //Effect of (log) honeybee visits 			
-			
-		//Flower survival = intercept + random int field + random int plot +
-		flwSurvPlot[i] = intFlwSurv + intFlwSurv_field[plotIndex[i]] + intFlwSurv_plot[i] + 						
-			slopePolSurv*pollenMu_plot[i] + //Pollen deposition (plot level average)
-			slopeEdgeCentSurv*isCent[i]; //Bay center effect
+			slopeHbeePol*logHbeeVis_all[i];  //Effect of (log) honeybee visits 											
 	}	
 				
 	for(i in 1:Nflw) 
 		pollenMu[i] = pollenMu_plot[flowerIndex[i]]; //Assigns plot level pollen mu to Nflw long vector
 		
-	for(i in 1:Nplant){	
-		//Predicted plant size (taken from plot level measurements above)
-		plSizeMu[i] = plSizePlotMu[plantIndex[i]];					
-		
-		flwSurv[i] = flwSurvPlot[plantIndex[i]] + //Plot-level plant survival
-			slopePlSizeSurv*plantSize[i];  //plant size effect 			
+	for(i in 1:Nplant){			
+		// Seed count per pod = intercept + random int field + random int plot + random int plant + hbee visits + pollen deposition
+		seedCountMuPlant[i] = intSeedCount + intSeedCount_field[plotIndex[plantIndex[i]]] + intSeedCount_plant[i] + //intSeedCount_plot[plantIndex[i]] +
+			slopePlSizeCount*plantSize[i] + //Plant size			
+			slopePolSeedCount*logPolCountPlot[plantIndex[i]] + //Pollen deposition (plot level average)
+			slopeMinDistSeedCount*logLbeeDist_all[plantIndex[i]]; //Lbee distance effect			
 	}
+	
+	for(i in 1:Npod){ //For each pod
+		seedCountMu[i] = seedCountMuPlant[podIndex[i]];  		
+	}		
 }
 	
 model {	
-	plDens ~ normal(plDensMu,sigmaPlDens); //Plant density per plot
-	plantSize ~ normal(plSizeMu,sigmaPlSize); //Plant size		
 	pollenCount ~ neg_binomial_2_log(pollenMu,pollenPhi); //Pollination rate	
-	podCount ~ binomial_logit(flwCount,flwSurv[obsPlant_ind]); //Flower survival	
-			
+	seedCount ~ neg_binomial_2_log(seedCountMu,seedCountPhi); //Seed count per pod
+				
 	// Priors	
 	//Claim
-	slopeEdgeCentSurv ~ normal(0,1); 
-	
-	//Planting density
-	intPlDens ~ normal(0,0.5); //Intercept
-	slopeHbeeDistPlDens ~ normal(0.05,0.1); //Distance into field		
-	sigmaPlDens ~ gamma(2,10); //Sigma for within-field (residual)
-	sigmaPlDens_field ~ gamma(4,10); //Sigma for field
-	intPlDens_field ~ normal(0,sigmaPlDens_field); //Random intercept for field	
-	
-	//Plant size - informative priors
-	intPlSize ~ normal(0,0.2); //Intercept
-	slopePlDensPlSize ~ normal(-0.75,0.5); //Planting density	
-	slope2016PlSize	~ normal(0,1); //Year effect
-	sigmaPlSize ~ gamma(6,10); //Sigma for residual			
+	slopeMinDistSeedCount ~ normal(0,1); 
 	
 	// Pollen deposition - informative priors
 	intPol ~ normal(3,1); //Intercept		
 	slopeHbeePol ~ normal(-0.4,0.5); //hbee Visitation effect
-	slopeLbeePol ~ normal(0.2,0.5); //lbee Visitation effect	
+	slopeLbeePol ~ normal(0.2,0.5); //lbee Visitation effect
 	sigmaPolField ~ gamma(9,10); //Sigma for random field
 	sigmaPolPlot ~ gamma(6,10); //Sigma for random plot	
 	pollenPhi ~ gamma(4,5); //Dispersion parameter
 	intPol_field ~ normal(0,sigmaPolField); //Random field int
 	intPol_plot ~ normal(0,sigmaPolPlot); //Random plot int
-			
-	// Flower survival 
-	intFlwSurv ~ normal(-5,1); //Intercept	
-	slopePolSurv ~ normal(2,1); //Slope of pollen deposition
-	slopePlSizeSurv ~ normal(0,0.5); //Slope of plant size	
-	sigmaFlwSurv_field ~ gamma(1.5,5); //SD of field random effect
-	sigmaFlwSurv_plot ~ gamma(2.5,5); //SD of plot random effect	
-	intFlwSurv_field ~ normal(0,sigmaFlwSurv_field); //field-level random intercepts
-	intFlwSurv_plot ~ normal(0,sigmaFlwSurv_plot); //plot-level random intercepts				
+		
+	// Seed count 
+	intSeedCount ~ normal(2.5,0.5); //Intercept	
+	slopePolSeedCount ~ normal(0,0.1); //Slope of pollen deposition
+	slopePlSizeCount ~ normal(0,0.1); //Slope of plant size	
+	seedCountPhi ~ gamma(12,4); //Dispersion parameter
+	sigmaSeedCount_field ~ gamma(1,10); //SD of field random effect
+	sigmaSeedCount_plant ~ gamma(1,10); //SD of plant random effect	
+	intSeedCount_field ~ normal(0,sigmaSeedCount_field); //field-level random intercepts	
+	intSeedCount_plant ~ normal(0,sigmaSeedCount_plant); //plant-level random intercepts	
 }
 
-generated quantities{	
-	//Plant-level		
-	//flower survival (surviving pods)
-	int predPodCount[Nplant_obs]; //Generated
-	real podCount_resid[Nplant_obs]; //Residual
-	real predPodCount_resid[Nplant_obs]; //Residual of generated
+generated quantities{
+	//Pod-level
+	//seeds per pod
+	int predSeedCount[Npod]; //Generated
+	real seedCount_resid[Npod]; //Residual
+	real predSeedCount_resid[Npod]; //Residual of generated		
 		
-	for(i in 1:Nplant_obs){		
-		//pod count (surviving pods)
-		podCount_resid[i] = podCount[i] - (flwCount[i]*inv_logit(flwSurv[i])); //Residual for actual
-		predPodCount[i] = binomial_rng(flwCount[i],inv_logit(flwSurv[i])); //Generates new value from binomial
-		predPodCount_resid[i] = predPodCount[i] - (flwCount[i]*inv_logit(flwSurv[i])); //Residual for new value		
-	}
+	for(i in 1:Npod){ //For each pod
+		//Seed count per pod
+		seedCount_resid[i] = seedCount[i] - exp(seedCountMu[i]);
+		predSeedCount[i] = neg_binomial_2_log_rng(seedCountMu[i],seedCountPhi); 
+		predSeedCount_resid[i] = predSeedCount[i] - exp(seedCountMu[i]);		
+	}	
 }

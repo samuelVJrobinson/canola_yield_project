@@ -138,8 +138,8 @@ transformed data {
 }
 
 parameters { 
-	//Claim: Survival ~ bay position
-	real slopeEdgeCentSurv; 
+	//Claim: flower survival ~ distance from edge
+	real slopeDistSurv; 
 
 	//Plant density
 	//Vector for imputing missing plant density values (missing values from my data + all of Riley's data)
@@ -210,7 +210,7 @@ transformed parameters {
 		//Plant size (plot-level) = intercept + random field int + random plot int + distance + planting density effect 		
 		plSizePlotMu[i] = intPlSize + //intPlSize_field[plotIndex_all[i]] + //intPlSize_plot[i] + 		
 			slopePlDensPlSize*plDens[i] + //Planting density effect			
-			slope2016PlSize*is2016_all[i];			
+			slope2016PlSize*is2016_all[i];		
 	}	
 	
 	for(i in 1:Nplot){
@@ -222,7 +222,7 @@ transformed parameters {
 		//Flower survival = intercept + random int field + random int plot +
 		flwSurvPlot[i] = intFlwSurv + intFlwSurv_field[plotIndex[i]] + intFlwSurv_plot[i] + 						
 			slopePolSurv*pollenMu_plot[i] + //Pollen deposition (plot level average)
-			slopeEdgeCentSurv*isCent[i]; //Bay center effect
+			slopeDistSurv*logHbeeDist_all[i]; //Distance from edge of field
 	}	
 				
 	for(i in 1:Nflw) 
@@ -239,13 +239,13 @@ transformed parameters {
 	
 model {	
 	plDens ~ normal(plDensMu,sigmaPlDens); //Plant density per plot
-	plantSize ~ normal(plSizeMu,sigmaPlSize); //Plant size		
+	plantSize ~ normal(plSizeMu,sigmaPlSize); //Plant size			
 	pollenCount ~ neg_binomial_2_log(pollenMu,pollenPhi); //Pollination rate	
 	podCount ~ binomial_logit(flwCount,flwSurv[obsPlant_ind]); //Flower survival	
 			
 	// Priors	
 	//Claim
-	slopeEdgeCentSurv ~ normal(0,1); 
+	slopeDistSurv ~ normal(0,1); 
 	
 	//Planting density
 	intPlDens ~ normal(0,0.5); //Intercept

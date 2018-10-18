@@ -369,10 +369,10 @@ transformed parameters {
 		// flwCountMu[i] = flwCountPlot[plantIndex[i]] + //Plot level flower count 
 			// slopePlSizeFlwCount*plantSize[i]; //individual size effect
 		
-		// flwSurv[i] = flwSurvPlot[plantIndex[obsPlant_ind[i]]] + //Plot-level plant survival
-			// slopePlSizeSurv*plantSize[obsPlant_ind[i]] +  //plant size effect 	
-			// // slopeSeedCountSurv*seedCountMuPlant[obsPlant_ind[i]] + //Slope of (log) seed count - NEW VARIABLE
-			// // slopeSeedSizeSurv*seedWeightPlantMu[obsPlant_ind[i]]; //Slope of seed size - NEW VARIABLE	
+		// flwSurv[i] = flwSurvPlot[plantIndex[i]] + //Plot-level plant survival
+			// slopePlSizeSurv*plantSize[i] +  //plant size effect 	
+			// // slopeSeedCountSurv*seedCountMuPlant[i] + //Slope of (log) seed count - NEW VARIABLE
+			// // slopeSeedSizeSurv*seedWeightPlantMu[i]; //Slope of seed size - NEW VARIABLE	
 	
 		// // Seed count per pod = intercept + random int field + random int plot + random int plant + hbee visits + pollen deposition
 		// seedCountMuPlant[i] = intSeedCount + intSeedCount_field[plotIndex[plantIndex[i]]] + intSeedCount_plant[i] + //intSeedCount_plot[plantIndex[i]] +
