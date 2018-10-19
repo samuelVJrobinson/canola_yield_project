@@ -177,8 +177,8 @@ transformed parameters {
 	// Plot-level	
 	vector[Nplot] pollenMu_plot; //Plot level pollen
 	vector[Nflw] pollenMu; //Expected pollen - flower level		
-	vector[Nplant] seedCountMuPlant; //Plant-level seed count	
-	vector[Npod] seedCountMu; //Pod-level seed counts		
+	vector[Nplant] seedWeightPlantMu; //Plant-level weight per seed
+	vector[Npod] seedWeightMu; //Pod-level weight per se	
 	
 	//Imputed missing data;
 	vector[Nplant] plantSize; //Vector for all values		

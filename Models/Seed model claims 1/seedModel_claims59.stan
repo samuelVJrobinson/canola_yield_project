@@ -223,7 +223,7 @@ model {
 				
 	// Priors	
 	//Claim
-	slopeSurvSeedCount ~ normal(0,1); 
+	slopeSurvSeedCount ~ normal(0,0.1); 
 	
 	// Pollen deposition - informative priors
 	intPol ~ normal(3,1); //Intercept		

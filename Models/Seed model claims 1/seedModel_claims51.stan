@@ -219,8 +219,8 @@ model {
 	intPol_plot ~ normal(0,sigmaPolPlot); //Random plot int
 			
 	// Flower survival 
-	intFlwSurv ~ normal(-5,1); //Intercept	
-	slopePolSurv ~ normal(2,1); //Slope of pollen deposition
+	intFlwSurv ~ normal(0,1); //Intercept	
+	slopePolSurv ~ normal(0,1); //Slope of pollen deposition
 	slopePlSizeSurv ~ normal(0,0.5); //Slope of plant size	
 	sigmaFlwSurv_field ~ gamma(1.5,5); //SD of field random effect
 	sigmaFlwSurv_plot ~ gamma(2.5,5); //SD of plot random effect	

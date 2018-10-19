@@ -223,7 +223,7 @@ model {
 				
 	// Priors	
 	//Claim
-	slopeFlwCountSeedCount ~ normal(0,1); 
+	slopeFlwCountSeedCount ~ normal(0,0.1); 
 	
 	// Pollen deposition - informative priors
 	intPol ~ normal(3,1); //Intercept		
@@ -237,8 +237,8 @@ model {
 		
 	// Seed count 
 	intSeedCount ~ normal(2.5,0.5); //Intercept	
-	slopePolSeedCount ~ normal(0,0.1); //Slope of pollen deposition
-	slopePlSizeCount ~ normal(0,0.1); //Slope of plant size	
+	slopePolSeedCount ~ normal(0.1,0.1); //Slope of pollen deposition
+	slopePlSizeCount ~ normal(0.1,0.1); //Slope of plant size	
 	seedCountPhi ~ gamma(12,4); //Dispersion parameter
 	sigmaSeedCount_field ~ gamma(1,10); //SD of field random effect
 	sigmaSeedCount_plant ~ gamma(1,10); //SD of plant random effect	

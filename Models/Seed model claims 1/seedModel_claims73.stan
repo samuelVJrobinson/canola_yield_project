@@ -177,8 +177,8 @@ transformed parameters {
 	// Plot-level	
 	vector[Nplot] pollenMu_plot; //Plot level pollen
 	vector[Nflw] pollenMu; //Expected pollen - flower level		
-	vector[Nplant] seedCountMuPlant; //Plant-level seed count	
-	vector[Npod] seedCountMu; //Pod-level seed counts		
+	vector[Nplant] seedWeightPlantMu; //Plant-level weight per seed
+	vector[Npod] seedWeightMu; //Pod-level weight per seed
 	
 	//Imputed missing data;
 	vector[Nplant] plantSize; //Vector for all values				
@@ -212,7 +212,7 @@ transformed parameters {
 	
 model {	
 	pollenCount ~ neg_binomial_2_log(pollenMu,pollenPhi); //Pollination rate	
-	seedCount ~ neg_binomial_2_log(seedCountMu,seedCountPhi); //Seed count per pod
+	seedMass ~ exp_mod_normal(seedWeightMu,sigmaSeedWeight,lambdaSeedWeight); //Weight per seed	
 				
 	// Priors	
 	//Claim

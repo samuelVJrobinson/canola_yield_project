@@ -183,8 +183,8 @@ transformed parameters {
 	// Plot-level	
 	vector[Nplot] pollenMu_plot; //Plot level pollen
 	vector[Nflw] pollenMu; //Expected pollen - flower level		
-	vector[Nplant] seedCountMuPlant; //Plant-level seed count	
-	vector[Npod] seedCountMu; //Pod-level seed counts		
+	vector[Nplant] seedWeightPlantMu; //Plant-level weight per seed
+	vector[Npod] seedWeightMu; //Pod-level weight per seed
 	
 	//Imputed missing data;
 	vector[Nplant] plantSize; //Vector for all values		
@@ -226,7 +226,7 @@ model {
 	seedMass ~ exp_mod_normal(seedWeightMu,sigmaSeedWeight,lambdaSeedWeight); //Weight per seed				
 	// Priors	
 	//Claim
-	slopeSurvSeedWeight ~ normal(0,1); 
+	slopeSurvSeedWeight ~ normal(0,0.1); 
 	
 	// Pollen deposition - informative priors
 	intPol ~ normal(3,1); //Intercept		
@@ -240,9 +240,9 @@ model {
 	
 	// Weight per seed 
 	intSeedWeight ~ normal(1.4,0.4); //Intercept	
-	slopePolSeedWeight ~ normal(0,1); //Slope of pollen deposition
-	slopeSeedCount ~ normal(-0.01,0.02); //Slope of seed count
-	slopePlSizeSeedWeight ~ normal(0.06,0.05); //Slope of plant size
+	slopePolSeedWeight ~ normal(1,1); //Slope of pollen deposition
+	slopeSeedCount ~ normal(0,0.1); //Slope of seed count
+	slopePlSizeSeedWeight ~ normal(0,0.2); //Slope of plant size
 	sigmaSeedWeight ~ gamma(4,10); //SD of seed weight
 	sigmaSeedWeight_field ~ gamma(1,10); //SD of field random effect	
 	sigmaSeedWeight_plot ~ gamma(1,10); //SD of plot random effect
