@@ -1240,27 +1240,16 @@ inits <- function(){with(datalist,list(
 # str(modPodcount_seed2)
 
 #Claims list
-claims1 <- stan(file='./Seed model claims 1/seedModel_claims51.stan',data=datalist,
-                iter=200,chains=4,init=inits)
-claims2 <- stan(file='./Seed model claims 1/seedModel_claims52.stan',data=datalist,
-                iter=200,chains=4,init=inits)
-claims3 <- stan(file='./Seed model claims 1/seedModel_claims58.stan',data=datalist,
-                iter=200,chains=4,init=inits)
-claims4 <- stan(file='./Seed model claims 1/seedModel_claims59.stan',data=datalist,
-                iter=200,chains=4,init=inits)
-claims5 <- stan(file='./Seed model claims 1/seedModel_claims67.stan',data=datalist,
-                iter=200,chains=4,init=inits)
-claims6 <- stan(file='./Seed model claims 1/seedModel_claims68.stan',data=datalist,
-                iter=200,chains=4,init=inits)
-claims7 <- stan(file='./Seed model claims 1/seedModel_claims69.stan',data=datalist,
-                iter=200,chains=4,init=inits)
-claims8 <- stan(file='./Seed model claims 1/seedModel_claims70.stan',data=datalist,
-                iter=200,chains=4,init=inits)
+claims1 <- stan(file='./Seed model claims 1/seedModel_claims59.stan',data=datalist,
+                iter=800,chains=4,init=inits)
+claims2 <- stan(file='./Seed model claims 1/seedModel_claims70.stan',data=datalist,
+                iter=800,chains=4,init=inits)
+save(claims1,claims2,file='temp.Rdata')
 
 claimTerm <- 'slopeSurvSeedWeight'
-stan_hist(claims8,pars=c(claimTerm,pars))+geom_vline(xintercept=0,linetype='dashed')
-traceplot(claims8,pars=c(claimTerm,pars),inc_warmup=F)
-mod1 <- extract(claims7)
+stan_hist(claims2,pars=c(claimTerm,pars))+geom_vline(xintercept=0,linetype='dashed')
+traceplot(claims2,pars=c(claimTerm,pars),inc_warmup=F)
+mod1 <- extract(claims2)
 2*(1-pnorm(abs(mean(mod1[[1]])/sd(mod1[[1]])),0,1)) #p-val
 
 pars=c('intPlDens','slopeHbeeDistPlDens',#'slopeHbeeDistSqPlDens', #Planting density
@@ -1283,7 +1272,7 @@ pars=c('intFlwSurv','slopePolSurv','slopePlSizeSurv', #Flower survival
        'slopeEdgeCentSurv','slopeSeedCountSurv','slopeSeedSizeSurv', 
        'sigmaFlwSurv_field','sigmaFlwSurv_plot')
 pars=c('intSeedCount','slopePolSeedCount','slopePlSizeCount', #Seeds per pod
-       'slopeEdgeCentSeedCount','slopeHbeeSeedCount','slopeLbeeSeedCount',#'slopeHbeeDistSeedCount',
+       #'slopeEdgeCentSeedCount','slopeHbeeSeedCount','slopeLbeeSeedCount',#'slopeHbeeDistSeedCount',
        'seedCountPhi','sigmaSeedCount_field',#'sigmaSeedCount_plot', #Plot-level random effect having trouble converging
        'sigmaSeedCount_plant')
 pars=c('intSeedWeight','slopePolSeedWeight','slopeSeedCount', #Weight per seed

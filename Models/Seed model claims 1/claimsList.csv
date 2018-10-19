@@ -63,7 +63,7 @@ seedModel_claims55,predSeedCount~logDist+...,-0.1256570472,0.037627561,304.13,-3
 seedModel_claims56,predSeedCount~logMinDist+...,-0.0155766218,0.040163377,304.94,-0.387831474,0.699,,slopeMinDistSeedCount,0.7659361,
 seedModel_claims57,predSeedCount~PlDens+...,-0.0009101741,0.005030407,313.41,-0.180934477,0.857,,slopePlDensSeedCount,0.3868675,
 seedModel_claims58,predSeedCount~predFlwCount+...,-0.8967590841,0.155687476,271.93,-5.759994993,2.99E-08, ***,slopeFlwCountSeedCount,0.04100447,
-seedModel_claims59,predSeedCount~predPodSuccess+...,0.500535695,0.044488977,321.99,11.25078014,9.47E-25, ***,slopeSurvSeedCount,Tested,Trouble with this one
+seedModel_claims59,predSeedCount~predPodSuccess+...,0.500535695,0.044488977,321.99,11.25078014,9.47E-25, ***,slopeSurvSeedCount,0.1554302,Trouble with this one
 seedModel_claims60,predSeedCount~sqrtFlDens+...,-0.1290166135,0.044167377,316.43,-2.921083869,0.00387,  **,slopeFlDensSeedCount,5.52E-05,***
 seedModel_claims61,predSeedCount~Stocking+...,0.0352636885,0.264839987,29.95,0.133150922,0.895,,slopeStockingSeedCount,0.7879626,
 seedModel_claims62,predSeedCount~hbeeVisRate+...,NA,NA,NA,NA,NA,,slopeHbeeVisSeedCount,0.6478144,
@@ -75,7 +75,7 @@ seedModel_claims66,predSeedSize~logDist+...,-0.0103157221,0.028925384,298.71,-0.
 seedModel_claims67,predSeedSize~logMinDist+...,0.0123963504,0.029695388,296.15,0.417450363,0.677,,slopeMinDistSeedWeight,0.001270956,***
 seedModel_claims68,predSeedSize~PlDens+...,0.008565905,0.003800144,301.66,2.254100238,0.0251,   *,slopePlDensSeedWeight,0.004524344,***
 seedModel_claims69,predSeedSize~predFlwCount+...,-0.4373889308,0.137227324,292.22,-3.187331201,0.00171,  **,slopeFlwCountSeedWeight,0.1719813,
-seedModel_claims70,predSeedSize~predPodSuccess+...,0.0447082862,0.046456557,304.6,0.96236762,0.338,,slopeSurvSeedWeight,Written,Trouble with this one
+seedModel_claims70,predSeedSize~predPodSuccess+...,0.0447082862,0.046456557,304.6,0.96236762,0.338,,slopeSurvSeedWeight,0.9795227,Trouble with this one
 seedModel_claims71,predSeedSize~sqrtFlDens+...,0.0207814169,0.033835706,300.96,0.614185996,0.54,,slopeFlDensSeedWeight,0.7784588,
 seedModel_claims72,predSeedSize~Stocking+...,0.4228838333,0.319544186,30.09,1.32339705,0.196,,slopeStockingSeedWeight,0.0260847,**
 seedModel_claims73,predSeedSize~hbeeVisRate+...,NA,NA,NA,NA,NA,,slopeHbeeVisSeedWeight,0.2133066,
