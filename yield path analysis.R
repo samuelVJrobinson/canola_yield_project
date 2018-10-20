@@ -669,21 +669,21 @@ inits <- function() { with(datalist,
    ))
 }
 
-#Claims list
-claims6 <- stan(file='./Commodity model claims 1/commodity_claims50.stan',data=datalist,iter=800,chains=4,
-                control=list(adapt_delta=0.8),init=inits)
-beep(1)
-newpar='slopeFlwCountFlDens'
-stan_hist(claims6,pars=c(pars,newpar))+geom_vline(xintercept=0,linetype='dashed')
-traceplot(claims6,pars=c(pars,newpar),inc_warmup=F)+geom_hline(yintercept=0,linetype='dashed')
-mod1 <- extract(claims6)
-2*(1-pnorm(abs(mean(mod1[[1]])/sd(mod1[[1]])),0,1)) #p-val for claim (2-tailed)
-print(claims1,pars=c(pars,newpar))
+# #Claims list
+# claims6 <- stan(file='./Commodity model claims 1/commodity_claims50.stan',data=datalist,iter=800,chains=4,
+#                 control=list(adapt_delta=0.8),init=inits)
+# beep(1)
+# newpar='slopeFlwCountFlDens'
+# stan_hist(claims6,pars=c(pars,newpar))+geom_vline(xintercept=0,linetype='dashed')
+# traceplot(claims6,pars=c(pars,newpar),inc_warmup=F)+geom_hline(yintercept=0,linetype='dashed')
+# mod1 <- extract(claims6)
+# 2*(1-pnorm(abs(mean(mod1[[1]])/sd(mod1[[1]])),0,1)) #p-val for claim (2-tailed)
+# print(claims1,pars=c(pars,newpar))
 
-# #Full model
-# modPodcount <- stan(file='visitation_pollen_model.stan',data=datalist,iter=2000,chains=3,
-#                    control=list(adapt_delta=0.8),init=inits)
-beep(5)
+#Full model
+modPodcount <- stan(file='visitation_pollen_model.stan',data=datalist,iter=1000,chains=3,
+                   control=list(adapt_delta=0.8),init=inits)
+beep(1)
 # 13 mins for 100 iter
 # save(modPodcount,file='modPodcount.Rdata')
 # load('modPodcount.Rdata') #Load full model - takes 3.9 hrs to run 1000 iterations, including all random effects
@@ -691,7 +691,8 @@ beep(5)
 # print(modPodcount)
 pars=c('intPlDens','slopeDistPlDens','slopeGPPlDens','sigmaPlDens','sigmaPlDens_field') #Planting density
 pars=c('intPlSize','slopePlDensPlSize','slopeDistPlSize','slopeGpPlSize', #Plant size
-       'slopeIrrigPlSize','slope2015PlSize','sigmaPlSize_field','sigmaPlSize_plot','sigmaPlSize')
+       'slopeIrrigPlSize','slope2015PlSize','slopeStockingPlSize','slopeDistStockingPlSize','slopeDist2015PlSize',
+       'sigmaPlSize_field','sigmaPlSize_plot','sigmaPlSize')
 pars=c('intFlDens','slopePlSizeFlDens','slopeHbeeDistFlDens','sigmaFlDens','sigmaFlDens_field') #Flower density
 pars=c('intVisit','slopeYearVis','slopeGpVis','slopeYearGpVis','slopeIrrigVis',
        'slopeDistVis','slopeHiveVis','slopeFlDens', #Visitation
@@ -706,27 +707,28 @@ pars=c('intSeedCount','slopeVisitSeedCount','slopePolSeedCount','slopePlSizeCoun
        'sigmaSeedCount_plant','sigmaSeedCount_field') #Seed count
 pars=c('intSeedWeight','slopeVisitSeedWeight','slopePolSeedWeight',#Seed weight
        'slopeSeedCount','slopePlSizeWeight',
-       'sigmaSeedWeight','sigmaSeedWeight_plant',
-       'sigmaSeedWeight_field','lambdaSeedWeight')
-stan_hist(modPodcount,pars=pars)#+geom_vline(xintercept=0,linetype='dashed')
+       'sigmaSeedWeight','sigmaSeedWeight_plant','sigmaSeedWeight_field','lambdaSeedWeight')
+stan_hist(modPodcount,pars=pars)+geom_vline(xintercept=0,linetype='dashed')
 traceplot(modPodcount,pars=c(pars),inc_warmup=F)
 # launch_shinystan(modPodcount)
 print(modPodcount,pars=pars)
 # pairs(modPodcount,pars=pars)
 
-
 #Appears to be a small positive effect of visitation rate on seed count, and a negative effect on seed weight. Not sure if this is due to actual visitation, or something like plant density/plant size, which is lower at edge (i.e. abiotic conditions are worse)
 
 mod3 <- extract(modPodcount)
-# pairs(mod3[c(pars,'lp__')],lower.panel=function(x,y){
-#   par(usr=c(0,1,0,1)) 
-#   text(0.5, 0.5, round(cor(x,y),2), cex = 1 * exp(abs(cor(x,y))))})
+# claim <- 'slopeIrrigPlSize'
+# 2*(1-pnorm(abs(mean(mod3[[claim]])/sd(mod3[[claim]])),0,1)) #p-val for claim (2-tailed)
+
+pairs(mod3[c(pars,'lp__')],lower.panel=function(x,y){
+  par(usr=c(0,1,0,1))
+  text(0.5, 0.5, round(cor(x,y),2), cex = 1 * exp(abs(cor(x,y))))})
+
+t(apply(mod3$intPlSize_plot,2,function(x) quantile(x,c(0.5,0.975,0.025)))) %>%
+  as.data.frame() %>% rename(median='50%',upr='97.5%',lwr='2.5%') %>% arrange(median) %>%
+  mutate(row=1:nrow(.)) %>% ggplot(aes(row,median))+geom_pointrange(aes(ymax=upr,ymin=lwr))+geom_hline(yintercept=0,col='red')
 # 
-# t(apply(mod3$intFlwSurv_field,2,function(x) quantile(x,c(0.5,0.975,0.025)))) %>% 
-#   as.data.frame() %>% rename(median='50%',upr='97.5%',lwr='2.5%') %>% arrange(median) %>% 
-#   mutate(row=1:nrow(.)) %>% ggplot(aes(row,median))+geom_pointrange(aes(ymax=upr,ymin=lwr))+geom_hline(yintercept=0,col='red')
-# 
-# qqline(apply(mod3$intFlwSurv_field,2,median))
+# qqnorm(apply(mod3$intPlSize_plot,2,median));qqline(apply(mod3$intPlSize_plot,2,median))
 # 
 
 #Check model fit:
@@ -746,6 +748,28 @@ with(mod3,plot(apply(plSize_resid,1,function(x) sum(abs(x))),
 abline(0,1,col='red'); #PP plot - good
 plot(datalist$plantSize,apply(mod3$predPlSize,2,median)[datalist$obsPl_ind], #Predicted vs Actual - good
      ylab='Predicted plant size',xlab='Actual plant size'); abline(0,1,col='red')
+
+#Weird relationship with stocking/distance:
+partial1 <- with(datalist,data.frame(resid=apply(mod3$plSize_resid,2,median),
+           numHives=numHives[plotIndex[plantIndex]],logDist=log(dist[plantIndex]),year=is2015[plotIndex[plantIndex]])) %>% 
+  mutate(distEff=mean(mod3$slopeDistPlSize)*logDist,stockingEff=mean(mod3$slopeStockingPlSize)*numHives) %>% 
+  mutate(distStockEff=mean(mod3$slopeDistStockingPlSize)*logDist*numHives) %>% 
+  mutate(distYearEff=mean(mod3$slopeDist2015PlSize)*year*logDist) %>% 
+  mutate(partial=distEff+stockingEff+distStockEff+distYearEff+resid) %>% 
+  filter(numHives==0|numHives==40)
+pred <- expand.grid(logDist=seq(0,6.3,0.1),numHives=c(0,40),is2015=c(F,T)) %>% 
+  mutate(DistHives=logDist*numHives,distYear=logDist*is2015) %>% as.matrix() %*% 
+  t(with(mod3,cbind(slopeDistPlSize,slopeStockingPlSize,slope2015PlSize,slopeDistStockingPlSize,slopeDist2015PlSize))) %>% 
+  apply(.,1,function(x) quantile(x,c(0.5,0.975,0.025))) %>% t() %>% as.data.frame() %>% 
+  bind_cols(expand.grid(logDist=seq(0,6.3,0.1),numHives=c(0,40),is2015=c(F,T)),.) %>% 
+  rename('med'='50%','upr'='97.5%','lwr'='2.5%') 
+ggplot(pred,aes(exp(logDist),med))+
+  geom_ribbon(aes(ymax=upr,ymin=lwr,fill=factor(numHives)),alpha=0.3,show.legend=F)+
+  geom_line(aes(col=factor(numHives)),size=1)+
+  facet_wrap(~factor(is2015,labels=c('2014','2015')),ncol=1)+
+#  geom_point(data=partial1,aes(y=partial,col=factor(numHives)),position=position_dodge(width=0.2))+
+  labs(col='Stocking',y='Plant size residual',x='Distance')+
+  scale_colour_manual(values=c('forestgreen','darkorange'))+scale_fill_manual(values=c('forestgreen','darkorange'))
 
 #flower density per plot
 with(mod3,plot(apply(flDens_resid,1,function(x) sum(abs(x))),
@@ -894,8 +918,8 @@ str(datalist)
 plotlev <- with(datalist,data.frame(plot=1:Nplot,field=plotIndex[1:Nplot],
                                 logDist=log(dist),hbeeVis=hbeeVis,totalTime=totalTime,
                                 is2015=is2015[plotIndex[1:Nplot]],isIrrig=isIrrigated[plotIndex[1:Nplot]],
-                                isGP=isGP[plotIndex[1:Nplot]],pollen=NA,
-                                plantDens=NA,flDens=flDens,plSize=NA,flwCount=NA,
+                                isGP=isGP[plotIndex[1:Nplot]],numHives=numHives[plotIndex[1:Nplot]],
+                                pollen=NA,plantDens=NA,flDens=flDens,plSize=NA,flwCount=NA,
                                 avgSurv=NA,avgSeedWeight=NA,avgSeedCount=NA))
 
 plotlev$pollen[sort(unique(datalist$flowerIndex))] <- #log pollen
@@ -918,6 +942,14 @@ plotlev$avgSeedCount[sort(unique(datalist$plantIndex[datalist$podIndex]))] <-
 plotlev <- plotlev %>%  drop_na() %>% mutate_at(vars(plot,field),factor) %>% 
   mutate(logVisRate=log(hbeeVis+0.5/totalTime)) %>% 
   mutate(pollen=scale(pollen))
+
+mod1 <- lmer(plSize~plantDens+logDist*numHives+is2015*logDist+(1|field),data=plotlev)
+summary(mod1)
+
+pred1 <- expand.grid(plantDens=0.013,is2015=F,logDist=seq(0,6.2,0.1),numHives=seq(0,60,10),field=28)
+pred1 <- cbind(pred1,pred=predict(mod1,newdata=pred1))
+
+ggplot(pred1,aes(logDist,pred,col=factor(numHives)))+geom_point()
 
 mod1 <- psem(lmer(plantDens~logDist+(1|field),data=plotlev),
              lmer(plSize~plantDens+isIrrig+isGP+is2015+(1|field),data=plotlev),
