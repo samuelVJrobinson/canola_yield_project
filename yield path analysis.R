@@ -682,7 +682,7 @@ inits <- function() { with(datalist,
 # print(claims1,pars=c(pars,newpar))
 
 #Full model
-modPodcount <- stan(file='visitation_pollen_model.stan',data=datalist,iter=1000,chains=3,
+modPodcount <- stan(file='visitation_pollen_model.stan',data=datalist,iter=2000,chains=3,
                    control=list(adapt_delta=0.8),init=inits)
 beep(1)
 # 13 mins for 100 iter
@@ -693,7 +693,8 @@ beep(1)
 pars=c('intPlDens','slope2015PlDens','slopeIrrigPlDens','slope2015IrrigPlDens',
        'slopeDistPlDens','slopeGPPlDens','sigmaPlDens','sigmaPlDens_field') #Planting density
 pars=c('intPlSize','slopePlDensPlSize','slopeDistPlSize','slopeGpPlSize', #Plant size
-       'slopeIrrigPlSize','slope2015PlSize','slopeStockingPlSize','slopeDistStockingPlSize','slopeDist2015PlSize',
+       'slopeIrrigPlSize','slope2015PlSize','slopeStockingPlSize',
+       'slopeDistStockingPlSize','slopeDist2015PlSize',
        'sigmaPlSize_field','sigmaPlSize_plot','sigmaPlSize')
 pars=c('intFlDens','slopePlSizeFlDens','slopeHbeeDistFlDens','sigmaFlDens','sigmaFlDens_field') #Flower density
 pars=c('intVisit','slopeYearVis','slopeGpVis','slopeYearGpVis','slopeIrrigVis',
@@ -719,19 +720,21 @@ print(modPodcount,pars=pars)
 #Appears to be a small positive effect of visitation rate on seed count, and a negative effect on seed weight. Not sure if this is due to actual visitation, or something like plant density/plant size, which is lower at edge (i.e. abiotic conditions are worse)
 
 mod3 <- extract(modPodcount)
-# claim <- 'slopeIrrigPlSize'
+# claim <- 'slopePlDensPlSize'
 # 2*(1-pnorm(abs(mean(mod3[[claim]])/sd(mod3[[claim]])),0,1)) #p-val for claim (2-tailed)
 
 pairs(mod3[c(pars,'lp__')],lower.panel=function(x,y){
   par(usr=c(0,1,0,1))
   text(0.5, 0.5, round(cor(x,y),2), cex = 1 * exp(abs(cor(x,y))))})
 
-t(apply(mod3$intPlSize_plot,2,function(x) quantile(x,c(0.5,0.975,0.025)))) %>%
+t(apply(mod3$intVisit_field,2,function(x) quantile(x,c(0.5,0.975,0.025)))) %>%
   as.data.frame() %>% rename(median='50%',upr='97.5%',lwr='2.5%') %>% arrange(median) %>%
-  mutate(row=1:nrow(.)) %>% ggplot(aes(row,median))+geom_pointrange(aes(ymax=upr,ymin=lwr))+geom_hline(yintercept=0,col='red')
-# 
-# qqnorm(apply(mod3$intPlSize_plot,2,median));qqline(apply(mod3$intPlSize_plot,2,median))
-# 
+  mutate(row=1:nrow(.)) %>% 
+  ggplot(aes(row,median))+geom_pointrange(aes(ymax=upr,ymin=lwr))+geom_hline(yintercept=0,col='red')
+
+
+
+
 
 #Check model fit:
 par(mfrow=c(2,1))
@@ -753,7 +756,8 @@ plot(datalist$plantSize,apply(mod3$predPlSize,2,median)[datalist$obsPl_ind], #Pr
 
 #Weird relationship with stocking/distance:
 partial1 <- with(datalist,data.frame(resid=apply(mod3$plSize_resid,2,median),
-           numHives=numHives[plotIndex[plantIndex]],logDist=log(dist[plantIndex]),year=is2015[plotIndex[plantIndex]])) %>% 
+           numHives=numHives[plotIndex[plantIndex]],logDist=log(dist[plantIndex]),
+           year=is2015[plotIndex[plantIndex]])) %>% 
   mutate(distEff=mean(mod3$slopeDistPlSize)*logDist,stockingEff=mean(mod3$slopeStockingPlSize)*numHives) %>% 
   mutate(distStockEff=mean(mod3$slopeDistStockingPlSize)*logDist*numHives) %>% 
   mutate(distYearEff=mean(mod3$slopeDist2015PlSize)*year*logDist) %>% 
@@ -765,11 +769,11 @@ pred <- expand.grid(logDist=seq(0,6.3,0.1),numHives=c(0,40),is2015=c(F,T)) %>%
   apply(.,1,function(x) quantile(x,c(0.5,0.975,0.025))) %>% t() %>% as.data.frame() %>% 
   bind_cols(expand.grid(logDist=seq(0,6.3,0.1),numHives=c(0,40),is2015=c(F,T)),.) %>% 
   rename('med'='50%','upr'='97.5%','lwr'='2.5%') 
-ggplot(pred,aes(exp(logDist),med))+
+ggplot(pred,aes(logDist,med))+
   geom_ribbon(aes(ymax=upr,ymin=lwr,fill=factor(numHives)),alpha=0.3,show.legend=F)+
   geom_line(aes(col=factor(numHives)),size=1)+
   facet_wrap(~factor(is2015,labels=c('2014','2015')),ncol=1)+
-#  geom_point(data=partial1,aes(y=partial,col=factor(numHives)),position=position_dodge(width=0.2))+
+  geom_point(data=partial1,aes(y=partial,col=factor(numHives)),position=position_dodge(width=0.2))+
   labs(col='Stocking',y='Plant size residual',x='Distance')+
   scale_colour_manual(values=c('forestgreen','darkorange'))+scale_fill_manual(values=c('forestgreen','darkorange'))
 
@@ -785,18 +789,36 @@ plot(datalist$flDens,apply(mod3$predFlDens,2,median), #Predicted vs Actual - goo
 with(mod3,plot(apply(hbeeVis_resid,1,function(x) sum(abs(x))),
                apply(predHbeeVis_resid,1,function(x) sum(abs(x))),
                xlab='Sum residuals',ylab='Sum simulated residuals',main='Hbee visits')) 
-abline(0,1,col='red') #PP plot - OK
+abline(0,1,col='red')
+legend('topleft',paste('p=',round(mean(with(mod3,apply(hbeeVis_resid,1,function(x) sum(abs(x)))>apply(predHbeeVis_resid,1,function(x) sum(abs(x))))),3)))
+#PP plot - OK
 plot(with(datalist,hbeeVis/totalTime),jitter(apply(mod3$predHbeeVis,2,median)), #Predicted vs Actual - good
      ylab='Predicted visits',xlab='Actual visits')
 abline(0,1,col='red')
 
-# #Results
-# res <- with(mod3,data.frame(intVisit,slopeYearVis,slopeGpVis,slopeYearGpVis,slopeDistVis,slopeHiveVis,slopeFlDens))
-# 
-# #Model matrix
-# temp <- with(datalist,data.frame(int=1,year=is2015[plotIndex],area=isGP[plotIndex],
-#                                  areaYear=is2015[plotIndex]*isGP[plotIndex],
-#                                  dist,numHives=numHives[plotIndex],flDens))
+#Predictions
+
+#Model matrix
+modMat1 <- as.matrix(with(datalist,data.frame(int=1,year=is2015[plotIndex],GP=isGP[plotIndex],
+                  yearGP=is2015[plotIndex]*isGP[plotIndex],logDist=log(dist),
+                  numHives=numHives[plotIndex],flDens=flDens,irrig=isIrrigated[plotIndex])))
+#Coefs from model
+coefs1 <- with(mod3,cbind(intVisit,slopeYearVis,slopeGpVis,slopeYearGpVis,
+                          slopeDistVis,slopeHiveVis,slopeFlDens,slopeIrrigVis))
+res1 <-apply(mod3$hbeeVis_resid,2,median) #(log) Residuals
+
+#Distance/year/area effects 
+temp <- modMat1
+margCols <-  c("numHives","flDens","irrig" ) #Columns to marginalize
+temp[,margCols] <- matrix(rep(c(20,0,0),times=nrow(temp)),nrow=nrow(temp),byrow=T)
+temp <- data.frame(temp,aRes=apply(temp %*% t(coefs1),1,median)+res1) #Adjusted (log) residual
+
+temp %>% mutate(year=factor(year,labels=c('2014','2015')),GP=factor(GP,labels=c('Leth','GP'))) %>% 
+  ggplot(aes(logDist,aRes))+geom_point()+
+  facet_grid(year~GP)+geom_smooth(method='lm')
+
+
+
 
 #pollen - OK, but plot level random effects throw off PP checks
 with(mod3,plot(apply(pollen_resid,1,function(x) sum(abs(x))),
@@ -951,17 +973,20 @@ mod1 <- lmer(plSize~plantDens+logDist+numHives+
                plantDens:numHives+
                logDist:numHives+
                # logDist:is2015+
-               (1|field),
-             data=plotlev,REML=T)
+               (1|field),data=plotlev,REML=F)
 summary(mod1)
 drop1(mod1,test='Chisq')
 
 plantsAllComm %>% 
   mutate(logVeg=log(VegMass),logDens=scale(log(PlDens)),logDist=log(Distance),NumHives=scale(NumHives)) %>% 
-  lmer(logVeg~logDens+NumHives+
-         (1|Field/Plant),data=.,REML=F) %>% 
+  mutate(Year=Year==2015,Irrigated=Irrigated=='Irrigated') %>% 
+  mutate(Plant=paste0(Field,Plant)) %>% 
+  lmer(logVeg~logDens+NumHives*logDist+Irrigated+Year*logDist+
+         (1|Field/Plant),data=.,REML=T) %>% 
   summary()
-  # drop1(.,test='Chisq')
+
+
+  drop1(.,test='Chisq')
 summary(mod1)
 
 
