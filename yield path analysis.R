@@ -604,10 +604,11 @@ datalistPlant <- plantsAllComm %>% ungroup() %>%
   Nplant_miss=sum(is.na(VegMass)), #Missing plants
   podCount=Pods, #Successful pods
   flwCount=Pods+Missing, #Pods + Missing (total flw production)
-  totalSeedMass=SeedMass, #Weight of all seeds (g)
   plantIndex=plantIndex, #Index for plant (which plot?)
   plantSize_obs=log(VegMass[!is.na(VegMass)])-mean(log(VegMass[!is.na(VegMass)])), #log weight of veg mass (g), centered
-  obsPl_ind=which(!is.na(VegMass)),missPl_ind=which(is.na(VegMass))
+  obsPl_ind=which(!is.na(VegMass)),missPl_ind=which(is.na(VegMass)), #Indices for missing plant size
+  yield_obs=SeedMass[!is.na(SeedMass)], #observed weight of all seeds (g)
+  obsYield_ind=which(!is.na(SeedMass)), missYield_ind=which(is.na(SeedMass)) #Indices for missing yield
 ))
 
 # sort(unique(with(plantsAllComm,paste(Year,Field,Distance,Plant)))) %in%
@@ -689,7 +690,8 @@ beep(1)
 # load('modPodcount.Rdata') #Load full model - takes 3.9 hrs to run 1000 iterations, including all random effects
 
 # print(modPodcount)
-pars=c('intPlDens','slopeDistPlDens','slopeGPPlDens','sigmaPlDens','sigmaPlDens_field') #Planting density
+pars=c('intPlDens','slope2015PlDens','slopeIrrigPlDens','slope2015IrrigPlDens',
+       'slopeDistPlDens','slopeGPPlDens','sigmaPlDens','sigmaPlDens_field') #Planting density
 pars=c('intPlSize','slopePlDensPlSize','slopeDistPlSize','slopeGpPlSize', #Plant size
        'slopeIrrigPlSize','slope2015PlSize','slopeStockingPlSize','slopeDistStockingPlSize','slopeDist2015PlSize',
        'sigmaPlSize_field','sigmaPlSize_plot','sigmaPlSize')
@@ -943,13 +945,39 @@ plotlev <- plotlev %>%  drop_na() %>% mutate_at(vars(plot,field),factor) %>%
   mutate(logVisRate=log(hbeeVis+0.5/totalTime)) %>% 
   mutate(pollen=scale(pollen))
 
-mod1 <- lmer(plSize~plantDens+logDist*numHives+is2015*logDist+(1|field),data=plotlev)
+#Plant size model
+mod1 <- lmer(plSize~plantDens+logDist+numHives+
+               isIrrig*plantDens+
+               plantDens:numHives+
+               logDist:numHives+
+               # logDist:is2015+
+               (1|field),
+             data=plotlev,REML=T)
+summary(mod1)
+drop1(mod1,test='Chisq')
+
+plantsAllComm %>% 
+  mutate(logVeg=log(VegMass),logDens=scale(log(PlDens)),logDist=log(Distance),NumHives=scale(NumHives)) %>% 
+  lmer(logVeg~logDens+NumHives+
+         (1|Field/Plant),data=.,REML=F) %>% 
+  summary()
+  # drop1(.,test='Chisq')
 summary(mod1)
 
-pred1 <- expand.grid(plantDens=0.013,is2015=F,logDist=seq(0,6.2,0.1),numHives=seq(0,60,10),field=28)
-pred1 <- cbind(pred1,pred=predict(mod1,newdata=pred1))
 
-ggplot(pred1,aes(logDist,pred,col=factor(numHives)))+geom_point()
+pred1 <- expand.grid(plantDens=seq(-0.60,0.60,0.05),is2015=c(T,F),logDist=c(0,3,6),numHives=c(0,10,40),field=28)
+pred1 <- cbind(pred1,pred=predict(mod1,newdata=pred1)) %>% 
+  mutate(logDist=factor(logDist,labels=c('Dist=Near','Dist=Mid','Dist=Far'))) %>% 
+  mutate(is2015=factor(is2015,labels=c('2014','2015')))
+ggplot(pred1,aes(plantDens,pred,col=factor(numHives)))+geom_line(size=1)+
+  facet_grid(logDist~is2015)+labs(col='NumHives')+labs(y='PlantSize',col='Hive\nNumber')
+
+#Plant density model
+mod2 <- lmer(plantDens~is2015*isIrrig+isGP+logDist+(logDist|field),data=plotlev,REML=F)
+summary(mod2)
+drop1(mod2,test='Chisq')  
+
+summary(lm(plotlev$plantDens~cbind(predict(mod2)))) #R2=0.69
 
 mod1 <- psem(lmer(plantDens~logDist+(1|field),data=plotlev),
              lmer(plSize~plantDens+isIrrig+isGP+is2015+(1|field),data=plotlev),
@@ -981,7 +1009,7 @@ mod2 <- psem(lmer(plantDens~isGP+logDist+(1|field),data=plotlev),
              lmer(avgSeedCount~flwCount+is2015+pollen+logVisRate+plSize+(1|field),data=plotlev),
              lmer(avgSeedWeight~flwCount+avgSurv+isIrrig+pollen+logVisRate+plSize+(1|field),data=plotlev)
 )
-summary(mod2[[2]])
+summary(mod2[[8]])
 lapply(mod2,summary)
 dSep(mod2,conditioning=F)
 fisherC(mod2,conserve=T) 

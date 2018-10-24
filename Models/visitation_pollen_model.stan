@@ -36,6 +36,7 @@ data {
 	int<lower=1,upper=Nplant> missPl_ind[Nplant_miss]; //Index for missing plants	
 	int podCount[Nplant]; //Number of pods per plant
 	int flwCount[Nplant]; //Number of total flower (pods + missing) per plant
+	vector[Nplant_obs] yield_obs; //Observed yield (g seed per plant)	
 	
 	//Pod level
 	int Npod; //Number of pods
@@ -61,29 +62,32 @@ parameters {
 	//Plant density	
 	vector[Nplot_densMiss] plDens_miss; 
 	real intPlDens; //Global intercept
-	real slopeDistPlDens; //Slope of distance into field	
-	real slopeGPPlDens; //GP effect on plant density
+	real slope2015PlDens; //Effect of 2015
+	real slopeIrrigPlDens; //Effect of irrigation
+	real slope2015IrrigPlDens; //Year:irrigation interaction	
+	real slopeGPPlDens; //GP effect on plant density	
+	real slopeDistPlDens; //Slope of distance into field		
 	real<lower=0.01> sigmaPlDens; //Sigma for within-field (residual)
 	real<lower=0.01> sigmaPlDens_field; //Sigma for field
 	vector[Nfield] intPlDens_field; //Random intercept for field
 	
-	//Plant size - Density:distance, Year:GP, Irrigation:2015 interactions are 0. Leaving them out.	
-	//Plot level random effect has bad trace, strongly correlated with lp__
-	vector[Nplant_miss] plantSize_miss; //Imputed data for missing values	
-	real intPlSize; //Global intercept
-	real slopePlDensPlSize; //Slope of planting density
-	real slopeDistPlSize; //Slope of distance (edge of field has small plants)
-	real slopeGpPlSize; //Slope of Grand Prairie effect
-	real slopeIrrigPlSize; //Slope of irrigation effect	
-	real slope2015PlSize; //Slope of 2015 effect	
-	real slopeStockingPlSize; //Stocking effect
-	real slopeDistStockingPlSize; //Distance:Stocking interaction
-	real slopeDist2015PlSize; //Distance:year interaction
-	real<lower=0> sigmaPlSize_field; //Sigma for field
-	real<lower=0> sigmaPlSize_plot; //Sigma for plot - small n_eff, higher
-	real<lower=0> sigmaPlSize; //Sigma for within-plot (residual)
-	vector[Nfield] intPlSize_field; //Random intercept for field
-	vector[Nplot] intPlSize_plot; //Random intercept for plot - not converging well	
+	// // Plant size - Density:distance, Year:GP, Irrigation:2015 interactions are 0. Leaving them out.	
+	// // Plot level random effect has bad trace, strongly correlated with lp__
+	// vector[Nplant_miss] plantSize_miss; //Imputed data for missing values	
+	// real intPlSize; //Global intercept
+	// real slopePlDensPlSize; //Slope of planting density
+	// real slopeDistPlSize; //Slope of distance (edge of field has small plants)
+	// real slopeGpPlSize; //Slope of Grand Prairie effect
+	// real slopeIrrigPlSize; //Slope of irrigation effect	
+	// real slope2015PlSize; //Slope of 2015 effect	
+	// real slopeStockingPlSize; //Stocking effect
+	// real slopeDistStockingPlSize; //Distance:Stocking interaction
+	// real slopeDist2015PlSize; //Distance:year interaction
+	// real<lower=0> sigmaPlSize_field; //Sigma for field
+	// real<lower=0> sigmaPlSize_plot; //Sigma for plot - small n_eff, higher
+	// real<lower=0> sigmaPlSize; //Sigma for within-plot (residual)
+	// vector[Nfield] intPlSize_field; //Random intercept for field
+	// vector[Nplot] intPlSize_plot; //Random intercept for plot - not converging well	
 				
 	// //Flower density per plot
 	// real intFlDens; //Global intercept
@@ -166,13 +170,16 @@ parameters {
 	// // vector[Nplot] intSeedWeight_plot; //plot-level random intercepts	
 	// vector[Nfield] intSeedWeight_field; //field-level random intercepts	
 	// real<lower=0> lambdaSeedWeight; //Lambda term for exponential process
+	
+	// // Total yield (g/plant)
+	// vector[Nplant_miss] yield_miss; //Imputed data for missing values	
 }
 
 transformed parameters {		
 	//Expected values
 	vector[Nplot] plDensMu; //Predicted plant density
-	vector[Nplant] plSizeMu; //Plant size	
-	vector[Nplot] plSizePlotMu; //Plot-level plant size	
+	// vector[Nplant] plSizeMu; //Plant size	
+	// vector[Nplot] plSizePlotMu; //Plot-level plant size	
 	// vector[Nplot] flDensMu; //Predicted flower density	
 	// vector[Nplot] visitHbeeMu; //Plot-level hbee visits	
 	// vector[Nplot] pollenPlot; //Plot-level pollen per stigma
@@ -189,16 +196,22 @@ transformed parameters {
 	// vector[Npod] seedWeightMu; //Pod-level weight per seed			
 	
 	//Imputed missing data;
-	vector[Nplant] plantSize; //Plant size
 	vector[Nplot] plDens; //Planting density
-	plantSize[obsPl_ind]=plantSize_obs;
-	plantSize[missPl_ind]=plantSize_miss;	
+	// vector[Nplant] plantSize; //Plant size
+	// vector[Nplant] yield; //Yield per plant
 	plDens[obsPlDens_ind]=plDens_obs;
 	plDens[missPlDens_ind]=plDens_miss;
+	// plantSize[obsPl_ind]=plantSize_obs;
+	// plantSize[missPl_ind]=plantSize_miss;		
+	// yield[obsPl_ind]=yield_obs;
+	// yield[missPl_ind]=yield_miss;
 	
 	for(i in 1:Nplot){ 
 		// Plant density per plot
 		plDensMu[i] = intPlDens + intPlDens_field[plotIndex[i]] + 
+			slope2015PlDens*is2015[plotIndex[i]]+ //Year effect
+			slopeIrrigPlDens*isIrrigated[plotIndex[i]]+ //Irrigation effect
+			slope2015IrrigPlDens*isIrrigated[plotIndex[i]]*is2015[plotIndex[i]]+ //Year:irrigation interaction
 			slopeDistPlDens*logHbeeDist[i] + //Distance effect				
 			slopeGPPlDens*isGP[plotIndex[i]]; //GP effect
 			
@@ -259,9 +272,9 @@ transformed parameters {
 	// for(i in 1:Nflw) //For each flower stigma
 		// pollenMu[i] = intPollen + pollenPlot[flowerIndex[i]]; //Matches to plot-level pollen + global intercept	
 		
-	for(i in 1:Nplant){ //For each plant 	
-		//Plant size = plot-level estimate
-		plSizeMu[i] = plSizePlotMu[plantIndex[i]]; 			
+	// for(i in 1:Nplant){ //For each plant 	
+		// //Plant size = plot-level estimate
+		// plSizeMu[i] = plSizePlotMu[plantIndex[i]]; 			
 		
 		// // Flower count per plant
 		// flwCountMu[i] = flwCountPlot[plantIndex[i]] + //Plot level flower count 
@@ -277,7 +290,7 @@ transformed parameters {
 		// // Weight per seed = plot-level effect + random int plant + 
 		// seedWeightPlantMu[i] = seedWeightMuPlot[plantIndex[i]] + intSeedWeight_plant[i] +			
 			// slopePlSizeWeight*plantSize[i]; //Plant size 		
-	}
+	// }
 	
 	// for(i in 1:Npod){ //For each pod
 		// seedCountMu[i] = seedCountMuPlant[podIndex[i]]; 
@@ -289,7 +302,7 @@ transformed parameters {
 model {	
 	//Likelihood		
 	plDens ~ normal(plDensMu,sigmaPlDens); //Plant density
-	plantSize ~ normal(plSizeMu,sigmaPlSize); //Plant size	
+	// plantSize ~ normal(plSizeMu,sigmaPlSize); //Plant size	
 	// flDens ~ normal(flDensMu,sigmaFlDens); //Flower density per plot
 	// hbeeVis ~ neg_binomial_2_log(visitHbeeMu,visitHbeePhi); //Honeybee visitation (no ZI-process)
 	// pollenCount ~ neg_binomial_2_log(pollenMu,pollenPhi); //Pollination rate	
@@ -301,27 +314,30 @@ model {
 	//Priors
 	//Plant density	- informative priors
 	intPlDens ~ normal(0,0.1); //Global intercept
+	slope2015PlDens ~ normal(0,1); //Year effect
+	slopeIrrigPlDens ~ normal(0,1); //Irrigation effect
+	slope2015IrrigPlDens ~ normal(0,1); //Year:irrigation interaction
 	slopeDistPlDens ~ normal(0,0.05); //Slope of distance into field	
 	slopeGPPlDens ~ normal(0,1); // Grand Prairie effect 
 	sigmaPlDens ~ gamma(3,10); //Sigma for within-field (residual)
 	sigmaPlDens_field ~ gamma(3,10); //Sigma for field
 	intPlDens_field ~ normal(0,sigmaPlDens_field); //Random intercept for field
 	
-	//Plant size - informative priors
-	intPlSize ~ normal(0,0.5); //Intercept
-	slopePlDensPlSize ~ normal(0,0.5); //Plant density
-	slopeDistPlSize ~ normal(0,0.05); //Distance effect
-	slopeGpPlSize ~ normal(0,0.5); //Grand Prairie effect
-	slopeIrrigPlSize ~ normal(0,0.5); //Irrigation effect
-	slope2015PlSize ~ normal(0.3,0.5); //2015 effect	
-	slopeStockingPlSize ~ normal(0,1); //Stocking effect
-	slopeDistStockingPlSize ~ normal(0,1); //Distance:Stocking interaction
-	slopeDist2015PlSize ~ normal(0,1); //Distance:Year interaction
-	sigmaPlSize_field ~ gamma(3,10); //Sigma for random field 
-	sigmaPlSize_plot ~ gamma(3.5,10); //Sigma for random plot
-	sigmaPlSize ~ gamma(7,10); //Sigma for residual	
-	intPlSize_field ~ normal(0,sigmaPlSize_field); //Random field int
-	intPlSize_plot ~ normal(0,sigmaPlSize_plot); //Random int plot	
+	// // Plant size - informative priors
+	// intPlSize ~ normal(0,0.5); //Intercept
+	// slopePlDensPlSize ~ normal(0,0.5); //Plant density
+	// slopeDistPlSize ~ normal(0,0.05); //Distance effect
+	// slopeGpPlSize ~ normal(0,0.5); //Grand Prairie effect
+	// slopeIrrigPlSize ~ normal(0,0.5); //Irrigation effect
+	// slope2015PlSize ~ normal(0.3,0.5); //2015 effect	
+	// slopeStockingPlSize ~ normal(0,1); //Stocking effect
+	// slopeDistStockingPlSize ~ normal(0,1); //Distance:Stocking interaction
+	// slopeDist2015PlSize ~ normal(0,1); //Distance:Year interaction
+	// sigmaPlSize_field ~ gamma(3,10); //Sigma for random field 
+	// sigmaPlSize_plot ~ gamma(3.5,10); //Sigma for random plot
+	// sigmaPlSize ~ gamma(7,10); //Sigma for residual	
+	// intPlSize_field ~ normal(0,sigmaPlSize_field); //Random field int
+	// intPlSize_plot ~ normal(0,sigmaPlSize_plot); //Random int plot	
 	
 	// // Flower density per plot
 	// intFlDens ~ normal(0,1); //Global intercept
@@ -425,11 +441,11 @@ generated quantities{
 	// real pollen_resid[Nflw]; //residual
 	// real predPollen_resid[Nflw]; //residual of generated
 	
-	//Plant-level	
-	//plantSize
-	real predPlSize[Nplant]; //Generated
-	real plSize_resid[Nplant]; //Residual
-	real predPlSize_resid[Nplant]; //Residual of generated
+	// //Plant-level	
+	// //plantSize
+	// real predPlSize[Nplant]; //Generated
+	// real plSize_resid[Nplant]; //Residual
+	// real predPlSize_resid[Nplant]; //Residual of generated
 	// //flower count per plant (potential pods)
 	// int predFlwCount[Nplant]; //Generated
 	// real flwCount_resid[Nplant]; //Residual
@@ -473,11 +489,11 @@ generated quantities{
 		// predPollen_resid[i] = exp(pollenMu[i]) - predPollenCount[i]; //Residual for predicted		
 	// }
 			
-	for(i in 1:Nplant){
-		//plant size
-		plSize_resid[i]= plantSize[i] - plSizeMu[i]; //Residual for actual
-		predPlSize[i] = normal_rng(plSizeMu[i],sigmaPlSize); //Generates new value from normal dist.
-		predPlSize_resid[i] = predPlSize[i] - plSizeMu[i]; //Residual for new value	
+	// for(i in 1:Nplant){
+		// //plant size
+		// plSize_resid[i]= plantSize[i] - plSizeMu[i]; //Residual for actual
+		// predPlSize[i] = normal_rng(plSizeMu[i],sigmaPlSize); //Generates new value from normal dist.
+		// predPlSize_resid[i] = predPlSize[i] - plSizeMu[i]; //Residual for new value	
 		// //flower count per plant
 		// flwCount_resid[i] = flwCount[i] - exp(flwCountMu[i]); //Residual for actual
 		// predFlwCount[i] = neg_binomial_2_log_rng(flwCountMu[i],flwCountPhi); //Generates new value from neg. bin.
@@ -487,7 +503,7 @@ generated quantities{
 		// // predPodCount[i] = binomial_rng(flwCount[i],inv_logit(flwSurv[i])); //Generates new value from binomial
 		// predPodCount[i] = beta_binomial_rng(flwCount[i],inv_logit(flwSurv[i])*flwSurvPhi,(1-inv_logit(flwSurv[i]))*flwSurvPhi); //Generates new value from beta-binomial
 		// predPodCount_resid[i] = predPodCount[i] - (flwCount[i]*inv_logit(flwSurv[i])); //Residual for new value		
-	}
+	// }
 	
 	// for(i in 1:Npod){ //For each pod
 		// //Seed count per pod - doesn't work well due to weird generating process
