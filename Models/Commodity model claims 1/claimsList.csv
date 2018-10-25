@@ -3,16 +3,20 @@ commodity_claims1,plantDens~is2015+...,-0.103,0.121,48.86,-0.85177054,0.398,,0.2
 commodity_claims2,plantDens~isGP+...,-0.311,0.111,47.98,-2.81519803,0.00705,  **,0.005499251,***,slopeGPPlDens,Added to next model
 commodity_claims3,plantDens~isIrrig+...,0.163,0.134,47.89,1.21774854,0.229,,0.18444,,slopeIrrigPlDens,
 commodity_claims38,plantDens~stocking+...,NA,NA,NA,NA,NA,,0.1334327,,slopeStockingPlDens,
+,,,,,,,,,,,
 commodity_claims39,plSize~stocking+...,NA,NA,NA,NA,NA,,0.0570471,**,slopeStockingPlSize,Added to next model
 commodity_claims4,plSize~logDist+...,-0.00441,0.0162,177.12,-0.27154949,0.786,,0.9958139,,slopeDistPlSize,
 commodity_claims5,plSize~logVisRate+...,0.0459,0.0386,220.98,1.18775963,0.24,,0.2145702,,hbeeVisPlSize,
+,,,,,,,,,,,
 commodity_claims6,flDens~logDist+...,0.743,0.12,176.33,6.18718532,4.17E-09, ***,6.13E-10,***,slopeHbeeDistFlDens,Added to next model
 commodity_claims8,flDens~plantDens+...,0.362,0.775,213.08,0.46755727,0.644,,0.1237296,,slopePlDensFlDens,
 commodity_claims40,flDens~stocking+...,NA,NA,NA,NA,NA,,0.0983627,*,slopeStockingFlDens,
 commodity_claims50,flDens~flwCount+...,,,,,,,0.9932082,,slopeFlwCountFlDens,
+,,,,,,,,,,,
 commodity_claims10,logVisRate~isIrrig+...,-0.429,0.245,45.93,-1.75113576,0.0866,,0.05559301,**,slopeIrrigVis,Added to next model
 commodity_claims11,logVisRate~plantDens+...,0.117,0.161,171.9,0.72451315,0.475,,0.7708187,,slopePlDensVis,
 commodity_claims7,logVisRate~flDens+...,NA,NA,NA,NA,NA,,0.2739753,,slopeFlDensVis,
+,,,,,,,,,,,
 commodity_claims12,pollen~is2015+...,0.261,0.216,49.29,1.20764061,0.233,,0.1992189,,slope2015Pollen,
 commodity_claims13,pollen~isGP+...,0.197,0.212,48.33,0.92524533,0.359,,0.4061748,,slopeGPPollen,
 commodity_claims14,pollen~isIrrig+...,-0.118,0.243,48.76,-0.48594151,0.629,,0.8246894,,slopeIrrigPollen,
@@ -22,6 +26,7 @@ commodity_claims17,pollen~plSize+...,-0.15,0.109,214.8,-1.37012632,0.175,,0.0799
 commodity_claims9,pollen~flDens+...,NA,NA,NA,NA,NA,,0.7015942,,slopeFlDensPollen,
 commodity_claims41,pollen~stocking+...,NA,NA,NA,NA,NA,,0.7162145,,slopeStockingPollen,
 commodity_claims46,pollen~flwCount+...,,,,,,,0.6840389,,slopeFlwCountPollen,
+,,,,,,,,,,,
 commodity_claims18,avgSurv~flDens+...,-0.002,0.00557,220.94,-0.35860329,0.723,,0.9167679,,slopeFlDensSurv,
 commodity_claims19,avgSurv~is2015+...,0.00102,0.0918,50.56,0.01113851,0.991,,0.6957471,,slope2015Surv,
 commodity_claims20,avgSurv~isGP+...,-0.0386,0.0887,47.59,-0.43494853,0.666,,0.8883996,,slopeGPSurv,

@@ -576,6 +576,7 @@ datalistPlot <- with(arrange(surveyAllComm,factor(paste(Year,Field,Distance))),l
   plotIndex=as.numeric(as.factor(paste(Year,Field))), #Index for field (which field?)
   dist=Distance, #Distance from edge
   hbeeVis=Honeybee, #Visits by honeybees
+  flyVis=Fly, #Visits by flies
   totalTime=TotalTime/10, #Total time (mins/10)
   #Planting density
   Nplot_densObs=sum(!is.na(PlDens)), #Number of plots with observed flower density
@@ -648,10 +649,10 @@ inits <- function() { with(datalist,
     intFlDens=1,slopePlSizeFlDens=0, slopeHbeeDistFlDens=0, #Flower density
     sigmaFlDens=0.5,sigmaFlDens_field=0.5,intFlDens_field=rep(0,Nfield),
     intVisit=-1,slopeYearVis=0,slopeGpVis=0,slopeYearGpVis=1.5,slopeDistVis=0, #Visitation
-    slopeHiveVis=0.5,slopeFlDens=0,sigmaVisField=2,visitHbeePhi=0.7,intVisit_field=rep(0.5,Nfield),
-    alphaVisField=1,betaVisField=1,
-    intPollen=5.5,slopeVisitPol=0,sigmaPolField=0.5,sigmaPolPlot=0.4,pollenPhi=0.7, #Pollen deposition
-    slopeHbeeDistPollen=0,intPollen_field=rep(0,datalist$Nfield),intPollen_plot=rep(0,datalist$Nplot),
+    slopeHiveVis=0.5,slopeFlDens=0,sigmaVisField=2,visitHbeePhi=0.7,intVisit_field=rep(0.5,Nfield),lambdaVisField=1,
+    intPollen=5.5,slopeVisitPol=0,slopeHbeeDistPollen=0,slopeStockingPollen=0, #Pollen deposition
+    slopeStockingHbeeDistPollen=0,sigmaPolField=0.5,sigmaPolPlot=0.4,pollenPhi=0.7,
+    intPollen_field=rep(0,datalist$Nfield),intPollen_plot=rep(0,datalist$Nplot),
     intFlwCount=1,slopePlSizeFlwCount=0,sigmaFlwCount_field=0.5,sigmaFlwSurv_plot=0.5, #Flower count per plant
     intFlwSurv_plot=rep(0,Nplot),intFlwCount_field=rep(0,Nfield),flwCountPhi=1,
     intFlwSurv=1,slopeVisitSurv=0,slopePolSurv=0,slopePlSizeSurv=0.02, #Flower survival
@@ -683,7 +684,7 @@ inits <- function() { with(datalist,
 # print(claims1,pars=c(pars,newpar))
 
 #Full model
-modPodcount <- stan(file='visitation_pollen_model.stan',data=datalist,iter=2000,chains=3,
+modPodcount <- stan(file='visitation_pollen_model.stan',data=datalist,iter=1000,chains=3,
                    control=list(adapt_delta=0.8),init=inits)
 beep(1)
 # 13 mins for 100 iter
@@ -701,8 +702,8 @@ pars=c('intFlDens','slopePlSizeFlDens','slopeHbeeDistFlDens','sigmaFlDens','sigm
 pars=c('intVisit','slopeYearVis','slopeGpVis','slopeYearGpVis','slopeIrrigVis',
        'slopeDistVis','slopeHiveVis','slopeFlDens', #Visitation
        'sigmaVisField','lambdaVisField','visitHbeePhi')
-pars=c('intPollen','slopeVisitPol','sigmaPolField','slopeHbeeDistPollen',#'sigmaPolPlot',
-       'pollenPhi') #Pollen deposition
+pars=c('intPollen','slopeVisitPol','slopeHbeeDistPollen','slopeFlyVisPol',
+       'sigmaPolField','pollenPhi') #Pollen deposition
 pars=c('intFlwCount','slopePlSizeFlwCount', #Flower count per plant
        'sigmaFlwCount_field','sigmaFlwCount_plot','flwCountPhi')
 pars=c('intFlwSurv','slopeVisitSurv','slopePolSurv','slopePlSizeSurv','sigmaFlwSurv_plot',
@@ -716,25 +717,23 @@ stan_hist(modPodcount,pars=pars)+geom_vline(xintercept=0,linetype='dashed')
 traceplot(modPodcount,pars=c(pars),inc_warmup=F)
 # launch_shinystan(modPodcount)
 print(modPodcount,pars=pars)
-# pairs(modPodcount,pars=pars)
-
-#Appears to be a small positive effect of visitation rate on seed count, and a negative effect on seed weight. Not sure if this is due to actual visitation, or something like plant density/plant size, which is lower at edge (i.e. abiotic conditions are worse)
+# pairs(modPodcount,pars=pars) #Takes way too long
 
 mod3 <- extract(modPodcount)
-# claim <- 'slopePlDensPlSize'
-# 2*(1-pnorm(abs(mean(mod3[[claim]])/sd(mod3[[claim]])),0,1)) #p-val for claim (2-tailed)
+claim <- 'slopeFlyVisPol'
+2*(1-pnorm(abs(mean(mod3[[claim]])/sd(mod3[[claim]])),0,1)) #p-val for claim (2-tailed)
 
 pairs(mod3[c(pars,'lp__')],lower.panel=function(x,y){
   par(usr=c(0,1,0,1))
   text(0.5, 0.5, round(cor(x,y),2), cex = 1 * exp(abs(cor(x,y))))})
 
-t(apply(mod3$intVisit_field,2,function(x) quantile(x,c(0.5,0.975,0.025)))) %>%
+t(apply(mod3$intPollen_plot,2,function(x) quantile(x,c(0.5,0.975,0.025)))) %>%
   as.data.frame() %>% rename(median='50%',upr='97.5%',lwr='2.5%') %>% arrange(median) %>%
   mutate(row=1:nrow(.)) %>% 
   ggplot(aes(row,median))+geom_pointrange(aes(ymax=upr,ymin=lwr))+geom_hline(yintercept=0,col='red')
   # ggplot(aes(median))+geom_density()
 
-qqnorm(apply(mod3$intVisit_field,2,median));qqline(apply(mod3$intVisit_field,2,median));
+qqnorm(apply(mod3$intPollen_plot,2,median));qqline(apply(mod3$intPollen_plot,2,median));
 mean(apply(mod3$intVisit_field,2,median))
 
 
@@ -835,11 +834,9 @@ with(mod3,plot(apply(pollen_resid,1,function(x) sum(abs(x))),
                apply(predPollen_resid,1,function(x) sum(abs(x))),
                xlab='Sum residuals',ylab='Sum simulated residuals',main='Pollen counts')) 
 abline(0,1,col='red') #PP plot
-
 with(mod3,{x <- sum(apply(pollen_resid,1,function(x) sum(abs(x)))<
              apply(predPollen_resid,1,function(x) sum(abs(x))))/nrow(predPollen_resid)
   legend('topleft',paste('p =',round(min(x,1-x),3)))})
-
 plot(datalist$pollenCount,apply(mod3$predPollenCount,2,median), #Predicted vs Actual 
      ylab='Predicted pollen',xlab='Actual pollen')
 abline(0,1,col='red') #PP plot
