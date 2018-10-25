@@ -114,6 +114,9 @@ parameters {
 	real<lower=0> sigmaVisField; //SD of field random intercepts
 	real<lower=0> visitHbeePhi; //Dispersion parameter	
 	vector[Nfield] intVisit_field; //field-level random intercepts		
+	real<lower=0> lambdaVisField; //Lambda for skewed random effects
+	// real logAlphaVisField; //Alpha/beta for gamma hyperprior
+	// real<lower=0> betaVisField;
 	
 	// // Pollen deposition
 	// real intPollen; //Intercept
@@ -301,7 +304,7 @@ transformed parameters {
 		// seedCountMu[i] = seedCountMuPlant[podIndex[i]]; 
 		// //Plant-level effect + effect of seedCount (do pods with lots of seed also have bigger seeds?)		
 		// seedWeightMu[i] = seedWeightPlantMu[podIndex[i]]+slopeSeedCount*seedCount[i]; 
-	// }
+	// }	
 }
 	
 model {	
@@ -314,7 +317,7 @@ model {
 	// flwCount ~ neg_binomial_2_log(flwCountMu,flwCountPhi); //Flower count per plant (attempted pods)
 	// podCount ~ beta_binomial(flwCount,inv_logit(flwSurv)*flwSurvPhi,(1-inv_logit(flwSurv))*flwSurvPhi); //Flower survival (surviving pods) - beta binomial (regular binomial doesn't work)	
 	// seedCount ~ neg_binomial_2_log(seedCountMu,seedCountPhi); //Seed count per pod
-	// seedMass ~ exp_mod_normal(seedWeightMu,sigmaSeedWeight,lambdaSeedWeight); //Weight per seed		
+	// seedMass ~ exp_mod_normal(seedWeightMu,sigmaSeedWeight,lambdaSeedWeight); //Weight per seed			
 		
 	//Priors
 	// //Plant density	- informative priors
@@ -352,17 +355,18 @@ model {
 	// sigmaFlDens_field ~ gamma(4,2); //Sigma for field
 	// intFlDens_field ~ normal(0,sigmaFlDens_field); //Random intercept for field			
 	
-	//Visitation - informative priors
+	// Visitation - informative priors
 	intVisit ~ normal(-1,1); //Intercept	
 	slopeDistVis ~ normal(-0.3,0.3); //Slope of distance effect on hbee visits
 	slopeHiveVis ~ normal(0.6,0.5); //Slope of hive effect on visits 
 	slopeYearVis ~ normal(0.5,1); //2015 effect
 	slopeGpVis ~ normal(0,1); //Effect of Grand Prairie	
 	slopeYearGpVis ~ normal(0,1); // GP-year interaction
-	slopeFlDens ~ normal(0,5); //Flower density 
-	sigmaVisField ~ gamma(4,2); //Sigma for random field 	
-	intVisit_field ~ normal(0,sigmaVisField); //Random field int
-	visitHbeePhi ~ gamma(2,2); //Dispersion parameter		
+	slopeFlDens ~ normal(0,0.5); //Flower density 
+	sigmaVisField ~ gamma(4,4); //Sigma for random field 		
+	intVisit_field ~ exp_mod_normal(0,sigmaVisField,lambdaVisField); //Skewed random effects - slightly better than standard normal
+	lambdaVisField ~ gamma(4,2); //Lambda for skewed random effects			
+	visitHbeePhi ~ gamma(4,10); //Dispersion parameter for NegBin		
 		
 	// // Pollen deposition - informative priors
 	// intPollen ~ normal(5.5,1); //Intercept	

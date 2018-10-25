@@ -3,7 +3,7 @@ commodity_claims1,plantDens~is2015+...,-0.103,0.121,48.86,-0.85177054,0.398,,0.2
 commodity_claims2,plantDens~isGP+...,-0.311,0.111,47.98,-2.81519803,0.00705,  **,0.005499251,***,slopeGPPlDens,Added to next model
 commodity_claims3,plantDens~isIrrig+...,0.163,0.134,47.89,1.21774854,0.229,,0.18444,,slopeIrrigPlDens,
 commodity_claims38,plantDens~stocking+...,NA,NA,NA,NA,NA,,0.1334327,,slopeStockingPlDens,
-commodity_claims39,plSize~stocking+...,NA,NA,NA,NA,NA,,0.0570471,**,slopeStockingPlSize,
+commodity_claims39,plSize~stocking+...,NA,NA,NA,NA,NA,,0.0570471,**,slopeStockingPlSize,Added to next model
 commodity_claims4,plSize~logDist+...,-0.00441,0.0162,177.12,-0.27154949,0.786,,0.9958139,,slopeDistPlSize,
 commodity_claims5,plSize~logVisRate+...,0.0459,0.0386,220.98,1.18775963,0.24,,0.2145702,,hbeeVisPlSize,
 commodity_claims6,flDens~logDist+...,0.743,0.12,176.33,6.18718532,4.17E-09, ***,6.13E-10,***,slopeHbeeDistFlDens,Added to next model

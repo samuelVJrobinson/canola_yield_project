@@ -648,7 +648,8 @@ inits <- function() { with(datalist,
     intFlDens=1,slopePlSizeFlDens=0, slopeHbeeDistFlDens=0, #Flower density
     sigmaFlDens=0.5,sigmaFlDens_field=0.5,intFlDens_field=rep(0,Nfield),
     intVisit=-1,slopeYearVis=0,slopeGpVis=0,slopeYearGpVis=1.5,slopeDistVis=0, #Visitation
-    slopeHiveVis=0.5,slopeFlDens=0,sigmaVisField=2,visitHbeePhi=0.7,intVisit_field=rep(0,Nfield),zeroVisHbeeTheta=0.2,
+    slopeHiveVis=0.5,slopeFlDens=0,sigmaVisField=2,visitHbeePhi=0.7,intVisit_field=rep(0.5,Nfield),
+    alphaVisField=1,betaVisField=1,
     intPollen=5.5,slopeVisitPol=0,sigmaPolField=0.5,sigmaPolPlot=0.4,pollenPhi=0.7, #Pollen deposition
     slopeHbeeDistPollen=0,intPollen_field=rep(0,datalist$Nfield),intPollen_plot=rep(0,datalist$Nplot),
     intFlwCount=1,slopePlSizeFlwCount=0,sigmaFlwCount_field=0.5,sigmaFlwSurv_plot=0.5, #Flower count per plant
@@ -699,7 +700,7 @@ pars=c('intPlSize','slopePlDensPlSize','slopeDistPlSize','slopeGpPlSize', #Plant
 pars=c('intFlDens','slopePlSizeFlDens','slopeHbeeDistFlDens','sigmaFlDens','sigmaFlDens_field') #Flower density
 pars=c('intVisit','slopeYearVis','slopeGpVis','slopeYearGpVis','slopeIrrigVis',
        'slopeDistVis','slopeHiveVis','slopeFlDens', #Visitation
-       'sigmaVisField','visitHbeePhi') 
+       'sigmaVisField','lambdaVisField','visitHbeePhi')
 pars=c('intPollen','slopeVisitPol','sigmaPolField','slopeHbeeDistPollen',#'sigmaPolPlot',
        'pollenPhi') #Pollen deposition
 pars=c('intFlwCount','slopePlSizeFlwCount', #Flower count per plant
@@ -731,8 +732,10 @@ t(apply(mod3$intVisit_field,2,function(x) quantile(x,c(0.5,0.975,0.025)))) %>%
   as.data.frame() %>% rename(median='50%',upr='97.5%',lwr='2.5%') %>% arrange(median) %>%
   mutate(row=1:nrow(.)) %>% 
   ggplot(aes(row,median))+geom_pointrange(aes(ymax=upr,ymin=lwr))+geom_hline(yintercept=0,col='red')
+  # ggplot(aes(median))+geom_density()
 
-
+qqnorm(apply(mod3$intVisit_field,2,median));qqline(apply(mod3$intVisit_field,2,median));
+mean(apply(mod3$intVisit_field,2,median))
 
 
 
@@ -800,25 +803,32 @@ abline(0,1,col='red')
 
 #Model matrix
 modMat1 <- as.matrix(with(datalist,data.frame(int=1,year=is2015[plotIndex],GP=isGP[plotIndex],
-                  yearGP=is2015[plotIndex]*isGP[plotIndex],logDist=log(dist),
-                  numHives=numHives[plotIndex],flDens=flDens,irrig=isIrrigated[plotIndex])))
+                  yearGP=is2015[plotIndex]*isGP[plotIndex],logDist=log(dist)-mean(log(dist)),
+                  numHives=log(numHives[plotIndex]),flDens=flDens,irrig=isIrrigated[plotIndex])))
 #Coefs from model
 coefs1 <- with(mod3,cbind(intVisit,slopeYearVis,slopeGpVis,slopeYearGpVis,
                           slopeDistVis,slopeHiveVis,slopeFlDens,slopeIrrigVis))
 res1 <-apply(mod3$hbeeVis_resid,2,median) #(log) Residuals
 
 #Distance/year/area effects 
-temp <- modMat1
+temp <- modMat1 #Adjusted residuals
 margCols <-  c("numHives","flDens","irrig" ) #Columns to marginalize
-temp[,margCols] <- matrix(rep(c(20,0,0),times=nrow(temp)),nrow=nrow(temp),byrow=T)
-temp <- data.frame(temp,aRes=apply(temp %*% t(coefs1),1,median)+res1) #Adjusted (log) residual
-
-temp %>% mutate(year=factor(year,labels=c('2014','2015')),GP=factor(GP,labels=c('Leth','GP'))) %>% 
-  ggplot(aes(logDist,aRes))+geom_point()+
-  facet_grid(year~GP)+geom_smooth(method='lm')
-
-
-
+temp[,margCols] <- matrix(rep(c(log(20),0,0),times=nrow(temp)),nrow=nrow(temp),byrow=T) #20 hives, mean flDens, no irrig
+temp <- data.frame(temp,aRes=apply(temp %*% t(coefs1),1,median)+res1) %>%  #Adjusted (log) residual
+  mutate(logDist=logDist+mean(log(datalist$dist))) %>%  #Uncenters distance
+  mutate(year=factor(year,labels=c('2014','2015')),GP=factor(GP,labels=c('Lethbridge','Grand Prairie')))
+temp2 <- expand.grid(int=1,year=c(0,1),GP=c(0,1),yearGP=NA, #Prediction intervals
+           logDist=seq(min(modMat1[,5]),max(modMat1[,5]),0.1),numHives=log(20),flDens=0,irrig=0) %>% 
+  mutate(yearGP=year*GP)
+temp2 <- cbind(temp2,t(apply(as.matrix(temp2) %*% t(coefs1),1,function(x) quantile(x,c(0.5,0.975,0.025))))) %>% 
+  rename('med'='50%','upr'='97.5%','lwr'='2.5%') %>% 
+  mutate(logDist=logDist+mean(log(datalist$dist))) %>% 
+  mutate(year=factor(year,labels=c('2014','2015')),GP=factor(GP,labels=c('Lethbridge','Grand Prairie')))
+ggplot(temp2)+
+  geom_ribbon(aes(exp(logDist),ymax=exp(upr),ymin=exp(lwr)),alpha=0.3,fill='red')+
+  geom_line(aes(exp(logDist),exp(med)),size=1,col='red')+
+  geom_point(data=temp,aes(exp(logDist),exp(aRes)))+
+  facet_grid(year~GP)+labs(y='Visits/10 mins',x='Distance')+ylim(0,16)
 
 #pollen - OK, but plot level random effects throw off PP checks
 with(mod3,plot(apply(pollen_resid,1,function(x) sum(abs(x))),
