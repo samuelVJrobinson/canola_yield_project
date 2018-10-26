@@ -33,7 +33,7 @@ commodity_claims20,avgSurv~isGP+...,-0.0386,0.0887,47.59,-0.43494853,0.666,,0.88
 commodity_claims21,avgSurv~isIrrig+...,0.0445,0.1,47.14,0.44324252,0.66,,0.851872,,slopeIrrigSurv,
 commodity_claims22,avgSurv~logDist+...,-0.00195,0.011,179.15,-0.17688583,0.86,,0.874349,,slopeHbeeDistSurv,
 commodity_claims23,avgSurv~plantDens+...,-0.106,0.0659,192.94,-1.6056039,0.114,,0.06698427,*,slopePlDensSurv,Added to next model
-commodity_claims47,avgSurv~flwCount+...,,,,,,,2.65E-05,***,slopeFlwCountSurv,
+commodity_claims47,avgSurv~flwCount+...,,,,,,,2.65E-05,***,slopeFlwCountSurv,Added to next model
 commodity_claims42,avgSurv~stocking+...,NA,NA,NA,NA,NA,,0.8826204,,slopeStockingSurv,
 ,,,,,,,,,,,
 commodity_claims24,avgSeedCount~avgSurv+...,0.000817,0.0322,223.26,0.02537856,0.98,,0.838008,,slopeSurvSeedCount,
@@ -55,10 +55,5 @@ commodity_claims36,avgSeedWeight~logDist+...,13.9,15,178.51,0.9245707,0.357,,0.3
 commodity_claims37,avgSeedWeight~plantDens+...,-68.3,93.3,204.89,-0.73157241,0.47,,0.5129994,,slopePlDensSeedWeight,
 commodity_claims44,avgSeedWeight~stocking+...,NA,NA,NA,NA,NA,,0.8853771,,slopeStockingSeedWeight,
 commodity_claims49,avgSeedWeight~flwCount+...,,,,,,,0.4937681,,slopeFlwCountSeedWeight,
-,,,,,,,,,,,
-,,,,,,,,,,,
-,,,,,,,,,,,
-,,,,,,,,,,,
-,,,,,,,,,,,
 ,,,,,,,,,,,
 commodity_claims45,flwCount~plantDens+...,,,,,,,0.5509352,,slopePlDensFlwCount,

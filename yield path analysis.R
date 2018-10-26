@@ -597,26 +597,24 @@ datalistFlw <- flowersAllComm %>%
 ))
 
 datalistPlant <- plantsAllComm %>% ungroup() %>% 
+  filter(SeedMass!=0) %>%
+  filter(!is.na(Pods),!is.na(Missing)) %>% 
   mutate(plantIndex=as.numeric(factor(paste(Year,Field,Distance)))) %>% #Index for plant (which plot?)
   arrange(plantIndex) %>% 
-  filter(!is.na(Pods),!is.na(Missing)) %>% 
   with(list(Nplant=length(VegMass), #Number of plant samples (some missing)
-  Nplant_obs=sum(!is.na(VegMass)), #Observed plants
-  Nplant_miss=sum(is.na(VegMass)), #Missing plants
+  # Nplant_obs=sum(!is.na(VegMass)), #Observed plants
+  # Nplant_miss=sum(is.na(VegMass)), #Missing plants
   podCount=Pods, #Successful pods
   flwCount=Pods+Missing, #Pods + Missing (total flw production)
   plantIndex=plantIndex, #Index for plant (which plot?)
-  plantSize_obs=log(VegMass[!is.na(VegMass)])-mean(log(VegMass[!is.na(VegMass)])), #log weight of veg mass (g), centered
-  obsPl_ind=which(!is.na(VegMass)),missPl_ind=which(is.na(VegMass)), #Indices for missing plant size
-  yield_obs=SeedMass[!is.na(SeedMass)], #observed weight of all seeds (g)
-  obsYield_ind=which(!is.na(SeedMass)), missYield_ind=which(is.na(SeedMass)) #Indices for missing yield
+  plantSize=log(VegMass[!is.na(VegMass)])-mean(log(VegMass[!is.na(VegMass)])), #log weight of veg mass (g), centered
+  yield=SeedMass[!is.na(SeedMass)] #observed weight of all seeds (g)
+  # obsPl_ind=which(!is.na(VegMass)),missPl_ind=which(is.na(VegMass)), #Indices for missing plant size
+  # obsYield_ind=which(!is.na(SeedMass)), missYield_ind=which(is.na(SeedMass)) #Indices for missing yield
 ))
 
-# sort(unique(with(plantsAllComm,paste(Year,Field,Distance,Plant)))) %in%
-#   sort(unique(with(seedsAllComm,paste(Year,Field,Distance,Plant))))
-
 #Problem: plots exist at the pod level which do not exist at plant level
-a <- plantsAllComm %>% ungroup() %>% filter(!is.na(Pods),!is.na(Missing)) %>%
+a <- plantsAllComm %>% ungroup() %>% filter(!is.na(Pods),!is.na(Missing)) %>%  filter(SeedMass!=0) %>%
   transmute(index=factor(paste(Year,Field,Distance,Plant))) %>% distinct() #Index for plant (which plot?)
 b <- seedsAllComm %>% ungroup() %>% filter(!is.na(Plant)&!is.na(PodCount)&PodCount>0&!is.na(PodMass)) %>%
   filter(!is.na(Pods),!is.na(Missing)) %>% #Remove plants from plant level
@@ -642,7 +640,7 @@ str(datalist)
 inits <- function() { with(datalist,
   list(plDens_miss=rep(0,Nplot_densMiss),intPlDens=1, slopeGPPlDens=0, #Plant density
     slopeDistPlDens=0,sigmaPlDens=0.5,sigmaPlDens_field=0.5,
-    plantSize_miss=rep(0,Nplant_miss),intPlSize=0,slopePlDensPlSize=0, #Plant size
+    intPlSize=0,slopePlDensPlSize=0, #Plant size
     slopeDistPlSize=0,slopeGpPlSize=0,slopeIrrigPlSize=0,slope2015PlSize=0,
     sigmaPlSize_field=0.5,sigmaPlSize_plot=0.5,sigmaPlSize=0.5,
     intPlSize_field=rep(0,Nfield),intPlSize_plot=rep(0,Nplot),
@@ -656,7 +654,7 @@ inits <- function() { with(datalist,
     intFlwCount=1,slopePlSizeFlwCount=0,sigmaFlwCount_field=0.5,sigmaFlwSurv_plot=0.5, #Flower count per plant
     intFlwSurv_plot=rep(0,Nplot),intFlwCount_field=rep(0,Nfield),flwCountPhi=1,
     intFlwSurv=1,slopeVisitSurv=0,slopePolSurv=0,slopePlSizeSurv=0.02, #Flower survival
-    slopePlDensSurv=0,sigmaFlwSurv_plot=0.3,sigmaFlwSurv_field=0.3, 
+    slopeFlwCountSurv=0,slopePlDensSurv=0,sigmaFlwSurv_plot=0.3,sigmaFlwSurv_field=0.3, 
     intFlwSurv_field=rep(0,Nfield),intFlwSurv_plot=rep(0,Nplot),flwSurvPhi=1,
     intSeedCount=3.15,slopeVisitSeedCount=0.05,slopePolSeedCount=0,seedCountPhi=21, #Seed count
     slope2015SeedCount=0,slopePlSizeCount=0, sigmaSeedCount_plant=0.14,
@@ -668,7 +666,8 @@ inits <- function() { with(datalist,
     sigmaSeedWeight=0.5,sigmaSeedWeight_plant=0.5,sigmaSeedWeight_plot=0.5,sigmaSeedWeight_field=0.5,
     intSeedWeight_field=rep(0,datalist$Nfield),slopePlSizeSeedWeight=0,
     intSeedWeight_plot=rep(0,datalist$Nplot),intSeedWeight_plant=rep(0,datalist$Nplant),
-    lambdaSeedWeight=1.5
+    lambdaSeedWeight=1.5,
+    intYield=0,slopeYield=1,sigmaYield=0.5 #Yield
    ))
 }
 
@@ -683,8 +682,8 @@ inits <- function() { with(datalist,
 # 2*(1-pnorm(abs(mean(mod1[[1]])/sd(mod1[[1]])),0,1)) #p-val for claim (2-tailed)
 # print(claims1,pars=c(pars,newpar))
 
-#Full model
-modPodcount <- stan(file='visitation_pollen_model.stan',data=datalist,iter=1000,chains=3,
+#Full model - 700 secs for 50 iter, plant 275 is causing problems
+modPodcount <- stan(file='visitation_pollen_model.stan',data=datalist,iter=50,chains=1,
                    control=list(adapt_delta=0.8),init=inits)
 beep(1)
 # 13 mins for 100 iter
@@ -713,6 +712,8 @@ pars=c('intSeedCount','slopeVisitSeedCount','slopePolSeedCount','slopePlSizeCoun
 pars=c('intSeedWeight','slopeVisitSeedWeight','slopePolSeedWeight',#Seed weight
        'slopeSeedCount','slopePlSizeWeight',
        'sigmaSeedWeight','sigmaSeedWeight_plant','sigmaSeedWeight_field','lambdaSeedWeight')
+pars=c('calcYield')
+
 stan_hist(modPodcount,pars=pars)+geom_vline(xintercept=0,linetype='dashed')
 traceplot(modPodcount,pars=c(pars),inc_warmup=F)
 # launch_shinystan(modPodcount)
