@@ -55,6 +55,14 @@ invLogit <- function(x){
   i[is.nan(i)] <- 1 #If x is large enough, becomes Inf/Inf = NaN, but Lim(invLogit) x->Inf = 1
   return(i)
 }
+coefs <- function(L){ #Shorter summary from list of L coefficients from a Stan list
+  upr=sapply(L,function(x) round(quantile(x,0.975),3))
+  lwr=sapply(L,function(x) round(quantile(x,0.025),3))
+  meanCoef=sapply(L, mean); stdev=sapply(L, sd)
+  data.frame(median=sapply(L,function(x) round(median(x),3)),
+             lwr=lwr,upr=upr,mean=round(meanCoef,3),sd=round(stdev,3),z=round(meanCoef/stdev,3),
+             overlap=sapply(L,function(x) overlap(x)),
+             pval=round(2*(1-pnorm(abs(meanCoef/stdev),0,1)),4)) }
 #Linear breakpoint function - two lines with intersection "b"
 bpoint <- function(x,int1,slope1,b,slope2) ifelse(x<b,int1+slope1*x,b*slope1+(x-b)*slope2+int1)
 #Effect size for Posterior samples
@@ -695,10 +703,11 @@ inits <- function() { with(datalist,
 #Full model - 1.7 hrs for 1000 iter
 modPodcount <- stan(file='visitation_pollen_model.stan',data=datalist,iter=1000,chains=4,
                    control=list(adapt_delta=0.8),init=inits)
-save(modPodcount,file='modPodcount.Rdata')
+save(modPodcount,file='modPodcount2.Rdata')
 beep(1)
 # 13 mins for 100 iter
-# load('modPodcount.Rdata') 
+# load('modPodcount.Rdata') #Seed weight, size, and yield
+# load('modPodcount2.Rdata') #All other coefficients
 
 # print(modPodcount)
 pars=c('intPlDens','slope2015PlDens','slopeIrrigPlDens','slope2015IrrigPlDens',
@@ -711,12 +720,12 @@ pars=c('intFlDens','slopePlSizeFlDens','slopeHbeeDistFlDens','sigmaFlDens','sigm
 pars=c('intVisit','slopeYearVis','slopeGpVis','slopeYearGpVis','slopeIrrigVis',
        'slopeDistVis','slopeHiveVis','slopeFlDens', #Visitation
        'sigmaVisField','lambdaVisField','visitHbeePhi')
-pars=c('intPollen','slopeVisitPol','slopeHbeeDistPollen','slopeFlyVisPol',
+pars=c('intPollen','slopeVisitPol','slopeHbeeDistPollen',#'slopeFlyVisPol',
        'sigmaPolField','pollenPhi') #Pollen deposition
 pars=c('intFlwCount','slopePlSizeFlwCount', #Flower count per plant
        'sigmaFlwCount_field','sigmaFlwCount_plot','flwCountPhi')
 pars=c('intFlwSurv','slopeVisitSurv','slopePolSurv','slopePlSizeSurv',
-       'slopePlDensSurv','slopeFlwCountSurv','slopeIrrigSurv','slope2015Surv',
+       'slopePlDensSurv','slopeIrrigSurv','slope2015Surv',
        'slopeIrrig2015Surv','slopePlSizeIrrigSurv',
        'sigmaFlwSurv_field','flwSurvPhi') #Flower survival
 pars=c('intSeedCount','slopeVisitSeedCount','slopePolSeedCount','slopePlSizeCount',
@@ -729,8 +738,6 @@ pars=c('intSeedWeight','slopeVisitSeedWeight','slopePolSeedWeight',#Seed weight
        'slopePlSizeIrrigSeedWeight','slopeSeedCount2015SeedWeight','slopePlSize2015SeedWeight',
        'slopePlSizeIrrig2015SeedWeight',
        'sigmaSeedWeight','sigmaSeedWeight_plant','sigmaSeedWeight_field','lambdaSeedWeight')
-# pars=c('intYield','slopeYield','sigmaYield','sigmaYield_field',
-#        'sigmaSlopeYield_field','sigmaYield_plot','sigmaSlopeYield_plot')
 pars=c('intYield','slopeYield','sigmaYield',
        'sigmaYield_field','sigmaYield_plot','L_field','L_plot')
 stan_hist(modPodcount,pars=pars)+geom_vline(xintercept=0,linetype='dashed')
@@ -740,18 +747,11 @@ print(modPodcount,pars=pars)
 # pairs(modPodcount,pars=pars) #Takes way too long
 
 mod3 <- extract(modPodcount)
-claim <- 'slopeFlyVisPol'
- #p-val for claim (2-tailed)
-
-coefs <- function(L){ #Shorter summary from list of L coefficients
-  upr=sapply(L,function(x) round(quantile(x,0.975),2))
-  lwr=sapply(L,function(x) round(quantile(x,0.025),2))
-  meanCoef=sapply(L, mean); stdev=sapply(L, sd)
-  data.frame(median=sapply(L,function(x) round(median(x),2)),
-             width=abs(upr-lwr),mean=round(meanCoef,2),sd=round(stdev,2),z=round(meanCoef/stdev,2),
-             overlap=sapply(L,function(x) overlap(x)),
-             pval=round(2*(1-pnorm(abs(meanCoef/stdev),0,1)),4)) }
 coefs(mod3[pars])
+library(xtable)
+print(xtable(coefs(mod3[pars]),digits=c(0,3,3,3,3,3,3,0,4)))
+
+
 
 #Faster Pairplots
 pairs(mod3[c(pars,'lp__')],lower.panel=function(x,y){
@@ -768,6 +768,15 @@ t(apply(mod3$intFlwSurv_plot,2,function(x) quantile(x,c(0.5,0.975,0.025)))) %>%
 qqnorm(apply(mod3$intPollen_plot,2,median));qqline(apply(mod3$intPollen_plot,2,median));
 mean(apply(mod3$intVisit_field,2,median))
 
+#Plots of random intercepts/slopes for yield
+par(mfrow=c(2,1))
+plot(apply(mod3$ranEffYield_field[,1,],2,mean),apply(mod3$ranEffYield_field[,2,],2,mean),
+     xlab='Intercept',ylab='Slope',main='Field',pch=19) #Weakly correlated (r=-0.55)
+abline(h=0,lty='dashed');abline(v=0,lty='dashed')
+plot(apply(mod3$ranEffYield_plot[,1,],2,mean),apply(mod3$ranEffYield_plot[,2,],2,mean),
+     xlab='Intercept',ylab='Slope',main='Plot',pch=19) #Highly correlated (r=-0.98)
+abline(h=0,lty='dashed');abline(v=0,lty='dashed')
+par(mfrow=c(1,1))
 
 #Check model fit:
 par(mfrow=c(2,1))
@@ -1374,8 +1383,6 @@ datalistPod <- within(datalistPod,{
   # podIndex <- as.numeric(factor(podIndex)) #Re-index
   Npod <- sum(!naPod)
 })
-
-
 datalistPlot$flDens <- datalistPlot$plDens <- datalistPlot$flDens_extra <- NULL #Remove NA fields
 datalistPlant$avgSeedCount <- datalistPlant$avgSeedMass <- NULL
 
@@ -1410,8 +1417,8 @@ inits <- function(){with(datalist,list(
   slopeFBayLbee=0,slopeStocking=0,slopeCentHbeeDistLbee=-0.2,slopeStockingHbeeDistLbee=0.3,
   slopeFlDensLbee=0.03,sigmaLbeeVisField=1,visitLbeePhi=0.5,intVisitLbee_field=rep(0,Nfield+Nfield_extra),
   #Pollen
-  intPol=3,slopeHbeePol=-0.4,slopeLbeePol=0.15,slopeCentPol=-0.3,slopeHbeeDistPol=-0.2, 
-  sigmaPolField=0.9,sigmaPolPlot=0.5,pollenPhi=0.8,
+  intPol=3,slopeHbeePol=0.1,slopeLbeePol=0.2,slopeCentPol=-0.4,slopeHbeeDistPol=0, 
+  slopeFlDensPol=0,sigmaPolField=1,sigmaPolPlot=0.5,pollenPhi=0.7,
   intPol_field=rep(0,Nfield),intPol_plot=rep(0,Nplot),
   #Flower count per plant
   intFlwCount=6,slopePlSizeFlwCount=0.56,sigmaFlwCount_field=0.26,
@@ -1431,40 +1438,28 @@ inits <- function(){with(datalist,list(
   sigmaSeedWeight_plant=0.1,intSeedWeight_field=rep(0,Nfield),intSeedWeight_plot=rep(0,Nplot),
   intSeedWeight_plant=rep(0,Nplant)),lambdaSeedWeight=3
 )}
-# #Full model
-# modPodcount_seed <- stan(file='visitation_pollen_model_seed.stan',data=datalist,
-#                          iter=1000,chains=3,control=list(adapt_delta=0.8),init=inits)
+#Full model
+modPodcount_seed <- stan(file='visitation_pollen_model_seed.stan',data=datalist,
+                         iter=200,chains=3,control=list(adapt_delta=0.8),init=inits)
 # save(modPodcount_seed,file='modPodcount_seed2.Rdata')
-#Setting max_treedepth=15 takes about 2-3x as long to run model. Use with care.
-# modPodcount_seed2 <- optimizing(stan_model(file='visitation_pollen_model_seed.stan'),data=datalist,init=inits)
-# str(modPodcount_seed2)
-
-#Claims list
-claims1 <- stan(file='./Seed model claims 1/seedModel_claims59.stan',data=datalist,
-                iter=800,chains=4,init=inits)
-claims2 <- stan(file='./Seed model claims 1/seedModel_claims70.stan',data=datalist,
-                iter=800,chains=4,init=inits)
-save(claims1,claims2,file='temp.Rdata')
-
-claimTerm <- 'slopeSurvSeedWeight'
-stan_hist(claims2,pars=c(claimTerm,pars))+geom_vline(xintercept=0,linetype='dashed')
-traceplot(claims2,pars=c(claimTerm,pars),inc_warmup=F)
-mod1 <- extract(claims2)
-2*(1-pnorm(abs(mean(mod1[[1]])/sd(mod1[[1]])),0,1)) #p-val
+# Setting max_treedepth=15 takes about 2-3x as long to run model. Use with care.
+modPodcount_seed2 <- optimizing(stan_model(file='visitation_pollen_model_seed.stan'),data=datalist,init=inits)
+str(modPodcount_seed2)
 
 pars=c('intPlDens','slopeHbeeDistPlDens',#'slopeHbeeDistSqPlDens', #Planting density
        'sigmaPlDens','sigmaPlDens_field') 
-pars=c('intPlSize','slopePlDensPlSize','slope2016PlSize',
-       'sigmaPlSize') #Plant size
-pars=c('intFlDens','slopePlSizeFlDens','sigmaFlDens','sigmaFlDens_field') #Flower density
+pars=c('intPlSize','slopePlDensPlSize','slopeDistPlSize','sigmaPlSize') #Plant size
+pars=c('intFlDens','slopePlSizeFlDens','slopeBayFlDens',
+       'slope2016FlDens','slopeDistFlDens','slopePlDensFlDens',
+       'sigmaFlDens','sigmaFlDens_field') #Flower density
 pars=c('intVisitLbee','slopeHbeeDistLbee','slopeLbeeDistLbee','slopeCentLbee','slopeFBayLbee', #Lbee vis
-       'slopeStocking','slopeCentHbeeDistLbee','slopeStockingHbeeDistLbee',#'slopePlsizeLbee',
+       'slopeStockingLbee','slope2016Lbee','slopeCentHbeeDistLbee','slopeStockingHbeeDistLbee',
        'slopeFlDensLbee','sigmaLbeeVisField','visitLbeePhi')
-pars=c('intVisitHbee','slopeHbeeDistHbee','slopeLbeeDistHbee',#'slopeLbeeHbeeDistHbee','slopeLbeeVisHbee', #Hbee vis 
+pars=c('intVisitHbee','slopeHbeeDistHbee','slopeLbeeDistHbee','slopeLbeeHbeeDistHbee','slopeLbeeVisHbee', #Hbee vis 
        'slopeCentHbee','slopeFlDensHbee','slopeFBayHbee', 
        'visitHbeePhi','zeroVisHbeeTheta') 
-pars=c('intPol','slopeHbeePol','slopeLbeePol','slopeCentPol','slopeHbeeDistPol', #Pollen
-       'pollenPhi','sigmaPolField','sigmaPolPlot')
+pars=c('intPol','slopeHbeePol','slopeLbeePol','slopeCentPol','slopeHbeeDistPol','slopeFlDensPol', #Pollen
+       'pollenPhi','sigmaPolField')
 pars=c('intFlwCount','slopePlSizeFlwCount', #Flower count per plant
       'sigmaFlwCount_field',#'sigmaFlwCount_plot', #Plot-level random effect having trouble converging
       'flwCountPhi')
@@ -1483,17 +1478,21 @@ stan_hist(modPodcount_seed,pars=pars)+geom_vline(xintercept=0,linetype='dashed')
 traceplot(modPodcount_seed,pars=pars,inc_warmup=F)+geom_hline(yintercept=0,linetype='dashed')
 print(modPodcount_seed,pars=pars)
 
-#Extract effect size and whether posterior overlaps zero
-cbind(round(sapply(mod3[pars],function(x) effSize(x)),2),sapply(mod3[pars],function(x) overlap(x)))
-
 #Check model fit:
 mod3 <- extract(modPodcount_seed)
+coefs(mod3[pars])
+
+#Distribution of random effects intercepts
+t(apply(mod3$intPol_field,2,function(x) quantile(x,c(0.5,0.025,0.975)))) %>% 
+  as.data.frame() %>% rename(med='50%',lwr='2.5%',upr='97.5%') %>% 
+  arrange(med) %>% mutate(plot=1:n()) %>% 
+  ggplot()+geom_pointrange(aes(x=plot,y=med,ymax=upr,ymin=lwr))+
+  geom_hline(yintercept=0,col='red')
 
 #Faster pair plots
 pairs(mod3[c(pars,'lp__')],lower.panel=function(x,y){
   par(usr=c(0,1,0,1))
   text(0.5, 0.5, round(cor(x,y),2), cex = 1 * exp(abs(cor(x,y))))})
-
 
 par(mfrow=c(2,1))
 #planting density - good
@@ -1504,7 +1503,7 @@ abline(0,1,col='red')
 plot(datalist$plDens_obs,apply(mod3$predPlDens,2,median)[datalist$obsPlDens_ind], #Predicted vs Actual
      ylab='Predicted plant density',xlab='Actual plant density'); abline(0,1,col='red');
 
-#plant size - good
+#plant size - OK
 with(mod3,plot(apply(plSize_resid,1,function(x) sum(abs(x))),
                apply(predPlSize_resid,1,function(x) sum(abs(x))),
                xlab='Sum residuals',ylab='Sum simulated residuals',main='Plant size')) 
@@ -1531,69 +1530,6 @@ abline(0,1,col='red') #PP plot - not so good
 plot(with(datalist,c(lbeeVis,lbeeVis_extra)),apply(mod3$predLbeeVis_all,2,median), #Predicted vs Actual - OK
      ylab='Predicted visits',xlab='Actual visits')
 abline(0,1,col='red') #PP plot - not so good
-
-#Partial plots - Chris' advice
-
-#Model matrix + actual + resid
-modMat <- with(datalist,data.frame(intercept=1,logHbeeDist=log(c(hbee_dist,hbee_dist_extra)),
-                        logLbeeDist=log(c(lbee_dist,lbee_dist_extra)),
-                        isCent=c(isCent,isCent_extra),Fbay=c(isFBay,isFBay_extra),
-                        stocking=c(lbeeStocking,lbeeStocking_extra),
-                        centHbeeDist=c(isCent,isCent_extra),
-                        stockingHbeeDist=c(lbeeStocking,lbeeStocking_extra)*
-                          log(c(hbee_dist,hbee_dist_extra)),
-                        flDens=apply(mod3$flDens,2,median),
-                        lbeeVis=c(lbeeVis,lbeeVis_extra),
-                        resid=apply(mod3$lbeeVis_resid,2,median)))
-#Slope estimates
-estimates <- as.matrix(with(mod3,data.frame(intVisitLbee,slopeHbeeDistLbee,slopeLbeeDistLbee,slopeCentLbee,
-                    slopeFBayLbee,slopeStocking,slopeCentHbeeDistLbee,slopeStockingHbeeDistLbee,slopeFlDensLbee)))
-
-#Hbee dist effect
-#Bay center
-modMat2 <- as.matrix(modMat[,c(1:9)])
-keep <- colnames(modMat2) %in% c("intercept","logHbeeDist","isCent","centHbeeDist")
-modMat2[,!keep] <- matrix(rep(colMeans(modMat2[,!keep]),each=nrow(modMat2)),nrow=nrow(modMat2)) #Marginalize
-modMat2 <- data.frame(pred=t(apply(modMat2 %*% t(estimates),1,function(x) exp(quantile(x,c(0.5,0.025,0.975)))))) %>% 
-  cbind(modMat2[,keep]) %>% mutate(resid=modMat$resid) 
-arrange(modMat2,logHbeeDist,isCent) %>% 
-  mutate(isCent=factor(isCent,labels=c('Edge','Cent'))) %>%
-  ggplot(aes(exp(logHbeeDist),pred.50.,col=isCent))+geom_line(size=1)+
-  geom_ribbon(aes(ymax=pred.97.5.,ymin=pred.2.5.,col=NULL,fill=isCent),alpha=0.3)+
-  labs(x='Distance from Edge',y='Visits/10 mins')+xlim(0,400)
-
-#Stocking
-modMat2 <- as.matrix(modMat[,c(1:9)])
-keep <- colnames(modMat2) %in% c("intercept","logHbeeDist","stocking","stockingHbeeDist")
-modMat2[,!keep] <- matrix(rep(colMeans(modMat2[,!keep]),each=nrow(modMat2)),nrow=nrow(modMat2)) #Marginalize
-modMat2 <- data.frame(pred=t(apply(modMat2 %*% t(estimates),1,function(x) exp(quantile(x,c(0.5,0.025,0.975)))))) %>% 
-  cbind(modMat2[,keep]) %>% mutate(resid=modMat$resid) 
-arrange(modMat2,logHbeeDist,stocking) %>% 
-  mutate(stocking=factor(stocking,labels=c('Half','Full'))) %>%
-  ggplot(aes(exp(logHbeeDist),pred.50.,col=stocking))+geom_line(size=1)+
-  geom_ribbon(aes(ymax=pred.97.5.,ymin=pred.2.5.,col=NULL,fill=stocking),alpha=0.3)+
-  labs(x='Distance from Edge',y='Visits/10 mins')+
-  xlim(0,400)
-
-#Lbee dist
-modMat2 <- as.matrix(modMat[,c(1:9)])
-keep <- colnames(modMat2) %in% c("intercept","logLbeeDist")
-modMat2[,!keep] <- matrix(rep(colMeans(modMat2[,!keep]),each=nrow(modMat2)),nrow=nrow(modMat2)) #Marginalize
-modMat2 <- data.frame(pred=t(apply(modMat2 %*% t(estimates),1,function(x) exp(quantile(x,c(0.5,0.025,0.975)))))) %>% 
-  cbind(modMat2[,keep]) %>% mutate(resid=modMat$resid) 
-arrange(modMat2,logLbeeDist) %>% 
-  # mutate(stocking=factor(stocking,labels=c('Half','Full'))) %>%
-  ggplot(aes(exp(logLbeeDist),pred.50.))+geom_line(size=1)+
-  geom_ribbon(aes(ymax=pred.97.5.,ymin=pred.2.5.),alpha=0.3)+
-  geom_point(aes(y=pred.50.-resid))+
-  labs(x='Distance from Shelter',y='Visits/10 mins')+
-  xlim(0,50)+ylim(-5,100)
-
-# mutate(stocking=factor(stocking,labels=c('Half','Full'))) %>%
-
-
-sort(names(mod3))
-
 
 #pollen - good
 with(mod3,plot(apply(pollen_resid,1,function(x) sum(abs(x))),
