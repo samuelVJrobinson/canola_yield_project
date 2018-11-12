@@ -701,10 +701,35 @@ inits <- function() { with(datalist,
 # print(claims1,pars=c(pars,newpar))
 
 #Full model - 1.7 hrs for 1000 iter
-modPodcount <- stan(file='visitation_pollen_model.stan',data=datalist,iter=1000,chains=4,
+modPodcount6 <- stan(file='visitation_pollen_model.stan',data=datalist,iter=2000,chains=3,
                    control=list(adapt_delta=0.8),init=inits)
+
+#modPodcount has slopeDistStockingPlSize
+#modPodcount2 has no interactions
+#modPodcount3 has slopeDistStockingPlSize, slopeDist2015PlSize - 
+#modPodcount4 has slopeDistStockingPlSize, slopeDist2015PlSize, slopePlDensStockingPlSize
+#modPodcount5 has slopeDistStockingPlSize, slopeDist2015PlSize, slopePlDensStockingPlSize,slopeIrrigationStockingPlSize
+#modPodcount6 has slopeDistStockingPlSize, slopeDist2015PlSize , no random plot intercept; much worse looic
+
+loo_modPodcount1 <- loo(modPodcount,'log_lik_plant')
+loo_modPodcount2 <- loo(modPodcount2,'log_lik_plant')
+loo_modPodcount3 <- loo(modPodcount3,'log_lik_plant')
+loo_modPodcount4 <- loo(modPodcount4,'log_lik_plant')
+loo_modPodcount5 <- loo(modPodcount5,'log_lik_plant')
+loo_modPodcount6 <- loo(modPodcount6,'log_lik_plant')
+
+loo::compare(loo_modPodcount1,loo_modPodcount2,loo_modPodcount3,
+             loo_modPodcount4,loo_modPodcount5,loo_modPodcount6)
+
+#Looks like models 1 and 2 are about the same, 3,4,5 about the same in terms of of elpd_loo. 
+
+loo::compare(loo_modPodcount3,loo_modPodcount6)
+
+
 # save(modPodcount,file='modPodcount2.Rdata')
-beep(1)
+beep(4)
+
+
 # 13 mins for 100 iter
 # load('modPodcount.Rdata') #Seed weight, size, and yield
 # load('modPodcount2.Rdata') #All other coefficients (plot/plant level)
@@ -714,7 +739,8 @@ pars=c('intPlDens','slope2015PlDens','slopeIrrigPlDens','slope2015IrrigPlDens',
        'slopeDistPlDens','slopeGPPlDens','sigmaPlDens','sigmaPlDens_field') #Planting density
 pars=c('intPlSize','slopePlDensPlSize','slopeDistPlSize','slopeGpPlSize', #Plant size
        'slopeIrrigPlSize','slope2015PlSize','slopeStockingPlSize',
-       'slopeDistStockingPlSize','slopeDist2015PlSize',
+       'slopeDistStockingPlSize',#'slopePlDensStockingPlSize',
+       'slopeDist2015PlSize',#'slopeIrrigationStockingPlSize',
        'sigmaPlSize_field','sigmaPlSize_plot','sigmaPlSize')
 pars=c('intFlDens','slopePlSizeFlDens','slopeHbeeDistFlDens','sigmaFlDens','sigmaFlDens_field') #Flower density
 pars=c('intVisit','slopeYearVis','slopeGpVis','slopeYearGpVis','slopeIrrigVis',
@@ -740,13 +766,13 @@ pars=c('intSeedWeight','slopeVisitSeedWeight','slopePolSeedWeight',#Seed weight
        'sigmaSeedWeight','sigmaSeedWeight_plant','sigmaSeedWeight_field','lambdaSeedWeight')
 pars=c('intYield','slopeYield','sigmaYield',
        'sigmaYield_field','sigmaYield_plot','L_field','L_plot')
-stan_hist(modPodcount,pars=pars)+geom_vline(xintercept=0,linetype='dashed')
+stan_hist(modPodcount3,pars=pars)+geom_vline(xintercept=0,linetype='dashed')
 traceplot(modPodcount,pars=c(pars),inc_warmup=F)
 # launch_shinystan(modPodcount)
 print(modPodcount,pars=pars)
 # pairs(modPodcount,pars=pars) #Takes way too long
 
-mod3 <- extract(modPodcount)
+mod3 <- extract(modPodcount3)
 coefs(mod3[pars])
 library(xtable)
 print(xtable(coefs(mod3[pars]),digits=c(0,3,3,3,3,3,3,0,4)))
@@ -757,7 +783,7 @@ pairs(mod3[c(pars,'lp__')],lower.panel=function(x,y){
   text(0.5, 0.5, round(cor(x,y),2), cex = 1 * exp(abs(cor(x,y))))})
 
 #Plot of random intercepts
-t(apply(mod3$intFlwSurv_plot,2,function(x) quantile(x,c(0.5,0.975,0.025)))) %>%
+t(apply(mod3$intPlSize_field,2,function(x) quantile(x,c(0.5,0.975,0.025)))) %>%
   as.data.frame() %>% rename(median='50%',upr='97.5%',lwr='2.5%') %>% arrange(median) %>%
   mutate(row=1:nrow(.)) %>% 
   ggplot(aes(row,median))+geom_pointrange(aes(ymax=upr,ymin=lwr))+geom_hline(yintercept=0,col='red')
@@ -948,6 +974,157 @@ plot(log(datalist$yield),apply(mod3$predYield,2,median), #Predicted vs Actual - 
 par(mfrow=c(1,1))
 
 # Partial effects plots for commodity fields -----------------------------
+mod3 <- extract(modPodcount) #Get coefficients from stan model
+
+#Plant-level data (792 rows)
+plantDat <- with(datalist,data.frame(
+  visit=(hbeeVis/totalTime)[plotIndex[plantIndex]],
+  logvisit=log((hbeeVis/totalTime)+0.5)[plotIndex[plantIndex]],
+  # pollen=apply(mod3$pollenPlot,2,median)[plotIndex[plantIndex]],
+  plSize=plantSize, #Plant size
+  plDens=apply(mod3$plDens,2,mean)[plantIndex],
+  irrigation=isIrrigated[plotIndex[plantIndex]],
+  year2015=is2015[plotIndex[plantIndex]],
+  irrig2015=isIrrigated[plotIndex[plantIndex]]*is2015[plotIndex[plantIndex]],
+  plSizeIrrig=plantSize*isIrrigated[plotIndex[plantIndex]],
+  logdist=(log(dist)-mean(log(dist)))[plotIndex[plantIndex]], #Transformed distance
+  dist=dist[plotIndex[plantIndex]], #Actual distance
+  GP=isGP[plotIndex[plantIndex]],
+  stocking=numHives[plotIndex[plantIndex]],
+  distStocking=(log(dist)-mean(log(dist)))[plotIndex[plantIndex]]*numHives[plotIndex[plantIndex]],
+  dist2015=(log(dist)-mean(log(dist)))[plotIndex[plantIndex]]*is2015[plotIndex[plantIndex]],
+  plDensStocking=apply(mod3$plDens,2,mean)[plantIndex]*numHives[plotIndex[plantIndex]],
+  irrigStocking=isIrrigated[plotIndex[plantIndex]]*numHives[plotIndex[plantIndex]],
+  plSizeResid=apply(mod3$plSize_resid,2,median),
+  flwCount=flwCount
+  # flwCountResid=log(flwCount)-apply(mod3$flwCountMu,2,median), #Log-resid for flower count
+  # podCountResid=logit(podCount/flwCount)-apply(mod3$flwSurv,2,median) #Logit-resid for flower survival
+  )) 
+
+#Model matrix for plant size
+MM_plSize <- with(plantDat,data.frame(int=1,plDens,logdist,GP,year2015,
+                    stocking,irrigation,plDensStocking,distStocking)) %>% as.matrix()
+#Coefficient matrix for plant size
+coef_plSize <- with(mod3,data.frame(intPlSize,slopePlDensPlSize,slopeDistPlSize,
+            slopeGpPlSize,slope2015PlSize,slopeStockingPlSize,slopeIrrigPlSize,
+            slopePlDensStockingPlSize,slopeDistStockingPlSize))
+
+#Partial effect of plant density and stocking
+MM_temp <- MM_plSize %>% as.data.frame() %>% mutate_at(vars(-plDens,-stocking,-plDensStocking),mean) %>% as.matrix()
+
+data.frame(MM_temp,t(apply(MM_temp %*% t(coef_plSize),1,function(x) quantile(x,c(0.5,0.025,0.975))))) %>%
+  rename(pred=X50.,upr=X97.5.,lwr=X2.5.) %>%
+  mutate(resid=plantDat$plSizeResid+pred) %>%
+  filter(stocking==0|stocking==40) %>%
+  mutate(stocking=factor(stocking,labels=c('Unstocked','Stocked'))) %>%
+  ggplot(aes(x=plDens))+
+  geom_ribbon(aes(ymax=upr,ymin=lwr,fill=stocking),alpha=0.3)+
+  geom_jitter(aes(y=resid,col=stocking),alpha=0.5)+
+  geom_line(aes(y=pred,col=stocking),size=1)+
+  labs(x='Plant density',y='Plant size',col='Stocking',fill='Stocking')
+
+# #Partial effect of distance and stocking on plant size
+MM_temp <- MM_plSize %>% as.data.frame() %>% mutate_at(vars(-logdist,-stocking,-distStocking),mean) %>% as.matrix()
+
+data.frame(MM_temp,t(apply(MM_temp %*% t(coef_plSize),1,function(x) quantile(x,c(0.5,0.025,0.975))))) %>%
+  rename(pred=X50.,upr=X97.5.,lwr=X2.5.) %>% 
+  mutate(resid=plantDat$plSizeResid+pred) %>%
+  filter(stocking==0|stocking==40) %>%
+  mutate(stocking=factor(stocking,labels=c('Unstocked','Stocked'))) %>% 
+  ggplot(aes(x=logdist))+
+  geom_ribbon(aes(ymax=upr,ymin=lwr,fill=stocking),alpha=0.3)+
+  geom_jitter(aes(y=resid,col=stocking),alpha=0.5)+
+  geom_line(aes(y=pred,col=stocking),size=1)+
+  labs(x='Distance',y='Plant size',col='Stocking',fill='Stocking')
+
+# #Partial effect of stocking and distance on plant size
+# MM_temp <- MM_plSize %>% as.data.frame() %>% mutate_at(vars(-logdist,-stocking,-distStocking),mean) %>% as.matrix()
+# 
+# data.frame(MM_temp,t(apply(MM_temp %*% t(coef_plSize),1,function(x) quantile(x,c(0.5,0.025,0.975)))),dist=plantDat$dist) %>%
+#   rename(pred=X50.,upr=X97.5.,lwr=X2.5.) %>% 
+#   mutate(resid=plantDat$plSizeResid+pred) %>% 
+#   filter(stocking==0|stocking==40) %>% 
+#   mutate(stocking=factor(stocking,labels=c('Unstocked','Stocked'))) %>%
+#   ggplot(aes(x=dist))+
+#   geom_ribbon(aes(ymax=upr,ymin=lwr,fill=stocking),alpha=0.3)+
+#   geom_jitter(aes(y=resid,col=stocking),alpha=0.5)+
+#   geom_line(aes(y=pred,col=stocking),size=1)+
+#   labs(x='Distance',y='Plant size',col='Stocking',fill='Stocking')
+
+#Model matrix for flower production (per plant)
+MM_flwCount <- with(plantDat,data.frame(int=1,plSize)) %>% as.matrix()
+
+#Coefficient matrix for flower production
+coef_flwCount <- with(mod3,data.frame(intFlwCount,slopePlSizeFlwCount))
+
+#Effect of plant size on flower production
+MM_temp <- MM_flwCount 
+
+data.frame(MM_temp,t(apply(MM_temp %*% t(coef_flwCount),1,function(x) quantile(x,c(0.5,0.025,0.975))))) %>%
+  rename(pred=X50.,upr=X97.5.,lwr=X2.5.) %>%  
+  mutate(resid=plantDat$flwCountResid+pred) %>% 
+  mutate_at(vars(pred:resid),exp) %>% 
+  ggplot(aes(x=plantDat$plSize))+
+  # geom_ribbon(aes(ymax=upr,ymin=lwr),alpha=0.3)+
+  geom_jitter(aes(y=resid),alpha=0.5)+
+  geom_line(aes(y=pred),size=1,col='red')+
+  labs(x='Plant size',y='Flowers per plant')
+
+#Model matrix for flower survival (pod count)
+MM_flwSurv <- with(plantDat,data.frame(int=1,logvisit,pollen,plSize,plDens,year2015,irrigation,
+                                         irrig2015,plSizeIrrig)) %>% as.matrix()
+#Coefficient matrix for flower survival
+coef_flwSurv <- with(mod3,data.frame(intFlwSurv,slopeVisitSurv,slopePolSurv,slopePlSizeSurv,slopePlDensSurv,
+                                     slopeIrrigSurv,slope2015Surv,slopeIrrig2015Surv,slopePlSizeIrrigSurv))
+
+#Partial effects plot of visitation on flower survival
+MM_temp <- MM_flwSurv %>% as.data.frame() %>% mutate_at(vars(-logvisit),mean) %>% as.matrix()
+
+data.frame(MM_temp,t(apply(MM_temp %*% t(coef_flwSurv),1,function(x) quantile(x,c(0.5,0.025,0.975))))) %>%
+  rename(pred=X50.,upr=X97.5.,lwr=X2.5.) %>% 
+  mutate(resid=plantDat$podCountResid+pred) %>% 
+  mutate_at(vars(pred:resid),invLogit) %>%
+  ggplot(aes(x=plantDat$visit))+
+  geom_ribbon(aes(ymax=upr,ymin=lwr),alpha=0.3)+
+  geom_jitter(aes(y=resid),alpha=0.5)+ylim(0.5,0.9)+
+  geom_line(aes(y=pred),size=1,col='red')+
+  labs(x='Visits/10 mins',y='Pod survival')
+  
+#Partial effects of pollen deposition on flower survival
+MM_temp <- MM_flwSurv %>% as.data.frame() %>% mutate_at(vars(-pollen),mean) %>% as.matrix()
+
+data.frame(MM_temp,t(apply(MM_temp %*% t(coef_flwSurv),1,function(x) quantile(x,c(0.5,0.025,0.975))))) %>%
+  rename(pred=X50.,upr=X97.5.,lwr=X2.5.) %>% 
+  mutate(resid=plantDat$podCountResid+pred) %>% mutate_at(vars(pred:resid),invLogit) %>%
+  ggplot(aes(x=exp(pollen+median(mod3$intPollen))))+
+  geom_ribbon(aes(ymax=upr,ymin=lwr),alpha=0.3)+
+  geom_jitter(aes(y=resid),alpha=0.5)+#ylim(0.5,0.9)+
+  geom_line(aes(y=pred),size=1,col='red')+
+  labs(x='Pollen per stigma',y='Pod survival')
+
+#Partial effects plot for plant size
+MM_temp <- MM_flwSurv %>% as.data.frame() %>% mutate_at(vars(-plSize),mean) %>% as.matrix()
+
+data.frame(MM_temp,t(apply(MM_temp %*% t(coef_flwSurv),1,function(x) quantile(x,c(0.5,0.025,0.975))))) %>%
+  rename(pred=X50.,upr=X97.5.,lwr=X2.5.) %>% 
+  mutate(resid=plantDat$podCountResid+pred) %>% mutate_at(vars(pred:resid),invLogit) %>%
+  ggplot(aes(x=plSize))+
+  geom_ribbon(aes(ymax=upr,ymin=lwr),alpha=0.3)+
+  geom_jitter(aes(y=resid),alpha=0.5)+ylim(0.5,0.9)+xlim(-2,2)+
+  geom_line(aes(y=pred),size=1,col='red')+
+  labs(x='Plant size',y='Pod survival')
+
+#Partial effects plot for plant density
+MM_temp <- MM_flwSurv %>% as.data.frame() %>% mutate_at(vars(-plDens),mean) %>% as.matrix()
+
+data.frame(MM_temp,t(apply(MM_temp %*% t(coef_flwSurv),1,function(x) quantile(x,c(0.5,0.025,0.975))))) %>%
+  rename(pred=X50.,upr=X97.5.,lwr=X2.5.) %>% 
+  mutate(resid=plantDat$podCountResid+pred) %>% mutate_at(vars(pred:resid),invLogit) %>%
+  ggplot(aes(x=plDens))+
+  geom_ribbon(aes(ymax=upr,ymin=lwr),alpha=0.3)+
+  geom_jitter(aes(y=resid),alpha=0.5)+
+  geom_line(aes(y=pred),size=1,col='red')+
+  labs(x='Plant density',y='Pod survival')
 
 #Pod-level data (3872 rows)
 podDat <- with(datalist,data.frame(
@@ -983,32 +1160,47 @@ data.frame(MM_temp,t(apply(MM_temp %*% t(coef_seedCount),1,function(x) quantile(
   rename(pred=X50.,upr=X97.5.,lwr=X2.5.) %>% 
   mutate(resid=podDat$seedCountResid+pred) %>% mutate(year2015=factor(year2015,labels=c('2014','2015'))) %>% 
   ggplot()+geom_jitter(aes(x=year2015,y=exp(resid)),width=0.25,alpha=0.3)+
-  geom_pointrange(aes(x=year2015,y=exp(pred),ymax=exp(upr),ymin=exp(lwr)),col='red')+
-  labs(x='Year',y='Seeds per pod')
-
+  geom_pointrange(aes(x=year2015,y=exp(pred),ymax=exp(upr),ymin=exp(lwr)),col='red',size=1)+
+  labs(x='Year',y='Seeds per pod')+ylim(0,40)
 
 #Model matrix for seedMass 
-MM_seedMass <- with(podDat,data.frame(int=1,pollen,seedCount,plSize,year2016,lbeeDist,plDens,stocking)) %>% 
-  as.matrix()
-#Coefficent matrix for seedMass
-coef_seedMass <- with(mod3,data.frame(intSeedWeight,slopePolSeedWeight,slopeSeedCount,slopePlSizeSeedWeight,slope2016SeedWeight,
-                                      slopeLbeeDistSeedWeight,slopePlDensSeedWeight,slopeStockingSeedWeight)) %>% as.matrix()
+MM_seedMass <- with(podDat,data.frame(int=1,visit,pollen,seedCount,plSize,irrigation,year2015,irrig2015,seedCountPlSize,
+                                      plSizeIrrig,seedCount2015,plSize2015,plSizeIrrig2015)) %>% as.matrix()
 
-#Partial effect of seed count
-MM_temp <- MM_seedMass %>% as.data.frame() %>% mutate_at(vars(-seedCount),mean) %>% as.matrix()
+#Coefficent matrix for seedMass
+coef_seedMass <- with(mod3,data.frame(intSeedWeight,slopeVisitSeedWeight,slopePolSeedWeight,slopeSeedCount,
+                      slopePlSizeWeight,slopeIrrigSeedWeight,slope2015SeedWeight,slope2015IrrigSeedWeight,
+                      slopeSeedCountPlSizeSeedWeight,slopePlSizeIrrigSeedWeight,slopeSeedCount2015SeedWeight,
+                      slopePlSize2015SeedWeight,slopePlSizeIrrig2015SeedWeight)) %>% as.matrix()
+
+#Partial effect of seed count/plant size
+MM_temp <- MM_seedMass %>% as.data.frame() %>% mutate_at(vars(-seedCount,-plSize),mean) %>% 
+  mutate(plSize=rep(c(-1,0,1),length.out=n())) %>% #10,50,90 percentile of plant size
+  mutate(seedCount=rep(c(1:40),length.out=n())) %>% #1-40 seeds
+  mutate(seedCountPlSize=seedCount*plSize,plSizeIrrig=plSize*irrigation,
+         plSize2015=plSize*year2015,plSizeIrrig2015=plSize*irrigation*year2015) %>% 
+  distinct() %>% as.matrix()
 
 data.frame(MM_temp,t(apply(MM_temp %*% t(coef_seedMass),1,function(x) quantile(x,c(0.5,0.025,0.975))))) %>%
   rename(pred=X50.,upr=X97.5.,lwr=X2.5.) %>% 
-  mutate(resid=podDat$seedMassResid+pred) %>% arrange(seedCount) %>% 
+  mutate(plSize=factor(plSize,labels=c('Small','Medium','Large'))) %>% 
   ggplot()+
-  geom_ribbon(aes(x=seedCount,ymax=upr,ymin=lwr),alpha=0.3)+
-  geom_line(aes(seedCount,pred),size=1)+
-  geom_point(aes(seedCount,resid),alpha=0.5)+
-  ylim(0,7.5)+labs(x='Seeds per pod',y='Weight per seed')
+  geom_ribbon(aes(seedCount,ymax=upr,ymin=lwr,fill=plSize),alpha=0.3)+
+  geom_line(aes(seedCount,pred,col=plSize),size=1)+
+  labs(x='Seeds per pod',y='Seed Weight')
 
+#Partial effect of irrigation
+MM_temp <- MM_seedMass %>% as.data.frame() %>% mutate_at(vars(-irrigation),mean) %>% as.matrix()
 
-
-
+data.frame(MM_temp,t(apply(MM_temp %*% t(coef_seedMass),1,function(x) quantile(x,c(0.5,0.025,0.975))))) %>%
+  rename(pred=X50.,upr=X97.5.,lwr=X2.5.) %>% 
+  mutate(resid=pred+podDat$seedWeightResid) %>%
+  mutate(irrigation=factor(irrigation,labels=c('Dryland','Irrigated'))) %>% 
+  ggplot()+
+  # geom_jitter(aes(x=irrigation,y=resid),width=0.25,alpha=0.3)+
+  geom_violin(aes(x=irrigation,y=resid))+
+  geom_pointrange(aes(x=irrigation,y=pred,ymax=upr,ymin=lwr),col='red',size=1)+
+  labs(x='Irrigation',y='Weight per seed')
 
 # Test commodity field analysis, using piecewiseSEM --------------------------
 library(piecewiseSEM)
