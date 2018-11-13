@@ -1,3 +1,5 @@
 modPodcount.Rdata
 modPodcount_seed.Rdata
 tempClaims.Rdata
+visitation_pollen_model.stan
+*.rds

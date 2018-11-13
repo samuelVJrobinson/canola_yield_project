@@ -650,8 +650,8 @@ inits <- function() { with(datalist,
     slopeDistPlDens=0,sigmaPlDens=0.5,sigmaPlDens_field=0.5,
     intPlSize=0,slopePlDensPlSize=0, #Plant size
     slopeDistPlSize=0,slopeGpPlSize=0,slopeIrrigPlSize=0,slope2015PlSize=0,
-    sigmaPlSize_field=0.5,sigmaPlSize_plot=0.5,sigmaPlSize=0.5,
-    intPlSize_field=rep(0,Nfield),intPlSize_plot=rep(0,Nplot),
+    sigmaPlSize_field=rep(0.5,2),sigmaPlSize_plot=rep(0.5,2),sigmaPlSize=0.5,
+    # intPlSize_field=rep(0,Nfield),intPlSize_plot=rep(0,Nplot),
     intFlDens=1,slopePlSizeFlDens=0, slopeHbeeDistFlDens=0, #Flower density
     sigmaFlDens=0.5,sigmaFlDens_field=0.5,intFlDens_field=rep(0,Nfield),
     intVisit=-1,slopeYearVis=0,slopeGpVis=0,slopeYearGpVis=1.5,slopeDistVis=0, #Visitation
@@ -704,31 +704,37 @@ inits <- function() { with(datalist,
 modPodcount6 <- stan(file='visitation_pollen_model.stan',data=datalist,iter=2000,chains=3,
                    control=list(adapt_delta=0.8),init=inits)
 
+# library(lme4)
+# mod1 <- plantsAllComm %>% ungroup() %>% 
+#   mutate(logVegMass=scale(log(VegMass),T,F),logPlDens=scale(log(PlDens),T,F),Year=factor(Year)) %>% 
+#   mutate(logDist=scale(log(Distance),T,F)) %>% 
+#   mutate(Plot=factor(paste(Field,Distance))) %>%
+#   lmer(logVegMass~logPlDens*NumHives*Year+logDist+Area+Irrigated+
+#          (logPlDens|Field/Plot),data=.)
+# summary(mod1)
+# predict(mod1)
+
+# Interactions seem important for plant size, but parsing out which one is tricky. 
 #modPodcount has slopeDistStockingPlSize
 #modPodcount2 has no interactions
-#modPodcount3 has slopeDistStockingPlSize, slopeDist2015PlSize - 
+#modPodcount3 has slopeDistStockingPlSize, slopeDist2015PlSize 
 #modPodcount4 has slopeDistStockingPlSize, slopeDist2015PlSize, slopePlDensStockingPlSize
 #modPodcount5 has slopeDistStockingPlSize, slopeDist2015PlSize, slopePlDensStockingPlSize,slopeIrrigationStockingPlSize
-#modPodcount6 has slopeDistStockingPlSize, slopeDist2015PlSize , no random plot intercept; much worse looic
-
-loo_modPodcount1 <- loo(modPodcount,'log_lik_plant')
-loo_modPodcount2 <- loo(modPodcount2,'log_lik_plant')
-loo_modPodcount3 <- loo(modPodcount3,'log_lik_plant')
-loo_modPodcount4 <- loo(modPodcount4,'log_lik_plant')
-loo_modPodcount5 <- loo(modPodcount5,'log_lik_plant')
-loo_modPodcount6 <- loo(modPodcount6,'log_lik_plant')
-
-loo::compare(loo_modPodcount1,loo_modPodcount2,loo_modPodcount3,
-             loo_modPodcount4,loo_modPodcount5,loo_modPodcount6)
-
-#Looks like models 1 and 2 are about the same, 3,4,5 about the same in terms of of elpd_loo. 
-
-loo::compare(loo_modPodcount3,loo_modPodcount6)
+#modPodcount6 has slopeDistStockingPlSize, slopeDist2015PlSize, slopeDistStocking2015PlSize
 
 
-# save(modPodcount,file='modPodcount2.Rdata')
-beep(4)
-
+# loo_modPodcount1 <- loo(modPodcount,'log_lik_plant') 
+# loo_modPodcount2 <- loo(modPodcount2,'log_lik_plant') #No-interaction model
+# loo_modPodcount3 <- loo(modPodcount3,'log_lik_plant') #This might be OK, but has no plDensPlSize relationship
+# loo_modPodcount4 <- loo(modPodcount4,'log_lik_plant') #This might be OK
+# loo_modPodcount5 <- loo(modPodcount5,'log_lik_plant') 
+# 
+# compare(loo_modPodcount1,loo_modPodcount2,loo_modPodcount3,loo_modPodcount4,loo_modPodcount5)
+# compare(loo_modPodcount3,loo_modPodcount5)
+# 
+# #Looks like models 1 and 2 are about the same, 3,4,5 about the same in terms of of elpd_loo. 
+# loo_model_weights(lapply(list(modPodcount,modPodcount2,modPodcount3,modPodcount4,modPodcount5),
+#                          extract_log_lik,parameter='log_lik_plant'))
 
 # 13 mins for 100 iter
 # load('modPodcount.Rdata') #Seed weight, size, and yield
@@ -739,8 +745,11 @@ pars=c('intPlDens','slope2015PlDens','slopeIrrigPlDens','slope2015IrrigPlDens',
        'slopeDistPlDens','slopeGPPlDens','sigmaPlDens','sigmaPlDens_field') #Planting density
 pars=c('intPlSize','slopePlDensPlSize','slopeDistPlSize','slopeGpPlSize', #Plant size
        'slopeIrrigPlSize','slope2015PlSize','slopeStockingPlSize',
-       'slopeDistStockingPlSize',#'slopePlDensStockingPlSize',
-       'slopeDist2015PlSize',#'slopeIrrigationStockingPlSize',
+       # 'slopeDistStockingPlSize','slopePlDensStockingPlSize',
+       # 'slopeDist2015PlSize','slopeIrrigationStockingPlSize',
+       'slopePlDensStockingPlSize','slopePlDens2015PlSize',
+       'slopeStocking2015PlSize','slopePlDensStocking2015PlSize',
+       'L_PlSize_field','L_PlSize_plot',
        'sigmaPlSize_field','sigmaPlSize_plot','sigmaPlSize')
 pars=c('intFlDens','slopePlSizeFlDens','slopeHbeeDistFlDens','sigmaFlDens','sigmaFlDens_field') #Flower density
 pars=c('intVisit','slopeYearVis','slopeGpVis','slopeYearGpVis','slopeIrrigVis',
@@ -766,13 +775,13 @@ pars=c('intSeedWeight','slopeVisitSeedWeight','slopePolSeedWeight',#Seed weight
        'sigmaSeedWeight','sigmaSeedWeight_plant','sigmaSeedWeight_field','lambdaSeedWeight')
 pars=c('intYield','slopeYield','sigmaYield',
        'sigmaYield_field','sigmaYield_plot','L_field','L_plot')
-stan_hist(modPodcount3,pars=pars)+geom_vline(xintercept=0,linetype='dashed')
+stan_hist(modPodcount6,pars=pars)+geom_vline(xintercept=0,linetype='dashed')
 traceplot(modPodcount,pars=c(pars),inc_warmup=F)
 # launch_shinystan(modPodcount)
 print(modPodcount,pars=pars)
 # pairs(modPodcount,pars=pars) #Takes way too long
 
-mod3 <- extract(modPodcount3)
+mod3 <- extract(modPodcount4)
 coefs(mod3[pars])
 library(xtable)
 print(xtable(coefs(mod3[pars]),digits=c(0,3,3,3,3,3,3,0,4)))
@@ -817,7 +826,7 @@ with(mod3,plot(apply(plSize_resid,1,function(x) sum(abs(x))),
                apply(predPlSize_resid,1,function(x) sum(abs(x))),
                xlab='Sum residuals',ylab='Sum simulated residuals',main='Plant size')) 
 abline(0,1,col='red'); #PP plot - good
-plot(datalist$plantSize,apply(mod3$predPlSize,2,median)[datalist$obsPl_ind], #Predicted vs Actual - good
+plot(datalist$plantSize,apply(mod3$predPlSize,2,median), #Predicted vs Actual - good
      ylab='Predicted plant size',xlab='Actual plant size'); abline(0,1,col='red')
 
 #flower density per plot
