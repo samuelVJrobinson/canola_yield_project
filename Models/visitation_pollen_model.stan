@@ -83,23 +83,24 @@ parameters {
 	real<lower=0.01> sigmaPlDens_field; //Sigma for field
 	vector[Nfield] intPlDens_field; //Random intercept for field
 	
-	// Plant size - Density:distance, Year:GP, Irrigation:2015, Density:2015 interactions are 0. Leaving them out.	
-	// Irrigation:year interaction irrigation(p=0.97) and irrigation:year (0.61) seems to make very little difference to plant size
+	// Plant size 
+	// Density:distance, Year:GP, Irrigation:2015, Density:2015 interactions are 0. Leaving them out.	
+	// Density:GP (0.23), Density:2015 (0.88), and Density:GP:Year (0.70) don't make any difference 
+	// Irrigation:year (p=0.82), density:irrigation (0.26), and density:year:irrigation (0.56) seems to make very little difference to plant size
 	// Distance:year:stocking interaction seems to make very little difference, and poor elpd	
 	// Distance:GP and Distance:GP:Year make very little difference, and have worse elpd
 	// Model with Distance:stocking and distance:2015 is slightly better (elpd: Diff=-1.1,se=2.5) than model with only plDens:stocking
+	// Model with plDens:stocking is marginally worse worse (elp_loo =-0.5,se=1.4) than model without.
+	// Model with without stocking is slightly worse (elpd_loo=-1.4,se=1.2) than full model, and has pval of 0.05, but I think this is a spurious effect because there is no strong distance:stocking relationship (see above), no relationship with hbee visits, and is in wrong direction.
 	// Very little correlation b/w slope & int for both field and plot, and no real difference in slopes at plot/field level, so removing random slopes		
 	real intPlSize; //Global intercept
 	real slopePlDensPlSize; //Slope of planting density	
 	real slopeDistPlSize; //Slope of distance 
 	real slopeGpPlSize; //Slope of Grand Prairie effect	
-	real slope2015PlSize; //Slope of 2015 effect	
-	real slopeStockingPlSize; //Stocking effect - number of hives
-	real slopeIrrigPlSize; //Slope of irrigation				
-	// real slopePlDensStockingPlSize; //Density:Stocking		
-	real slopePlDensGpPlSize; //Density:Area
-	real slopePlDens2015PlSize; //Density:Year
-	real slopePlDensGp2015PlSize; //Density:Area:Year
+	real slope2015PlSize; //Slope of 2015 effect		
+	real slopeIrrigPlSize; //Slope of irrigation	
+	// real slopeStockingPlSize; //Stocking effect - number of hives	
+	// real slopePlDensStockingPlSize; //Density:Stocking			
 	real<lower=0> sigmaPlSize_field; //SD of field-level intercept
 	real<lower=0> sigmaPlSize_plot; //SD of plot-level intercept
 	real<lower=0> sigmaPlSize; //Sigma for within-plot (residual)
@@ -128,19 +129,19 @@ parameters {
 	// vector[Nfield] intVisit_field; //field-level random intercepts		
 	// real<lower=0> lambdaVisField; //Lambda for skewed random effects	
 	
-	// // Pollen deposition
-	// // Plot level random effect has bad trace, strongly correlated with lp__
-	// real intPollen; //Intercept
-	// real slopeVisitPol; //Slope of hbee visits	
-	// real slopeHbeeDistPollen; //Effect of distance into field - p=0.076 (p=0.17 if stocking and stocking:dist interaction included)
-	// real<lower=0> sigmaPolField; //SD of field random intercepts	
-	// real<lower=0> pollenPhi; //Dispersion parameter
-	// vector[Nfield] intPollen_field; //field-level random intercepts	
-	// real<lower=0> sigmaPolPlot; //SD of plot random intercepts - Rhat 1.4, small n_eff, strongly correlated with lp__
-	// vector[Nplot] intPollen_plot; //plot-level random intercepts
-	// // real slopeFlyVisPol; //Slope of fly visits - p=0.577
-	// // real slopeStockingPollen; //Hive number effect - p=0.613
-	// // real slopeStockingHbeeDistPollen; //Hive number:hbee distance interaction - p=0.949
+	// Pollen deposition
+	// Plot level random effect has bad trace, strongly correlated with lp__
+	real intPollen; //Intercept
+	real slopeVisitPol; //Slope of hbee visits	
+	real slopeHbeeDistPollen; //Effect of distance into field - p=0.076 (p=0.17 if stocking and stocking:dist interaction included - see below)
+	real<lower=0> sigmaPolField; //SD of field random intercepts	
+	real<lower=0> pollenPhi; //Dispersion parameter
+	vector[Nfield] intPollen_field; //field-level random intercepts	
+	real<lower=0> sigmaPolPlot; //SD of plot random intercepts - Rhat 1.4, small n_eff, strongly correlated with lp__
+	vector[Nplot] intPollen_plot; //plot-level random intercepts
+	// real slopeFlyVisPol; //Slope of fly visits - p=0.577
+	// real slopeStockingPollen; //Hive number effect - p=0.613
+	// real slopeStockingHbeeDistPollen; //Hive number:hbee distance interaction - p=0.949
 	
 	// // Flower count (per plant) 
 	// real intFlwCount; //Intercept
@@ -271,11 +272,8 @@ transformed parameters {
 			slopeDistPlSize*logHbeeDist[i] + //Distance effect (edge of field has smaller plants)			
 			slopeGpPlSize*isGP[plotIndex[i]] + // Grand Prairie
 			slope2015PlSize*is2015[plotIndex[i]] + //2015
-			slopeIrrigPlSize*isIrrigated[plotIndex[i]] + //Irrigation effect									
-			slopeStockingPlSize*numHives[plotIndex[i]] + //Stocking									
-			slopePlDensGpPlSize*plDens[i]*isGP[plotIndex[i]] + //Density:Area
-			slopePlDens2015PlSize*plDens[i]*is2015[plotIndex[i]] + //Density:Year
-			slopePlDensGp2015PlSize*plDens[i]*isGP[plotIndex[i]]*is2015[plotIndex[i]]; //Density:Area:Year
+			slopeIrrigPlSize*isIrrigated[plotIndex[i]]; //Irrigation effect									
+			// slopeStockingPlSize*numHives[plotIndex[i]] + //Stocking												
 			// slopePlDensStockingPlSize*plDens[i]*numHives[plotIndex[i]]; //Density:Stocking interaction				
 	
 		// // Flower density = intercept + random field int + 
@@ -416,12 +414,8 @@ model {
 	slopeGpPlSize ~ normal(0,0.5); //Grand Prairie effect
 	slopeIrrigPlSize ~ normal(0,0.5); //Irrigation effect
 	slope2015PlSize ~ normal(0.3,0.5); //2015 effect			
-	slopeStockingPlSize ~ normal(0,0.1); //Stocking effect	
-	// slopePlDensStockingPlSize ~ normal(0,0.1); //Density:Stocking interaction		
-	slopePlDensGpPlSize ~ normal(0,1); //Density:GP
-	slopePlDens2015PlSize ~ normal(0,1); //Density:year
-	slopePlDensGp2015PlSize ~ normal(0,1); 	//Density:GP:year
-	
+	// slopeStockingPlSize ~ normal(0,0.1); //Stocking effect	
+	// slopePlDensStockingPlSize ~ normal(0,0.1); //Density:Stocking interaction			
 	sigmaPlSize_field ~ gamma(3,10); //Sigma for random field 
 	sigmaPlSize_plot ~ gamma(3,10); //Sigma for random plot
 	sigmaPlSize ~ gamma(7,10); //Sigma for residual	
@@ -566,9 +560,9 @@ generated quantities {
 	
 	// Plant-level	
 	// plantSize
-	// real predPlSize[Nplant]; //Generated
-	// real plSize_resid[Nplant]; //Residual
-	// real predPlSize_resid[Nplant]; //Residual of generated
+	real predPlSize[Nplant]; //Generated
+	real plSize_resid[Nplant]; //Residual
+	real predPlSize_resid[Nplant]; //Residual of generated
 	vector[Nplant] log_lik_plant; //Log-likelihod for plants
 	
 	// // flower count per plant (potential pods)
@@ -619,10 +613,10 @@ generated quantities {
 	// }
 
 	for(i in 1:Nplant){
-		// //plant size
-		// plSize_resid[i]= plantSize[i] - plSizeMu[i]; //Residual for actual
-		// predPlSize[i] = normal_rng(plSizeMu[i],sigmaPlSize); //Generates new value from normal dist.
-		// predPlSize_resid[i] = predPlSize[i] - plSizeMu[i]; //Residual for new value				 
+		//plant size
+		plSize_resid[i]= plantSize[i] - plSizeMu[i]; //Residual for actual
+		predPlSize[i] = normal_rng(plSizeMu[i],sigmaPlSize); //Generates new value from normal dist.
+		predPlSize_resid[i] = predPlSize[i] - plSizeMu[i]; //Residual for new value				 
 		log_lik_plant[i] = normal_lpdf(plantSize[i]| plSizeMu[i], sigmaPlSize); //LOO likelihood for plants
 		
 		// // flower count per plant

@@ -700,22 +700,16 @@ inits <- function() { with(datalist,
 # print(claims1,pars=c(pars,newpar))
 
 #Full model - 1.7 hrs for 1000 iter
-modPodcount <- stan(file='visitation_pollen_model.stan',data=datalist,iter=1000,chains=3,
-                   control=list(adapt_delta=0.8),init=inits) 
-
-#modPodcount1 has density:stocking
-#modPodcount2 has all main terms
-#modPodcount3 has all main terms - stocking
-#modPodcount4 has all main terms - stocking + density:year
-
+modPodcount3 <- stan(file='visitation_pollen_model.stan',data=datalist,iter=1000,chains=3,
+                   control=list(adapt_delta=0.8),init=inits)
 library(loo)
-loo_modPodcount1 <- loo(modPodcount1,pars='log_lik_plant') 
-loo_modPodcount2 <- loo(modPodcount2,pars='log_lik_plant')
-loo_modPodcount3 <- loo(modPodcount3,pars='log_lik_plant')
-loo_modPodcount4 <- loo(modPodcount4,pars='log_lik_plant')
-compare(loo_modPodcount2,loo_modPodcount3) #-0.5, 1.3 se
-compare(loo_modPodcount1,loo_modPodcount2) #-0.7 elpd_diff, 1.4 se
-compare(loo_modPodcount3,loo_modPodcount4) #0.1, 0.7 se
+loo_modPodcount1 <- loo(modPodcount,pars='log_lik_plant') #Model without plDens:stocking
+loo_modPodcount2 <- loo(modPodcount2,pars='log_lik_plant') #model with plDens:stocking
+loo_modPodcount3 <- loo(modPodcount3,pars='log_lik_plant') #model without plDens:stocking or stocking
+
+compare(loo_modPodcount1,loo_modPodcount2,loo_modPodcount3) #Very little difference between model with
+compare(loo_modPodcount1,loo_modPodcount2) #Very little difference between model with
+compare(loo_modPodcount1,loo_modPodcount3) #Very little difference between model with 
 
 
 # load('modPodcount.Rdata') #Seed weight, size, and yield
@@ -725,8 +719,8 @@ compare(loo_modPodcount3,loo_modPodcount4) #0.1, 0.7 se
 pars=c('intPlDens','slope2015PlDens','slopeIrrigPlDens','slope2015IrrigPlDens',
        'slopeDistPlDens','slopeGPPlDens','sigmaPlDens','sigmaPlDens_field') #Planting density
 pars=c('intPlSize','slopePlDensPlSize','slopeDistPlSize','slopeGpPlSize', #Plant size
-       'slopeIrrigPlSize','slope2015PlSize','slopePlDens2015PlSize',#'slopeStockingPlSize',
-       #'slopePlDensStockingPlSize','slopePlDensDistPlSize',
+       'slopeIrrigPlSize','slope2015PlSize','slopeStockingPlSize',
+       'slopePlDensStockingPlSize',
        'sigmaPlSize_field','sigmaPlSize_plot','sigmaPlSize')
 pars=c('intFlDens','slopePlSizeFlDens','slopeHbeeDistFlDens','sigmaFlDens','sigmaFlDens_field') #Flower density
 pars=c('intVisit','slopeYearVis','slopeGpVis','slopeYearGpVis','slopeIrrigVis',
@@ -752,13 +746,13 @@ pars=c('intSeedWeight','slopeVisitSeedWeight','slopePolSeedWeight',#Seed weight
        'sigmaSeedWeight','sigmaSeedWeight_plant','sigmaSeedWeight_field','lambdaSeedWeight')
 pars=c('intYield','slopeYield','sigmaYield',
        'sigmaYield_field','sigmaYield_plot','L_field','L_plot')
-stan_hist(modPodcount,pars=pars)+geom_vline(xintercept=0,linetype='dashed')
+stan_hist(modPodcount3,pars=pars)+geom_vline(xintercept=0,linetype='dashed')
 traceplot(modPodcount,pars=c(pars),inc_warmup=F)
 # launch_shinystan(modPodcount)
-print(modPodcount,pars=pars)
+print(modPodcount2,pars=pars)
 # pairs(modPodcount,pars=pars) #Takes way too long
 
-mod3 <- extract(modPodcount)
+mod3 <- extract(modPodcount3)
 coefs(mod3[pars])
 library(xtable)
 print(xtable(coefs(mod3[pars]),digits=c(0,3,3,3,3,3,3,0,4)))
@@ -964,6 +958,8 @@ mod3 <- extract(modPodcount) #Get coefficients from stan model
 
 #Plant-level data (792 rows)
 plantDat <- with(datalist,data.frame(
+  field=plotIndex[plantIndex],
+  plot=plantIndex,
   visit=(hbeeVis/totalTime)[plotIndex[plantIndex]],
   logvisit=log((hbeeVis/totalTime)+0.5)[plotIndex[plantIndex]],
   # pollen=apply(mod3$pollenPlot,2,median)[plotIndex[plantIndex]],
@@ -986,6 +982,16 @@ plantDat <- with(datalist,data.frame(
   # flwCountResid=log(flwCount)-apply(mod3$flwCountMu,2,median), #Log-resid for flower count
   # podCountResid=logit(podCount/flwCount)-apply(mod3$flwSurv,2,median) #Logit-resid for flower survival
   )) 
+
+## Model averaging
+# library(MuMIn)
+# library(lme4)
+# temp<- with(plantDat,data.frame(plSize,plDens,logdist,GP,year2015,stocking,irrigation,field=factor(field),plot=factor(plot)))
+# tempmod <- lmer(plSize~plDens*stocking*logdist-plDens:stocking:logdist+GP*year2015+stocking*year2015+
+#                   year2015*irrigation+(plDens|field)+(1|plot),data=temp,na.action=na.fail,REML=F)
+# summary(tempmod)
+# tempmod_d <- dredge(tempmod)
+# summary(model.avg(tempmod_d))
 
 #Model matrix for plant size
 MM_plSize <- with(plantDat,data.frame(int=1,plDens,logdist,GP,year2015,
