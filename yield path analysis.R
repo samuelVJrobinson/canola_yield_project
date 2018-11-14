@@ -9,11 +9,10 @@ library(beepr)
 #Big-text theme, no grid lines (used for Bayer 2016 presentation)
 prestheme=theme(legend.position='right',
                 legend.text=element_text(size=15),
-                axis.text=element_text(size=15), 
+                axis.text=element_text(size=15),
                 axis.title=element_text(size=20),
                 title=element_text(size=20),
-                panel.grid.major=element_line(size=0.5,colour='black',linetype='dotted'),
-                panel.grid.minor=element_blank(),
+                panel.grid.major=element_blank(),panel.grid.minor=element_blank(),
                 panel.border=element_rect(size=1,colour='black'),
                 strip.text=element_text(size=15))
 theme_set(theme_bw()+prestheme) #Sets graph theme to B/Ws + prestheme
@@ -701,51 +700,33 @@ inits <- function() { with(datalist,
 # print(claims1,pars=c(pars,newpar))
 
 #Full model - 1.7 hrs for 1000 iter
-modPodcount6 <- stan(file='visitation_pollen_model.stan',data=datalist,iter=2000,chains=3,
-                   control=list(adapt_delta=0.8),init=inits)
+modPodcount <- stan(file='visitation_pollen_model.stan',data=datalist,iter=1000,chains=3,
+                   control=list(adapt_delta=0.8),init=inits) 
 
-# library(lme4)
-# mod1 <- plantsAllComm %>% ungroup() %>% 
-#   mutate(logVegMass=scale(log(VegMass),T,F),logPlDens=scale(log(PlDens),T,F),Year=factor(Year)) %>% 
-#   mutate(logDist=scale(log(Distance),T,F)) %>% 
-#   mutate(Plot=factor(paste(Field,Distance))) %>%
-#   lmer(logVegMass~logPlDens*NumHives*Year+logDist+Area+Irrigated+
-#          (logPlDens|Field/Plot),data=.)
-# summary(mod1)
-# predict(mod1)
-
-# Interactions seem important for plant size, but parsing out which one is tricky. 
-#modPodcount has slopePlDensStockingPlSize,slopePlDens2015PlSize,slopeStocking2015PlSize,slopePlDensStocking2015PlSize
-#modPodcount2 has slopePlDensStockingPlSize,slopePlDens2015PlSize,slopeStocking2015PlSize
-#modPodcount3 has slopePlDensStockingPlSize,slopePlDens2015PlSize
-#modPodcount4 has slopePlDensStockingPlSize
-#modPodcount5 has slopePlDensStockingPlSize,slopeDistStockingPlSize
-#modPodcount6 has slopePlDensStockingPlSize,slopeDistStockingPlSize,slopePlDensDistStockingPlSize
+#modPodcount1 has density:stocking
+#modPodcount2 has all main terms
+#modPodcount3 has all main terms - stocking
+#modPodcount4 has all main terms - stocking + density:year
 
 library(loo)
-loo_modPodcount1 <- loo(modPodcount,'log_lik_plant')
-loo_modPodcount2 <- loo(modPodcount2,'log_lik_plant') 
-loo_modPodcount3 <- loo(modPodcount3,'log_lik_plant') 
-loo_modPodcount4 <- loo(modPodcount4,'log_lik_plant')  #This seems like the winner
-loo_modPodcount5 <- loo(modPodcount5,'log_lik_plant')
-loo_modPodcount6 <- loo(modPodcount6,'log_lik_plant') 
- 
-# compare(loo_modPodcount1,loo_modPodcount2,loo_modPodcount3,loo_modPodcount4,loo_modPodcount5)
-compare(loo_modPodcount1,loo_modPodcount2,loo_modPodcount3,loo_modPodcount4,loo_modPodcount5,loo_modPodcount6)
-compare(loo_modPodcount5,loo_modPodcount6)
+loo_modPodcount1 <- loo(modPodcount1,pars='log_lik_plant') 
+loo_modPodcount2 <- loo(modPodcount2,pars='log_lik_plant')
+loo_modPodcount3 <- loo(modPodcount3,pars='log_lik_plant')
+loo_modPodcount4 <- loo(modPodcount4,pars='log_lik_plant')
+compare(loo_modPodcount2,loo_modPodcount3) #-0.5, 1.3 se
+compare(loo_modPodcount1,loo_modPodcount2) #-0.7 elpd_diff, 1.4 se
+compare(loo_modPodcount3,loo_modPodcount4) #0.1, 0.7 se
 
 
-
-# 13 mins for 100 iter
 # load('modPodcount.Rdata') #Seed weight, size, and yield
-# load('modPodcount2.Rdata') #All other coefficients (plot/plant level)
+# load('modPodcount2.Rdata') #All other coefficients (plot/plant level) - 22 mins for 1000 iter
 
 # print(modPodcount)
 pars=c('intPlDens','slope2015PlDens','slopeIrrigPlDens','slope2015IrrigPlDens',
        'slopeDistPlDens','slopeGPPlDens','sigmaPlDens','sigmaPlDens_field') #Planting density
 pars=c('intPlSize','slopePlDensPlSize','slopeDistPlSize','slopeGpPlSize', #Plant size
-       'slopeIrrigPlSize','slope2015PlSize','slopeStockingPlSize',
-       'slopePlDensStockingPlSize',
+       'slopeIrrigPlSize','slope2015PlSize','slopePlDens2015PlSize',#'slopeStockingPlSize',
+       #'slopePlDensStockingPlSize','slopePlDensDistPlSize',
        'sigmaPlSize_field','sigmaPlSize_plot','sigmaPlSize')
 pars=c('intFlDens','slopePlSizeFlDens','slopeHbeeDistFlDens','sigmaFlDens','sigmaFlDens_field') #Flower density
 pars=c('intVisit','slopeYearVis','slopeGpVis','slopeYearGpVis','slopeIrrigVis',
@@ -771,13 +752,13 @@ pars=c('intSeedWeight','slopeVisitSeedWeight','slopePolSeedWeight',#Seed weight
        'sigmaSeedWeight','sigmaSeedWeight_plant','sigmaSeedWeight_field','lambdaSeedWeight')
 pars=c('intYield','slopeYield','sigmaYield',
        'sigmaYield_field','sigmaYield_plot','L_field','L_plot')
-stan_hist(modPodcount4,pars=pars)+geom_vline(xintercept=0,linetype='dashed')
-traceplot(modPodcount4,pars=c(pars),inc_warmup=F)
+stan_hist(modPodcount,pars=pars)+geom_vline(xintercept=0,linetype='dashed')
+traceplot(modPodcount,pars=c(pars),inc_warmup=F)
 # launch_shinystan(modPodcount)
-print(modPodcount5,pars=pars)
+print(modPodcount,pars=pars)
 # pairs(modPodcount,pars=pars) #Takes way too long
 
-mod3 <- extract(modPodcount4)
+mod3 <- extract(modPodcount)
 coefs(mod3[pars])
 library(xtable)
 print(xtable(coefs(mod3[pars]),digits=c(0,3,3,3,3,3,3,0,4)))
@@ -987,7 +968,7 @@ plantDat <- with(datalist,data.frame(
   logvisit=log((hbeeVis/totalTime)+0.5)[plotIndex[plantIndex]],
   # pollen=apply(mod3$pollenPlot,2,median)[plotIndex[plantIndex]],
   plSize=plantSize, #Plant size
-  plDens=apply(mod3$plDens,2,mean)[plantIndex],
+  plDens=apply(mod3$plDens,2,mean)[plantIndex], #Centered using 3.774427
   irrigation=isIrrigated[plotIndex[plantIndex]],
   year2015=is2015[plotIndex[plantIndex]],
   irrig2015=isIrrigated[plotIndex[plantIndex]]*is2015[plotIndex[plantIndex]],
@@ -1008,53 +989,31 @@ plantDat <- with(datalist,data.frame(
 
 #Model matrix for plant size
 MM_plSize <- with(plantDat,data.frame(int=1,plDens,logdist,GP,year2015,
-                    stocking,irrigation,plDensStocking,distStocking)) %>% as.matrix()
+                    stocking,irrigation,plDensStocking)) %>% as.matrix()
 #Coefficient matrix for plant size
 coef_plSize <- with(mod3,data.frame(intPlSize,slopePlDensPlSize,slopeDistPlSize,
             slopeGpPlSize,slope2015PlSize,slopeStockingPlSize,slopeIrrigPlSize,
-            slopePlDensStockingPlSize,slopeDistStockingPlSize))
+            slopePlDensStockingPlSize))
 
 #Partial effect of plant density and stocking
 MM_temp <- MM_plSize %>% as.data.frame() %>% mutate_at(vars(-plDens,-stocking,-plDensStocking),mean) %>% as.matrix()
 
-data.frame(MM_temp,t(apply(MM_temp %*% t(coef_plSize),1,function(x) quantile(x,c(0.5,0.025,0.975))))) %>%
+p1 <- data.frame(MM_temp,t(apply(MM_temp %*% t(coef_plSize),1,function(x) quantile(x,c(0.5,0.025,0.975))))) %>%
   rename(pred=X50.,upr=X97.5.,lwr=X2.5.) %>%
   mutate(resid=plantDat$plSizeResid+pred) %>%
   filter(stocking==0|stocking==40) %>%
-  mutate(stocking=factor(stocking,labels=c('Unstocked','Stocked'))) %>%
+  mutate(stocking=factor(stocking,labels=c('No hives','40 hives'))) %>%
+  mutate(plDens=exp(plDens+mean(log(surveyAllComm$PlDens),na.rm=T))) %>% #Untransform plant density
+  mutate_at(vars(upr,lwr,pred,resid),function(x,y) exp(x+mean(log(plantsAllComm$VegMass),na.rm=T))) %>% 
   ggplot(aes(x=plDens))+
   geom_ribbon(aes(ymax=upr,ymin=lwr,fill=stocking),alpha=0.3)+
-  geom_jitter(aes(y=resid,col=stocking),alpha=0.5)+
+  geom_jitter(aes(y=resid,col=stocking))+
   geom_line(aes(y=pred,col=stocking),size=1)+
-  labs(x='Plant density',y='Plant size',col='Stocking',fill='Stocking')
-
-# #Partial effect of distance and stocking on plant size
-MM_temp <- MM_plSize %>% as.data.frame() %>% mutate_at(vars(-logdist,-stocking,-distStocking),mean) %>% as.matrix()
-
-data.frame(MM_temp,t(apply(MM_temp %*% t(coef_plSize),1,function(x) quantile(x,c(0.5,0.025,0.975))))) %>%
-  rename(pred=X50.,upr=X97.5.,lwr=X2.5.) %>% 
-  mutate(resid=plantDat$plSizeResid+pred) %>%
-  filter(stocking==0|stocking==40) %>%
-  mutate(stocking=factor(stocking,labels=c('Unstocked','Stocked'))) %>% 
-  ggplot(aes(x=logdist))+
-  geom_ribbon(aes(ymax=upr,ymin=lwr,fill=stocking),alpha=0.3)+
-  geom_jitter(aes(y=resid,col=stocking),alpha=0.5)+
-  geom_line(aes(y=pred,col=stocking),size=1)+
-  labs(x='Distance',y='Plant size',col='Stocking',fill='Stocking')
-
-# #Partial effect of stocking and distance on plant size
-# MM_temp <- MM_plSize %>% as.data.frame() %>% mutate_at(vars(-logdist,-stocking,-distStocking),mean) %>% as.matrix()
-# 
-# data.frame(MM_temp,t(apply(MM_temp %*% t(coef_plSize),1,function(x) quantile(x,c(0.5,0.025,0.975)))),dist=plantDat$dist) %>%
-#   rename(pred=X50.,upr=X97.5.,lwr=X2.5.) %>% 
-#   mutate(resid=plantDat$plSizeResid+pred) %>% 
-#   filter(stocking==0|stocking==40) %>% 
-#   mutate(stocking=factor(stocking,labels=c('Unstocked','Stocked'))) %>%
-#   ggplot(aes(x=dist))+
-#   geom_ribbon(aes(ymax=upr,ymin=lwr,fill=stocking),alpha=0.3)+
-#   geom_jitter(aes(y=resid,col=stocking),alpha=0.5)+
-#   geom_line(aes(y=pred,col=stocking),size=1)+
-#   labs(x='Distance',y='Plant size',col='Stocking',fill='Stocking')
+  labs(x=expression(paste('Plants per ',m^2)),y='Plant size (g)')+xlim(10,100)+ylim(0,40)+
+  scale_colour_manual(values=c('forestgreen','darkorange'))+
+  scale_fill_manual(values=c('forestgreen','darkorange'))+
+  theme(legend.position=c(0.8,0.9),legend.background=element_rect(fill='white',colour='black',linetype='solid'),
+        legend.title=element_blank())
 
 #Model matrix for flower production (per plant)
 MM_flwCount <- with(plantDat,data.frame(int=1,plSize)) %>% as.matrix()
