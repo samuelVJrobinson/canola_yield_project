@@ -666,20 +666,18 @@ inits <- function() { with(datalist,
     slopeFlwCountSurv=0,slopePlDensSurv=0,sigmaFlwSurv_plot=0.3,sigmaFlwSurv_field=0.3, 
     intFlwSurv_field=rep(0,Nfield),intFlwSurv_plot=rep(0,Nplot),flwSurvPhi=1,
     #Seed count
-    intSeedCount=3.15,slopeVisitSeedCount=0.05,slopePolSeedCount=0,seedCountPhi=21, 
-    slopeIrrigSeedCount=0,slopeIrrig2015SeedCount=0,slopePlSizeIrrigSeedCount=0,
-    slopePlSize2015SeedCount=0,slopePlSizeIrrig2015SeedCount=0,
-    slope2015SeedCount=0,slopePlSizeCount=0, sigmaSeedCount_plant=0.14,
-    sigmaSeedCount_plot=0.07,sigmaSeedCount_field=0.1,
+    intSeedCount=3.15,slopeVisitSeedCount=0,slopePolSeedCount=0,
+    slopePlSizeCount=0.01,slope2015SeedCount=0.15,
+    seedCountPhi=21, sigmaSeedCount_plant=0.14,sigmaSeedCount_plot=0.08,sigmaSeedCount_field=0.06,
     intSeedCount_field=rep(0,datalist$Nfield),intSeedCount_plot=rep(0,datalist$Nplot),
     intSeedCount_plant=rep(0,datalist$Nplant),
     #Seed weight
-    intSeedWeight=0,slopeVisitSeedWeight=0,slopePolSeedWeight=0,slopeSeedCount=0, 
-    slopePlSizeWeight=0,slopeIrrigSeedWeight=0,
-    slope2015SeedWeight=0,slope2015IrrigSeedWeight=0,slopeSeedCountVegMassSeedWeight=0,
+    intSeedWeight=2,slopeVisitSeedWeight=0,slopePolSeedWeight=0,slopeSeedCount=0.02, 
+    slopePlSizeWeight=0,slopeIrrigSeedWeight=0,slope2015SeedWeight=0.5,
+    slope2015IrrigSeedWeight=0,slopeSeedCountVegMassSeedWeight=0,
     slopePlSizeIrrigSeedWeight=0,slopeSeedCount2015SeedWeight=0,slopePlSize2015SeedWeight=0,
     slopePlSizeIrrig2015SeedWeight=0,
-    sigmaSeedWeight=0.5,sigmaSeedWeight_plant=0.5,sigmaSeedWeight_plot=0.5,sigmaSeedWeight_field=0.5,
+    sigmaSeedWeight=0.5,sigmaSeedWeight_plant=0.2,sigmaSeedWeight_plot=0.5,sigmaSeedWeight_field=0.4,
     intSeedWeight_field=rep(0,datalist$Nfield),slopePlSizeSeedWeight=0,
     intSeedWeight_plot=rep(0,datalist$Nplot),intSeedWeight_plant=rep(0,datalist$Nplant),
     lambdaSeedWeight=1.5,
@@ -700,19 +698,17 @@ inits <- function() { with(datalist,
 # print(claims1,pars=c(pars,newpar))
 
 #Full model - 1.7 hrs for 1000 iter
-modPodcount3 <- stan(file='visitation_pollen_model.stan',data=datalist,iter=1000,chains=3,
+modPodcount <- stan(file='visitation_pollen_model.stan',data=datalist,iter=1000,chains=3,
                    control=list(adapt_delta=0.8),init=inits)
-library(loo)
-loo_modPodcount1 <- loo(modPodcount,pars='log_lik_plant') #Model without plDens:stocking
-loo_modPodcount2 <- loo(modPodcount2,pars='log_lik_plant') #model with plDens:stocking
-loo_modPodcount3 <- loo(modPodcount3,pars='log_lik_plant') #model without plDens:stocking or stocking
+# save(modPodcount,file='modPodcount2.Rdata') #Seed count/weight/yield model
 
-compare(loo_modPodcount1,loo_modPodcount2,loo_modPodcount3) #Very little difference between model with
-compare(loo_modPodcount1,loo_modPodcount2) #Very little difference between model with
-compare(loo_modPodcount1,loo_modPodcount3) #Very little difference between model with 
+#modPodcount has exp-normal
+#modPodcount2 has normal
 
 
-# load('modPodcount.Rdata') #Seed weight, size, and yield
+# modPodcount has logSeedCount, modPodcount2 has seedCount effect, very little elpd_loo difference (-0.9,se:4.6)
+
+# load('modPodcount.Rdata') #Seed count, size, and yield
 # load('modPodcount2.Rdata') #All other coefficients (plot/plant level) - 22 mins for 1000 iter
 
 # print(modPodcount)
@@ -735,27 +731,33 @@ pars=c('intFlwSurv','slopeVisitSurv','slopePolSurv','slopePlSizeSurv',
        'slopeIrrig2015Surv','slopePlSizeIrrigSurv',
        'sigmaFlwSurv_field','flwSurvPhi') #Flower survival
 pars=c('intSeedCount','slopeVisitSeedCount','slopePolSeedCount','slopePlSizeCount',
-       'slope2015SeedCount','slopeIrrigSeedCount','slopeIrrig2015SeedCount','slopePlSizeIrrigSeedCount',
-       'slopePlSize2015SeedCount','slopePlSizeIrrig2015SeedCount',
-       'seedCountPhi','sigmaSeedCount_plant','sigmaSeedCount_field') #Seed count
+       'slope2015SeedCount',
+       'seedCountPhi','sigmaSeedCount_plant','sigmaSeedCount_plot','sigmaSeedCount_field') #Seed count
 pars=c('intSeedWeight','slopeVisitSeedWeight','slopePolSeedWeight',#Seed weight
        'slopeSeedCount','slopePlSizeWeight','slopeIrrigSeedWeight',
-       'slope2015SeedWeight','slope2015IrrigSeedWeight','slopeSeedCountPlSizeSeedWeight',
-       'slopePlSizeIrrigSeedWeight','slopeSeedCount2015SeedWeight','slopePlSize2015SeedWeight',
-       'slopePlSizeIrrig2015SeedWeight',
-       'sigmaSeedWeight','sigmaSeedWeight_plant','sigmaSeedWeight_field','lambdaSeedWeight')
+       'slope2015SeedWeight','slope2015IrrigSeedWeight','sigmaSeedWeight',
+       'sigmaSeedWeight_plant','sigmaSeedWeight_plot','sigmaSeedWeight_field','lambdaSeedWeight')
 pars=c('intYield','slopeYield','sigmaYield',
        'sigmaYield_field','sigmaYield_plot','L_field','L_plot')
-stan_hist(modPodcount3,pars=pars)+geom_vline(xintercept=0,linetype='dashed')
+stan_hist(modPodcount,pars=pars)+geom_vline(xintercept=0,linetype='dashed')
 traceplot(modPodcount,pars=c(pars),inc_warmup=F)
 # launch_shinystan(modPodcount)
-print(modPodcount2,pars=pars)
+# print(modPodcount,pars=pars) #Takes way too long
 # pairs(modPodcount,pars=pars) #Takes way too long
 
-mod3 <- extract(modPodcount3)
-coefs(mod3[pars])
+mod3 <- extract(modPodcount2)
+plot(apply(mod3$seedWeightMu,2,mean),apply(mod3$seedMass_resid,2,median),xlab='Expected mu',ylab='Resid')
+qqnorm(apply(mod3$seedMass_resid,2,median)); qqline(apply(mod3$seedMass_resid,2,median))
+
+
+
+with(datalist,data.frame(seedCount,seedMass)) %>% 
+  lm(log(seedMass)~seedCount,data=.) %>% plot()
+
+
+(mod3coefs <- data.frame(par='Weight per seed',parname=rownames(coefs(mod3[pars])),coefs(mod3[pars]),row.names=NULL))
 library(xtable)
-print(xtable(coefs(mod3[pars]),digits=c(0,3,3,3,3,3,3,0,4)))
+print(xtable(mod3coefs,digits=c(0,0,0,3,3,3,3,3,3,0,4)),include.rownames=F)
 
 #Faster Pairplots
 pairs(mod3[c(pars,'lp__')],lower.panel=function(x,y){
@@ -847,33 +849,6 @@ abline(0,1,col='red') #PP plot
 plot(datalist$seedMass,apply(mod3$predSeedMass,2,median), #Predicted vs Actual - OK, but weird outliers: check data
      ylab='Predicted seed weight',xlab='Actual seed weight'); abline(0,1,col='red'); 
 
-#Partial plots
-temp <- with(datalist,data.frame(int=rep(1,Npod),seedCount, #Dataframe to hold info
-  logHbeeVis=with(datalist,log((hbeeVis/totalTime)+0.5))[plantIndex[podIndex]],
-  pollen=apply(mod3$pollenPlot,2,mean)[plantIndex[podIndex]], #Mean pollen at plot
-  lambdaInt=rep(1,Npod),
-  resid=apply(mod3$seedMass_resid,2,mean))) %>% as.matrix()
-
-#Model matrix
-modMat <- as.matrix(with(mod3,data.frame(intSeedWeight,slopeSeedCount,
-                               slopeVisitSeedWeight,slopePolSeedWeight,
-                               lambdaSeedWeight=1/lambdaSeedWeight)))
-#Seedcount
-temp2 <- as.data.frame(temp) %>% #Marginalize across all vars except seedCount
-  mutate_at(vars(logHbeeVis,pollen),mean) %>% as.matrix()
-temp2 <- cbind(temp2,t(apply(temp2[,c(1:5)] %*% t(modMat),1,function(x) quantile(x,c(0.5,0.975,0.025))))) %>% 
-  as.data.frame() %>% rename(median='50%',upr='97.5%',lwr='2.5%') %>% 
-  mutate(predUpr=apply(mod3$predSeedMass,2,quantile,0.975)) %>% 
-  mutate(predLwr=apply(mod3$predSeedMass,2,quantile,0.025)) %>% 
-  arrange(seedCount) %>% filter(resid<6,seedCount<40)
-
-ggplot(temp2,aes(seedCount,median))+geom_ribbon(aes(ymax=upr,ymin=lwr),fill='red',alpha=0.3)+
-  geom_point(aes(seedCount,(median+resid)),alpha=0.3)+
-  # geom_point(aes(seedCount,predUpr),alpha=0.3,col='red')+
-  # geom_point(aes(seedCount,predLwr),alpha=0.3,col='red')+
-  geom_line(size=1,col='red')+ylab('Weight per seed (mg)')+xlab('Seeds per pod')
-  
-  
 #Flower count - good predictions, but slightly overdispersed
 with(mod3,plot(apply(flwCount_resid,1,function(x) sum(abs(x))),
                apply(predFlwCount_resid,1,function(x) sum(abs(x))),
@@ -891,58 +866,6 @@ abline(0,1,col='red') #PP plot - good
 plot(datalist$podCount,apply(mod3$predPodCount,2,median), #Predicted vs Actual - good
      ylab='Predicted number of pods',xlab='Actual number of pods'); abline(0,1,col='red')
 
-#Partial plots
-temp <- with(datalist,data.frame(int=rep(1,Nplant), #Dataframe to hold info
-             logHbeeVis=with(datalist,log((hbeeVis/totalTime)+0.5))[plantIndex],
-             pollen=apply(mod3$pollenPlot,2,mean)[plantIndex], #Mean pollen at plot
-             plDens=apply(mod3$plDens,2,mean)[plantIndex], #Planting density
-             irrig=isIrrigated[plotIndex[plantIndex]],is2015=is2015[plotIndex[plantIndex]],
-             irrig2015=isIrrigated[plotIndex[plantIndex]]*is2015[plotIndex[plantIndex]],
-             plSize=plantSize,plSizeIrrig=plantSize*isIrrigated[plotIndex[plantIndex]],
-             logflwCount=log(flwCount),
-             resid=apply(mod3$podCount_resid,2,mean),podCount,flwCount=flwCount)) %>% as.matrix()
-
-#Model matrix
-modMat <- as.matrix(with(mod3,data.frame(intFlwSurv,slopeVisitSurv,
-            slopePolSurv,slopePlDensSurv,
-            slopeIrrigSurv,slope2015Surv,slopeIrrig2015Surv,
-            slopePlSizeSurv,slopePlSizeIrrigSurv,slopeFlwCountSurv)))
-#FlowerCount
-temp2 <- as.data.frame(temp) %>% #Marginalize across all vars except (log)FlowerCount
-  mutate_at(vars(int:plSizeIrrig),mean) %>% as.matrix()
-temp2 <- cbind(temp2,t(apply(temp2[,c(1:10)] %*% t(modMat),1,function(x) quantile(x,c(0.5,0.975,0.025))))) %>% 
-  as.data.frame() %>% rename(pred='50%',upr='97.5%',lwr='2.5%') %>% 
-  mutate(predUpr=apply(mod3$predPodCount,2,quantile,0.975)) %>%
-  mutate(predLwr=apply(mod3$predPodCount,2,quantile,0.025)) %>%
-  mutate_at(vars(pred,upr,lwr),invLogit) %>% #Transform to proportion
-  mutate(pred=pred*flwCount,upr=upr*flwCount,lwr=lwr*flwCount) %>% #Tranform to predicted count
-  arrange(flwCount)
-ggplot(data=temp2)+
-  geom_ribbon(aes(x=flwCount,ymax=upr/flwCount,ymin=lwr/flwCount),alpha=0.2)+
-  geom_point(aes(flwCount,(pred-resid)/flwCount))+
-  geom_line(aes(flwCount,pred/flwCount),size=1,col='red')+
-  # scale_x_log10()+
-  labs(x='Flowers per plant',y='Flower survival')+ylim(NA,1)
-
-#Plant size
-temp2 <- as.data.frame(temp) %>% #Marginalize across all vars except Plant size
-  mutate(flwCountMeas=flwCount) %>% 
-  mutate_at(vars(int:irrig2015,plSizeIrrig:flwCount),mean) %>% as.matrix()
-temp2 <- cbind(temp2,t(apply(temp2[,c(1:10)] %*% t(modMat),1,function(x) quantile(x,c(0.5,0.975,0.025))))) %>% 
-  as.data.frame() %>% rename(pred='50%',upr='97.5%',lwr='2.5%') %>% 
-  mutate(predUpr=apply(mod3$predPodCount,2,quantile,0.975)) %>%
-  mutate(predLwr=apply(mod3$predPodCount,2,quantile,0.025)) %>%
-  mutate_at(vars(pred,upr,lwr),invLogit) %>% #Transform to proportion
-  mutate(pred=pred*flwCountMeas,upr=upr*flwCountMeas,lwr=lwr*flwCountMeas) %>% #Tranform to predicted count
-  mutate(plSize=exp(plSize+2.62)) %>% #Transform to original scale
-  arrange(plSize)
-ggplot(data=temp2)+
-  geom_ribbon(aes(x=plSize,ymax=upr/flwCountMeas,ymin=lwr/flwCountMeas),alpha=0.2)+
-  geom_point(aes(plSize,(pred-resid)/flwCountMeas))+
-  geom_line(aes(plSize,pred/flwCountMeas),size=1,col='red')+
-  # scale_x_log10()+
-  labs(x='Plant size',y='Flower survival')+ylim(NA,1)
-
 
 #Yield per plant
 with(mod3,plot(apply(yield_resid,1,function(x) sum(abs(x))),
@@ -954,7 +877,7 @@ plot(log(datalist$yield),apply(mod3$predYield,2,median), #Predicted vs Actual - 
 par(mfrow=c(1,1))
 
 # Partial effects plots for commodity fields -----------------------------
-mod3 <- extract(modPodcount) #Get coefficients from stan model
+mod3 <- extract(modPodcount2) #Get coefficients from stan model
 
 #Plant-level data (792 rows)
 plantDat <- with(datalist,data.frame(
@@ -982,16 +905,6 @@ plantDat <- with(datalist,data.frame(
   # flwCountResid=log(flwCount)-apply(mod3$flwCountMu,2,median), #Log-resid for flower count
   # podCountResid=logit(podCount/flwCount)-apply(mod3$flwSurv,2,median) #Logit-resid for flower survival
   )) 
-
-## Model averaging
-# library(MuMIn)
-# library(lme4)
-# temp<- with(plantDat,data.frame(plSize,plDens,logdist,GP,year2015,stocking,irrigation,field=factor(field),plot=factor(plot)))
-# tempmod <- lmer(plSize~plDens*stocking*logdist-plDens:stocking:logdist+GP*year2015+stocking*year2015+
-#                   year2015*irrigation+(plDens|field)+(1|plot),data=temp,na.action=na.fail,REML=F)
-# summary(tempmod)
-# tempmod_d <- dredge(tempmod)
-# summary(model.avg(tempmod_d))
 
 #Model matrix for plant size
 MM_plSize <- with(plantDat,data.frame(int=1,plDens,logdist,GP,year2015,
@@ -1098,6 +1011,9 @@ data.frame(MM_temp,t(apply(MM_temp %*% t(coef_flwSurv),1,function(x) quantile(x,
 
 #Pod-level data (3872 rows)
 podDat <- with(datalist,data.frame(
+  field=plotIndex[plantIndex[podIndex]],
+  plot=plantIndex[podIndex],
+  plant=podIndex,
   visit=log((hbeeVis/totalTime)+0.5)[plotIndex[plantIndex[podIndex]]],
   pollen=apply(mod3$pollenPlot,2,median)[plotIndex[plantIndex[podIndex]]],
   seedCount=seedCount, plSize=plantSize[podIndex], #Plant size
@@ -1109,10 +1025,9 @@ podDat <- with(datalist,data.frame(
   seedCount2015=seedCount*is2015[plotIndex[plantIndex[podIndex]]],
   plSize2015=plantSize[podIndex]*is2015[plotIndex[plantIndex[podIndex]]],
   plSizeIrrig2015=plantSize[podIndex]*isIrrigated[plotIndex[plantIndex[podIndex]]]*is2015[plotIndex[plantIndex[podIndex]]],
-  seedWeight=seedMass,seedWeightResid=apply(mod3$seedMass_resid,2,median), #Median resid for seedMass
+  seedWeight=seedMass,seedWeightResid=apply(mod3$seedMass_resid,2,median) #Median resid for seedMass
   # seedCountResid=apply(mod3$seedCount_resid,2,median) #Residuals on real scale
-  seedCountResid=
-    apply(log(matrix(rep(datalist$seedCount,nrow(mod3$seedCountMu)),ncol=nrow(mod3$seedCountMu)))-t(mod3$seedCountMu),1,mean)
+  # seedCountResid=apply(log(matrix(rep(datalist$seedCount,nrow(mod3$seedCountMu)),ncol=nrow(mod3$seedCountMu)))-t(mod3$seedCountMu),1,mean)
   )) 
 
 #Model matrix for seedCount
@@ -1134,30 +1049,29 @@ data.frame(MM_temp,t(apply(MM_temp %*% t(coef_seedCount),1,function(x) quantile(
   labs(x='Year',y='Seeds per pod')+ylim(0,40)
 
 #Model matrix for seedMass 
-MM_seedMass <- with(podDat,data.frame(int=1,visit,pollen,seedCount,plSize,irrigation,year2015,irrig2015,seedCountPlSize,
-                                      plSizeIrrig,seedCount2015,plSize2015,plSizeIrrig2015)) %>% as.matrix()
+MM_seedMass <- with(podDat,data.frame(int=1,visit,pollen,seedCount=seedCount,plSize,irrigation,year2015,irrig2015)) %>% as.matrix()
 
 #Coefficent matrix for seedMass
 coef_seedMass <- with(mod3,data.frame(intSeedWeight,slopeVisitSeedWeight,slopePolSeedWeight,slopeSeedCount,
-                      slopePlSizeWeight,slopeIrrigSeedWeight,slope2015SeedWeight,slope2015IrrigSeedWeight,
-                      slopeSeedCountPlSizeSeedWeight,slopePlSizeIrrigSeedWeight,slopeSeedCount2015SeedWeight,
-                      slopePlSize2015SeedWeight,slopePlSizeIrrig2015SeedWeight)) %>% as.matrix()
+                      slopePlSizeWeight,slopeIrrigSeedWeight,slope2015SeedWeight,slope2015IrrigSeedWeight)) %>% as.matrix()
 
-#Partial effect of seed count/plant size
-MM_temp <- MM_seedMass %>% as.data.frame() %>% mutate_at(vars(-seedCount,-plSize),mean) %>% 
-  mutate(plSize=rep(c(-1,0,1),length.out=n())) %>% #10,50,90 percentile of plant size
-  mutate(seedCount=rep(c(1:40),length.out=n())) %>% #1-40 seeds
-  mutate(seedCountPlSize=seedCount*plSize,plSizeIrrig=plSize*irrigation,
-         plSize2015=plSize*year2015,plSizeIrrig2015=plSize*irrigation*year2015) %>% 
-  distinct() %>% as.matrix()
+#Partial effect of seed count
+MM_temp <- MM_seedMass %>% as.data.frame() %>% mutate_at(vars(-seedCount),mean) %>% 
+  as.matrix()
 
-data.frame(MM_temp,t(apply(MM_temp %*% t(coef_seedMass),1,function(x) quantile(x,c(0.5,0.025,0.975))))) %>%
-  rename(pred=X50.,upr=X97.5.,lwr=X2.5.) %>% 
-  mutate(plSize=factor(plSize,labels=c('Small','Medium','Large'))) %>% 
-  ggplot()+
-  geom_ribbon(aes(seedCount,ymax=upr,ymin=lwr,fill=plSize),alpha=0.3)+
-  geom_line(aes(seedCount,pred,col=plSize),size=1)+
+temp <- data.frame(MM_temp,t(apply(MM_temp %*% t(coef_seedMass),1,function(x) quantile(x,c(0.5,0.025,0.975))))) %>%
+  rename(pred=X50.,upr=X97.5.,lwr=X2.5.) %>%
+  mutate(resid=podDat$seedWeightResid+pred) 
+temp2 <- data.frame(x=rep(temp$seedCount,each=nrow(mod3$predSeedMass_resid)),y=rep(temp$pred,each=nrow(mod3$predSeedMass_resid))+as.vector(mod3$predSeedMass_resid)) %>% 
+  group_by(x) %>% summarize(upr=quantile(y,0.975),lwr=quantile(y,0.025)) %>% ungroup()
+  
+ggplot(temp,aes(x=seedCount))+
+  geom_ribbon(data=temp2,aes(x=x,ymax=upr,ymin=lwr),alpha=0.3)+
+  geom_ribbon(aes(ymax=upr,ymin=lwr),alpha=0.3)+
+  geom_line(aes(y=pred),size=1)+
+  geom_jitter(aes(y=resid),width=0.2,alpha=0.3)+xlim(0,40)+
   labs(x='Seeds per pod',y='Seed Weight')
+  
 
 #Partial effect of irrigation
 MM_temp <- MM_seedMass %>% as.data.frame() %>% mutate_at(vars(-irrigation),mean) %>% as.matrix()
@@ -1559,9 +1473,9 @@ inits <- function() {with(datalist,list(
   slopeFlDensPol=-0.03,sigmaPolField=0.8,sigmaPolPlot=0.5,pollenPhi=0.7,
   intPol_field=rep(0,Nfield),intPol_plot=rep(0,Nplot_F),
   #Flower count per plant
-  intFlwCount=6,slopePlSizeFlwCount=0.56,slopeCentFlwCount=0,
-  slopePolFlwCount=0,slopeLbeeVisFlwCount=0,slopeFlDensFlwCount=0,
-  sigmaFlwCount_field=0.26,intFlwCount_field=rep(0,Nfield),flwCountPhi=5.1,
+  intFlwCount=6,slopePlSizeFlwCount=1,slopeCentFlwCount=0.1,
+  slopePolFlwCount=-0.04,slopeLbeeVisFlwCount=-0.01,slopeFlDensFlwCount=0.005,
+  sigmaFlwCount_field=0.1,intFlwCount_field=rep(0,Nfield),intFlwCount_plot=rep(0,Nplot_F),flwCountPhi=27,
   #Flower survival
   intFlwSurv=-5,slopePolSurv=0.5,slopePlSizeSurv=0,slopeEdgeCentSurv=0.4,
   slopeSeedCountSurv=2.3,slopeHbeeDistSurv=0,slopeLbeeDistSurv=0,
@@ -1583,12 +1497,13 @@ inits <- function() {with(datalist,list(
 
 #Full model
 modPodcount_seed <- stan(file='visitation_pollen_model_seed.stan',data=datalist,
-                         iter=150,chains=3,control=list(adapt_delta=0.8),init='inits')
+                         iter=200,chains=3,control=list(adapt_delta=0.8),init='inits')
 # save(modPodcount_seed,file='modPodcount_seed.Rdata') #Seed count/weight model
-modPodcount_seed2 <- stan(file='visitation_pollen_model_seed.stan',data=datalist,
-                         iter=1000,chains=4,control=list(adapt_delta=0.8),init='inits')
+# modPodcount_seed2 <- stan(file='visitation_pollen_model_seed.stan',data=datalist,
+#                          iter=1000,chains=4,control=list(adapt_delta=0.8),init='inits')
 # save(modPodcount_seed2,file='modPodcount_seed2.Rdata') #Flower count/pod success
 # Setting max_treedepth=15 takes about 2-3x as long to run model. Use with care.
+# load('modPodcount_seed2.Rdata')
 
 # #ML version, no variance estimates
 # modPodcount_seed2 <- optimizing(stan_model(file='visitation_pollen_model_seed.stan'),data=datalist,init=inits)
@@ -1612,7 +1527,7 @@ pars=c('intPol','slopeHbeePol','slopeLbeePol','slopeCentPol','slopeHbeeDistPol',
        'pollenPhi','sigmaPolField')
 pars=c('intFlwCount','slopePlSizeFlwCount', #Flower count per plant
        'slopeCentFlwCount','slopePolFlwCount','slopeLbeeVisFlwCount',
-       'slopeFlDensFlwCount','sigmaFlwCount_field','flwCountPhi')
+       'slopeFlDensFlwCount','sigmaFlwCount_field','sigmaFlwCount_plot','flwCountPhi')
 pars=c('intFlwSurv','slopePolSurv','slopePlSizeSurv', #Flower survival
        'slopeEdgeCentSurv','slopeHbeeDistSurv','slopeLbeeDistSurv','slopeFlwCountSurv',
        'slopeFlwDensSurv','sigmaFlwSurv_field','sigmaFlwSurv_plot')
@@ -1632,6 +1547,14 @@ print(modPodcount_seed,pars=pars)
 #Check model fit:
 mod3 <- extract(modPodcount_seed)
 coefs(mod3[pars])
+library(xtable)
+print(xtable(coefs(mod3[pars]),digits=c(0,3,3,3,3,3,3,0,4)))
+
+#Faster pair plots
+pairs(mod3[c(pars,'lp__')],lower.panel=function(x,y){
+  par(usr=c(0,1,0,1))
+  text(0.5, 0.5, round(cor(x,y),2), cex = 1 * exp(abs(cor(x,y))))})
+
 
 #Distribution of random effects intercepts
 t(apply(mod3$intSeedCount_plot,2,function(x) quantile(x,c(0.5,0.025,0.975)))) %>% 
@@ -1640,10 +1563,7 @@ t(apply(mod3$intSeedCount_plot,2,function(x) quantile(x,c(0.5,0.025,0.975)))) %>
   ggplot()+geom_pointrange(aes(x=plot,y=med,ymax=upr,ymin=lwr))+
   geom_hline(yintercept=0,col='red')
 
-#Faster pair plots
-pairs(mod3[c(pars,'lp__')],lower.panel=function(x,y){
-  par(usr=c(0,1,0,1))
-  text(0.5, 0.5, round(cor(x,y),2), cex = 1 * exp(abs(cor(x,y))))})
+
 
 par(mfrow=c(2,1))
 #planting density - good
@@ -1731,9 +1651,74 @@ par(mfrow=c(1,1))
 
 # Partial effects plots for seed fields -----------------------------------
 
-#Residual plots (normalQQ,equal var)
-with(mod3,plot(apply(seedWeightMu,2,mean),apply(seedMass_resid,2,mean)))
-with(mod3,qqnorm(apply(seedMass_resid,2,mean)));with(mod3,qqline(apply(seedMass_resid,2,mean)))
+mod3 <- extract(modPodcount_seed)
+
+#Plant-level data (582 rows)
+plantDat <- with(datalist,data.frame(
+  plant=1:Nplant,
+  plDens=apply(mod3$plDens,2,median)[plotIndex_F[plantIndex]],
+  plSize=plantSize, #Centered around 3.204388
+  hbeeDist=(log(hbee_dist)-mean(log(c(hbee_dist,hbee_dist_extra))))[plotIndex_F[plantIndex[1:Nplant]]], #Centered around 4.641845
+  lbeeDist=(log(lbee_dist)-mean(log(c(lbee_dist,lbee_dist_extra))))[plotIndex_F[plantIndex[1:Nplant]]], #Centered around 3.113714
+  edgeCent=isCent[plotIndex_F[plantIndex[1:Nplant]]],
+  pol=apply(mod3$pollenMu_plot,2,median)[plotIndex_F[plantIndex]],
+  lbeeVis=log(1+hbeeVis/totalTime)[plotIndex_F[plantIndex[1:Nplant]]],
+  hbeeVis=log(1+lbeeVis/totalTime)[plotIndex_F[plantIndex[1:Nplant]]],
+  flDens=apply(mod3$flDens,2,median)[plotIndex_F[plantIndex[1:Nplant]]],
+  flwCount=flwCount,podCount=podCount,
+  flwCount_resid=apply(mod3$flwCountMu,2,median)-log(flwCount) #Log-residuals
+))
+
+#Model matrix for flower count 
+MM_flwCount <- with(plantDat,data.frame(int=1,edgeCent,pol,lbeeVis,flDens,plSize)) %>% 
+  as.matrix()
+#Coefficent matrix for seedMass
+coef_flwCount <- with(mod3,data.frame(intFlwCount,slopeCentFlwCount,slopePolFlwCount,slopeLbeeVisFlwCount,
+                                      slopeFlDensFlwCount,slopePlSizeFlwCount)) %>% as.matrix()
+
+#Partial effect of plant size
+MM_temp <- MM_flwCount %>% as.data.frame() %>% mutate_at(vars(-plSize),mean) %>% as.matrix()
+
+data.frame(MM_temp,t(apply(MM_temp %*% t(coef_flwCount),1,function(x) quantile(x,c(0.5,0.025,0.975))))) %>% 
+  rename(pred=X50.,upr=X97.5.,lwr=X2.5.) %>% 
+  mutate(resid=plantDat$flwCount_resid+pred) %>% arrange(flDens) %>% 
+  mutate_at(vars(pred:resid),exp) %>% 
+  ggplot(aes(x=exp(plSize+3.204388)))+
+  geom_ribbon(aes(ymax=upr,ymin=lwr),alpha=0.3)+
+  geom_line(aes(y=pred),size=1)+
+  geom_point(aes(y=resid),alpha=0.5)+#ylim(250,650)+
+  labs(x='Plant size',y='Flowers per plant')
+
+
+#Partial effect of flower density
+MM_temp <- MM_flwCount %>% as.data.frame() %>% mutate_at(vars(-flDens),mean) %>% as.matrix()
+
+data.frame(MM_temp,t(apply(MM_temp %*% t(coef_flwCount),1,function(x) quantile(x,c(0.5,0.025,0.975))))) %>% 
+  rename(pred=X50.,upr=X97.5.,lwr=X2.5.) %>% 
+  mutate(resid=plantDat$flwCount_resid+pred) %>% arrange(flDens) %>% 
+  mutate_at(vars(pred:resid),exp) %>% 
+  ggplot(aes(x=(flDens+22)^2))+
+  geom_ribbon(aes(ymax=upr,ymin=lwr),alpha=0.3)+
+  geom_line(aes(y=pred),size=1)+
+  geom_point(aes(y=resid),alpha=0.5)+ylim(250,650)+
+  labs(x='Flower density',y='Flowers per plant')
+
+#Partial effect of bay center
+MM_temp <- MM_flwCount %>% as.data.frame() %>% mutate_at(vars(-edgeCent),mean) %>% as.matrix()
+
+data.frame(MM_temp,t(apply(MM_temp %*% t(coef_flwCount),1,function(x) quantile(x,c(0.5,0.025,0.975))))) %>% 
+  rename(pred=X50.,upr=X97.5.,lwr=X2.5.) %>% 
+  mutate(resid=plantDat$flwCount_resid+pred) %>% arrange(edgeCent) %>% 
+  mutate_at(vars(pred:resid),exp) %>% 
+  mutate(edgeCent=factor(edgeCent,labels=c('Bay Edge','Bay Center'))) %>% 
+  ggplot(aes(x=edgeCent))+
+  geom_jitter(aes(y=resid),alpha=0.5)+
+  geom_pointrange(aes(y=pred,ymax=upr,ymin=lwr),col='red',size=1)+
+  ylim(250,650)+
+  labs(x=NULL,y='Flowers per plant')
+
+
+
 
 #Pod-level data (2885 rows)
 podDat <- with(datalist,data.frame(
