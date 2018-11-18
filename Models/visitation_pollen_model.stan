@@ -638,6 +638,6 @@ generated quantities {
 		seedMass_resid[i] = seedMass[i] - (seedWeightMu[i]+(1/lambdaSeedWeight)); 
 		predSeedMass[i] = exp_mod_normal_rng(seedWeightMu[i],sigmaSeedWeight,lambdaSeedWeight); 
 		predSeedMass_resid[i] = predSeedMass[i] - (seedWeightMu[i]+(1/lambdaSeedWeight));
-		log_lik_seedMass[i] = exp_mod_normal_lpdf(seedMass[i]| seedWeightMu[i],sigmaSeedWeight,lambdaSeedWeight); //LOO likelihood for seed size		
+		// log_lik_seedMass[i] = exp_mod_normal_lpdf(seedMass[i]| seedWeightMu[i],sigmaSeedWeight,lambdaSeedWeight); //LOO likelihood for seed size - takes about 10 mins to compute in R		
 	}	
 }
