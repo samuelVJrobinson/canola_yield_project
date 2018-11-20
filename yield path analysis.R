@@ -1459,15 +1459,15 @@ inits <- function() {with(datalist,list(
   slopeDistPlSize=0.08,sigmaPlSize=0.6,
   #Flower density per plot
   flDens_miss=rep(0,Nplot_flsMiss),flDens_extra_miss=rep(0,Nplot_flsMiss_extra),
-  intFlDens=0.5,slopePlSizeFlDens=1,slopeBayFlDens=1,slope2016FlDens=-3,slopeDistFlDens=1.2,
+  intFlDens=0.5,slopePlSizeFlDens=1,slopeMBayFlDens=1,slope2016FlDens=-3,slopeDistFlDens=1.2,
   intFlDens_field=rep(0,Nfield+Nfield_extra),sigmaFlDens=5,sigmaFlDens_field=3.5,
   #Hbees
   intVisitHbee=1.9,slopeHbeeDistHbee=-0.25,slopeLbeeDistHbee=0.4,slopeLbeeHbeeDistHbee=0,
-  slopeLbeeVisHbee=0,slopeCentHbee=0.35,slopeFlDensHbee=0,slopeFBayHbee=0.1,
+  slopeLbeeVisHbee=0,slopeCentHbee=0.35,slopeFlDensHbee=0,slopeMBayHbee=0.1,
   visitHbeePhi=0.7,zeroVisHbeeTheta=0.3,
   #Lbees
   intVisitLbee=4.5,slopeHbeeDistLbee=-0.3,slopeLbeeDistLbee=-0.8,slopeCentLbee=-0.6,
-  slopeFBayLbee=0,slopeStocking=0,slopeCentHbeeDistLbee=-0.2,slopeStockingHbeeDistLbee=0.3,
+  slopeMBayLbee=0,slopeStocking=0,slopeCentHbeeDistLbee=-0.2,slopeStockingHbeeDistLbee=0.3,
   slopeFlDensLbee=0.03,sigmaLbeeVisField=1,visitLbeePhi=0.5,intVisitLbee_field=rep(0,Nfield+Nfield_extra),
   #Pollen
   intPol=2.5,slopeHbeePol=0.03,slopeLbeePol=0.2,slopeCentPol=-0.6,slopeHbeeDistPol=-0.16, 
@@ -1483,9 +1483,10 @@ inits <- function() {with(datalist,list(
   slopeHbeeDistSurv=-0.11,slopeLbeeDistSurv=-0.21,slopeFlwDensSurv=-0.01,sigmaFlwSurv_field=0.36,
   sigmaFlwSurv_plot=0.35,intFlwSurv_field=rep(0,Nfield),intFlwSurv_plot=rep(0,Nplot_F),
   #Seed count
-  intSeedCount=3,slopePolSeedCount=0.06,slopePlSizeCount=0.2,slopeEdgeCentSeedCount=-0.15,
-  slopeHbeeDistSeedCount=-0.01,slopeFlDensSeedCount=-0.005,slopeFlwCountSeedCount=-3e-4,slopeSurvSeedCount=0.15,
-  seedCountPhi=3.5,sigmaSeedCount_field=0.1,sigmaSeedCount_plot=0.1,sigmaSeedCount_plant=0.1,
+  intSeedCount=2.6,slopePolSeedCount=0.05,slopePlSizeCount=0.07,slopeEdgeCentSeedCount=-0.15,
+  slopeHbeeDistSeedCount=-0.008,slopeFlDensSeedCount=-0.006,#slopeFlwCountSeedCount=-3e-4,
+  slopeSurvSeedCount=0.15,seedCountPhi=3.5,sigmaSeedCount_field=0.1,
+  sigmaSeedCount_plot=0.1,sigmaSeedCount_plant=0.07,
   intSeedCount_field=rep(0,Nfield),intSeedCount_plot=rep(0,Nplot_F),intSeedCount_plant=rep(0,Nplant),
   #Seed weight
   intSeedWeight=3.5,slopePolSeedWeight=-0.05,slopeSeedCount=-0.035,slopePlSizeSeedWeight=0.25,
@@ -1497,14 +1498,14 @@ inits <- function() {with(datalist,list(
 )}
 
 #Full model
-modPodcount_seed <- stan(file='visitation_pollen_model_seed.stan',data=datalist,
-                         iter=2000,chains=4,control=list(adapt_delta=0.8),init='inits')
+modPodcount_seed2 <- stan(file='visitation_pollen_model_seed.stan',data=datalist,
+                         iter=200,chains=3,control=list(adapt_delta=0.8),init='inits')
 # Setting max_treedepth=15 takes about 2-3x as long to run model. Use with care.
 
 # save(modPodcount_seed,file='modPodcount_seed.Rdata') #Seed count/weight model
 # save(modPodcount_seed,file='modPodcount_seed2.Rdata') #Flw count/ Pod success
-# save(modPodcount_seed,file='modPodcount_seed3.Rdata') #All other params
-# load('modPodcount_seed.Rdata')
+# save(modPodcount_seed,file='modPodcount_seed3.Rdata') #All other params (visits,plSize,etc)
+# load('modPodcount_seed3.Rdata')
 
 # #ML version, no variance estimates
 # modPodcount_seed2 <- optimizing(stan_model(file='visitation_pollen_model_seed.stan'),data=datalist,init=inits)
@@ -1517,14 +1518,14 @@ pars=c('intPlSize','slopePlDensPlSize','slopeDistPlSize','sigmaPlSize') #Plant s
 pars=c('intFlDens','slopePlSizeFlDens','slopeBayFlDens',
        'slope2016FlDens','slopeDistFlDens',
        'sigmaFlDens','sigmaFlDens_field') #Flower density
-pars=c('intVisitLbee','slopeHbeeDistLbee','slopeLbeeDistLbee','slopeCentLbee','slopeFBayLbee', #Lbee vis
+pars=c('intVisitLbee','slopeHbeeDistLbee','slopeLbeeDistLbee','slopeCentLbee','slopeMBayLbee', #Lbee vis
        'slopeStockingLbee','slope2016Lbee','slopeCentHbeeDistLbee','slopeStockingHbeeDistLbee',
        'slopeFlDensLbee','sigmaLbeeVisField','visitLbeePhi')
 pars=c('intVisitHbee','slopeHbeeDistHbee','slopeLbeeDistHbee','slopeLbeeHbeeDistHbee','slopeLbeeVisHbee', #Hbee vis 
-       'slopeCentHbee','slopeFlDensHbee','slopeFBayHbee', 
+       'slopeCentHbee','slopeFlDensHbee','slopeMBayHbee', 
        'visitHbeePhi','zeroVisHbeeTheta') 
 pars=c('intPol','slopeHbeePol','slopeLbeePol','slopeCentPol','slopeHbeeDistPol','slopeFlDensPol', #Pollen
-       'pollenPhi','sigmaPolField')
+       'pollenPhi','sigmaPolField','sigmaPolPlot')
 pars=c('intFlwCount','slopePlSizeFlwCount', #Flower count per plant
        'slopeCentFlwCount','slopePolFlwCount',
        'slopeFlDensFlwCount','sigmaFlwCount_field','flwCountPhi')
@@ -1533,13 +1534,13 @@ pars=c('intFlwSurv','slopePolSurv','slopePlSizeSurv', #Flower survival
        'slopeFlwDensSurv','sigmaFlwSurv_field','sigmaFlwSurv_plot')
 pars=c('intSeedCount','slopePolSeedCount','slopePlSizeCount', #Seeds per pod
        'slopeEdgeCentSeedCount','slopeHbeeDistSeedCount','slopeFlDensSeedCount',
-       'slopeSurvSeedCount','seedCountPhi','sigmaSeedCount_field','sigmaSeedCount_plant')
+       'slopeSurvSeedCount','seedCountPhi','sigmaSeedCount_field','sigmaSeedCount_plot','sigmaSeedCount_plant')
 pars=c('intSeedWeight','slopePolSeedWeight','slopeSeedCount', #Weight per seed
        'slopePlSizeSeedWeight',
        'slope2016SeedWeight','slopeLbeeDistSeedWeight','slopePlDensSeedWeight',
        'slopeStockingSeedWeight','lambdaSeedWeight',
        'sigmaSeedWeight','sigmaSeedWeight_field', #Random effects for plot don't converge well
-       'sigmaSeedWeight_plant','sigmaSeedWeight_plot')#
+       'sigmaSeedWeight_plot','sigmaSeedWeight_plant')#
 stan_hist(modPodcount_seed,pars=pars)+geom_vline(xintercept=0,linetype='dashed')
 traceplot(modPodcount_seed,pars=pars,inc_warmup=F)+geom_hline(yintercept=0,linetype='dashed')
 print(modPodcount_seed,pars=pars)
@@ -1556,13 +1557,11 @@ pairs(mod3[c(pars,'lp__')],lower.panel=function(x,y){
 
 
 #Distribution of random effects intercepts
-t(apply(mod3$intSeedCount_plot,2,function(x) quantile(x,c(0.5,0.025,0.975)))) %>% 
+t(apply(mod3$intSeedWeight_plant,2,function(x) quantile(x,c(0.5,0.025,0.975)))) %>% 
   as.data.frame() %>% rename(med='50%',lwr='2.5%',upr='97.5%') %>% 
   arrange(med) %>% mutate(plot=1:n()) %>% 
-  ggplot()+geom_pointrange(aes(x=plot,y=med,ymax=upr,ymin=lwr))+
+  ggplot()+geom_pointrange(aes(x=plot,y=med,ymax=upr,ymin=lwr),alpha=0.5)+
   geom_hline(yintercept=0,col='red')
-
-
 
 par(mfrow=c(2,1))
 #planting density - good
@@ -1651,6 +1650,21 @@ par(mfrow=c(1,1))
 # Partial effects plots for seed fields -----------------------------------
 
 mod3 <- extract(modPodcount_seed)
+
+#Plot-level data (647 rows) - visitation data
+plotDat <- with(datalist,data.frame(
+  plot=1:(Nplot+Nplot_extra),
+  hbeeDist=c(hbee_dist,hbee_dist_extra),lbeeDist=c(lbee_dist,lbee_dist_extra),
+  lbeeVis=c(lbeeVis,lbeeVis_extra),isMBay=c(isMBay,isMBay_extra),
+  flDens=apply(mod3$flDens,2,mean),isCent=c(isCent,isCent_extra), #Sqrt tranformed - 22
+  halfStock=c(lbeeStocking,lbeeStocking_extra), #half-stocking
+  year=c(is2016,is2016_extra),
+  hbeeResid=
+  lbeeResid
+  
+  )) 
+
+
 
 #Plant-level data (582 rows)
 plantDat <- with(datalist,data.frame(
