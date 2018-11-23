@@ -312,13 +312,11 @@ transformed parameters {
 			slope2015Surv*is2015[plotIndex[i]]; //Slope of year
 			// slopeIrrig2015Surv*isIrrigated[plotIndex[i]]*is2015[plotIndex[i]]; //Irrigation:year interaction
 			
-		// // Plot-level seed count = intercept + random int field + random int plot + random int plant + 
-		// seedCountMuPlot[i] = intSeedCount + intSeedCount_field[plotIndex[i]] + intSeedCount_plot[i] + 
-			// slopeVisitSeedCount*logHbeeVis[i] + //(log) hbee visits 
-			// slopePolSeedCount*pollenPlot[i] + //pollen deposition - large correlation b/w slopePolSeedCount and intFlwSurv
-			// slope2015SeedCount*is2015[plotIndex[i]]; //Year effect
-			// // slopeIrrigSeedCount*isIrrigated[plotIndex[i]] + //Irrigation
-			// // slopeIrrig2015SeedCount*isIrrigated[plotIndex[i]]*is2015[plotIndex[i]]; //Irrigation:year
+		// Plot-level seed count = intercept + random int field + random int plot + random int plant + 
+		seedCountMuPlot[i] = intSeedCount + intSeedCount_field[plotIndex[i]] + intSeedCount_plot[i] + 
+			slopeVisitSeedCount*logHbeeVis[i] + //(log) hbee visits 
+			slopePolSeedCount*pollenPlot[i] + //pollen deposition - large correlation b/w slopePolSeedCount and intFlwSurv
+			slope2015SeedCount*is2015[plotIndex[i]]; //Year effect		
 			
 		// // Plot-level seed weight = intercept + random int field + random int plot + 	
 		// seedWeightMuPlot[i] = intSeedWeight + intSeedWeight_field[plotIndex[i]] + intSeedWeight_plot[i] + 
@@ -344,12 +342,9 @@ transformed parameters {
 		flwSurv[i] = flwSurvPlot[plantIndex[i]] + slopePlSizeSurv*plantSize[i]; //Plot-level plant survival + size effect		
 			// slopePlSizeIrrigSurv*(plantSize[i]*isIrrigated[plotIndex[plantIndex[i]]]); //Plant size:Irrigation interaction
 						
-		// // Seed count per pod = plot-level effect + random plant int +		
-		// seedCountMuPlant[i] = seedCountMuPlot[plantIndex[i]] + intSeedCount_plant[i] + 			
-			// slopePlSizeCount*plantSize[i]; //plant size
-			// slopePlSizeIrrigSeedCount*plantSize[i]*isIrrigated[plotIndex[plantIndex[i]]] + //Plant size:irrigation
-			// slopePlSize2015SeedCount*plantSize[i]*is2015[plotIndex[plantIndex[i]]] + //Plant size:year
-			// slopePlSizeIrrig2015SeedCount*plantSize[i]*isIrrigated[plotIndex[plantIndex[i]]]*is2015[plotIndex[plantIndex[i]]]; //Plant size:irrigation:year
+		// Seed count per pod = plot-level effect + random plant int +		
+		seedCountMuPlant[i] = seedCountMuPlot[plantIndex[i]] + intSeedCount_plant[i] + 			
+			slopePlSizeCount*plantSize[i]; //plant size			
 			
 		// // Weight per seed = plot-level effect + random int plant + 
 		// seedWeightPlantMu[i] = seedWeightMuPlot[plantIndex[i]] + intSeedWeight_plant[i] +			
