@@ -69,7 +69,6 @@ bpoint <- function(x,int1,slope1,b,slope2) ifelse(x<b,int1+slope1*x,b*slope1+(x-
 effSize <- function(x) unname(median(x)/diff(quantile(x,c(0.025,0.975))))
 #Does 95% of posterior overlap zero?
 overlap <- function(x) {r <- quantile(x,c(0.025,0.975))>=0; xor(r[1],r[2]);}
-temp <- filter(seedsAllComm)
 
 #Everything above this line run to start
 
@@ -718,8 +717,9 @@ pars=c('intVisit','slopeYearVis','slopeGpVis','slopeYearGpVis','slopeIrrigVis',
        'sigmaVisField','lambdaVisField','visitHbeePhi')
 pars=c('intPollen','slopeVisitPol','slopeHbeeDistPollen',#'slopeFlyVisPol',
        'sigmaPolField','sigmaPolPlot','pollenPhi') #Pollen deposition
-pars=c('intFlwCount','slopePlSizeFlwCount', #Flower count per plant
-       'sigmaFlwCount_field','sigmaFlwCount_plot','flwCountPhi')
+pars=c('intFlwCount','slopePlSizeFlwCount','slopePlSizeSqFlwCount', #Flower count per plant
+       # 'sigmaFlwCount_field','sigmaFlwCount_plot','flwCountPhi')
+       'sigmaFlwCount_field','sigmaFlwCount')
 pars=c('intFlwSurv','slopeVisitSurv','slopePolSurv','slopePlSizeSurv',
        'slopePlDensSurv','slopeIrrigSurv','slope2015Surv',
        'sigmaFlwSurv_field','flwSurvPhi') #Flower survival
@@ -740,9 +740,10 @@ traceplot(modPodcount,pars=c(pars),inc_warmup=F)
 
 mod3 <- extract(modPodcount)
 
-(mod3coefs <- data.frame(par='Hbee visitation',parname=rownames(coefs(mod3[pars])),coefs(mod3[pars]),row.names=NULL))
-library(xtable)
-print(xtable(mod3coefs,digits=c(0,0,0,3,3,3,3,3,3,0,4)),include.rownames=F)
+# #Coefficients in table form for LaTeX
+# (mod3coefs <- data.frame(par='Hbee visitation',parname=rownames(coefs(mod3[pars])),coefs(mod3[pars]),row.names=NULL))
+# library(xtable)
+# print(xtable(mod3coefs,digits=c(0,0,0,3,3,3,3,3,3,0,4)),include.rownames=F)
 
 #Faster Pairplots
 pairs(mod3[c(pars,'lp__')],lower.panel=function(x,y){
@@ -750,7 +751,7 @@ pairs(mod3[c(pars,'lp__')],lower.panel=function(x,y){
   text(0.5, 0.5, round(cor(x,y),2), cex = 1 * exp(abs(cor(x,y))))})
 
 #Plot of random intercepts
-t(apply(mod3$ranEffPlSize_plot[,2,],2,function(x) quantile(x,c(0.5,0.975,0.025)))) %>%
+t(apply(mod3$intFlwCount_plot,2,function(x) quantile(x,c(0.5,0.975,0.025)))) %>%
   as.data.frame() %>% rename(median='50%',upr='97.5%',lwr='2.5%') %>% arrange(median) %>%
   mutate(row=1:nrow(.)) %>% 
   ggplot(aes(row,median))+geom_pointrange(aes(ymax=upr,ymin=lwr))+geom_hline(yintercept=0,col='red')
@@ -818,6 +819,27 @@ plot(datalist$pollenCount,apply(mod3$predPollenCount,2,median), #Predicted vs Ac
      ylab='Predicted pollen',xlab='Actual pollen')
 abline(0,1,col='red') #PP plot
 
+#Flower count - good predictions, but bad overdispersion
+with(mod3,plot(apply(flwCount_resid,1,function(x) sum(abs(x))),
+               apply(predFlwCount_resid,1,function(x) sum(abs(x))),
+               xlab='Sum residuals',ylab='Sum simulated residuals',main='Flower count per plant'))
+with(mod3,{x <- sum(apply(flwCount_resid,1,function(x) sum(abs(x)))<
+                      apply(predFlwCount_resid,1,function(x) sum(abs(x))))/nrow(predFlwCount_resid)
+  legend('topleft',paste('p =',round(min(x,1-x),3)))})
+abline(0,1,col='red');  #PP plot 
+plot(log(datalist$flwCount),apply(mod3$predFlwCount,2,median), #Predicted vs Actual - good
+     ylab='Predicted flower count',xlab='Actual flower count')  
+abline(0,1,col='red')
+
+#flower survival (pod count) - better with a beta-binomial, but still bad PP plot
+with(mod3,plot(apply(podCount_resid,1,function(x) sum(abs(x))),
+               apply(predPodCount_resid,1,function(x) sum(abs(x))),
+               xlab='Sum residuals',ylab='Sum simulated residuals',main='Pods per plant'))
+abline(0,1,col='red') #PP plot - bad
+plot(datalist$podCount,apply(mod3$predPodCount,2,median), #Predicted vs Actual - good
+     ylab='Predicted number of pods',xlab='Actual number of pods'); abline(0,1,col='red')
+
+
 #seeds per pod - bad
 with(mod3,plot(apply(seedCount_resid,1,function(x) sum(abs(x))),
                apply(predSeedCount_resid,1,function(x) sum(abs(x))),
@@ -833,24 +855,6 @@ with(mod3,plot(apply(seedMass_resid,1,function(x) sum(abs(x))),
 abline(0,1,col='red') #PP plot 
 plot(datalist$seedMass,apply(mod3$predSeedMass,2,median), #Predicted vs Actual - OK, but weird outliers: check data
      ylab='Predicted seed weight',xlab='Actual seed weight'); abline(0,1,col='red'); 
-
-#Flower count - good predictions, but slightly overdispersed
-with(mod3,plot(apply(flwCount_resid,1,function(x) sum(abs(x))),
-               apply(predFlwCount_resid,1,function(x) sum(abs(x))),
-               xlab='Sum residuals',ylab='Sum simulated residuals',main='Flower count per plant'))
-abline(0,1,col='red');  #PP plot 
-plot(datalist$flwCount,apply(mod3$predFlwCount,2,median), #Predicted vs Actual - good
-     ylab='Predicted flower count',xlab='Actual flower count')  
-abline(0,1,col='red')
-
-#flower survival (pod count) - better with a beta-binomial, but still not the best
-with(mod3,plot(apply(podCount_resid,1,function(x) sum(abs(x))),
-               apply(predPodCount_resid,1,function(x) sum(abs(x))),
-               xlab='Sum residuals',ylab='Sum simulated residuals',main='Pods per plant'))
-abline(0,1,col='red') #PP plot - good
-plot(datalist$podCount,apply(mod3$predPodCount,2,median), #Predicted vs Actual - good
-     ylab='Predicted number of pods',xlab='Actual number of pods'); abline(0,1,col='red')
-
 
 #Yield per plant
 with(mod3,plot(apply(yield_resid,1,function(x) sum(abs(x))),
