@@ -717,9 +717,10 @@ pars=c('intVisit','slopeYearVis','slopeGpVis','slopeYearGpVis','slopeIrrigVis',
        'sigmaVisField','lambdaVisField','visitHbeePhi')
 pars=c('intPollen','slopeVisitPol','slopeHbeeDistPollen',#'slopeFlyVisPol',
        'sigmaPolField','sigmaPolPlot','pollenPhi') #Pollen deposition
-pars=c('intFlwCount','slopePlSizeFlwCount','slopePlSizeSqFlwCount', #Flower count per plant
+pars=c('intFlwCount','slopePlSizeFlwCount', #Flower count per plant
        # 'sigmaFlwCount_field','sigmaFlwCount_plot','flwCountPhi')
-       'sigmaFlwCount_field','sigmaFlwCount')
+       'sigmaFlwCount_field','sigmaFlwCount_plot','intSigmaFlwCount',
+       'slopePlSizeSigmaFlwCount','sigmaSigmaFlwCount_field','sigmaSigmaFlwCount_plot')
 pars=c('intFlwSurv','slopeVisitSurv','slopePolSurv','slopePlSizeSurv',
        'slopePlDensSurv','slopeIrrigSurv','slope2015Surv',
        'sigmaFlwSurv_field','flwSurvPhi') #Flower survival
@@ -751,11 +752,14 @@ pairs(mod3[c(pars,'lp__')],lower.panel=function(x,y){
   text(0.5, 0.5, round(cor(x,y),2), cex = 1 * exp(abs(cor(x,y))))})
 
 #Plot of random intercepts
-t(apply(mod3$intFlwCount_plot,2,function(x) quantile(x,c(0.5,0.975,0.025)))) %>%
+t(apply(mod3$intSigmaFlwCount_field,2,function(x) quantile(x,c(0.5,0.975,0.025)))) %>%
   as.data.frame() %>% rename(median='50%',upr='97.5%',lwr='2.5%') %>% arrange(median) %>%
   mutate(row=1:nrow(.)) %>% 
   ggplot(aes(row,median))+geom_pointrange(aes(ymax=upr,ymin=lwr))+geom_hline(yintercept=0,col='red')
   # ggplot(aes(median))+geom_density()
+
+plot(apply(mod3$intFlwCount_field,2,median),apply(mod3$intSigmaFlwCount_field,2,median))
+
 
 qqnorm(apply(mod3$intPollen_plot,2,median));qqline(apply(mod3$intPollen_plot,2,median));
 mean(apply(mod3$intVisit_field,2,median))

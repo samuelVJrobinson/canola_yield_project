@@ -146,14 +146,19 @@ parameters {
 	
 	// Flower count (per plant) 
 	real intFlwCount; //Intercept
-	real slopePlSizeFlwCount; //Slope of plant size
-	real slopePlSizeSqFlwCount; //Slope of plant size squared
+	real slopePlSizeFlwCount; //Slope of plant size	
 	real<lower=0> sigmaFlwCount_field; //SD of field-level random effect
-	// real<lower=0> sigmaFlwCount_plot; //SD of plot-level random effect
+	real<lower=0> sigmaFlwCount_plot; //SD of plot-level random effect
 	vector[Nfield] intFlwCount_field; //Field-level random effect
-	// vector[Nplot] intFlwCount_plot; //Plot-level random effect	
+	vector[Nplot] intFlwCount_plot; //Plot-level random effect	
 	// real<lower=0> flwCountPhi; //Dispersion parameter
-	real<lower=0> sigmaFlwCount; //Sigma for lognormal version
+	// real<lower=0> sigmaFlwCount; //Sigma for lognormal version
+	real intSigmaFlwCount; //Intercept for sigma	
+	real slopePlSizeSigmaFlwCount; //Effect of plant size on sigma	
+	real<lower=0> sigmaSigmaFlwCount_field; //Sigma for field level sigma
+	vector[Nfield] intSigmaFlwCount_field; //Field-level random effect for sigma
+	real<lower=0> sigmaSigmaFlwCount_plot; //Sigma for plot level sigma
+	vector[Nplot] intSigmaFlwCount_plot; //Plot-level random effect for sigma
 	
 	// // Flower survival
 	// // plot-level random intercepts have low n_eff, and basically all intercepts overlap zero; sigma plot correlated with lp__
@@ -242,6 +247,7 @@ transformed parameters {
 	// vector[Nflw] pollenMu; //Flower-level pollen per stigma		
 	vector[Nplot] flwCountPlot; //Plot-level flowers per plant
 	vector[Nplant] flwCountMu; //Expected flowers per plant
+	vector<lower=0>[Nplant] sigmaFlwCount; //Sigma for flowers/plant
 	// vector[Nplot] flwSurvPlot; //Plot-level flower survival
 	// vector[Nplant] flwSurv; //Flower survival rate (logit)
 	// vector[Nplot] seedCountMuPlot; //Plot-level seed count
@@ -303,7 +309,7 @@ transformed parameters {
 		// //Switched global intercept to flower level term to "center" plot level measurements
 			
 		// Flower count per plant (plot level) = intercept + random field int + random plot int
-		flwCountPlot[i] = intFlwCount + intFlwCount_field[plotIndex[i]];// + intFlwCount_plot[i];
+		flwCountPlot[i] = intFlwCount + intFlwCount_field[plotIndex[i]] + intFlwCount_plot[i];
 		
 		// // Plot-level flower survival = intercept + random int field + random int plot + 
 		// flwSurvPlot[i] = intFlwSurv + intFlwSurv_field[plotIndex[i]] + //intFlwSurv_plot[i] + 
@@ -338,8 +344,9 @@ transformed parameters {
 		
 		// Flower count per plant
 		flwCountMu[i] = flwCountPlot[plantIndex[i]] + //Plot level flower count 
-			slopePlSizeFlwCount*plantSize[i] + //individual plant size
-			slopePlSizeSqFlwCount*exp(plantSize[i]+2.626568); //Actual Plant size
+			slopePlSizeFlwCount*plantSize[i]; //individual plant size
+		sigmaFlwCount[i] = exp(intSigmaFlwCount + intSigmaFlwCount_field[plotIndex[plantIndex[i]]] + intSigmaFlwCount_plot[plantIndex[i]] + 
+			slopePlSizeSigmaFlwCount*plantSize[i]); // Term for sigma				
 	
 		// // Flower survival per plant
 		// flwSurv[i] = flwSurvPlot[plantIndex[i]] + slopePlSizeSurv*plantSize[i]; //Plot-level plant survival + size effect		
@@ -450,14 +457,20 @@ model {
 	//sigmaFlwCount_plot correlated with lp__(r=0.69), and is making PP checks worse (p=0). Once removed, PP is still bad (p=0.01).
 	//Removing sigmaFlwCount_field also improves PP check, but not by much (p=0.03). Trying lognormal version.
 	intFlwCount ~ normal(0,2); //Intercept
-	slopePlSizeFlwCount ~ normal(0,1); //Slope of plant size
-	slopePlSizeSqFlwCount ~ normal(0,1); //Plant size^2
+	slopePlSizeFlwCount ~ normal(0,1); //Slope of plant size	
 	sigmaFlwCount_field ~ gamma(1,1); //SD of field-level random effect	
-	// sigmaFlwCount_plot ~ gamma(1,1); //SD of plot-level random effect
+	sigmaFlwCount_plot ~ gamma(1,1); //SD of plot-level random effect
 	intFlwCount_field ~ normal(0,sigmaFlwCount_field); //Field-level random effect	
-	// intFlwCount_plot ~ normal(0,sigmaFlwCount_plot); //Plot-level random effect	
-	sigmaFlwCount ~ gamma(1,1);
+	intFlwCount_plot ~ normal(0,sigmaFlwCount_plot); //Plot-level random effect	
+	// sigmaFlwCount ~ gamma(1,1); //Sigma - lognormal version
 	// flwCountPhi ~ normal(35,5); //Dispersion parameter	
+	intSigmaFlwCount ~ normal(-2,1); //Terms for variance
+	slopePlSizeSigmaFlwCount ~ normal(0,1);
+	sigmaSigmaFlwCount_field ~ gamma(2,10); //Sigma for field level sigma
+	intSigmaFlwCount_field ~ normal(0,sigmaSigmaFlwCount_field); //Field-level random effect for sigma
+	// sigmaSigmaFlwCount_plot ~ gamma(3,10); //Sigma for plot level sigma
+	// intSigmaFlwCount_plot ~ normal(0,sigmaSigmaFlwCount_plot); //Plot-level random effect for sigma
+	
 	
 	// //Flower survival - informative priors
 	// intFlwSurv ~ normal(1,1); //Intercept
@@ -620,7 +633,7 @@ generated quantities {
 		
 		// flower count per plant - lognormal version
 		flwCount_resid[i] = logFlwCount[i] - flwCountMu[i]; //Residual for actual
-		predFlwCount[i] = normal_rng(flwCountMu[i],sigmaFlwCount); //Generates new value from normal
+		predFlwCount[i] = normal_rng(flwCountMu[i],sigmaFlwCount[i]); //Generates new value from normal
 		predFlwCount_resid[i] = predFlwCount[i] - flwCountMu[i]; //Residual for new value		
 		
 		// // pod count (surviving pods)
