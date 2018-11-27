@@ -69,6 +69,18 @@ bpoint <- function(x,int1,slope1,b,slope2) ifelse(x<b,int1+slope1*x,b*slope1+(x-
 effSize <- function(x) unname(median(x)/diff(quantile(x,c(0.025,0.975))))
 #Does 95% of posterior overlap zero?
 overlap <- function(x) {r <- quantile(x,c(0.025,0.975))>=0; xor(r[1],r[2]);}
+#Posterior predictive check plots
+PPplots <- function(resid,predResid,actual,pred,main=NULL){
+  par(mfrow=c(2,1))
+  plot(resid,predResid,xlab='Sum residuals',ylab='Sum simulated residuals',main=main)
+  x <- sum(resid<predResid)/length(resid)
+  legend('topleft',paste('p =',round(min(x,1-x),3)))
+  abline(0,1,col='red') #PP plot
+  plot(actual,pred, #Predicted vs Actual - good
+       ylab=paste('Predicted',main),xlab=paste('Actual',main)) 
+  abline(0,1,col='red')
+  par(mfrow=c(1,1))
+}
 
 #Everything above this line run to start
 
@@ -700,6 +712,7 @@ inits <- function() { with(datalist,
 #Full model - 1.7 hrs for 1000 iter
 modPodcount <- stan(file='visitation_pollen_model.stan',data=datalist,iter=1000,chains=3,
                    control=list(adapt_delta=0.8),init=inits)
+beep(1)
 # save(modPodcount,file='modPodcount2.Rdata')
 # load('modPodcount.Rdata') #Seed count, size, and yield
 # load('modPodcount2.Rdata') #All other coefficients (plot/plant level) - 22 mins for 1000 iter
@@ -718,19 +731,18 @@ pars=c('intVisit','slopeYearVis','slopeGpVis','slopeYearGpVis','slopeIrrigVis',
 pars=c('intPollen','slopeVisitPol','slopeHbeeDistPollen',#'slopeFlyVisPol',
        'sigmaPolField','sigmaPolPlot','pollenPhi') #Pollen deposition
 pars=c('intFlwCount','slopePlSizeFlwCount', #Flower count per plant
-       # 'sigmaFlwCount_field','sigmaFlwCount_plot','flwCountPhi')
-       'sigmaFlwCount_field','sigmaFlwCount_plot','intSigmaFlwCount',
-       'slopePlSizeSigmaFlwCount','sigmaSigmaFlwCount_field','sigmaSigmaFlwCount_plot')
+       'sigmaFlwCount_field','intSigmaFlwCount',
+       'slopePlSizeSigmaFlwCount','sigmaSigmaFlwCount_field')
 pars=c('intFlwSurv','slopeVisitSurv','slopePolSurv','slopePlSizeSurv',
-       'slopePlDensSurv','slopeIrrigSurv','slope2015Surv',
-       'sigmaFlwSurv_field','flwSurvPhi') #Flower survival
+       'slopePlDensSurv','slopeIrrigSurv','slope2015Surv','sigmaFlwSurv_field',
+       # 'flwSurvPhi') #Flower survival
+       'intPhiFlwSurv','slopePlSizePhiFlwSurv','sigmaPhiFlwSurv_field')
 pars=c('intSeedCount','slopeVisitSeedCount','slopePolSeedCount','slopePlSizeCount',
-       'slope2015SeedCount',
-       'seedCountPhi','sigmaSeedCount_plant','sigmaSeedCount_plot','sigmaSeedCount_field') #Seed count
+       'slope2015SeedCount','seedCountPhi','sigmaSeedCount_plant','sigmaSeedCount_field') #Seed count
 pars=c('intSeedWeight','slopeVisitSeedWeight','slopePolSeedWeight',#Seed weight
        'slopeSeedCount','slopePlSizeWeight','slopeIrrigSeedWeight',
        'slope2015SeedWeight','slope2015IrrigSeedWeight','sigmaSeedWeight',
-       'sigmaSeedWeight_plant','sigmaSeedWeight_plot','sigmaSeedWeight_field','lambdaSeedWeight')
+       'sigmaSeedWeight_plant','sigmaSeedWeight_field','lambdaSeedWeight')
 pars=c('intYield','slopeYield','sigmaYield',
        'sigmaYield_field','sigmaYield_plot','L_field','L_plot')
 stan_hist(modPodcount,pars=pars)+geom_vline(xintercept=0,linetype='dashed')
@@ -777,80 +789,45 @@ par(mfrow=c(1,1))
 #Check model fit:
 par(mfrow=c(2,1))
 #planting density - good
-with(mod3,plot(apply(plDens_resid,1,function(x) sum(abs(x))), #PP plot - good
-               apply(predPlDens_resid,1,function(x) sum(abs(x))),
-               xlab='Sum residuals',ylab='Sum simulated residuals',main='Planting density'))
-abline(0,1,col='red') 
-plot(datalist$plDens_obs,apply(mod3$predPlDens,2,median)[datalist$obsPlDens_ind], #Predicted vs Actual
-     ylab='Predicted plant density',xlab='Actual plant density'); abline(0,1,col='red');
+with(mod3,PPplots(apply(plDens_resid,1,function(x) sum(abs(x))),
+                  apply(predPlDens_resid,1,function(x) sum(abs(x))),
+                  apply(plDens,2,mean),apply(predPlDens,2,median),main='Plant density'))
 
 #plant size - good
-with(mod3,plot(apply(plSize_resid,1,function(x) sum(abs(x))),
-               apply(predPlSize_resid,1,function(x) sum(abs(x))),
-               xlab='Sum residuals',ylab='Sum simulated residuals',main='Plant size')) 
-abline(0,1,col='red'); #PP plot - good
-plot(datalist$plantSize,apply(mod3$predPlSize,2,median), #Predicted vs Actual - good
-     ylab='Predicted plant size',xlab='Actual plant size'); abline(0,1,col='red')
+with(mod3,PPplots(apply(plSize_resid,1,function(x) sum(abs(x))),
+                  apply(predPlSize_resid,1,function(x) sum(abs(x))),
+                  datalist$plantSize,apply(predPlSize,2,median),main='Plant size'))
 
 #flower density per plot
-with(mod3,plot(apply(flDens_resid,1,function(x) sum(abs(x))),
-               apply(predFlDens_resid,1,function(x) sum(abs(x))),
-               xlab='Sum residuals',ylab='Sum simulated residuals',main='Flower density per plot')) 
-abline(0,1,col='red'); #PP plot - good
-plot(datalist$flDens,apply(mod3$predFlDens,2,median), #Predicted vs Actual - good
-     ylab='Predicted flower density',xlab='Actual flower density'); abline(0,1,col='red')
+with(mod3,PPplots(apply(flDens_resid,1,function(x) sum(abs(x))),
+                  apply(predFlDens_resid,1,function(x) sum(abs(x))),
+                  datalist$flDens,apply(predFlDens,2,median),main='Flower density'))
 
 #hbee visits - good
-with(mod3,plot(apply(hbeeVis_resid,1,function(x) sum(abs(x))),
-               apply(predHbeeVis_resid,1,function(x) sum(abs(x))),
-               xlab='Sum residuals',ylab='Sum simulated residuals',main='Hbee visits')) 
-abline(0,1,col='red')
-legend('topleft',paste('p=',round(mean(with(mod3,apply(hbeeVis_resid,1,function(x) sum(abs(x)))>apply(predHbeeVis_resid,1,function(x) sum(abs(x))))),3)))
-#PP plot - OK
-plot(with(datalist,hbeeVis/totalTime),jitter(apply(mod3$predHbeeVis,2,median)), #Predicted vs Actual - good
-     ylab='Predicted visits',xlab='Actual visits')
-abline(0,1,col='red')
+with(mod3,PPplots(apply(hbeeVis_resid,1,function(x) sum(abs(x))),
+                  apply(predHbeeVis_resid,1,function(x) sum(abs(x))),
+                  with(datalist,hbeeVis/totalTime),apply(predHbeeVis,2,median),main='Visits per 10mins'))
 
 #pollen - OK, but plot level random effects throw off PP checks
-with(mod3,plot(apply(pollen_resid,1,function(x) sum(abs(x))),
-               apply(predPollen_resid,1,function(x) sum(abs(x))),
-               xlab='Sum residuals',ylab='Sum simulated residuals',main='Pollen counts')) 
-abline(0,1,col='red') #PP plot
-with(mod3,{x <- sum(apply(pollen_resid,1,function(x) sum(abs(x)))<
-             apply(predPollen_resid,1,function(x) sum(abs(x))))/nrow(predPollen_resid)
-  legend('topleft',paste('p =',round(min(x,1-x),3)))})
-plot(datalist$pollenCount,apply(mod3$predPollenCount,2,median), #Predicted vs Actual 
-     ylab='Predicted pollen',xlab='Actual pollen')
-abline(0,1,col='red') #PP plot
+with(mod3,PPplots(apply(pollen_resid,1,function(x) sum(abs(x))),
+                  apply(predPollen_resid,1,function(x) sum(abs(x))),
+                  datalist$pollenCount,apply(predPollenCount,2,median),main='Pollen per stigma'))
 
-#Flower count - good predictions, but bad overdispersion
-with(mod3,plot(apply(flwCount_resid,1,function(x) sum(abs(x))),
-               apply(predFlwCount_resid,1,function(x) sum(abs(x))),
-               xlab='Sum residuals',ylab='Sum simulated residuals',main='Flower count per plant'))
-with(mod3,{x <- sum(apply(flwCount_resid,1,function(x) sum(abs(x)))<
-                      apply(predFlwCount_resid,1,function(x) sum(abs(x))))/nrow(predFlwCount_resid)
-  legend('topleft',paste('p =',round(min(x,1-x),3)))})
-abline(0,1,col='red');  #PP plot 
-plot(log(datalist$flwCount),apply(mod3$predFlwCount,2,median), #Predicted vs Actual - good
-     ylab='Predicted flower count',xlab='Actual flower count')  
-abline(0,1,col='red')
+#Flower count - good
+with(mod3,PPplots(apply(flwCount_resid,1,function(x) sum(abs(x))),
+                  apply(predFlwCount_resid,1,function(x) sum(abs(x))),
+                  datalist$flwCount,apply(predFlwCount,2,median),main='Flowers per plant'))
 
-#flower survival (pod count) - better with a beta-binomial, but still bad PP plot
-with(mod3,plot(apply(podCount_resid,1,function(x) sum(abs(x))),
-               apply(predPodCount_resid,1,function(x) sum(abs(x))),
-               xlab='Sum residuals',ylab='Sum simulated residuals',main='Pods per plant'))
-abline(0,1,col='red') #PP plot - bad
-plot(datalist$podCount,apply(mod3$predPodCount,2,median), #Predicted vs Actual - good
-     ylab='Predicted number of pods',xlab='Actual number of pods'); abline(0,1,col='red')
-
+#flower survival (pod count) - good
+with(mod3,PPplots(apply(podCount_resid,1,function(x) sum(abs(x))),
+                  apply(predPodCount_resid,1,function(x) sum(abs(x))),
+                  datalist$podCount,apply(predPodCount,2,median),main='Pods per plant'))
 
 #seeds per pod - bad
-with(mod3,plot(apply(seedCount_resid,1,function(x) sum(abs(x))),
-               apply(predSeedCount_resid,1,function(x) sum(abs(x))),
-               xlab='Sum residuals',ylab='Sum simulated residuals',main='Seeds per pod')) 
-abline(0,1,col='red') #PP plot - not good
-plot(datalist$seedCount,apply(mod3$predSeedCount,2,median), #Predicted vs Actual - good
-     ylab='Predicted seed count',xlab='Actual seed count'); abline(0,1,col='red')
+with(mod3,PPplots(apply(seedCount_resid,1,function(x) sum(abs(x))),
+                  apply(predSeedCount_resid,1,function(x) sum(abs(x))),
+                  datalist$seedCount,apply(predSeedCount,2,median),main='Seeds per pod'))
+
 
 #weight per seed - good
 with(mod3,plot(apply(seedMass_resid,1,function(x) sum(abs(x))),
