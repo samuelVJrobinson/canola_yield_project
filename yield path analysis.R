@@ -1888,7 +1888,8 @@ inits <- function() {with(datalist,list(
 
 #Full model
 modPodcount_seed <- stan(file='visitation_pollen_model_seed.stan',data=datalist,
-                         iter=100,chains=4,control=list(adapt_delta=0.8),init='inits')
+                         iter=500,chains=4,control=list(adapt_delta=0.8),init=inits)
+beep(1)
 # Setting max_treedepth=15 takes about 2-3x as long to run model. Use with care.
 
 # save(modPodcount_seed,file='modPodcount_seed.Rdata') #Seed count/weight model - 1.3hrs for 2000 iter
@@ -1918,10 +1919,12 @@ pars=c('intPol','slopeHbeePol','slopeLbeePol','slopeCentPol','slopeHbeeDistPol',
        'pollenPhi','sigmaPolField','sigmaPolPlot')
 pars=c('intFlwCount','slopePlSizeFlwCount', #Flower count per plant
        'slopeCentFlwCount','slopePolFlwCount',
-       'slopeFlDensFlwCount','sigmaFlwCount_field','flwCountPhi')
+       'slopeFlDensFlwCount','sigmaFlwCount_field',
+       'intPhiFlwCount','slopePlSizePhiFlwCount','sigmaPhiFlwCount_field')
 pars=c('intFlwSurv','slopePolSurv','slopePlSizeSurv', #Flower survival
        'slopeEdgeCentSurv','slopeHbeeDistSurv','slopeLbeeDistSurv',
-       'slopeFlwDensSurv','sigmaFlwSurv_field','sigmaFlwSurv_plot')
+       'slopeFlwDensSurv','sigmaFlwSurv_field','sigmaFlwSurv_plot',
+       'intPhiFlwSurv','slopePlSizePhiFlwSurv','sigmaPhiFlwSurv_field')
 pars=c('intSeedCount','slopePolSeedCount','slopePlSizeCount', #Seeds per pod
        'slopeEdgeCentSeedCount','slopeHbeeDistSeedCount','slopeFlDensSeedCount',
        'slopeSurvSeedCount','seedCountPhi','sigmaSeedCount_field','sigmaSeedCount_plot')
@@ -1937,7 +1940,7 @@ print(modPodcount_seed,pars=pars)
 
 #Check model fit:
 mod3 <- extract(modPodcount_seed)
-(mod3coefs <- data.frame(par='Pollen',parname=rownames(coefs(mod3[pars])),coefs(mod3[pars]),row.names=NULL))
+(mod3coefs <- data.frame(par='FlwCount',parname=rownames(coefs(mod3[pars])),coefs(mod3[pars]),row.names=NULL))
 print(xtable(mod3coefs,digits=c(0,0,0,3,3,3,3,3,3,0,4)),include.rownames=F)
 
 #Faster pair plots
@@ -1989,31 +1992,21 @@ plot(with(datalist,c(lbeeVis,lbeeVis_extra)),apply(mod3$predLbeeVis_all,2,median
 abline(0,1,col='red') #PP plot - not so good
 
 #pollen - good
-with(mod3,plot(apply(pollen_resid,1,function(x) sum(abs(x))),
+with(mod3,PPplots(apply(pollen_resid,1,function(x) sum(abs(x))),
               apply(predPollen_resid,1,function(x) sum(abs(x))),
-              xlab='Sum residuals',ylab='Sum simulated residuals',main='Pollen counts')) 
-abline(0,1,col='red') #PP plot
-plot(datalist$pollenCount,apply(mod3$predPollenCount,2,median), #Predicted vs Actual 
-     ylab='Predicted pollen',xlab='Actual pollen')
-abline(0,1,col='red') #PP plot
+              datalist$pollenCount,apply(mod3$predPollenCount,2,median),
+              main='Pollen counts')) 
 
 #Flower count - good, but close
-with(mod3,plot(apply(flwCount_resid,1,function(x) sum(abs(x))),
+with(mod3,PPplots(apply(flwCount_resid,1,function(x) sum(abs(x))),
                apply(predFlwCount_resid,1,function(x) sum(abs(x))),
-               xlab='Sum residuals',ylab='Sum simulated residuals',main='Flower count per plant'))
-abline(0,1,col='red');  #PP plot - OK
-plot(datalist$flwCount,apply(mod3$predFlwCount,2,median), #Predicted vs Actual - good, but variance increases
-     ylab='Predicted flower count',xlab='Actual flower count',ylim=c(0,3000))  
-abline(0,1,col='red')
+               datalist$flwCount,apply(mod3$predFlwCount,2,median),
+               main='Flower count per plant'))
 
 #flower survival (pod count) - bad
-with(mod3,plot(apply(podCount_resid,1,function(x) sum(abs(x))),
+with(mod3,PPplots(apply(podCount_resid,1,function(x) sum(abs(x))),
                apply(predPodCount_resid,1,function(x) sum(abs(x))),
-               xlab='Sum residuals',ylab='Sum simulated residuals',main='Pods per plant'))
-abline(0,1,col='red') #PP plot - good
-plot(datalist$podCount,apply(mod3$predPodCount,2,median), #Predicted vs Actual - good
-     ylab='Predicted number of pods',xlab='Actual number of pods'); abline(0,1,col='red')
-
+               datalist$podCount,apply(mod3$predPodCount,2,median),main='Pods per plant'))
 
 #seeds per pod - not good, but close
 with(mod3,plot(apply(seedCount_resid,1,function(x) sum(abs(x))),
