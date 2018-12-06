@@ -2230,6 +2230,7 @@ data.frame(MM_temp,t(apply(MM_temp %*% t(coef_seedMass),1,function(x) quantile(x
 # Total effects for seed fields -------------------------------------------
 
 # #Load all coefficients from models
+setwd('./Models')
 # load('modPodcount_seed.Rdata') #Seed count/weight model  + flw count + yield model
 # mod1 <- extract(modPodcount_seed)
 # rm(modPodcount_seed); gc()
@@ -2266,31 +2267,37 @@ getN <- function(args){
 #Generate plant densities from distances
 genPlDens <- function(hbeeDist,int,slopeDist,stDev,transform=F){
   N <- getN(list(hbeeDist))
+  if(stDev<0) stop('Negative sigma')
   #dist= distances, intercept,slope of distance, stDev, and back-transform
   transHbeeDist <- log(hbeeDist)-4.641845
   mu <- int+slopeDist*transHbeeDist
   a <- rnorm(N,mu,stDev)
+  if(any(is.na(a))) stop('NAs from rnorm')
   if(transform) return(exp(a+3.197572)) else return(a)
 }
 
 #Generate plant sizes from plant density/distance
 genPlSize <- function(plDens,hbeeDist,int,slopePlDens,slopeDist,stDev,transform=F){
   N <- getN(list(plDens,hbeeDist))
+  if(stDev<0) stop('Negative sigma')
   transHbeeDist <- log(hbeeDist)-4.641845
   transPlDens <- log(plDens)-3.573633
   mu <- int+slopePlDens*transPlDens+slopeDist*transHbeeDist
   a <- rnorm(plDens,mu,stDev)
+  if(any(is.na(a))) stop('NAs from rnorm')
   if(transform) return(exp(a+3.197572)) else return(a)
 }
 
-#Generate flower density for plot
+#Generate flower density for plot - pl size must be centered/transformed before
 genFlwDens <- function(avgPlSize,isMbay=0,is2016,hbeeDist,int,slopePlSize,slopeMbay,slope2016,
                        slopeDist,stDev,transform=F){
   N <- getN(list(avgPlSize,isMbay,is2016,hbeeDist))
-  transPlSize <- log(avgPlSize)-3.197572 #Plant size
+  if(stDev<0) stop('Negative sigma')
+  # transPlSize <- log(avgPlSize)-3.197572 #Plant size - already transformed, so no need
   transHbeeDist <- log(hbeeDist)-4.641845
-  mu <- int + transPlSize*slopePlSize + isMbay*slopeMbay + is2016*slope2016 + transHbeeDist*slopeDist
+  mu <- int + avgPlSize*slopePlSize + isMbay*slopeMbay + is2016*slope2016 + transHbeeDist*slopeDist
   a <- rnorm(N,mu,stDev)
+  if(any(is.na(a))) stop('NAs from rnorm')
   if(transform) return((a+22)^2) else return(a)
 }
 
@@ -2299,6 +2306,7 @@ genLbeeVis <- function(lbeeDist,hbeeDist,isMbay=0,isCent,isHalfStock,is2016,flDe
                        int,slopeLbeeDist,slopeHbeeDist,slopeMbay,slopeCent,slopeStock,
                        slope2016,slopeFlDens,slopeCentHbeeDist,slopeStockHbeeDist,phi,addVar=T){
   N <- getN(list(lbeeDist,hbeeDist,isMbay,isCent,isHalfStock,is2016,flDens))
+  if(phi<0) stop('Negative phi')
   transHbeeDist <- log(hbeeDist)-4.641845 #Hbee distance
   transLbeeDist <- log(lbeeDist)-3.113714 #Lbee distance
   transFlDens <- sqrt(flDens)-22 #Flw dens
@@ -2318,6 +2326,10 @@ genHbeeVis <- function(flDens,hbeeDist,lbeeDist,lbeeVis,isMbay=0,isCent,int,
                        slopeFlDens,slopeHbeeDist,slopeLbeeDist,slopeHbeeLbeeDist,
                        slopeLbeeVis,slopeMbay,slopeCent,phiNB,thetaZI,addVar=T){
   N <- getN(list(flDens,hbeeDist,lbeeDist,lbeeVis,isMbay,isCent))
+  if(phiNB<0) stop('Negative phiNB')
+  if(thetaZI<0|thetaZI>1) stop('ThetaZI not between 0 and 1')
+  if(any(!is.finite(lbeeDist)|lbeeDist<0|!is.finite(hbeeDist)|hbeeDist<0)) stop('Hbee dist or Lbee dist either negative, infinite, or NA')
+  
   transHbeeDist <- log(hbeeDist)-4.641845 #Hbee distance
   transLbeeDist <- log(lbeeDist)-3.113714 #Lbee distance
   transLbeeVis <- log(1+lbeeVis) #Lbee visits
@@ -2332,7 +2344,8 @@ genHbeeVis <- function(flDens,hbeeDist,lbeeDist,lbeeVis,isMbay=0,isCent,int,
     a[is.na(a)] <- rnbinom(sum(is.na(a)),mu=exp(lambda)[is.na(a)],size=phiNB) #Other slots filled by NB process
     return(a)
   } else {
-    return(exp(lambda)*(1-thetaZI))
+    a <- exp(lambda)*(1-thetaZI)
+    return(a)
   }
 }
 
@@ -2341,6 +2354,7 @@ genAvgPol <- function(hbeeVis,lbeeVis,isCent,hbeeDist,flDens,
                       int,slopeHbeeVis,slopeLbeeVis,slopeCent,slopeHbeeDist,slopeFlDens,
                       stDev,center=T,transform=F){
   N <- getN(list(hbeeVis,lbeeVis,isCent,hbeeDist,flDens))
+  if(stDev<0) stop('Negative sigma')
   #hbee counts, distance, intercept, slopes, center data, transform
   #Note: transform doesn't make sense unless center=F (Jensen's inequality)
   transHbeeVis <- log(hbeeVis+1)
@@ -2350,7 +2364,14 @@ genAvgPol <- function(hbeeVis,lbeeVis,isCent,hbeeDist,flDens,
   mu <- ifelse(center,0,int)+slopeHbeeVis*transHbeeVis+slopeLbeeVis*transLbeeVis+
     slopeCent*isCent+slopeHbeeDist*transHbeeDist+slopeFlDens*transFlDens
   a <- rnorm(N,mu,stDev)
-  if(transform) return(exp(a)) else return(a)
+  if(any(is.na(a))) stop('NAs from rnorm. stDev:',stDev,' slopeHbeeVis:',slopeHbeeVis,
+                         ' slopeLbeeVis:',slopeLbeeVis,' slopeCent:',slopeCent,' slopeHbeeDist:',slopeHbeeDist,
+                         ' slopeFlDens:',slopeFlDens,' center:',center,' int:',int,'\nmeanHbeeVis:',mean(hbeeVis),
+                         ' meanLbeeVis:',mean(lbeeVis),' meanIsCent:',mean(isCent),' meanHbeeDist:',mean(hbeeDist),
+                         ' meanFlDens:',mean(flDens),' transform:',transform,
+                         '\nmeanTransHbee:',mean(transHbeeVis),' meanTransLbeeVis:',mean(transLbeeVis),' meanTransHbee:',
+                         mean(transHbeeDist),' meanTransFlDens:',mean(transFlDens))
+  if(transform) return(exp(a)) else return(a) 
 }
 
 #Generate flower counts from plant sizes
@@ -2358,6 +2379,7 @@ genFlwCount <- function(plSize,isCent,avgPol,flDens,
                         int,slopePlSize,slopeCent,slopePol,slopeFlDens,
                         intPhi,slopePlSizePhi,addVar=T){
   N <- getN(list(plSize,isCent,avgPol,flDens))
+  
   #plSize=plant size, intercept,slope of plant size, phi
   transPlSize <- log(plSize)-3.197572 #Plant size
   transFlDens <- sqrt(flDens)-22 #Flw dens
@@ -2366,6 +2388,7 @@ genFlwCount <- function(plSize,isCent,avgPol,flDens,
   if(!addVar) return(exp(mu)) #No variance
   phi <- exp(intPhi+slopePlSizePhi*transPlSize) #Dispersion
   a <- round(exp(rnorm(N,mu,phi)))
+  if(any(is.na(a))) stop('NAs from rnorm')
   return(a)
 }
 
@@ -2395,6 +2418,7 @@ genSeedCount <- function(pol,plSize,isCent,hbeeDist,flDens,flwSurv,
                          int,slopePol,slopePlSize,slopeCent,slopeHbeeDist,slopeFlDens,slopeSurv,
                          stDev,transform=T){
   N <- getN(list(pol,plSize,isCent,hbeeDist,flDens,flwSurv))
+  if(stDev<0) stop('Negative sigma')
   transPlSize <- log(plSize)-3.197572 #Plant size
   transHbeeDist <- log(hbeeDist)-4.641845 #Hbee distance
   transFlDens <- sqrt(flDens)-22 #Flw dens
@@ -2404,6 +2428,7 @@ genSeedCount <- function(pol,plSize,isCent,hbeeDist,flDens,flwSurv,
   mu <- int+slopePol*pol+transPlSize*slopePlSize+slopeCent*isCent+slopeHbeeDist*transHbeeDist+
     slopeFlDens*transFlDens+slopeSurv*transFlSurv
   a <- rnorm(N,mu,stDev)
+  if(any(is.na(a))) stop('NAs from rnorm')
   if(transform) return(exp(a)) else return(a)
 }
 
@@ -2412,6 +2437,7 @@ genSeedWeight <- function(pol,avgSeedCount,plSize,plDens,is2016,lbeeDist,isHalfS
                           int,slopePol,slopeSeedCount,slopePlSize,slopePlDens,slope2016,
                           slopeLbeeDist,slopeStocking,slopePlDensPlSize,lambda,stDev,addVar=T){
   N <- getN(list(pol,avgSeedCount,plSize,plDens,is2016,lbeeDist,isHalfStock))
+  if(stDev<0) stop('Negative sigma')
   transPlDens <- log(plDens)-3.573633 #Plant density
   transPlSize <- log(plSize)-3.197572 #Plant size
   transLbeeDist <- log(lbeeDist)-3.113714 #Lbee distance
@@ -2425,6 +2451,7 @@ genSeedWeight <- function(pol,avgSeedCount,plSize,plDens,is2016,lbeeDist,isHalfS
     return(a)
   } else {
     a <- rnorm(N,mu,stDev)+rexp(N,lambda)
+    if(any(is.na(a))) stop('NAs from rnorm')
     a[a<0] <- 0.22 
     return(a)
   }
@@ -2463,16 +2490,16 @@ simSeed <- function(hbeeDist,lbeeDist,isCent,is2016,isHalfStock,dat,returnAll=F,
                       slopeDist=sample(slopeHbeeDistPlDens,1),
                       stDev=ifelse(plotVar,sample(sigmaPlDens,1),0),transform=T)))
   
-  # #Compare to actual - looks OK, but a bit too sparse at the high end. Mainly caused by random effect
+  #Compare to actual - looks OK, but a bit too sparse at the high end. Mainly caused by random effect
   # par(mfrow=c(2,1))
   # hist(surveyAllSeed$PlDens,breaks=seq(0,150,5),xlab='Actual Plant Density',main=NULL)
-  # hist(simPlDens,breaks=seq(0,150,5),xlab='Actual Plant Density',main=NULL)
+  # hist(simPlDens,breaks=seq(0,150,5),xlab='Sim Plant Density',main=NULL)
   
   #Simulated plant sizes within plots
   simPlSize <- with(dat,mapply(genPlSize,plDens=simPlDens,hbeeDist=hbeeDist,
                                int=sample(intPlDens,1),slopePlDens=sample(slopePlDensPlSize,1),
                                slopeDist=sample(slopeDistPlSize,1),
-                               stDev=ifelse(plotVar,sample(sigmaPlSize,1),0),transform=T))
+                               stDev=ifelse(plotVar,sample(sigmaPlSize,1),0),transform=T,SIMPLIFY=F))
   
   # #Compare to actual - looks OK
   # par(mfrow=c(2,1))
@@ -2488,8 +2515,8 @@ simSeed <- function(hbeeDist,lbeeDist,isCent,is2016,isHalfStock,dat,returnAll=F,
                           stDev=ifelse(plotVar,sample(sigmaFlDens,1),0),transform=T))
   # #Compare to actual - OK
   # par(mfrow=c(2,1))
-  # upr <- max((datalist$flDens+22)^2,simFlwDens,na.rm=T)+50
-  # hist((datalist$flDens+22)^2,breaks=seq(0,upr,50),xlab='Actual Flw Dens',main=NULL)
+  # upr <- max(surveyAllSeed$FlDens*4,simFlwDens,na.rm=T)+50
+  # hist(surveyAllSeed$FlDens*4,breaks=seq(0,upr,50),xlab='Actual Flw Dens',main=NULL)
   # hist(simFlwDens,breaks=seq(0,upr,50),xlab='Sim Flw Dens',main=NULL)
   
   #Simulate lbee visits
@@ -2548,7 +2575,7 @@ simSeed <- function(hbeeDist,lbeeDist,isCent,is2016,isHalfStock,dat,returnAll=F,
                      slopePlSize=sample(slopePlSizeFlwCount,1),slopeCent=sample(slopeCentFlwCount,1),
                      slopePol=sample(slopePolFlwCount,1),slopeFlDens=sample(slopeFlDensFlwCount,1),
                      intPhi=sample(intPhiFlwCount,1),slopePlSizePhi=sample(slopePlSizePhiFlwCount,1),
-                     addVar=plotVar))
+                     addVar=plotVar,SIMPLIFY=F))
   
   # #Compare to actual - looks good
   # par(mfrow=c(2,1))
@@ -2563,7 +2590,7 @@ simSeed <- function(hbeeDist,lbeeDist,isCent,is2016,isHalfStock,dat,returnAll=F,
                            slopeCent=sample(slopeEdgeCentSurv,1),slopeHbeeDist=sample(slopeHbeeDistSurv,1),
                            slopeLbeeDist=sample(slopeLbeeDistSurv,1),slopeFlwDens=sample(slopeFlwDensSurv,1),
                            intPhi=sample(intPhiFlwSurv,1),slopePlSizePhi=sample(slopePlSizePhiFlwSurv,1),
-                           addVar=plotVar))
+                           addVar=plotVar,SIMPLIFY=F))
   
   # #Flower survivorship (proportion) - looks OK
   # par(mfrow=c(2,1))
@@ -2579,7 +2606,7 @@ simSeed <- function(hbeeDist,lbeeDist,isCent,is2016,isHalfStock,dat,returnAll=F,
                     slopePol=sample(slopePolSeedCount,1),slopePlSize=sample(slopePlSizeCount,1),
                     slopeCent=sample(slopeEdgeCentSeedCount,1),slopeHbeeDist=sample(slopeHbeeDistSeedCount,1),
                     slopeFlDens=sample(slopeFlDensSeedCount,1),slopeSurv=sample(slopeSurvSeedCount,1),
-                    stDev=ifelse(plotVar,sample(sigmaSeedCount_plant,1),0),transform=T))
+                    stDev=ifelse(plotVar,sample(sigmaSeedCount_plant,1),0),transform=T,SIMPLIFY=F))
   
   # #OK, but spread seems too small - perhaps a t-dist would be better?
   # par(mfrow=c(2,1))
@@ -2595,7 +2622,8 @@ simSeed <- function(hbeeDist,lbeeDist,isCent,is2016,isHalfStock,dat,returnAll=F,
               slopePlDens=sample(slopePlDensSeedWeight,1),slope2016=sample(slope2016SeedWeight,1),
               slopeLbeeDist=sample(slopeLbeeDistSeedWeight,1),slopeStocking=sample(slopeStockingSeedWeight,1),
               slopePlDensPlSize=sample(slopePlDensPlSizeSeedWeight,1),
-              lambda=sample(lambdaSeedWeight,1),stDev=sample(sigmaSeedWeight_plant,1),addVar=plotVar))
+              lambda=sample(lambdaSeedWeight,1),stDev=sample(sigmaSeedWeight_plant,1),addVar=plotVar,
+              SIMPLIFY=F))
   
   # #Looks good
   # par(mfrow=c(2,1))
@@ -2618,6 +2646,8 @@ simSeed <- function(hbeeDist,lbeeDist,isCent,is2016,isHalfStock,dat,returnAll=F,
   # hist(with(datalist,tapply(yield*exp(plDens[plantIndex]+3.573633),plantIndex,mean)),
   #      xlab='Actual yield/m2',main=NULL,breaks=seq(0,1000,20))
   
+  # if(any(!is.finite(simYield))) stop('Non-finite yield estimate:',yield[!is.finite(simYield)])
+  
   if(!returnAll){
     return(simYield)
   } else {
@@ -2627,53 +2657,115 @@ simSeed <- function(hbeeDist,lbeeDist,isCent,is2016,isHalfStock,dat,returnAll=F,
   }
 }
 
-#Try out generic fields, using distance/irrig/year data from data
-results <- with(filter(surveyAllSeed,Bay=='F'),replicate(50,simSeed(hbeeDist=Distance,lbeeDist=minDist,
-                isCent=EdgeCent=='Center',is2016=Year==2016,
-                isHalfStock=Treatment=='Double tent',dat=mod3)))
+# #Try out generic fields
+# results <- with(filter(surveyAllSeed,Bay=='F'),replicate(50,simSeed(hbeeDist=Distance,lbeeDist=minDist,
+#                 isCent=EdgeCent=='Center',is2016=Year==2016,
+#                 isHalfStock=Treatment=='Double tent',dat=mod3)))
+# 
+# results2 <- filter(surveyAllSeed,Bay=='F') %>% 
+#   select(Field,Distance,EdgeCent,PlDens) %>% #Simulated yield per plot
+#   unite(ID,Field:EdgeCent,sep='_') %>% 
+#   bind_cols(data.frame(t(apply(results,1,function(x) quantile(x,c(0.5,0.05,0.95),na.rm=T))))) %>%
+#   rename('pred'='X50.','lwr'='X5.','upr'='X95.')
+# 
+# #Looks OK, at least for average field
+# ungroup(plantsAllSeed) %>% select(Field,Distance,EdgeCent,SeedMass) %>% #Actual yield per plot
+#   unite(ID,Field:EdgeCent) %>% group_by(ID) %>% summarize(totalSeeds=mean(SeedMass,na.rm=T)) %>% 
+#   left_join(results2,by='ID') %>% mutate(actual=totalSeeds*PlDens) %>% select(-totalSeeds,-PlDens) %>%
+#   ggplot(aes(x=actual,y=pred))+
+#   # geom_point()+
+#   geom_pointrange(aes(ymax=upr,ymin=lwr),alpha=0.4)+
+#   geom_abline(intercept=0,slope=1,col='red')+
+#   labs(x='Actual Yield',y='Predicted Yield')
 
-results2 <- filter(surveyAllSeed,Bay=='F') %>% 
-  select(Field,Distance,EdgeCent,PlDens) %>% #Simulated yield per plot
-  unite(ID,Field:EdgeCent,sep='_') %>% 
-  bind_cols(data.frame(t(apply(results,1,function(x) quantile(x,c(0.5,0.05,0.95),na.rm=T))))) %>%
-  rename('pred'='X50.','lwr'='X5.','upr'='X95.')
-
-#Looks OK, at least for average field
-ungroup(plantsAllSeed) %>% select(Field,Distance,EdgeCent,SeedMass) %>% #Actual yield per plot
-  unite(ID,Field:EdgeCent) %>% group_by(ID) %>% summarize(totalSeeds=mean(SeedMass,na.rm=T)) %>% 
-  left_join(results2,by='ID') %>% mutate(actual=totalSeeds*PlDens) %>% select(-totalSeeds,-PlDens) %>%
-  ggplot(aes(x=actual,y=pred))+
-  # geom_point()+
-  geom_pointrange(aes(ymax=upr,ymin=lwr),alpha=0.4)+
-  geom_abline(intercept=0,slope=1,col='red')+
-  labs(x='Actual Yield',y='Predicted Yield')
-
-#Simulate pollination effects at generic fields
-scenario <- expand.grid(hDist=seq(1,401,10),lDist=c(5,10,20),cent=c(0,1))
-results <- replicate(500,with(scenario,simSeed(hbeeDist=hDist,lbeeDist=lDist,isCent=cent,
-                                              is2016=0,isHalfStock=0,dat=mod3,plotVar=F)))
-beep(1)
-#Simulated yield distribution
-results2 <- data.frame(scenario,t(apply(results,1,function(x) quantile(x,c(0.5,0.05,0.95),na.rm=T)))) %>%
-  rename('pred'='X50.','lwr'='X5.','upr'='X95.')
-
-# #Results in g/m2
-# results %>% mutate(numHives=factor(numHives,labels=c('NoHives','40Hives','400Hives'))) %>% 
-#   ggplot(aes(x=dist,y=pred,col=numHives,fill=numHives))+
-#   geom_ribbon(aes(ymax=upr,ymin=lwr,col=NULL),alpha=0.3,show.legend=F)+
+# #Simulate pollination effects at generic fields
+# scenario <- expand.grid(hDist=200,lDist=seq(1,51,5),cent=c(0,1))
+# results <- replicate(100,with(scenario,simSeed(hbeeDist=hDist,lbeeDist=lDist,isCent=cent,
+#                                               is2016=0,isHalfStock=0,dat=mod3,plotVar=F)))
+# beep(1)
+# #Simulated yield distribution
+# results2 <- data.frame(scenario,t(apply(results,1,function(x) quantile(x,c(0.5,0.05,0.95),na.rm=T)))) %>%
+#   rename('pred'='X50.','lwr'='X5.','upr'='X95.')
+# 
+# #Results in bu/acre
+# results2 %>% 
+#   mutate_at(vars(pred,upr,lwr),g2bushels) %>% 
+#   mutate(cent=factor(cent,labels=c('Edge','Center'))) %>% 
+#   ggplot(aes(x=lDist,y=pred,col=cent))+
+#   geom_ribbon(aes(ymax=upr,ymin=lwr,col=NULL,fill=cent),alpha=0.3,show.legend=F)+
 #   geom_line(size=1)+
-#   labs(y='Predicted yield (g/m2)',x='Distance',col='Stocking')
+#   labs(y='Predicted yield (bu/acre)',x='Distance',col='Bay position')
 
-#Results in bu/acre
-results2 %>% 
-  mutate_at(vars(pred,upr,lwr),g2bushels) %>% 
-  mutate(lDist=factor(lDist,labels=c('Near','Mid','Far'))) %>% 
-  mutate(cent=factor(cent,labels=c('Edge','Center'))) %>% 
-  ggplot(aes(x=hDist,y=pred,col=lDist))+
-  geom_ribbon(aes(ymax=upr,ymin=lwr,col=NULL,fill=lDist),alpha=0.3,show.legend=F)+
-  geom_line(size=1)+facet_wrap(~cent,ncol=1)+
-  labs(y='Predicted yield (bu/acre)',x='Distance',col='Lbee\nDist')
+#Simulate regular and thinner bay scenario
 
+#Create standard field (7m bays * 86 bays across = 602m)
+scal <- (800/602) #Scaling factor
+bayType <- matrix(rep(rep(c(0,1,1,1,1,1,1),86),602),ncol=602,byrow=T) #1 = F, 0 = M
+centType <- matrix(rep(rep(c(NA,0,0.5,1,1,0.5,0),86),602),ncol=602,byrow=T) #1 = cent, 0 = edge, 0.5 = half-cent, NA = Mbay
+xloc <- matrix(rep(c(1:602),602),ncol=602,byrow=T)*scal - (scal/2) #Dist across
+yloc <- matrix(rep(c(1:602),each=602),ncol=602,byrow=T)*scal - (scal/2) #Dist down
+dists <- matrix(NA,ncol=602,nrow=602) #Distance matrix for distance from edge
+for(row in 1:602){
+  for(col in 1:602){
+    # #Distance from hives - takes ~10 sec
+    # dists[row,col] <- min(dist(matrix(c(xloc[row,col],yloc[row,col],0,0,0,800,800,0,800,800),ncol=2,byrow=T))[1:4])
+    dists[row,col] <- min(xloc[row,col],abs(xloc[row,col]-800),yloc[row,col],abs(yloc[row,col]-800))
+  }
+}
+
+#Lbee spacing (72 tents total)
+#1st col= rows(y), 2nd col= cols(x)
+lbeeLocs <- cbind(round(rep(c((602/8)*(1:8)-(602/8)/2,(602/7)*(0:7)),length.out=8*9)),
+                 rep(2+(7*9)*(1:9),each=8))*scal
+lbeeLocs[lbeeLocs[,1]==0,1] <- 1*scal #Makes sure all tents within field
+plot(lbeeLocs) #OK
+
+#Functions to extract lbee distances
+getLbeeDist <- function(x,y) dist(rbind(x,y))
+minDist <- function(x,y,lbeeLocs) {
+  startLim <- 30 
+  foundTents <- F
+  while(!foundTents){
+    xlims <- x + startLim*c(-1,1); ylims <- y + startLim*c(-1,1) #Search limits 
+    lookHere <- lbeeLocs[,1]>xlims[1]  & lbeeLocs[,1]<xlims[2] & lbeeLocs[,2]>ylims[1]  & lbeeLocs[,2]<ylims[2]
+    if(any(lookHere)) foundTents <- T
+    if(startLim>500) stop('No tents within 500 m')
+    startLim <- startLim+50 #Look 50m further
+  }
+  
+  if(sum(lookHere)==1) { #If only 1 tent found
+    return(dist(rbind(lbeeLocs[lookHere,],c(x,y))))
+  } else { 
+    return(min(apply(lbeeLocs[lookHere,],1,getLbeeDist,y=c(x,y))))
+  }
+}
+
+lbeeDists <- matrix(NA,ncol=602,nrow=602) #Takes a minute to generate
+for(i in 1:602){
+  lbeeDists[,i] <- sapply(1:602*scal,minDist,y=i*scal,lbeeLocs=lbeeLocs)
+}
+lbeeDists[lbeeDists==0] <- 0.5 #Set minimum distance to half a meter
+
+#Looks OK
+par(mfrow=c(2,2))
+image(1:602*scal,1:602*scal,t(lbeeDists),xlab='',ylab='',main='Lbee Distances')
+points(lbeeLocs[,c(2:1)],pch=19,col='black')
+image(1:602*scal,1:602*scal,t(dists),main='Hbee distances',xlab='',ylab='')
+image(1:602*scal,1:602*scal,t(bayType),xlab='',ylab='',main='Bays')
+image(1:602*scal,1:602*scal,t(centType),xlab='',ylab='',main='Cent/Edge')
+par(mfrow=c(1,1))
+
+scenario <- data.frame(x=rep(1:602,each=602),y=rep(1:602,602),hbeeDist=as.vector(dists),lbeeDist=as.vector(lbeeDists)) %>% 
+  mutate(bay=as.vector(bayType),cent=as.vector(centType)) %>% filter(bay!=0) #Get rid of male bays
+scenario$yield <- with(scenario,simSeed(hbeeDist=hbeeDist,lbeeDist=lbeeDist,isCent=cent,
+                      is2016=0,isHalfStock=0,dat=mod3,plotVar=F))
+mean(g2bushels(scenario$yield)) #~36 bushels per acre
+
+scenario %>% 
+  ggplot(aes(x=x*scal,y=y*scal))+geom_raster(aes(fill=g2bushels(yield)))+
+  labs(x=NULL,y=NULL,fill='bu/\nacre')+
+  geom_point(data=data.frame(lbeeLocs),aes(X2,X1),col='red')+
+  coord_cartesian(xlim=c(0,100),ylim=c(0,100))
 
 # Test seed field model using piecewiseSEM -------------------------------------------
 library(piecewiseSEM)
