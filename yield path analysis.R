@@ -2696,7 +2696,7 @@ simSeed <- function(hbeeDist,lbeeDist,isCent,is2016,isHalfStock,dat,returnAll=F,
 #   geom_line(size=1)+
 #   labs(y='Predicted yield (bu/acre)',x='Distance',col='Bay position')
 
-#Simulate regular and thinner bay scenario
+#Simulate regular bay scenario
 
 #Create standard field (7m bays * 86 bays across = 602m)
 scal <- (800/602) #Scaling factor
@@ -2759,13 +2759,15 @@ scenario <- data.frame(x=rep(1:602,each=602),y=rep(1:602,602),hbeeDist=as.vector
   mutate(bay=as.vector(bayType),cent=as.vector(centType)) %>% filter(bay!=0) #Get rid of male bays
 scenario$yield <- with(scenario,simSeed(hbeeDist=hbeeDist,lbeeDist=lbeeDist,isCent=cent,
                       is2016=0,isHalfStock=0,dat=mod3,plotVar=F))
-mean(g2bushels(scenario$yield)) #~36 bushels per acre
+beep(1)
+mean(g2bushels(scenario$yield)) #~36 bushels per acre on average
 
 scenario %>% 
   ggplot(aes(x=x*scal,y=y*scal))+geom_raster(aes(fill=g2bushels(yield)))+
-  labs(x=NULL,y=NULL,fill='bu/\nacre')+
-  geom_point(data=data.frame(lbeeLocs),aes(X2,X1),col='red')+
-  coord_cartesian(xlim=c(0,100),ylim=c(0,100))
+  labs(x=NULL,y=NULL,fill='Yield\n(bu/\nacre)')+
+  geom_point(data=data.frame(lbeeLocs),aes(X2,X1),col='black')+
+  # scale_fill_gradient(low='yellow',high='blue')+
+  coord_cartesian(xlim=c(200,600),ylim=c(200,600))
 
 # Test seed field model using piecewiseSEM -------------------------------------------
 library(piecewiseSEM)
