@@ -91,6 +91,7 @@ g2bushels <- function(x){
 
 #Everything above this line run to start
 
+
 # Data from Wang et al 2011 - ovule counts --------------------------------
 ovDat <- read.csv('wang2011ovData.csv') %>% 
   mutate(Freq=ifelse(Freq<0,0,Freq))
@@ -658,6 +659,10 @@ datalistPod <- seedsAllComm %>% ungroup() %>%
   seedMass=(PodMass/PodCount)*1000, #Weight per seed (mg)
   podIndex=podIndex) #Index for pod (which plant?)
 )
+# #Adds average flower count per plant (plot-level)
+# datalistPlot$avgFlwCount_obs <- with(datalistPlant,tapply(flwCount,plantIndex,mean)) #Average flowers per plant
+# datalistPlot$NavgFlwCount_miss <- datalistPlot$Nplot-length(datalistPlot$avgFlwCount_obs) #Number of missing flower counts (all at end)
+
 datalistPod$seedMass[datalistPod$seedMass>8] <- with(datalistPod,seedMass[seedMass>8]/10) #Fixes weird outliers
 datalist <- c(datalistField,datalistPlot,datalistFlw,datalistPlant,datalistPod)
 rm(datalistField,datalistPlot,datalistFlw,datalistPlant,datalistPod,a,b,keep) #Cleanup
@@ -705,12 +710,17 @@ inits <- function() { with(datalist,
    ))
 }
 
-# #Claims list
-# claims6 <- stan(file='./Commodity model claims 1/commodity_claims50.stan',data=datalist,iter=800,chains=4,
-#                 control=list(adapt_delta=0.8),init=inits)
-# beep(1)
-# newpar='slopeFlwCountFlDens'
-# stan_hist(claims6,pars=c(pars,newpar))+geom_vline(xintercept=0,linetype='dashed')
+#Claims list
+claims1 <- stan(file='./Commodity model claims 2/commodity_claims6.stan',data=datalist,iter=800,chains=3,
+                control=list(adapt_delta=0.8),init=inits)
+beep(1)
+pars <- c('intPlSize','slopePlDensPlSize','slopeDistPlSize','slopeGpPlSize',
+          'slope2015PlSize','slopeIrrigPlSize')
+newpar <- 'slopeStockingFlDens'
+mod1 <- extract(claims1)
+coefs(mod1[c(newpar)])
+
+stan_hist(claims1,pars=c(pars))+geom_vline(xintercept=0,linetype='dashed')
 # traceplot(claims6,pars=c(pars,newpar),inc_warmup=F)+geom_hline(yintercept=0,linetype='dashed')
 # mod1 <- extract(claims6)
 # 2*(1-pnorm(abs(mean(mod1[[1]])/sd(mod1[[1]])),0,1)) #p-val for claim (2-tailed)
@@ -2678,23 +2688,31 @@ simSeed <- function(hbeeDist,lbeeDist,isCent,is2016,isHalfStock,dat,returnAll=F,
 #   geom_abline(intercept=0,slope=1,col='red')+
 #   labs(x='Actual Yield',y='Predicted Yield')
 
-# #Simulate pollination effects at generic fields
-# scenario <- expand.grid(hDist=200,lDist=seq(1,51,5),cent=c(0,1))
-# results <- replicate(100,with(scenario,simSeed(hbeeDist=hDist,lbeeDist=lDist,isCent=cent,
-#                                               is2016=0,isHalfStock=0,dat=mod3,plotVar=F)))
-# beep(1)
-# #Simulated yield distribution
-# results2 <- data.frame(scenario,t(apply(results,1,function(x) quantile(x,c(0.5,0.05,0.95),na.rm=T)))) %>%
-#   rename('pred'='X50.','lwr'='X5.','upr'='X95.')
-# 
-# #Results in bu/acre
-# results2 %>% 
-#   mutate_at(vars(pred,upr,lwr),g2bushels) %>% 
-#   mutate(cent=factor(cent,labels=c('Edge','Center'))) %>% 
-#   ggplot(aes(x=lDist,y=pred,col=cent))+
-#   geom_ribbon(aes(ymax=upr,ymin=lwr,col=NULL,fill=cent),alpha=0.3,show.legend=F)+
-#   geom_line(size=1)+
-#   labs(y='Predicted yield (bu/acre)',x='Distance',col='Bay position')
+#Simulate pollination effects at generic fields
+scenario <- expand.grid(hDist=c(20,400),lDist=seq(1,51,5),cent=c(0,0.5,1),halfStock=c(0,1))
+results <- replicate(500,with(scenario,simSeed(hbeeDist=hDist,lbeeDist=lDist,isCent=cent,
+                                              is2016=0,isHalfStock=halfStock,dat=mod3,plotVar=F)))
+beep(2)
+#Simulated yield distribution
+results2 <- data.frame(scenario,t(apply(results,1,function(x) quantile(x,c(0.5,0.05,0.95),na.rm=T)))) %>%
+  rename('pred'='X50.','lwr'='X5.','upr'='X95.')
+
+#Results in bu/acre
+results2 %>%
+  mutate_at(vars(pred,upr,lwr),g2bushels) %>%
+  mutate(cent=factor(cent,labels=c('Edge','Halfway','Center')),hDist=factor(hDist,labels=c('Near','Far'))) %>%
+  mutate(halfStock=factor(halfStock,labels=c('Regular','Half-stocking'))) %>% 
+  ggplot(aes(x=lDist,y=pred,col=cent))+
+  # geom_ribbon(aes(ymax=upr,ymin=lwr,col=NULL,fill=cent),alpha=0.2,show.legend=F)+
+  geom_line(aes(linetype=halfStock),size=1)+
+  facet_grid(~hDist)+
+  labs(y='Predicted yield (bu/acre)',x='Shelter Distance',col='Bay\nposition')+
+  scale_colour_manual(values=c('darkorange','red','blue'))+scale_fill_manual(values=c('darkorange','red','blue'))
+
+
+
+
+
 
 #Simulate regular bay scenario
 

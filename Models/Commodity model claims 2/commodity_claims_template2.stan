@@ -74,6 +74,8 @@ transformed data {
 }
 
 parameters {
+	//Claim
+
 	// Plant density	
 	vector[Nplot_densMiss] plDens_miss; 
 	real intPlDens; //Global intercept
@@ -86,16 +88,7 @@ parameters {
 	real<lower=0.01> sigmaPlDens_field; //Sigma for field
 	vector[Nfield] intPlDens_field; //Random intercept for field
 	
-	// Plant size 
-	// Density:distance, Year:GP, Irrigation:2015, Density:2015 interactions are 0. Leaving them out.	
-	// Density:GP (0.23), Density:2015 (0.88), and Density:GP:Year (0.70) don't make any difference 
-	// Irrigation:year (p=0.82), density:irrigation (0.26), and density:year:irrigation (0.56) seems to make very little difference to plant size
-	// Distance:year:stocking interaction seems to make very little difference, and poor elpd	
-	// Distance:GP and Distance:GP:Year make very little difference, and have worse elpd
-	// Model with Distance:stocking and distance:2015 is slightly better (elpd: Diff=-1.1,se=2.5) than model with only plDens:stocking
-	// Model with plDens:stocking is marginally worse worse (elp_loo =-0.5,se=1.4) than model without.
-	// Model with without stocking is slightly worse (elpd_loo=-1.4,se=1.2) than full model, and has pval of 0.05, but I think this is a spurious effect because there is no strong distance:stocking relationship (see above), no relationship with hbee visits, and is in wrong direction (more bees -> bigger plants).
-	// Very little correlation b/w slope & int for both field and plot, and no real difference in slopes at plot/field level, so removing random slopes		
+	// Plant size 	
 	real intPlSize; //Global intercept
 	real slopePlDensPlSize; //Slope of planting density	
 	real slopeDistPlSize; //Slope of distance 
@@ -139,10 +132,7 @@ parameters {
 	real<lower=0> pollenPhi; //Dispersion parameter
 	vector[Nfield] intPollen_field; //field-level random intercepts	
 	real<lower=0> sigmaPolPlot; //SD of plot random intercepts - Rhat 1.4, small n_eff, strongly correlated with lp__
-	vector[Nplot] intPollen_plot; //plot-level random intercepts
-	// real slopeFlyVisPol; //Slope of fly visits - p=0.577
-	// real slopeStockingPollen; //Hive number effect - p=0.613
-	// real slopeStockingHbeeDistPollen; //Hive number:hbee distance interaction - p=0.949
+	vector[Nplot] intPollen_plot; //plot-level random intercepts	
 	
 	// Flower count (per plant) 
 	real intFlwCount; //Intercept
@@ -164,15 +154,10 @@ parameters {
 	real slopePlDensSurv; //Slope of plant density	
 	real slopeIrrigSurv; //Slope of irrigation - p=0.56
 	real slope2015Surv; //Slope of year - p=0.68
-	//Interactions
-	// real slopeIrrig2015Surv; //Irrigation:year interaction - p=0.51
-	// real slopePlSizeIrrigSurv; //Plant size:Irrigation interaction - p=0.58
+	//Interactions	
 	real slopePlSizePlDensSurv; //Plant size:plant density
-	// real<lower=0> sigmaFlwSurv_plot; //SD of plot random intercepts	
 	real<lower=0> sigmaFlwSurv_field; //SD of field random intercepts
 	vector[Nfield] intFlwSurv_field; //field-level random intercepts
-	// vector[Nplot] intFlwSurv_plot; //plot-level random intercepts
-	// real<lower=0> flwSurvPhi; //Dispersion parameter for beta-binomial
 	real intPhiFlwSurv; //Intercept for sigma
 	real slopePlSizePhiFlwSurv; //Effect of plant size on phi
 	real<lower=0> sigmaPhiFlwSurv_field; //Sigma for field level sigma
@@ -184,11 +169,6 @@ parameters {
 	real slopePolSeedCount; //Slope of pollen deposition - p=0.74
 	real slopePlSizeCount; //Slope of plant size - p=0.22	
 	real slope2015SeedCount; //Year effect - p=0.0003
-	// real slopeIrrigSeedCount; //Irrigation - p=0.88	
-	// slopeIrrig2015SeedCount; //Irrigation:2015 - p=0.4736
-	// slopePlSizeIrrigSeedCount; //Plant size:irrigation - p=0.6772
-	// slopePlSize2015SeedCount; //Plant size:2015 - p=0.2196
-	// slopePlSizeIrrig2015SeedCount; //Plant size:irrigation:2015 - p=0.9639	
 	real<lower=0> sigmaSeedCount_plant; //SD of plant random effect - OK
 	real<lower=0> sigmaSeedCount_plot; //SD of plot random effect - not converging well, Rhat 1.1, small n_eff. 
 	real<lower=0> sigmaSeedCount_field; //SD of field random effect - OK
@@ -197,42 +177,35 @@ parameters {
 	vector[Nfield] intSeedCount_field; //field-level random intercepts 
 	real<lower=0> seedCountPhi; //Dispersion parameter
 	
-	// // Weight per seed
-	// // slopeSeedCountPlSizeSeedWeight highly correlated with slopePlSizeWeight (r=-0.8)	
-	// // exp-normal distribution works much better than normal (elpd_diff:-71.3,se:23.7)
-	// real intSeedWeight; //Intercept
-	// real slopeVisitSeedWeight; //Slope of hbee visits - p=0.24
-	// real slopePolSeedWeight; //Slope of pollen deposition - p=0.50
-	// real slopeSeedCount; //Slope of seed count - p<0.0001
-	// real slopePlSizeWeight; //Slope of plant size - p=0.13
-	// real slopeIrrigSeedWeight; //Irrigation effect - p=0.04
-	// real slope2015SeedWeight; //Slope of 2015 - p=0.28
-	// // Interactions
-	// real slope2015IrrigSeedWeight; //Year:irrigation - p=0.12
-	// // real slopeSeedCountPlSizeSeedWeight; //SeedCount:plant size - p=0.19
-	// // real slopePlSizeIrrigSeedWeight; // plant size:irrigation - p=0.48
-	// // real slopeSeedCount2015SeedWeight; // SeedCount:Year - p=0.18
-	// // real slopePlSize2015SeedWeight; // Plant size:Year - p=0.89
-	// // real slopePlSizeIrrig2015SeedWeight; // Plant size:Irrigated:Year - p=0.93	
-	// real<lower=0> sigmaSeedWeight; //SD of seed weight
-	// real<lower=0> sigmaSeedWeight_plant; //SD of plant random effect - OK
-	// real<lower=0> sigmaSeedWeight_plot; //SD of plot random effect - not converging well, Rhat 1.08, small n_eff
-	// real<lower=0> sigmaSeedWeight_field; //SD of field random effect - OK	
-	// vector[Nplant] intSeedWeight_plant; //plant-level random intercepts		
-	// vector[Nplot] intSeedWeight_plot; //plot-level random intercepts	
-	// vector[Nfield] intSeedWeight_field; //field-level random intercepts	
-	// real<lower=0> lambdaSeedWeight; //Lambda term for exponential process
+	// Weight per seed	
+	real intSeedWeight; //Intercept
+	real slopeVisitSeedWeight; //Slope of hbee visits - p=0.24
+	real slopePolSeedWeight; //Slope of pollen deposition - p=0.50
+	real slopeSeedCount; //Slope of seed count - p<0.0001
+	real slopePlSizeWeight; //Slope of plant size - p=0.13
+	real slopeIrrigSeedWeight; //Irrigation effect - p=0.04
+	real slope2015SeedWeight; //Slope of 2015 - p=0.28
+	// Interactions
+	real slope2015IrrigSeedWeight; //Year:irrigation - p=0.12	
+	real<lower=0> sigmaSeedWeight; //SD of seed weight
+	real<lower=0> sigmaSeedWeight_plant; //SD of plant random effect - OK
+	real<lower=0> sigmaSeedWeight_plot; //SD of plot random effect - not converging well, Rhat 1.08, small n_eff
+	real<lower=0> sigmaSeedWeight_field; //SD of field random effect - OK	
+	vector[Nplant] intSeedWeight_plant; //plant-level random intercepts		
+	vector[Nplot] intSeedWeight_plot; //plot-level random intercepts	
+	vector[Nfield] intSeedWeight_field; //field-level random intercepts	
+	real<lower=0> lambdaSeedWeight; //Lambda term for exponential process
 	
-	// // Total yield (g/plant)	
-	// real intYield; //Intercept for predicted yield
-	// real slopeYield; //Proportion of predicted yield that becomes yield		
-	// vector<lower=0>[2] sigmaYield_field; //SD of field-level intercept/slopes
-	// vector<lower=0>[2] sigmaYield_plot; //SD of plot-level intercept/slope	
-	// real<lower=0> sigmaYield; //SD of plant-level yield	
-	// cholesky_factor_corr[2] L_field; //Cholesky-decomposed correlation matrices
-	// cholesky_factor_corr[2] L_plot;
-	// matrix[2,Nfield] zYield_field; //Unit normals for matrix correlation trick
-	// matrix[2,Nplot] zYield_plot; 	
+	// Total yield (g/plant)	
+	real intYield; //Intercept for predicted yield
+	real slopeYield; //Proportion of predicted yield that becomes yield		
+	vector<lower=0>[2] sigmaYield_field; //SD of field-level intercept/slopes
+	vector<lower=0>[2] sigmaYield_plot; //SD of plot-level intercept/slope	
+	real<lower=0> sigmaYield; //SD of plant-level yield	
+	cholesky_factor_corr[2] L_field; //Cholesky-decomposed correlation matrices
+	cholesky_factor_corr[2] L_plot;
+	matrix[2,Nfield] zYield_field; //Unit normals for matrix correlation trick
+	matrix[2,Nplot] zYield_plot; 	
 }
 
 transformed parameters {		
@@ -250,17 +223,17 @@ transformed parameters {
 	vector[Nplot] flwSurvPlot; //Plot-level flower survival
 	vector[Nplant] flwSurv; //Flower survival rate (logit)
 	vector<lower=0>[Nplant] flwSurvPhi; //Phi for flower survival
-	// vector[Nplot] seedCountMuPlot; //Plot-level seed count
-	// vector[Nplant] seedCountMuPlant; //Plant-level seed count
-	// vector[Npod] seedCountMu; //Pod-level seed counts	
-	// vector[Nplot] seedWeightMuPlot; //Plot-level weight per seed
-	// vector[Nplant] seedWeightPlantMu; //Plant-level weight per seed
-	// vector[Npod] seedWeightMu; //Pod-level weight per seed				
-	// vector[Nplant] calcYield; //Calculated yield per plant (from pod count, seed weight, seed count)
-	// vector[Nplant] logYieldMu; //Predicted log(yield) per plant (calculated x coef)
-	// // Generate correlated random slopes and intercepts matrix
-	// matrix[2,Nfield] ranEffYield_field = diag_pre_multiply(sigmaYield_field,L_field) * zYield_field; //Field level random effects
-	// matrix[2,Nplot] ranEffYield_plot = diag_pre_multiply(sigmaYield_plot,L_plot) * zYield_plot; //Plot level random effects	
+	vector[Nplot] seedCountMuPlot; //Plot-level seed count
+	vector[Nplant] seedCountMuPlant; //Plant-level seed count
+	vector[Npod] seedCountMu; //Pod-level seed counts	
+	vector[Nplot] seedWeightMuPlot; //Plot-level weight per seed
+	vector[Nplant] seedWeightPlantMu; //Plant-level weight per seed
+	vector[Npod] seedWeightMu; //Pod-level weight per seed				
+	vector[Nplant] calcYield; //Calculated yield per plant (from pod count, seed weight, seed count)
+	vector[Nplant] logYieldMu; //Predicted log(yield) per plant (calculated x coef)
+	// Generate correlated random slopes and intercepts matrix
+	matrix[2,Nfield] ranEffYield_field = diag_pre_multiply(sigmaYield_field,L_field) * zYield_field; //Field level random effects
+	matrix[2,Nplot] ranEffYield_plot = diag_pre_multiply(sigmaYield_plot,L_plot) * zYield_plot; //Plot level random effects	
 	
 	// Imputed missing data;
 	vector[Nplot] plDens; //Planting density	
@@ -282,9 +255,7 @@ transformed parameters {
 			slopeDistPlSize*logHbeeDist[i] + //Distance effect (edge of field has smaller plants)			
 			slopeGpPlSize*isGP[plotIndex[i]] + // Grand Prairie
 			slope2015PlSize*is2015[plotIndex[i]] + //2015
-			slopeIrrigPlSize*isIrrigated[plotIndex[i]]; //Irrigation effect									
-			// slopeStockingPlSize*numHives[plotIndex[i]] + //Stocking												
-			// slopePlDensStockingPlSize*plDens[i]*numHives[plotIndex[i]]; //Density:Stocking interaction				
+			slopeIrrigPlSize*isIrrigated[plotIndex[i]]; //Irrigation effect												
 	
 		// Flower density = intercept + random field int + 
 		flDensMu[i] = intFlDens	+ intFlDens_field[plotIndex[i]] + 
@@ -299,14 +270,12 @@ transformed parameters {
 			slopeDistVis*logHbeeDist[i] + //distance from edge 
 			slopeHiveVis*logNumHives[plotIndex[i]] + //(log) Number of hives
 			slopeFlDens*flDens[i] + //Flower density
-			slopeIrrigVis*isIrrigated[plotIndex[i]]; //Irrigation
+			slopeIrrigVis*isIrrigated[plotIndex[i]]; //Irrigation - not sure this should be here, but leaving it for now
 		
 		// Plot-level pollen deposition = random int field + random int plot + 
 		pollenPlot[i] = intPollen_field[plotIndex[i]] + //intPollen_plot[i] + 
-			slopeVisitPol*logHbeeVis[i] + //(log) hbee visits
-			// slopeFlyVisPol*logFlyVis[i] + //(log) fly visits
-			slopeHbeeDistPollen*logHbeeDist[i]; //Distance effect						
-		//Switched global intercept to flower level term to "center" plot level measurements
+			slopeVisitPol*logHbeeVis[i] + //(log) hbee visits			
+			slopeHbeeDistPollen*logHbeeDist[i]; //Distance effect								
 			
 		// Flower count per plant (plot level) = intercept + random field int + random plot int
 		flwCountPlot[i] = intFlwCount + intFlwCount_field[plotIndex[i]];// + intFlwCount_plot[i];
@@ -317,22 +286,21 @@ transformed parameters {
 			slopePolSurv*pollenPlot[i] + //(log) pollen deposition - large correlation b/w slopePolSurv and intFlwSurv
 			slopePlDensSurv*plDens[i] + //Plant density			
 			slopeIrrigSurv*isIrrigated[plotIndex[i]] + //Slope of irrigation
-			slope2015Surv*is2015[plotIndex[i]]; //Slope of year
-			// slopeIrrig2015Surv*isIrrigated[plotIndex[i]]*is2015[plotIndex[i]]; //Irrigation:year interaction
+			slope2015Surv*is2015[plotIndex[i]]; //Slope of year			
 			
-		// // Plot-level seed count = intercept + random int field + random int plot + random int plant + 
-		// seedCountMuPlot[i] = intSeedCount + intSeedCount_field[plotIndex[i]] + intSeedCount_plot[i] + 
-			// slopeVisitSeedCount*logHbeeVis[i] + //(log) hbee visits 
-			// slopePolSeedCount*pollenPlot[i] + //pollen deposition - large correlation b/w slopePolSeedCount and intFlwSurv
-			// slope2015SeedCount*is2015[plotIndex[i]]; //Year effect		
+		// Plot-level seed count = intercept + random int field + random int plot + random int plant + 
+		seedCountMuPlot[i] = intSeedCount + intSeedCount_field[plotIndex[i]] + intSeedCount_plot[i] + 
+			slopeVisitSeedCount*logHbeeVis[i] + //(log) hbee visits 
+			slopePolSeedCount*pollenPlot[i] + //pollen deposition - large correlation b/w slopePolSeedCount and intFlwSurv
+			slope2015SeedCount*is2015[plotIndex[i]]; //Year effect		
 			
-		// // Plot-level seed weight = intercept + random int field + random int plot + 	
-		// seedWeightMuPlot[i] = intSeedWeight + intSeedWeight_field[plotIndex[i]] + intSeedWeight_plot[i] + 
-			// slopeVisitSeedWeight*logHbeeVis[i] + //(log) hbee visits 
-			// slopePolSeedWeight*pollenPlot[i] + //pollen deposition - large correlation b/w slopePolSeedWeight and intFlwSurv
-			// slopeIrrigSeedWeight*isIrrigated[plotIndex[i]] + //Irrigation effect
-			// slope2015SeedWeight*is2015[plotIndex[i]] + // Year effect
-			// slope2015IrrigSeedWeight*is2015[plotIndex[i]]*isIrrigated[plotIndex[i]]; //Year:irrigation effect
+		// Plot-level seed weight = intercept + random int field + random int plot + 	
+		seedWeightMuPlot[i] = intSeedWeight + intSeedWeight_field[plotIndex[i]] + intSeedWeight_plot[i] + 
+			slopeVisitSeedWeight*logHbeeVis[i] + //(log) hbee visits 
+			slopePolSeedWeight*pollenPlot[i] + //pollen deposition - large correlation b/w slopePolSeedWeight and intFlwSurv
+			slopeIrrigSeedWeight*isIrrigated[plotIndex[i]] + //Irrigation effect
+			slope2015SeedWeight*is2015[plotIndex[i]] + // Year effect
+			slope2015IrrigSeedWeight*is2015[plotIndex[i]]*isIrrigated[plotIndex[i]]; //Year:irrigation effect
 	}
 		
 	for(i in 1:Nflw) //For each flower stigma
@@ -352,7 +320,7 @@ transformed parameters {
 		// Flower survival per plant
 		flwSurv[i] = flwSurvPlot[plantIndex[i]] + slopePlSizeSurv*plantSize[i] + //Plot-level plant survival + size effect		
 			slopePlSizePlDensSurv*plantSize[i]*plDens[plantIndex[i]]; //Plant size:plant density 
-			// slopePlSizeIrrigSurv*(plantSize[i]*isIrrigated[plotIndex[plantIndex[i]]]); //Plant size:Irrigation interaction
+			
 		//Phi (dispersion) for flower survival	
 		flwSurvPhi[i] = exp(intPhiFlwSurv + intPhiFlwSurv_field[plotIndex[plantIndex[i]]] + slopePlSizePhiFlwSurv*plantSize[i]);
 						
