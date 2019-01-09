@@ -15,7 +15,7 @@ commodity_claims50,flDens~flwCount+...,,,,,,,0.9932082,,slopeFlwCountFlDens,
 ,,,,,,,,,,,
 commodity_claims10,logVisRate~isIrrig+...,-0.429,0.245,45.93,-1.75113576,0.0866,,0.05559301,**,slopeIrrigVis,"Added to next model. Effect is marginal, but leaving it in for now."
 commodity_claims11,logVisRate~plantDens+...,0.117,0.161,171.9,0.72451315,0.475,,0.7708187,,slopePlDensVis,
-commodity_claims7,logVisRate~flDens+...,NA,NA,NA,NA,NA,,0.2739753,,slopeFlDensVis,
+commodity_claims7,logVisRate~flDens+...,NA,NA,NA,NA,NA,,0.2739753,,slopeFlDensVis,Added to next model. Seems like it should be included as a main effect in principle.
 ,,,,,,,,,,,
 commodity_claims12,pollen~is2015+...,0.261,0.216,49.29,1.20764061,0.233,,0.1992189,,slope2015Pollen,
 commodity_claims13,pollen~isGP+...,0.197,0.212,48.33,0.92524533,0.359,,0.4061748,,slopeGPPollen,

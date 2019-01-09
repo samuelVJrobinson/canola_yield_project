@@ -659,9 +659,17 @@ datalistPod <- seedsAllComm %>% ungroup() %>%
   seedMass=(PodMass/PodCount)*1000, #Weight per seed (mg)
   podIndex=podIndex) #Index for pod (which plant?)
 )
-# #Adds average flower count per plant (plot-level)
-# datalistPlot$avgFlwCount_obs <- with(datalistPlant,tapply(flwCount,plantIndex,mean)) #Average flowers per plant
-# datalistPlot$NavgFlwCount_miss <- datalistPlot$Nplot-length(datalistPlot$avgFlwCount_obs) #Number of missing flower counts (all at end)
+#Adds average flower count per plant, and average plant weight (plot-level), used in claim 6, 12, 15
+datalistPlot <- c(datalistPlot,with(datalistPlant,
+  list( #Both terms are missing from plots 248-271, so use the same N and indices
+    Nplot_flwCountObs = length(unique(plantIndex)),
+    Nplot_flwCountMiss = datalistPlot$Nplot-length(unique(plantIndex)),
+    flwCountPlot_obs = log(unname(tapply(flwCount,plantIndex,mean))), #Log-transformed average flower count
+    plSizePlot_obs = unname(tapply(plantSize,plantIndex,mean)), #Plant size
+    obsFlwCount_ind = unique(plantIndex),
+    missFlwCount_ind = (1:datalistPlot$Nplot)[!(1:datalistPlot$Nplot %in% unique(plantIndex))]
+  )
+))
 
 datalistPod$seedMass[datalistPod$seedMass>8] <- with(datalistPod,seedMass[seedMass>8]/10) #Fixes weird outliers
 datalist <- c(datalistField,datalistPlot,datalistFlw,datalistPlant,datalistPod)
@@ -711,20 +719,19 @@ inits <- function() { with(datalist,
 }
 
 #Claims list
-claims1 <- stan(file='./Commodity model claims 2/commodity_claims6.stan',data=datalist,iter=800,chains=3,
+claims1 <- stan(file='./Commodity model claims 2/commodity_claims14.stan',data=datalist,iter=800,chains=3,
+                control=list(adapt_delta=0.8),init=inits)
+claims2 <- stan(file='./Commodity model claims 2/commodity_claims15.stan',data=datalist,iter=800,chains=3,
                 control=list(adapt_delta=0.8),init=inits)
 beep(1)
-pars <- c('intPlSize','slopePlDensPlSize','slopeDistPlSize','slopeGpPlSize',
-          'slope2015PlSize','slopeIrrigPlSize')
-newpar <- 'slopeStockingFlDens'
-mod1 <- extract(claims1)
-coefs(mod1[c(newpar)])
+pars <- c('intPollen','slopeVisitPol','slopeHbeeDistPollen',
+          'sigmaPolField','pollenPhi','sigmaPolPlot')	
+newpar <- 'slopeStockingPollen'
 
-stan_hist(claims1,pars=c(pars))+geom_vline(xintercept=0,linetype='dashed')
-# traceplot(claims6,pars=c(pars,newpar),inc_warmup=F)+geom_hline(yintercept=0,linetype='dashed')
-# mod1 <- extract(claims6)
-# 2*(1-pnorm(abs(mean(mod1[[1]])/sd(mod1[[1]])),0,1)) #p-val for claim (2-tailed)
-# print(claims1,pars=c(pars,newpar))
+stan_trace(claims1,pars=c(pars,newpar))
+# pairs(claims1,pars=c(pars,newpar)) #Takes a long time
+mod1 <- extract(claims1)
+coefs(mod1[c(pars,newpar)])
 
 #Full model - 1.7 hrs for 1000 iter
 modPodcount <- stan(file='visitation_pollen_model.stan',data=datalist,iter=1000,chains=3,

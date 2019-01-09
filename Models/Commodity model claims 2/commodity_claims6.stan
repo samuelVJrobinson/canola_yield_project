@@ -14,31 +14,28 @@ data {
 	int flyVis[Nplot]; //Number of fly visits per plot
 	vector[Nplot] totalTime; //Minutes taken for observation/10	
 	vector[Nplot] flDens; //Flower density
+	
 	//Plant density (stems/m2) - missing and observed
 	int Nplot_densObs; //Number of plots where plant density was observed
-	int Nplot_densMiss; //Number of plots with plant density missing 
+	int Nplot_densMiss; //Number of plots with plant density missing 	
 	vector[Nplot_densObs] plDens_obs; //Observed plant density (stems/m2)
 	int<lower=1,upper=Nplot> obsPlDens_ind[Nplot_densObs]; //Index for observed plant density
 	int<lower=1,upper=Nplot> missPlDens_ind[Nplot_densMiss]; //Index for missing plant density		
 	
-	//Flower level
-	int Nflw; //Number of flowers
-	int<lower=1,upper=Nplot>  flowerIndex[Nflw];  //Index for flowers - which plot?
-	int pollenCount[Nflw]; //Pollen count
-
+	//Flower count per plant (plot-level)
+	int Nplot_flwCountObs; //Number of observed plots
+	int Nplot_flwCountMiss; //Number of unobserved plots
+	vector[Nplot_flwCountObs] flwCountPlot_obs; //Observed flower count
+	int<lower=1,upper=Nplot> obsFlwCount_ind[Nplot_flwCountObs]; //Index for observed flower counts
+	int<lower=1,upper=Nplot> missFlwCount_ind[Nplot_flwCountMiss]; //Index for missing flower counts
+	
 	//Plant level
 	int Nplant; //Number of all plants (some measurements missing)	
 	int podCount[Nplant]; //Number of pods per plant
 	int flwCount[Nplant]; //Number of total flower (pods + missing) per plant
 	int<lower=1,upper=Nplot> plantIndex[Nplant]; //Index for all plants - which plot?		
 	vector[Nplant] plantSize; //Centered mass of vegetative tissue (no seeds) (g)
-	vector[Nplant] yield; //Observed yield (g seed per plant)	
-	
-	//Pod level
-	int Npod; //Number of pods
-	int seedCount[Npod];  //Seeds per pod
-	vector[Npod] seedMass; //Mass of seedCount seeds (g)
-	int<lower=1,upper=Nplant> podIndex[Npod]; //Index for pods - which plant?	
+	vector[Nplant] yield; //Observed yield (g seed per plant)		
 }
 
 transformed data {
@@ -47,14 +44,7 @@ transformed data {
 	vector[Nplot] logHbeeDist=log(dist); //Log-transform distance	
 	vector[Nplot] logTime=log(totalTime); //Log-transform time
 	vector[Nplot] logHbeeVis;  //Hbee visitation rate
-	vector[Nplot] logFlyVis; //Fly visitation rate
-	vector[Nplant] logYield = log(yield); //Log yield (g seed per plant)	
-	vector[Nplant] logFlwCount; //Log flower count
-	vector[Npod] logSeedCount; //Log seed count
-	vector[Nplot] totalFlw_obs = rep_vector(0,Nplot); //Total flowers per plot (observed)
-	vector[Nplot] numPlants_obs = rep_vector(0,Nplot); //Number of plants observed 	
-	vector[Nplot] avgFlws_obs = rep_vector(0,Nplot); //Average observed flowers
-	// int numEmptyPlots = 0; //Number of plots with observed flower counts			
+	vector[Nplot] logFlyVis; //Fly visitation rate		
 	
 	logHbeeDist=logHbeeDist-mean(logHbeeDist); //Centers distance
 	
@@ -65,29 +55,7 @@ transformed data {
 	for(i in 1:Nplot){ //Log transform of honeybee visitation rate (per 10 mins)
 		logHbeeVis[i] = log((hbeeVis[i]/totalTime[i])+0.5); 
 		logFlyVis[i] = log((flyVis[i]/totalTime[i])+0.5);
-	}
-		
-	for(i in 1:Nplant){
-		logFlwCount[i] = log(flwCount[i]); //Log-transforms flower count per plant
-	}
-	
-	for(i in 1:Npod){
-		logSeedCount[i] = log(seedCount[i]); //Log-transforms seed count per pod
-	}
-	
-	//Calculates average number of flowers per plant (plot level)
-	for(i in 1:Nplant){
-		totalFlw_obs[plantIndex[i]] = totalFlw_obs[plantIndex[i]]+flwCount[i]; //Adds flowers from plant
-		numPlants_obs[plantIndex[i]] = numPlants_obs[plantIndex[i]]+1; //Adds plant to plot
-	}
-	
-	for(i in 1:Nplot){ //Count number of plots with no data
-		if(numPlants_obs[i]>0){ //If plants observed
-			// numEmptyPlots = numEmptyPlots+1; //	Increment number of empty plots
-		// else
-			avgFlws_obs[i] = totalFlw_obs[i]/numPlants_obs[i]; //Average number of flowers
-		}
-	}
+	}	
 }
 
 parameters {
@@ -125,7 +93,10 @@ parameters {
 	real slopeHbeeDistFlDens; //Slope of distance into field
 	real<lower=0.01> sigmaFlDens; //Sigma for within-field (residual)	
 	real<lower=0.01> sigmaFlDens_field; //Sigma for field
-	vector[Nfield] intFlDens_field; //Random intercept for field			
+	vector[Nfield] intFlDens_field; //Random intercept for field
+	
+	//Flower counts per plant
+	vector[Nplot_flwCountMiss] flwCountPlot_miss; //Missing average flower counts per plant (plot-level)	
 }
 
 transformed parameters {		
@@ -137,22 +108,11 @@ transformed parameters {
 	
 	// Imputed missing data;
 	vector[Nplot] plDens; //Planting density
-	vector[Nplot] avgFlws; //Average flowers per plant (some imputed)		
-	//Creates empty plot index for flowers per plant (plot level)
-	// vector[numEmptyPlots] emptyPlotIndex; //Index for plots with no flower counts per plant		
-	// int j = 1; //Starting number for plot index
-	// for(i in 1:Nplot){
-		// if(numPlants_obs[i]==0){
-			// emptyPlotIndex[j] = i;
-			// j = j+1;
-		// }				
-	// }	
+	vector[Nplot] avgFlws; //Average flowers per plant (some imputed)			
 	plDens[obsPlDens_ind]=plDens_obs;
 	plDens[missPlDens_ind]=plDens_miss;	
-	for(i in 1:Nplot){
-		if(avgFlws_obs[i]>0)
-			avgFlws[i] = avgFlws_obs[i];		
-	}	 
+	avgFlws[obsFlwCount_ind]=flwCountPlot_obs;
+	avgFlws[missFlwCount_ind]=flwCountPlot_miss;
 	
 	for(i in 1:Nplot){ 
 		// Plant density per plot
@@ -224,7 +184,10 @@ model {
 	slopeHbeeDistFlDens ~ normal(0,1); //distance into field
 	sigmaFlDens ~ gamma(7,2); //Sigma for within-field (residual)	
 	sigmaFlDens_field ~ gamma(4,2); //Sigma for field
-	intFlDens_field ~ normal(0,sigmaFlDens_field); //Random intercept for field				
+	intFlDens_field ~ normal(0,sigmaFlDens_field); //Random intercept for field	
+	
+	//Prior for missing flower count data
+	flwCountPlot_miss ~ normal(5,5);	
 }
 
 generated quantities {
