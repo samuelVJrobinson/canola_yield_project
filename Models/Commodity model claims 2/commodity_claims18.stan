@@ -74,8 +74,8 @@ transformed data {
 }
 
 parameters {
-	//Claim:avgSurv~flDens+...
-	real slopeFlDensSurv;
+	//Claim:avgSurv~isGP+...
+	real slopeGPSurv;
 
 	// Plant density	
 	vector[Nplot_densMiss] plDens_miss; 
@@ -118,7 +118,7 @@ parameters {
 	vector[Nfield] intPhiFlwSurv_field; //Field-level random effect for sigma
 }
 
-transformed parameters {			
+transformed parameters {		
 }
 	
 model {	
@@ -154,7 +154,7 @@ model {
 			slopeVisitSurv*logHbeeVis[i] + //hbee visits 
 			slopePolSurv*pollenPlot[i] + //(log) pollen deposition - large correlation b/w slopePolSurv and intFlwSurv
 			slopePlDensSurv*plDens[i] + //Plant density						
-			slopeFlDensSurv*flDens[i]; //Claim
+			slopeGPSurv*isGP[plotIndex[i]]; //Claim
 	}
 		
 	for(i in 1:Nflw) //For each flower stigma
@@ -176,7 +176,7 @@ model {
 			
 	//Priors
 	//Claim
-	slopeFlDensSurv ~ normal(0,2);
+	slopeGPSurv ~ normal(0,2);
 	
 	//Plant density	- informative priors
 	intPlDens ~ normal(0,0.1); //Global intercept

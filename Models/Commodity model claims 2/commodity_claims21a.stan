@@ -50,7 +50,9 @@ transformed data {
 	vector[Nplot] logFlyVis; //Fly visitation rate
 	vector[Nplant] logYield = log(yield); //Log yield (g seed per plant)	
 	vector[Nplant] logFlwCount; //Log flower count
+	vector[Nplant] logitFlwSurv; //(logit) proportion flower survival	
 	vector[Npod] logSeedCount; //Log seed count
+	
 	
 	logHbeeDist=logHbeeDist-mean(logHbeeDist); //Centers distance
 	
@@ -64,18 +66,26 @@ transformed data {
 	}
 		
 	for(i in 1:Nplant){
-		logFlwCount[i] = log(flwCount[i]); //Log-transforms flower count per plant
+		logFlwCount[i] = log(flwCount[i]); //Log flower count per plant	
+		//Necessary for promoting integers to reals. Otherwise does integer division.
+		logitFlwSurv[i] = podCount[i]; 
+		logitFlwSurv[i] = logitFlwSurv[i]/flwCount[i]; //Proportion surviving pods		
+		if(logitFlwSurv[i]<=0) //Deal with weird 100% and 0% plants
+			logitFlwSurv[i]=0.01;
+		else if(logitFlwSurv[i]>=1)
+			logitFlwSurv[i]=0.99;				
 	}
+	//Logit transform and center surviving flowers
+	logitFlwSurv=logit(logitFlwSurv)-mean(logit(logitFlwSurv));
 	
 	for(i in 1:Npod){
 		logSeedCount[i] = log(seedCount[i]); //Log-transforms seed count per pod
-	}
-	
+	}	
 }
 
 parameters {
-	//Claim:avgSurv~flDens+...
-	real slopeFlDensSurv;
+	//Claim:flwCount~avgSurv+...
+	real slopeSurvFlwCount;
 
 	// Plant density	
 	vector[Nplot_densMiss] plDens_miss; 
@@ -100,7 +110,17 @@ parameters {
 	real<lower=0> sigmaPolPlot; //SD of plot random intercepts - Rhat 1.4, small n_eff, strongly correlated with lp__
 	vector[Nplot] intPollen_plot; //plot-level random intercepts	
 	
-	// Flower survival
+	// Flower count (per plant) 
+	real intFlwCount; //Intercept
+	real slopePlSizeFlwCount; //Slope of plant size	
+	real<lower=0> phiFlwCount_field; //SD of field-level random effect	
+	vector[Nfield] intFlwCount_field; //Field-level random effect	
+	real intPhiFlwCount; //Intercept for sigma	
+	real slopePlSizePhiFlwCount; //Effect of plant size on sigma	
+	real<lower=0> sigmaPhiFlwCount_field; //Sigma for field level sigma
+	vector[Nfield] intPhiFlwCount_field; //Field-level random effect for sigma	
+	
+	// Flower survival (pod production)
 	// plot-level random intercepts have low n_eff, and basically all intercepts overlap zero; sigma plot correlated with lp__
 	// slopeFlwCountSurv and slopePlSizeSurv are correlated (-0.77), and basically represent the same thing, so using only plant size
 	real intFlwSurv; //Intercept
@@ -118,17 +138,21 @@ parameters {
 	vector[Nfield] intPhiFlwSurv_field; //Field-level random effect for sigma
 }
 
-transformed parameters {			
+transformed parameters {		
 }
 	
 model {	
 	//Expected values
 	vector[Nplot] plDensMu; //Predicted plant density	
 	vector[Nplot] pollenPlot; //Plot-level pollen per stigma
-	vector[Nflw] pollenMu; //Flower-level pollen per stigma			
+	vector[Nflw] pollenMu; //Flower-level pollen per stigma
+	vector[Nplot] flwCountPlot; //Plot-level flowers per plant
+	vector[Nplant] flwCountMu; //Expected flowers per plant
+	vector[Nplant] phiFlwCount; //Phi for flowers per plant	
 	vector[Nplot] flwSurvPlot; //Plot-level flower survival
 	vector[Nplant] flwSurv; //Flower survival rate (logit)
 	vector[Nplant] flwSurvPhi; //Phi for flower survival	
+	
 	
 	// Imputed missing data;
 	vector[Nplot] plDens; //Planting density	
@@ -148,22 +172,34 @@ model {
 		pollenPlot[i] = intPollen_field[plotIndex[i]] + //intPollen_plot[i] + 
 			slopeVisitPol*logHbeeVis[i] + //(log) hbee visits			
 			slopeHbeeDistPollen*logHbeeDist[i]; //Distance effect								
+		
+		// Flower count per plant (plot level) = intercept + random field int + random plot int
+		flwCountPlot[i] = intFlwCount + intFlwCount_field[plotIndex[i]];// + intFlwCount_plot[i];	
 			
 		// Plot-level flower survival = intercept + random int field + random int plot + 
 		flwSurvPlot[i] = intFlwSurv + intFlwSurv_field[plotIndex[i]] + //intFlwSurv_plot[i] + 
 			slopeVisitSurv*logHbeeVis[i] + //hbee visits 
 			slopePolSurv*pollenPlot[i] + //(log) pollen deposition - large correlation b/w slopePolSurv and intFlwSurv
-			slopePlDensSurv*plDens[i] + //Plant density						
-			slopeFlDensSurv*flDens[i]; //Claim
+			slopePlDensSurv*plDens[i]; //Plant density									
 	}
 		
 	for(i in 1:Nflw) //For each flower stigma
 		pollenMu[i] = intPollen + pollenPlot[flowerIndex[i]]; //global intercept + plot-level pollen 
 		
-	for(i in 1:Nplant){ //For each plant 		
+	for(i in 1:Nplant){ //For each plant 
+
+	// Flower count per plant
+		flwCountMu[i] = flwCountPlot[plantIndex[i]] + //Plot level flower count 
+			slopePlSizeFlwCount*plantSize[i] + //individual plant size
+			slopeSurvFlwCount*logitFlwSurv[i]; //Claim
+			
+		// Phi (dispersion) for flower count
+		phiFlwCount[i] = exp(intPhiFlwCount + intPhiFlwCount_field[plotIndex[plantIndex[i]]] + //intPhiFlwCount_plot[plantIndex[i]] + 
+			slopePlSizePhiFlwCount*plantSize[i]); 				
+			
 		// Flower survival per plant
 		flwSurv[i] = flwSurvPlot[plantIndex[i]] + slopePlSizeSurv*plantSize[i] + //Plot-level plant survival + plant size effect		
-			slopePlSizePlDensSurv*plantSize[i]*plDens[plantIndex[i]]; //Plant size:plant density 
+			slopePlSizePlDensSurv*plantSize[i]*plDens[plantIndex[i]]; //Plant size:plant density 			
 			
 		//Phi (dispersion) for flower survival	
 		flwSurvPhi[i] = exp(intPhiFlwSurv + intPhiFlwSurv_field[plotIndex[plantIndex[i]]] + slopePlSizePhiFlwSurv*plantSize[i]);		
@@ -172,11 +208,12 @@ model {
 	//Likelihood		
 	plDens ~ normal(plDensMu,sigmaPlDens); //Plant density		
 	pollenCount ~ neg_binomial_2_log(pollenMu,pollenPhi); //Pollination rate		
-	podCount ~ beta_binomial(flwCount,inv_logit(flwSurv).*flwSurvPhi,(1-inv_logit(flwSurv)).*flwSurvPhi); //Flower survival (surviving pods)
-			
+	flwCount ~ neg_binomial_2_log(flwCountMu,phiFlwCount); //Flower count per plant (attempted pods)
+	podCount ~ beta_binomial(flwCount,inv_logit(flwSurv).*flwSurvPhi,(1-inv_logit(flwSurv)).*flwSurvPhi); //Flower survival (surviving pods)	
+	
 	//Priors
 	//Claim
-	slopeFlDensSurv ~ normal(0,2);
+	slopeSurvFlwCount ~ normal(0,2);
 	
 	//Plant density	- informative priors
 	intPlDens ~ normal(0,0.1); //Global intercept
@@ -197,7 +234,17 @@ model {
 	pollenPhi ~ gamma(7,10); //Dispersion parameter
 	intPollen_field ~ normal(0,sigmaPolField); //Random field int
 	intPollen_plot ~ normal(0,sigmaPolPlot); //Random plot int		
-	sigmaPolPlot ~ gamma(3,10); //Sigma for random plot 
+	sigmaPolPlot ~ gamma(3,10); //Sigma for random plot
+
+	//Flower count (per plant)	
+	intFlwCount ~ normal(5,1); //Intercept
+	slopePlSizeFlwCount ~ normal(1,1); //Slope of plant size	
+	phiFlwCount_field ~ gamma(2,10); //SD of field-level random effect		
+	intFlwCount_field ~ normal(0,phiFlwCount_field); //Field-level random effect		
+	intPhiFlwCount ~ normal(5,2); //Terms for variance
+	slopePlSizePhiFlwCount ~ normal(1,1);
+	sigmaPhiFlwCount_field ~ gamma(1,1); //Sigma for field level sigma
+	intPhiFlwCount_field ~ normal(0,sigmaPhiFlwCount_field); //Field-level random effect for sigma			
 	
 	//Flower survival - informative priors
 	intFlwSurv ~ normal(1,1); //Intercept

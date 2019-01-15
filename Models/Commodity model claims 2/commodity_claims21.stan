@@ -74,8 +74,8 @@ transformed data {
 }
 
 parameters {
-	//Claim:avgSurv~flDens+...
-	real slopeFlDensSurv;
+	//Claim:avgSurv~flwCount+...
+	real slopeFlwCountSurv;
 
 	// Plant density	
 	vector[Nplot_densMiss] plDens_miss; 
@@ -118,7 +118,7 @@ parameters {
 	vector[Nfield] intPhiFlwSurv_field; //Field-level random effect for sigma
 }
 
-transformed parameters {			
+transformed parameters {		
 }
 	
 model {	
@@ -153,8 +153,7 @@ model {
 		flwSurvPlot[i] = intFlwSurv + intFlwSurv_field[plotIndex[i]] + //intFlwSurv_plot[i] + 
 			slopeVisitSurv*logHbeeVis[i] + //hbee visits 
 			slopePolSurv*pollenPlot[i] + //(log) pollen deposition - large correlation b/w slopePolSurv and intFlwSurv
-			slopePlDensSurv*plDens[i] + //Plant density						
-			slopeFlDensSurv*flDens[i]; //Claim
+			slopePlDensSurv*plDens[i]; //Plant density									
 	}
 		
 	for(i in 1:Nflw) //For each flower stigma
@@ -163,7 +162,8 @@ model {
 	for(i in 1:Nplant){ //For each plant 		
 		// Flower survival per plant
 		flwSurv[i] = flwSurvPlot[plantIndex[i]] + slopePlSizeSurv*plantSize[i] + //Plot-level plant survival + plant size effect		
-			slopePlSizePlDensSurv*plantSize[i]*plDens[plantIndex[i]]; //Plant size:plant density 
+			slopePlSizePlDensSurv*plantSize[i]*plDens[plantIndex[i]] + //Plant size:plant density 
+			slopeFlwCountSurv*logFlwCount[i]; //Claim
 			
 		//Phi (dispersion) for flower survival	
 		flwSurvPhi[i] = exp(intPhiFlwSurv + intPhiFlwSurv_field[plotIndex[plantIndex[i]]] + slopePlSizePhiFlwSurv*plantSize[i]);		
@@ -176,7 +176,7 @@ model {
 			
 	//Priors
 	//Claim
-	slopeFlDensSurv ~ normal(0,2);
+	slopeFlwCountSurv ~ normal(0,2);
 	
 	//Plant density	- informative priors
 	intPlDens ~ normal(0,0.1); //Global intercept

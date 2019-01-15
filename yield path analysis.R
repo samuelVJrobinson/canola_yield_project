@@ -63,6 +63,14 @@ coefs <- function(L){ #Shorter summary from list of L coefficients from a Stan l
              lwr=lwr,upr=upr,mean=round(meanCoef,3),sd=round(stdev,3),z=round(meanCoef/stdev,3),
              overlap=sapply(L,function(x) overlap(x)),
              pval=round(2*(1-pnorm(abs(meanCoef/stdev),0,1)),4)) }
+#Faster pair plot
+fastPairs <- function(l){ #List l
+  pairs(l,lower.panel=function(x,y){
+  par(usr=c(0,1,0,1))
+  text(0.5, 0.5, round(cor(x,y),2), cex = 1 * exp(abs(cor(x,y))))})
+}
+
+
 #Linear breakpoint function - two lines with intersection "b"
 bpoint <- function(x,int1,slope1,b,slope2) ifelse(x<b,int1+slope1*x,b*slope1+(x-b)*slope2+int1)
 #Effect size for Posterior samples
@@ -90,7 +98,6 @@ g2bushels <- function(x){
 }
 
 #Everything above this line run to start
-
 
 # Data from Wang et al 2011 - ovule counts --------------------------------
 ovDat <- read.csv('wang2011ovData.csv') %>% 
@@ -718,10 +725,15 @@ inits <- function() { with(datalist,
    ))
 }
 
+#Feed datalist into stan_rdump for use in CmdStan
+with(datalist,stan_rdump(names(datalist),'tempDat.data.R'))
+#Feed inits into stan_rdump
+temp <- inits()
+with(temp,stan_rdump(names(temp),'inits.data.R'))
+
+
 #Claims list
-claims1 <- stan(file='./Commodity model claims 2/commodity_claims14.stan',data=datalist,iter=800,chains=3,
-                control=list(adapt_delta=0.8),init=inits)
-claims2 <- stan(file='./Commodity model claims 2/commodity_claims15.stan',data=datalist,iter=800,chains=3,
+claims1 <- stan(file='./Commodity model claims 2/commodity_claims21a.stan',data=datalist,iter=100,chains=1,
                 control=list(adapt_delta=0.8),init=inits)
 beep(1)
 pars <- c('intPollen','slopeVisitPol','slopeHbeeDistPollen',
@@ -1962,12 +1974,6 @@ print(modPodcount_seed,pars=pars)
 mod3 <- extract(modPodcount_seed)
 (mod3coefs <- data.frame(par='NA',parname=rownames(coefs(mod3[pars])),coefs(mod3[pars]),row.names=NULL))
 print(xtable(mod3coefs,digits=c(0,0,0,3,3,3,3,3,3,0,4)),include.rownames=F)
-
-#Faster pair plots
-pairs(mod3[c(pars,'lp__')],lower.panel=function(x,y){
-  par(usr=c(0,1,0,1))
-  text(0.5, 0.5, round(cor(x,y),2), cex = 1 * exp(abs(cor(x,y))))})
-
 
 #Distribution of random effects intercepts
 t(apply(mod3$intPlDens_field,2,function(x) quantile(x,c(0.5,0.025,0.975)))) %>% 
