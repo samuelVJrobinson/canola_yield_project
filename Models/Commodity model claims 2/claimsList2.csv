@@ -19,7 +19,7 @@ commodity_claims17,avgSurv~is2015+...,-0.073,0.085,0.3916,,slope2015Surv,
 commodity_claims18,avgSurv~isGP+...,-0.041,0.085,0.6252,,slopeGPSurv,
 commodity_claims19,avgSurv~isIrrig+...,0.04,0.09,0.6538,,slopeIrrigSurv,
 commodity_claims20,avgSurv~logDist+...,-0.008,0.009,0.3818,,slopeHbeeDistSurv,
-commodity_claims21,avgSurv~flwCount+...,-0.22,0.047,2.86E-06,***,slopeFlwCountSurv,"Re-think this. Flower count and plant size slopes are correlated (-0.77), and represent similar things. Perhaps arrow should be other way?"
+commodity_claims21,avgSurv~flwCount+...,-0.22,0.047,2.86E-06,***,slopeFlwCountSurv,Backwards. Total flowers is downstream of flower survival rate
 commodity_claims22,avgSurv~stocking+...,-0.01,0.025,0.6869,,slopeStockingSurv,
 commodity_claims23,avgSeedCount~avgSurv+...,-0.004,0.013,0.771,,slopeSurvSeedCount,
 commodity_claims24,avgSeedCount~flDens+...,0,0.002,0.9243,,slopeFlDensSeedCount,
@@ -37,4 +37,10 @@ commodity_claims35,avgSeedWeight~logDist+...,0.002,0.016,0.9042,,slopeHbeeDistSe
 commodity_claims36,avgSeedWeight~plantDens+...,-0.006,0.083,0.9473,,slopePlDensSeedWeight,
 commodity_claims37,avgSeedWeight~stocking+...,-0.024,0.032,0.465,,slopeStockingSeedWeight,
 commodity_claims38,avgSeedWeight~flwCount+...,0.135,0.095,0.1538,,slopeFlwCountSeedWeight,Flower count correlated with plant size.
-commodity_claims39,flwCount~plantDens+...,0.014,0.022,0.5356,,slopePlDensFlwCount,
+commodity_claims39,flwCount~plantDens+...,,,,,slopePlDensFlwCount,
+commodity_claims40,flwCount~logDist+...,,,,,slopeHbeeDistFlwCount,
+commodity_claims41,flwCount~isGP+...,,,,,slopeGPFlwCount,
+commodity_claims42,flwCount~is2015+...,,,,,slope2015FlwCount,
+commodity_claims43,flwCount~isIrrig+...,,,,,slopeIrrigFlwCount,
+commodity_claims44,flwCount~logVisRate+...,,,,,slopeHbeeVisFlwCount,
+commodity_claims45,flwCount~numHives+...,,,,,slopeStockingFlwCount,

@@ -83,20 +83,20 @@ transformed data {
 }
 
 parameters {
-	//Claim: flwCount~plantDens+...
-	real slopePlDensFlwCount;
+	//Claim: flwCount~numHives+...
+	real slopeStockingFlwCount;
 
-	// Plant density	
-	vector[Nplot_densMiss] plDens_miss; 
-	real intPlDens; //Global intercept
-	real slope2015PlDens; //Effect of 2015
-	real slopeIrrigPlDens; //Effect of irrigation
-	real slope2015IrrigPlDens; //Year:irrigation interaction	
-	real slopeGPPlDens; //GP effect on plant density	
-	real slopeDistPlDens; //Slope of distance into field		
-	real<lower=0.01> sigmaPlDens; //Sigma for within-field (residual)
-	real<lower=0.01> sigmaPlDens_field; //Sigma for field
-	vector[Nfield] intPlDens_field; //Random intercept for field
+	// // Plant density	
+	// vector[Nplot_densMiss] plDens_miss; 
+	// real intPlDens; //Global intercept
+	// real slope2015PlDens; //Effect of 2015
+	// real slopeIrrigPlDens; //Effect of irrigation
+	// real slope2015IrrigPlDens; //Year:irrigation interaction	
+	// real slopeGPPlDens; //GP effect on plant density	
+	// real slopeDistPlDens; //Slope of distance into field		
+	// real<lower=0.01> sigmaPlDens; //Sigma for within-field (residual)
+	// real<lower=0.01> sigmaPlDens_field; //Sigma for field
+	// vector[Nfield] intPlDens_field; //Random intercept for field
 		
 	// Flower count (per plant) 
 	real intFlwCount; //Intercept
@@ -115,28 +115,28 @@ transformed parameters {
 	
 model {	
 	//Expected values
-	vector[Nplot] plDensMu; //Predicted plant density
+	// vector[Nplot] plDensMu; //Predicted plant density
 	vector[Nplot] flwCountPlot; //Plot-level flowers per plant
 	vector[Nplant] flwCountMu; //Expected flowers per plant
 	vector[Nplant] phiFlwCount; //Phi for flowers per plant	
 	
-	// Imputed missing data;
-	vector[Nplot] plDens; //Planting density	
-	plDens[obsPlDens_ind]=plDens_obs;
-	plDens[missPlDens_ind]=plDens_miss;	
+	// // Imputed missing data;
+	// vector[Nplot] plDens; //Planting density	
+	// plDens[obsPlDens_ind]=plDens_obs;
+	// plDens[missPlDens_ind]=plDens_miss;	
 	
 	for(i in 1:Nplot){ 
-		// Plant density per plot
-		plDensMu[i] = intPlDens + intPlDens_field[plotIndex[i]] + 
-			slope2015PlDens*is2015[plotIndex[i]]+ //Year effect
-			slopeIrrigPlDens*isIrrigated[plotIndex[i]]+ //Irrigation effect
-			slope2015IrrigPlDens*isIrrigated[plotIndex[i]]*is2015[plotIndex[i]]+ //Year:irrigation interaction
-			slopeDistPlDens*logHbeeDist[i] + //Distance effect				
-			slopeGPPlDens*isGP[plotIndex[i]]; //GP effect			
+		// // Plant density per plot
+		// plDensMu[i] = intPlDens + intPlDens_field[plotIndex[i]] + 
+			// slope2015PlDens*is2015[plotIndex[i]]+ //Year effect
+			// slopeIrrigPlDens*isIrrigated[plotIndex[i]]+ //Irrigation effect
+			// slope2015IrrigPlDens*isIrrigated[plotIndex[i]]*is2015[plotIndex[i]]+ //Year:irrigation interaction
+			// slopeDistPlDens*logHbeeDist[i] + //Distance effect				
+			// slopeGPPlDens*isGP[plotIndex[i]]; //GP effect			
 			
 		// Flower count per plant (plot level) = intercept + random field int + random plot int
 		flwCountPlot[i] = intFlwCount + intFlwCount_field[plotIndex[i]] +
-			slopePlDensFlwCount*plDens[i]; //Claim
+			slopeStockingFlwCount*logNumHives[plotIndex[i]]; //Claim
 	}
 		
 	for(i in 1:Nplant){ //For each plant 			
@@ -151,22 +151,22 @@ model {
 	}		
 
 	//Likelihood		
-	plDens ~ normal(plDensMu,sigmaPlDens); //Plant density	
+	// plDens ~ normal(plDensMu,sigmaPlDens); //Plant density	
 	flwCount ~ neg_binomial_2_log(flwCountMu,phiFlwCount); //Flower count per plant (attempted pods)
 			
-	//Priors
-	slopePlDensFlwCount ~ normal(0,2); //Claim
+	//Priors	
+	slopeStockingFlwCount ~ normal(0,2); //Claim
 	
-	//Plant density	- informative priors
-	intPlDens ~ normal(0,0.1); //Global intercept
-	slope2015PlDens ~ normal(0,1); //Year effect
-	slopeIrrigPlDens ~ normal(0,1); //Irrigation effect
-	slope2015IrrigPlDens ~ normal(0,1); //Year:irrigation interaction
-	slopeDistPlDens ~ normal(0,0.05); //Slope of distance into field	
-	slopeGPPlDens ~ normal(0,1); // Grand Prairie effect 
-	sigmaPlDens ~ gamma(3,10); //Sigma for within-field (residual)
-	sigmaPlDens_field ~ gamma(3,10); //Sigma for field
-	intPlDens_field ~ normal(0,sigmaPlDens_field); //Random intercept for field
+	// //Plant density	- informative priors
+	// intPlDens ~ normal(0,0.1); //Global intercept
+	// slope2015PlDens ~ normal(0,1); //Year effect
+	// slopeIrrigPlDens ~ normal(0,1); //Irrigation effect
+	// slope2015IrrigPlDens ~ normal(0,1); //Year:irrigation interaction
+	// slopeDistPlDens ~ normal(0,0.05); //Slope of distance into field	
+	// slopeGPPlDens ~ normal(0,1); // Grand Prairie effect 
+	// sigmaPlDens ~ gamma(3,10); //Sigma for within-field (residual)
+	// sigmaPlDens_field ~ gamma(3,10); //Sigma for field
+	// intPlDens_field ~ normal(0,sigmaPlDens_field); //Random intercept for field
 	
 	//Flower count (per plant)	
 	intFlwCount ~ normal(5,1); //Intercept

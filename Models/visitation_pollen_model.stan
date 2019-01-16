@@ -64,8 +64,17 @@ transformed data {
 	}
 		
 	for(i in 1:Nplant){
-		logFlwCount[i] = log(flwCount[i]); //Log-transforms flower count per plant
+		logFlwCount[i] = log(flwCount[i]); //Log flower count per plant	
+		//Necessary for promoting integers to reals. Otherwise does integer division.
+		logitFlwSurv[i] = podCount[i]; 
+		logitFlwSurv[i] = logitFlwSurv[i]/flwCount[i]; //Proportion surviving pods		
+		if(logitFlwSurv[i]<=0) //Deal with weird 100% and 0% plants
+			logitFlwSurv[i]=0.01;
+		else if(logitFlwSurv[i]>=1)
+			logitFlwSurv[i]=0.99;				
 	}
+	//Logit transform and center surviving flowers
+	logitFlwSurv=logit(logitFlwSurv)-mean(logit(logitFlwSurv));
 	
 	for(i in 1:Npod){
 		logSeedCount[i] = log(seedCount[i]); //Log-transforms seed count per pod
