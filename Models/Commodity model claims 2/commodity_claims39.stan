@@ -48,9 +48,10 @@ transformed data {
 	vector[Nplot] logTime=log(totalTime); //Log-transform time
 	vector[Nplot] logHbeeVis;  //Hbee visitation rate
 	vector[Nplot] logFlyVis; //Fly visitation rate
-	vector[Nplant] logYield = log(yield); //Log yield (g seed per plant)	
+	vector[Nplant] logitFlwSurv; //(logit) proportion flower survival	
 	vector[Nplant] logFlwCount; //Log flower count
-	vector[Npod] logSeedCount; //Log seed count
+	vector[Nplant] logYield = log(yield); //Log yield (g seed per plant)		
+	vector[Npod] logSeedCount; //Log seed count	
 	
 	logHbeeDist=logHbeeDist-mean(logHbeeDist); //Centers distance
 	
@@ -102,6 +103,7 @@ parameters {
 	real intFlwCount; //Intercept
 	real slopePlSizeFlwCount; //Slope of plant size	
 	real slopeSurvFlwCount; //Slope of flower survival rate
+	real slope2015FlwCount; //Slope of 2015 effect
 	real<lower=0> phiFlwCount_field; //SD of field-level random effect	
 	vector[Nfield] intFlwCount_field; //Field-level random effect	
 	real intPhiFlwCount; //Intercept for sigma	
@@ -136,6 +138,7 @@ model {
 			
 		// Flower count per plant (plot level) = intercept + random field int + random plot int
 		flwCountPlot[i] = intFlwCount + intFlwCount_field[plotIndex[i]] +
+			slope2015FlwCount*is2015[plotIndex[i]] + //2015 effect
 			slopePlDensFlwCount*plDens[i]; //Claim
 	}
 		
@@ -172,6 +175,7 @@ model {
 	intFlwCount ~ normal(5,1); //Intercept
 	slopePlSizeFlwCount ~ normal(1,1); //Slope of plant size
 	slopeSurvFlwCount ~ normal(0,1); //Slope of survival rate 
+	slope2015FlwCount ~ normal(0,1); //Slope of 2015 effect
 	phiFlwCount_field ~ gamma(2,10); //SD of field-level random effect		
 	intFlwCount_field ~ normal(0,phiFlwCount_field); //Field-level random effect		
 	intPhiFlwCount ~ normal(5,2); //Terms for variance
