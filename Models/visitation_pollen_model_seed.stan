@@ -175,33 +175,33 @@ parameters {
 	real<lower=0.0001> sigmaFlDens_field; //Sigma for field
 	vector[Nfield_all] intFlDens_field; //Random intercept for field
  
-	// // hbee Visitation - random effects at field level weren't converging
-	// real intVisitHbee; //Intercept	
-	// real slopeFlDensHbee; //Slope of flower density
-	// real slopeHbeeDistHbee; //Slope of (log) distance
-	// real slopeLbeeDistHbee; //Slope of leafcutter distance
-	// real slopeLbeeHbeeDistHbee; //Interaction b/w leafcutter & honeybee distance
-	// real slopeLbeeVisHbee; //Direct effect of leafcutter visitation	
-	// real slopeMBayHbee; //Effect of male bay		
-	// real slopeCentHbee; //Effect of bay position (center)	
-	// real<lower=0.0001> visitHbeePhi; //Dispersion parameter		
-	// real<lower=0,upper=1> zeroVisHbeeTheta; //Zero-inflation parameter - chance that zero is not from neg.bin. 
+	// hbee Visitation - random effects at field level weren't converging
+	real intVisitHbee; //Intercept	
+	real slopeFlDensHbee; //Slope of flower density
+	real slopeHbeeDistHbee; //Slope of (log) distance
+	real slopeLbeeDistHbee; //Slope of leafcutter distance
+	real slopeLbeeHbeeDistHbee; //Interaction b/w leafcutter & honeybee distance
+	real slopeLbeeVisHbee; //Direct effect of leafcutter visitation	
+	real slopeMBayHbee; //Effect of male bay		
+	real slopeCentHbee; //Effect of bay position (center)	
+	real<lower=0.0001> visitHbeePhi; //Dispersion parameter		
+	real<lower=0,upper=1> zeroVisHbeeTheta; //Zero-inflation parameter - chance that zero is not from neg.bin. 
 	
-	// // lbee Visitation
-	// // slopePlDensLbee and slopePlSizeLbee strongly correlated with slopeHbeeDistLbee (r=-0.69,-0.72) and with each other (r=0.75), so removing
-	// real intVisitLbee; //Intercept	
-	// real slopeLbeeDistLbee; //Slope of leafcutter distance (shelter)		
-	// real slopeHbeeDistLbee; //Slope of honeybee distance (field edge)
-	// real slopeMBayLbee; //Effect of male bay - p=0.894
-	// real slopeCentLbee; //Effect of bay position (center)	
-	// real slopeStockingLbee; //Effect of half-stocking leafcutter bees	
-	// real slope2016Lbee; //Year effect
-	// real slopeFlDensLbee; //Flower density effect
-	// real slopeCentHbeeDistLbee; //Bay position : honeybee distance interaction term -p=0.142
-	// real slopeStockingHbeeDistLbee; //Half-stocking:hbee distance interaction			
-	// real<lower=0.0001> sigmaLbeeVisField; //SD of field random intercepts
-	// real<lower=0.0001> visitLbeePhi; //Dispersion parameter	
-	// vector[Nfield_all] intVisitLbee_field; //field-level random intercepts	
+	// lbee Visitation
+	// slopePlDensLbee and slopePlSizeLbee strongly correlated with slopeHbeeDistLbee (r=-0.69,-0.72) and with each other (r=0.75), so removing
+	real intVisitLbee; //Intercept	
+	real slopeLbeeDistLbee; //Slope of leafcutter distance (shelter)		
+	real slopeHbeeDistLbee; //Slope of honeybee distance (field edge)
+	real slopeMBayLbee; //Effect of male bay - p=0.894
+	real slopeCentLbee; //Effect of bay position (center)	
+	real slopeStockingLbee; //Effect of half-stocking leafcutter bees	
+	real slope2016Lbee; //Year effect
+	real slopeFlDensLbee; //Flower density effect
+	real slopeCentHbeeDistLbee; //Bay position : honeybee distance interaction term -p=0.142
+	real slopeStockingHbeeDistLbee; //Half-stocking:hbee distance interaction			
+	real<lower=0.0001> sigmaLbeeVisField; //SD of field random intercepts
+	real<lower=0.0001> visitLbeePhi; //Dispersion parameter	
+	vector[Nfield_all] intVisitLbee_field; //field-level random intercepts	
 		
 	// Pollen deposition
 	// sigmaPolPlot correlated with lp__ (r=0.85), and most intercepts overlap zero

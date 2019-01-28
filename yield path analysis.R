@@ -630,9 +630,11 @@ datalistFlw <- flowersAllComm %>%
   pollenCount=Pollen
 ))
 
-datalistPlant <- plantsAllComm %>% ungroup() %>% 
+datalistPlant <- 
+  plantsAllComm %>% ungroup() %>% 
   filter(SeedMass!=0) %>%
-  filter(!is.na(Pods),!is.na(Missing)) %>% 
+  filter(!is.na(Pods),!is.na(Missing),!is.na(AvPodCount),!is.na(AvPodMass)) %>%
+  # filter(!is.na(Pods),!is.na(Missing)) %>%
   mutate(plantIndex=as.numeric(factor(paste(Year,Field,Distance)))) %>% #Index for plant (which plot?)
   arrange(plantIndex) %>% 
   with(list(Nplant=length(VegMass), #Number of plant samples (some missing)
@@ -642,14 +644,18 @@ datalistPlant <- plantsAllComm %>% ungroup() %>%
   flwCount=Pods+Missing, #Pods + Missing (total flw production)
   plantIndex=plantIndex, #Index for plant (which plot?)
   plantSize=log(VegMass[!is.na(VegMass)])-mean(log(VegMass[!is.na(VegMass)])), #log weight of veg mass (g), centered
+  #Averaged seeds per pod and weight per seed
+  avgSeedCount=AvPodCount,
+  avgSeedMass=(AvPodMass/AvPodCount)*1000, #Weight per seed (mg)
   yield=SeedMass[!is.na(SeedMass)] #observed weight of all seeds (g)
   # obsPl_ind=which(!is.na(VegMass)),missPl_ind=which(is.na(VegMass)), #Indices for missing plant size
   # obsYield_ind=which(!is.na(SeedMass)), missYield_ind=which(is.na(SeedMass)) #Indices for missing yield
-))
+)) 
 
 #Problem: plots exist at the pod level which do not exist at plant level
-a <- plantsAllComm %>% ungroup() %>% filter(!is.na(Pods),!is.na(Missing)) %>%  filter(SeedMass!=0) %>%
-  transmute(index=factor(paste(Year,Field,Distance,Plant))) %>% distinct() #Index for plant (which plot?)
+a <- plantsAllComm %>% ungroup() %>% filter(!is.na(Pods),!is.na(Missing),!is.na(AvPodCount),!is.na(AvPodMass)) %>%  
+  filter(SeedMass!=0) %>%  transmute(index=factor(paste(Year,Field,Distance,Plant))) %>% 
+  distinct() #Index for plant (which plot?)
 b <- seedsAllComm %>% ungroup() %>% filter(!is.na(Plant)&!is.na(PodCount)&PodCount>0&!is.na(PodMass)) %>%
   filter(!is.na(Pods),!is.na(Missing)) %>% #Remove plants from plant level
   transmute(index=factor(paste(Year,Field,Distance,Plant))) %>% distinct()
@@ -694,16 +700,23 @@ inits <- function() { with(datalist,
     sigmaFlDens=0.5,sigmaFlDens_field=0.5,intFlDens_field=rep(0,Nfield),
     intVisit=-1,slopeYearVis=0,slopeGpVis=0,slopeYearGpVis=1.5,slopeDistVis=0, #Visitation
     slopeHiveVis=0.5,slopeFlDens=0,sigmaVisField=2,visitHbeePhi=0.7,intVisit_field=rep(0.5,Nfield),lambdaVisField=1,
-    intPollen=5.5,slopeVisitPol=0,slopeHbeeDistPollen=0,slopeStockingPollen=0, #Pollen deposition
+    #Pollen deposition
+    intPollen=5.5,slopeVisitPol=0,slopeHbeeDistPollen=0,slopeStockingPollen=0, 
     slopeStockingHbeeDistPollen=0,sigmaPolField=0.5,sigmaPolPlot=0.4,pollenPhi=0.7,
     intPollen_field=rep(0,datalist$Nfield),intPollen_plot=rep(0,datalist$Nplot),
-    intFlwCount=1,slopePlSizeFlwCount=0,sigmaFlwCount_field=0.5,sigmaFlwSurv_plot=0.5, #Flower count per plant
+    #Flower count per plant
+    intFlwCount=1,slopePlSizeFlwCount=0,slopeSurvFlwCount=0,slope2015FlwCount=0,
+    sigmaFlwCount_field=0.5,sigmaFlwSurv_plot=0.5, 
+    phiFlwCount_field=0.1,intPhiFlwCount=0,slopePlSizePhiFlwCount=0,sigmaPhiFlwCount_field=0.1,
+    intPhiFlwCount_field=rep(0,Nfield),
     intFlwSurv_plot=rep(0,Nplot),intFlwCount_field=rep(0,Nfield),flwCountPhi=1,
     #Flower survival
     intFlwSurv=1,slopeVisitSurv=0,slopePolSurv=0,slopePlSizeSurv=0.02, 
     slopeIrrigSurv=0,slope2015Surv=0,slopeIrrig2015Surv=0,slopePlSizeIrrigSurv=0,
     slopeFlwCountSurv=0,slopePlDensSurv=0,sigmaFlwSurv_plot=0.3,sigmaFlwSurv_field=0.3, 
     intFlwSurv_field=rep(0,Nfield),intFlwSurv_plot=rep(0,Nplot),flwSurvPhi=1,
+    slopePlSizePlDensSurv=0,intPhiFlwSurv=0,slopePlSizePhiFlwSurv=0,sigmaPhiFlwSurv_field=0.1,
+    intPhiFlwSurv_field=rep(0,Nfield),
     #Seed count
     intSeedCount=3.15,slopeVisitSeedCount=0,slopePolSeedCount=0,
     slopePlSizeCount=0.01,slope2015SeedCount=0.15,
@@ -721,24 +734,28 @@ inits <- function() { with(datalist,
     intSeedWeight_plot=rep(0,datalist$Nplot),intSeedWeight_plant=rep(0,datalist$Nplant),
     lambdaSeedWeight=1.5,
     #Yield
-    intYield=0,slopeYield=1,sigmaYield=0.5 
+    intYield=-0.3,slopeYield=1,sigmaYield=0.25,
+    sigmaYield_field=c(0.1,0.05),sigmaYield_plot=c(0.4,0.17),
+    L_field=t(chol(matrix(c(1,-0.5,-0.5,1),ncol=2))),
+    L_plot=t(chol(matrix(c(1,-0.5,-0.5,1),ncol=2))),
+    zYield_field=matrix(rep(0,datalist$Nfield*2),nrow=2),
+    zYield_plot=matrix(rep(0,datalist$Nplot*2),nrow=2)
    ))
 }
 
-#Feed datalist into stan_rdump for use in CmdStan
-with(datalist,stan_rdump(names(datalist),'tempDat.data.R'))
-#Feed inits into stan_rdump
-temp <- inits()
-with(temp,stan_rdump(names(temp),'inits.data.R'))
-
-
-#Claims list
-claims1 <- stan(file='./Commodity model claims 2/commodity_claims21a.stan',data=datalist,iter=100,chains=1,
-                control=list(adapt_delta=0.8),init=inits)
-beep(1)
-pars <- c('intPollen','slopeVisitPol','slopeHbeeDistPollen',
-          'sigmaPolField','pollenPhi','sigmaPolPlot')	
-newpar <- 'slopeStockingPollen'
+# #Feed datalist into stan_rdump for use in CmdStan
+# with(datalist,stan_rdump(names(datalist),'tempDat.data.R'))
+# #Feed inits into stan_rdump
+# temp <- inits()
+# with(temp,stan_rdump(names(temp),'inits.data.R'))
+# 
+# #Claims list
+# claims1 <- stan(file='./Commodity model claims 2/commodity_claims39.stan',
+#                 data=datalist,iter=10,chains=1,control=list(adapt_delta=0.8),init=inits)
+# beep(1)
+# pars <- c('intPollen','slopeVisitPol','slopeHbeeDistPollen',
+#           'sigmaPolField','pollenPhi','sigmaPolPlot')	
+# newpar <- 'slopeStockingPollen'
 
 stan_trace(claims1,pars=c(pars,newpar))
 # pairs(claims1,pars=c(pars,newpar)) #Takes a long time
@@ -746,19 +763,17 @@ mod1 <- extract(claims1)
 coefs(mod1[c(pars,newpar)])
 
 #Full model - 1.7 hrs for 1000 iter
-modPodcount <- stan(file='visitation_pollen_model.stan',data=datalist,iter=1000,chains=3,
+modPodcount <- stan(file='visitation_pollen_model.stan',data=datalist,iter=1,chains=1,
                    control=list(adapt_delta=0.8),init=inits)
 beep(1)
-# save(modPodcount,file='modPodcount2.Rdata')
-# load('modPodcount.Rdata') #Seed count, size, and yield
-# load('modPodcount2.Rdata') #All other coefficients (plot/plant level) - 22 mins for 1000 iter
+# save(modPodcount,file='modPodcount.Rdata')
+load('modPodcount.Rdata') #Load all parameters
 
 # print(modPodcount)
 pars=c('intPlDens','slope2015PlDens','slopeIrrigPlDens','slope2015IrrigPlDens',
        'slopeDistPlDens','slopeGPPlDens','sigmaPlDens','sigmaPlDens_field') #Planting density
 pars=c('intPlSize','slopePlDensPlSize','slopeDistPlSize','slopeGpPlSize', #Plant size
-       'slopeIrrigPlSize','slope2015PlSize','slopeStockingPlSize',
-       'slopePlDensStockingPlSize',
+       'slopeIrrigPlSize','slope2015PlSize',
        'sigmaPlSize_field','sigmaPlSize_plot','sigmaPlSize')
 pars=c('intFlDens','slopePlSizeFlDens','slopeHbeeDistFlDens','sigmaFlDens','sigmaFlDens_field') #Flower density
 pars=c('intVisit','slopeYearVis','slopeGpVis','slopeYearGpVis','slopeIrrigVis',
@@ -766,9 +781,8 @@ pars=c('intVisit','slopeYearVis','slopeGpVis','slopeYearGpVis','slopeIrrigVis',
        'sigmaVisField','lambdaVisField','visitHbeePhi')
 pars=c('intPollen','slopeVisitPol','slopeHbeeDistPollen',#'slopeFlyVisPol',
        'sigmaPolField','sigmaPolPlot','pollenPhi') #Pollen deposition
-pars=c('intFlwCount','slopePlSizeFlwCount', #Flower count per plant
-       'sigmaFlwCount_field','intSigmaFlwCount',
-       'slopePlSizeSigmaFlwCount','sigmaSigmaFlwCount_field')
+pars=c('intFlwCount','slopePlSizeFlwCount','slopeSurvFlwCount','slope2015FlwCount', #Flower count per plant
+       'phiFlwCount_field','intPhiFlwCount','slopePlSizePhiFlwCount','sigmaPhiFlwCount_field')
 pars=c('intFlwSurv','slopeVisitSurv','slopePolSurv','slopePlSizeSurv',
        'slopePlDensSurv','slopeIrrigSurv','slope2015Surv','sigmaFlwSurv_field',
        # 'flwSurvPhi') #Flower survival
@@ -780,19 +794,31 @@ pars=c('intSeedWeight','slopeVisitSeedWeight','slopePolSeedWeight',#Seed weight
        'slope2015SeedWeight','slope2015IrrigSeedWeight','sigmaSeedWeight',
        'sigmaSeedWeight_plant','sigmaSeedWeight_field','lambdaSeedWeight')
 pars=c('intYield','slopeYield','sigmaYield',
-       'sigmaYield_field','sigmaYield_plot','L_field','L_plot')
+       'sigmaYield_field[1]','sigmaYield_field[2]','sigmaYield_plot[1]','sigmaYield_plot[2]',
+       'L_field','L_plot')
 stan_hist(modPodcount,pars=pars)+geom_vline(xintercept=0,linetype='dashed')
 traceplot(modPodcount,pars=c(pars),inc_warmup=F)
 # launch_shinystan(modPodcount)
 # print(modPodcount,pars=pars) #Takes way too long
 # pairs(modPodcount,pars=pars) #Takes way too long
 
-mod3 <- extract(modPodcount)
+mod3 <- extract(modPodcount) #Extract values
+#Replace Cholesky matrices with covariance term
+storage <- rep(NA,nrow(mod3$L_field))
+for(i in 1:nrow(mod3$L_field)){
+  storage[i] <- (mod3$L_field[i,,] %*% t(mod3$L_field[i,,]))[1,2]
+}
+mod3$L_field <- storage #Field level term
+for(i in 1:nrow(mod3$L_plot)){
+  storage[i] <- (mod3$L_plot[i,,] %*% t(mod3$L_plot[i,,]))[1,2]
+}
+mod3$L_plot <- storage
 
-# #Coefficients in table form for LaTeX
-# (mod3coefs <- data.frame(par='Hbee visitation',parname=rownames(coefs(mod3[pars])),coefs(mod3[pars]),row.names=NULL))
-# library(xtable)
-# print(xtable(mod3coefs,digits=c(0,0,0,3,3,3,3,3,3,0,4)),include.rownames=F)
+
+#Coefficients in table form for LaTeX
+(mod3coefs <- data.frame(par='Total yield',parname=rownames(coefs(mod3[pars])),coefs(mod3[pars]),row.names=NULL))
+library(xtable)
+print(xtable(mod3coefs,digits=c(0,0,0,3,3,3,3,3,3,0,4)),include.rownames=F)
 
 #Faster Pairplots
 pairs(mod3[c(pars,'lp__')],lower.panel=function(x,y){
@@ -807,12 +833,10 @@ t(apply(mod3$intSigmaFlwCount_field,2,function(x) quantile(x,c(0.5,0.975,0.025))
   # ggplot(aes(median))+geom_density()
 
 plot(apply(mod3$intFlwCount_field,2,median),apply(mod3$intSigmaFlwCount_field,2,median))
-
-
 qqnorm(apply(mod3$intPollen_plot,2,median));qqline(apply(mod3$intPollen_plot,2,median));
 mean(apply(mod3$intVisit_field,2,median))
 
-#Plots of random intercepts/slopes for yield
+#Plots of random intercepts/slopes for yield; not sure if the negative correlation actually means much
 par(mfrow=c(2,1))
 plot(apply(mod3$ranEffYield_field[,1,],2,mean),apply(mod3$ranEffYield_field[,2,],2,mean),
      xlab='Intercept',ylab='Slope',main='Field',pch=19) #Weakly correlated (r=-0.55)
@@ -864,23 +888,15 @@ with(mod3,PPplots(apply(seedCount_resid,1,function(x) sum(abs(x))),
                   apply(predSeedCount_resid,1,function(x) sum(abs(x))),
                   datalist$seedCount,apply(predSeedCount,2,median),main='Seeds per pod'))
 
-
 #weight per seed - good
-with(mod3,plot(apply(seedMass_resid,1,function(x) sum(abs(x))),
-               apply(predSeedMass_resid,1,function(x) sum(abs(x))),
-               xlab='Sum residuals',ylab='Sum simulated residuals',main='Weight per seed'))
-abline(0,1,col='red') #PP plot 
-plot(datalist$seedMass,apply(mod3$predSeedMass,2,median), #Predicted vs Actual - OK, but weird outliers: check data
-     ylab='Predicted seed weight',xlab='Actual seed weight'); abline(0,1,col='red'); 
+with(mod3,PPplots(apply(seedMass_resid,1,function(x) sum(abs(x))),
+                  apply(predSeedMass_resid,1,function(x) sum(abs(x))),
+                  datalist$seedMass,apply(mod3$predSeedMass,2,median),main='Weight per seed (TKW)'))
 
-#Yield per plant
-with(mod3,plot(apply(yield_resid,1,function(x) sum(abs(x))),
-               apply(predYield_resid,1,function(x) sum(abs(x))),
-               xlab='Sum residuals',ylab='Sum simulated residuals',main='Yield per plant'))
-abline(0,1,col='red') #PP plot - good
-plot(log(datalist$yield),apply(mod3$predYield,2,median), #Predicted vs Actual - good
-     ylab='log Predicted yield',xlab='log Actual yield'); abline(0,1,col='red')
-par(mfrow=c(1,1))
+#Yield per plant - good
+with(mod3,PPplots(apply(yield_resid,1,function(x) sum(abs(x))),
+                  apply(predYield_resid,1,function(x) sum(abs(x))),
+                  datalist$yield,exp(apply(mod3$predYield,2,median)),main='Total yield'))
 
 # Partial effects plots for commodity fields -----------------------------
 mod3 <- extract(modPodcount) #Get coefficients from stan model
@@ -1949,7 +1965,7 @@ pars=c('intFlwCount','slopePlSizeFlwCount', #Flower count per plant
        'slopeCentFlwCount','slopePolFlwCount',
        'slopeFlDensFlwCount','sigmaFlwCount_field',
        'intPhiFlwCount','slopePlSizePhiFlwCount','sigmaPhiFlwCount_field')
-pars=c('intFlwSurv','slopePolSurv','slopePlSizeSurv', #Flower survival
+pars <- c('intFlwSurv','slopePolSurv','slopePlSizeSurv', #Flower survival
        'slopeEdgeCentSurv','slopeHbeeDistSurv','slopeLbeeDistSurv',
        'slopeFlwDensSurv','sigmaFlwSurv_field','sigmaFlwSurv_plot',
        'intPhiFlwSurv','slopePlSizePhiFlwSurv','sigmaPhiFlwSurv_field')

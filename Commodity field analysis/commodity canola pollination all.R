@@ -321,7 +321,7 @@ seeds2014=transmute(plants2014,Field=FieldName,Plot,Plant,
   filter(paste(Field,Plot,Plant,sep='.')!='McKee 5.1.5') #Removes McKee5.1.5 (DISPUTE IN LABELLING)
 
 plants2014= group_by(seeds2014,Field,Plot,Plant) %>% 
-  summarise_each(funs(mean,se),vars=-FieldPlot)%>% #Mean and SE of metrics for each plant (all mean values except for pod measurements will equal plant-level metrics)
+  summarise_at(vars(-FieldPlot),funs(mean(.,na.rm=T),se)) %>% #Mean and SE of metrics for each plant (all mean values except for pod measurements will equal plant-level metrics)
   select(Field,Plot,Plant,VegMass=VegMass_mean,SeedMass=SeedMass_mean,
          Branch=Branch_mean,Pods=Pods_mean,Missing=Missing_mean,SeedCount=SeedCount_mean,
          AvPodCount=PodCount_mean,SEPodCount=PodCount_se,AvPodMass=PodMass_mean,SEPodMass=PodMass_se) %>%
@@ -358,7 +358,8 @@ seeds2015=transmute(plants2015,Field=FieldName,Plot,Plant,
   group_by(Field,Plot,Plant,Pod) %>%
   mutate(FieldPlot=paste(Field,Plot,sep='_'))
 
-plants2015=summarise_each(group_by(seeds2015,Field,Plot,Plant),funs(mean,se),vars=-FieldPlot)%>% #Mean and SE of metrics for each plant (all mean values except for pod measurements will equal plant-level metrics)
+plants2015=group_by(seeds2015,Field,Plot,Plant) %>% 
+  summarise_at(vars(-FieldPlot),funs(mean(.,na.rm=T),se))%>% #Mean and SE of metrics for each plant (all mean values except for pod measurements will equal plant-level metrics)
   select(Field,Plot,Plant,VegMass=VegMass_mean,SeedMass=SeedMass_mean,
          Branch=Branch_mean,Pods=Pods_mean,Missing=Missing_mean,SeedCount=SeedCount_mean,
          AvPodCount=PodCount_mean,SEPodCount=PodCount_se,AvPodMass=PodMass_mean,SEPodMass=PodMass_se) %>%
