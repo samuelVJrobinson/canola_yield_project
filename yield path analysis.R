@@ -816,7 +816,7 @@ mod3$L_plot <- storage
 
 
 #Coefficients in table form for LaTeX
-(mod3coefs <- data.frame(par='Total yield',parname=rownames(coefs(mod3[pars])),coefs(mod3[pars]),row.names=NULL))
+(mod3coefs <- data.frame(par='Plant size',parname=rownames(coefs(mod3[pars])),coefs(mod3[pars]),row.names=NULL))
 library(xtable)
 print(xtable(mod3coefs,digits=c(0,0,0,3,3,3,3,3,3,0,4)),include.rownames=F)
 
@@ -1157,13 +1157,15 @@ data.frame(MM_temp,t(apply(MM_temp %*% t(coef_seedMass),1,function(x) quantile(x
 # mod3$lp__ <- NULL #Removes LP
 # rm(modPodcount,mod1,mod2); gc();
 # save(mod3,file='modPodcount3.Rdata')
-setwd('./Models')
-load('modPodcount3.Rdata')
+setwd('~/Projects/UofC/canola_yield_project/Models')
+load('modPodcount.Rdata')
+modPodcount <- extract(modPodcount)
 
 3.412705 #Centering value for distance
 3.774427 #Centering value for plant density
 2.626568 #Centering value for plant size
 21 #centering value for flower density: sqrt(FlDens)-21
+1.0653 #centering value for logit-survival
 
 #Checks argument lengths and returns correct sample size
 getN <- function(args){
@@ -1197,11 +1199,11 @@ genPlSize <- function(plDens,dist,isGP,is2015,isIrrig,int,slopePlDens,slopeDist,
 }
 
 #Generate flower density for plot
-genFlwDens <- function(avgPlSize,dist,int,slopePlSize,slopeDist,sig,transform=F){
+genFlwDens <- function(avgPlSize,dist,int,slopePlSize,slopeDist,stDev,transform=F){
   N <- getN(list(avgPlSize,dist)) 
   #average log(plSize)-2.626568 plant size for plot, distance, intercept, slopes, stDev
   transdist <- log(dist)-3.412705
-  a <- rnorm(N,int + avgPlSize*slopePlSize + transdist*slopeDist,sig)
+  a <- rnorm(N,int + avgPlSize*slopePlSize + transdist*slopeDist,stDev)
   if(transform) return((a+21)^2) else return(a)
 }
 
@@ -1233,44 +1235,45 @@ genAvgPol <- function(hbee,dist,int,slopeHbee,slopeDist,stDev,center=T,transform
   if(transform) return(exp(a)) else return(a)
 }
 
-#Generate flower counts from plant sizes
-genFlwCount <- function(plSize,int,slopePlSize,intPhi,slopePlSizePhi,addVar=T){
-  #addVar: should use rbinom to simulate variance, or return expected value?
-  #plSize=plant size, intercept,slope of plant size, phi
-  transsize <- log(plSize)-2.626568
-  mu <- exp(int+slopePlSize*transsize) #Expected value
-  if(addVar){
-    phi <- exp(intPhi+slopePlSizePhi*transsize) #Dispersion
-    a <- rnbinom(length(plSize),mu=mu,size=phi)
-    return(a)  
-  } else (return(mu))
-}
-
-#Generate flower survival (pod count) from flower counts
-genPodCount <- function(flwCount,hbee,pol,plSize,plDens,isIrrig,is2015,int,
-                        slopeHbee,slopePol,slopePlSize,slopePlDens,slopeIrrig,
-                        slope2015,intPhi,slopePlSizePhi,transform=F,noBeta=F,
-                        addVar=T){
-  #addVar: should use rbinom to simulate variance, or return expected value?
-  #noBeta removes beta-binomial step
-  N <- getN(list(flwCount,hbee,pol,plSize,plDens,isIrrig,is2015))
+#Generate flower survival rate
+genFlwSurv <- function(hbee,pol,plSize,plDens,isIrrig,is2015,
+                       int,slopeHbee,slopePol,slopePlSize,slopePlDens,slopeIrrig,slope2015,
+                       intPhi,slopePlSizePhi,addVar=T){ 
+  N <- getN(list(hbee,pol,plSize,plDens,isIrrig,is2015))
   transhbee <- log(hbee+0.5)
   transsize <- log(plSize)-2.626568
   transdens <- log(plDens)-3.774427
   mu <- invLogit(int+slopeHbee*transhbee+slopePol*pol+slopePlSize*transsize+ #Expected value
                    slopePlDens*transdens+slopeIrrig*isIrrig+slope2015*is2015)
-  if(!addVar){
-    return(mu*flwCount)
-  }
-  if(noBeta){
-    a <- rbinom(N,flwCount,mu) #Skips beta step of distribution
-  } else {
+  if(!addVar) return(mu)
+  #Generate dispersion (phi)
+  phi <- exp(intPhi+slopePlSizePhi*transsize) #Dispersion
+  theta <- rbeta(N,mu*phi,(1-mu)*phi) #Generate from beta
+  return(theta)
+  # a <- rbinom(N,flwCount,theta)
+}
+
+#Generate flower counts from plant sizes
+genFlwCount <- function(plSize,surv,is2015,int,slopePlSize,slopeSurv,slope2015,
+                        intPhi,slopePlSizePhi,addVar=T){
+  N <- getN(list(plSize,surv))
+  #addVar: should use rbinom to simulate variance, or return expected value?
+  #plSize=plant size, intercept,slope of plant size, phi
+  transsize <- log(plSize)-2.626568
+  transsurv <- logit(surv)-1.0653 #Centered logit of survival
+  mu <- exp(int+slopePlSize*transsize+slopeSurv*transsurv+slope2015*is2015) #Expected value
+  if(addVar){
     phi <- exp(intPhi+slopePlSizePhi*transsize) #Dispersion
-    theta <- rbeta(N,mu*phi,(1-mu)*phi)
-    a <- rbinom(N,flwCount,theta)
-    # a <- rbetabinom(N,flwCount,mu,phi) #Requires rmutil packages
-  }
-  if(transform) return(mu) else return(a)
+    a <- rnbinom(N,mu=mu,size=phi)
+    return(a)  
+  } else (return(round(mu)))
+}
+
+#Generate pod counts from flower counts, flower survival rates
+genPodCount <- function(flwCount,flwSurv){
+  N <- getN(list(flwCount,flwSurv))
+  a <- rbinom(N,flwCount,flwSurv)
+  return(a)
 }
 
 #Generate avg seed counts per plant (seed count) - use stDev from plant level
@@ -1304,34 +1307,43 @@ genYield <- function(pods,seedCount,seedWeight,int,slopeYield,plotLev=T){
 }
 
 #Simulation
-simCommodity <- function(dist,is2015,isIrrig,isGP,numHives,dat,returnAll=F,useMean=F,plotVar=F){
+simCommodity <- function(dist,is2015,isIrrig,isGP,numHives,dat,returnAll=F,useMean=F,plotVar=F,
+                         other=NA){
   #returnAll: return all simulation parameters, or just yield?
   #useMean: use mean of distribution, or use random draw from it?
   #plotVar: simulate plot-level variance?
+  #other: list of endogenous variables to fix at a specific value (e.g. fix plant density/size). Works only for plDens right now
+  # rm(dist,is2015,isIrrig,isGP,numHives,dat,returnAll,useMean) #Cleanup
+  # rm(simPlDens,simPlSize,simFlwDens,simHbeeVis,simAvgPol,simFlwCount,simPodCount,simSeedCount,simSeedWeight,simYield)
+  # 
   # dist=1:400
   # is2015=0
   # isIrrig=0
   # isGP=0
   # numHives=40
-  # dat=mod3
+  # dat=modPodcount
   # returnAll=F
   # useMean=F
-  # rm(dist,is2015,isIrrig,isGP,numHives,dat,returnAll,useMean) #Cleanup
-  # rm(simPlDens,simPlSize,simFlwDens,simHbeeVis,simAvgPol,simFlwCount,simPodCount,simSeedCount,simSeedWeight,simYield)
-
+  # plotVar=T
+  
   if(useMean) dat <- lapply(dat,mean)
   
+  
   #Simulated plant density
+  if(!is.na(other)&grepl('simPlDens',names(other))){
+    simPlDens <- other$simPlDens
+  } else {
   simPlDens <- round(with(dat,genPlDens(dist=dist,is2015=is2015,isIrrig=isIrrig,isGP=isGP,
                       int=sample(intPlDens,1),slopeDist=sample(slopeDistPlDens,1),
                       slope2015=sample(slope2015PlDens,1),slopeIrrig=sample(slopeIrrigPlDens,1),
                       slopeIrrig2015=sample(slope2015IrrigPlDens,1),slopeGP=sample(slopeGPPlDens,1),
                       stDev=ifelse(plotVar,sample(sigmaPlDens,1),0),T)))
+  }
   
   # #Compare to actual - looks OK
   # par(mfrow=c(2,1))
   # hist(surveyAllComm$PlDens,breaks=seq(0,200,10),xlab='Actual Plant Density',main=NULL)
-  # hist(simPlDens,breaks=seq(0,200,10),xlab='Actual Plant Density',main=NULL)
+  # hist(simPlDens,breaks=seq(0,200,10),xlab='Simulated Plant Density',main=NULL)
   
   #Simulated plant sizes within plots
   simPlSize <- with(dat,mapply(genPlSize,plDens=simPlDens,dist=dist,isGP=isGP,is2015=is2015,
@@ -1347,14 +1359,14 @@ simCommodity <- function(dist,is2015,isIrrig,isGP,numHives,dat,returnAll=F,useMe
   # hist(unlist(simPlSize),xlab='Sim Plant Size',main=NULL,breaks=seq(0,upr,10))
   
   #Simulate flower density 
-    simFlwDens <- with(dat,genFlwDens(avgPlSize=temp,
+  simFlwDens <- with(dat,genFlwDens(avgPlSize=sapply(simPlSize,mean),
                        dist=dist,int=sample(intFlDens,1),slopePlSize=sample(slopePlSizeFlDens,1),
                        slopeDist=sample(slopeHbeeDistFlDens,1),
                        stDev=ifelse(plotVar,sample(sigmaFlDens,1),0),transform=T))
-  # #Compare to actual - looks OK
+  # #Compare to actual - looks OK, but tends to vary quite a bit
   # par(mfrow=c(2,1))
-  # hist(surveyAllComm$FlDens,breaks=seq(0,2000,100),xlab='Actual Flw Dens',main=NULL)
-  # hist(simFlwDens,breaks=seq(0,2000,100),xlab='Sim Flw Dens',main=NULL)
+  # hist(surveyAllComm$FlDens,breaks=seq(0,max(c(simFlwDens,surveyAllComm$FlDens))+100,100),xlab='Actual Flw Dens',main=NULL)
+  # hist(simFlwDens,breaks=seq(0,max(c(simFlwDens,surveyAllComm$FlDens))+100,100),xlab='Sim Flw Dens',main=NULL)
   
   #Simulate hbee visits
   simHbeeVis <- with(dat,genHbeeVis(dist=dist,numHives=numHives,flDens=simFlwDens,is2015=is2015,
@@ -1381,10 +1393,26 @@ simCommodity <- function(dist,is2015,isIrrig,isGP,numHives,dat,returnAll=F,useMe
   #     xlab='Sim Avg pollen/plot',main=NULL,breaks=seq(0,3000,100))
   # hist(with(flowersAllComm,tapply(Pollen,paste(Field,Year,Distance),mean)),xlab='Actual Avg Pollen/plot',main=NULL,breaks=seq(0,3000,100))
   
+  #Simulate flower survival rate
+  simFlwSurv <- with(dat,mapply(genFlwSurv,hbee=simHbeeVis,pol=simAvgPol,plSize=simPlSize,
+                                plDens=simPlDens,isIrrig=isIrrig,is2015=is2015,
+                                int=sample(intFlwSurv,1),slopeHbee=sample(slopeVisitSurv,1),
+                                slopePol=sample(slopePolSurv,1),slopePlSize=sample(slopePlSizeSurv,1),
+                                slopePlDens=sample(slopePlDensSurv,1),slopeIrrig=sample(slopeIrrigSurv,1),
+                                slope2015=sample(slope2015Surv,1),intPhi=sample(intPhiFlwSurv,1),
+                                slopePlSizePhi=sample(slopePlSizePhiFlwSurv,1),addVar=plotVar,SIMPLIFY=F))
+  
+  # #Flower survivorship (proportion) - looks OK
+  # par(mfrow=c(2,1))
+  # hist(unlist(simFlwSurv),xlab='Sim flower survival',main=NULL,breaks=seq(0,1,0.05))
+  # hist(with(plantsAllComm,Pods/(Pods+Missing)),xlab='Actual flower survival',main=NULL,breaks=seq(0,1,0.05))
+  
   #Simulate flower count per plant
-  simFlwCount <- with(dat,lapply(simPlSize,genFlwCount,int=sample(intFlwCount,1),
-                      slopePlSize=sample(slopePlSizeFlwCount,1),intPhi=sample(intPhiFlwCount,1),
-                      slopePlSizePhi=sample(slopePlSizePhiFlwCount,1),addVar=plotVar))
+  simFlwCount <- with(dat,mapply(genFlwCount,plSize=simPlSize,surv=simFlwSurv,is2015=is2015,
+                                 int=sample(intFlwCount,1),slopePlSize=sample(slopePlSizeFlwCount,1),
+                                 slopeSurv=sample(slopeSurvFlwCount,1),slope2015=sample(slope2015FlwCount,1),
+                                 intPhi=sample(intPhiFlwCount,1),
+                                 slopePlSizePhi=sample(slopePlSizePhiFlwCount,1),addVar=plotVar,SIMPLIFY=F))
   
   # #Compare to actual - looks OK
   # par(mfrow=c(2,1))
@@ -1393,21 +1421,14 @@ simCommodity <- function(dist,is2015,isIrrig,isGP,numHives,dat,returnAll=F,useMe
   # abline(v=mean(unlist(simFlwCount)),col='red');abline(v=median(unlist(simFlwCount)),col='red',lty='dashed')
   # hist(with(plantsAllComm,Pods+Missing),xlab='Actual Flowers/plant',main=NULL,breaks=seq(0,upr+50,50))
   # abline(v=mean(with(plantsAllComm,Pods+Missing),na.rm=T),col='red');abline(v=median(with(plantsAllComm,Pods+Missing),na.rm=T),col='red',lty='dashed')
+
+  simPodCount <- with(dat,mapply(genPodCount,simFlwCount,simFlwSurv,SIMPLIFY=F))
   
-  #Simulate flower survival to pod
-  simPodCount <- with(dat,mapply(genPodCount,flwCount=simFlwCount,hbee=simHbeeVis,pol=simAvgPol,
-                        plSize=simPlSize,plDens=simPlDens,isIrrig=isIrrig,is2015=is2015,
-                        int=sample(intFlwSurv,1),slopeHbee=sample(slopeVisitSurv,1),
-                        slopePol=sample(slopePolSurv,1),slopePlSize=sample(slopePlSizeSurv,1),
-                        slopePlDens=sample(slopePlDensSurv,1),slopeIrrig=sample(slopeIrrigSurv,1),
-                        slope2015=sample(slope2015Surv,1),intPhi=sample(intPhiFlwSurv,1),
-                        slopePlSizePhi=sample(slopePlSizePhiFlwSurv,1),noBeta=F,addVar=plotVar,SIMPLIFY=F))
-                        # phi=sample(flwSurvPhi,1)))
-  
-  # #Flower survivorship (proportion) - looks OK
+  # #Compare to actual - looks OK
   # par(mfrow=c(2,1))
-  # hist(unlist(simPodCount)/unlist(simFlwCount),xlab='Sim flower survival',main=NULL,breaks=seq(0,1,0.05))
-  # hist(with(plantsAllComm,Pods/(Pods+Missing)),xlab='Actual flower survival',main=NULL,breaks=seq(0,1,0.05))
+  # upr <- max(unlist(simPodCount),with(plantsAllComm,Pods),na.rm=T)
+  # hist(unlist(simPodCount),xlab='Sim Pods/plant',main=NULL,breaks=seq(0,upr+50,50))
+  # hist(with(plantsAllComm,Pods),xlab='Actual Pods/plant',main=NULL,breaks=seq(0,upr+50,50))
   
   #Simulate avg seeds per pod
   simSeedCount <- with(dat,mapply(genSeedCount,hbee=simHbeeVis,pol=simAvgPol,plSize=simPlSize,is2015=is2015,
@@ -1422,7 +1443,6 @@ simCommodity <- function(dist,is2015,isIrrig,isGP,numHives,dat,returnAll=F,useMe
   # hist(unlist(simSeedCount),breaks=seq(0,upr,2),main=NULL,xlab='Sim Avg Seed Count')
   # hist(plantsAllComm$AvPodCount,breaks=seq(0,upr,2),main=NULL,xlab='Actual Avg Seed Count')
   
-  
   #Simulate avg seed weight (mg)
   simSeedWeight <- with(dat,mapply(genSeedWeight,hbee=simHbeeVis,pol=simAvgPol,avgSeedCount=simSeedCount,
                       plSize=simPlSize,isIrrig=isIrrig,is2015=is2015,int=sample(intSeedWeight,1),
@@ -1436,9 +1456,9 @@ simCommodity <- function(dist,is2015,isIrrig,isGP,numHives,dat,returnAll=F,useMe
   # par(mfrow=c(2,1))
   # upr <- max(unlist(simSeedWeight),(plantsAllComm$AvPodMass*1000)/plantsAllComm$AvPodCount,na.rm=T)+1
   # hist(unlist(simSeedWeight),xlab='Sim weight per seed (mg)',main=NULL,breaks=seq(0,upr,0.5))
-  # abline(v=mean(unlist(simSeedWeight)),col='red');abline(v=median(unlist(simSeedWeight)),col='red',lty='dashed')
-  # hist(with(plantsAllComm,AvPodMass*1000/AvPodCount),xlab='Actual weight per seed (mg)',main=NULL,breaks=seq(0,upr,0.5))
-  # abline(v=mean(with(plantsAllComm,AvPodMass*1000/AvPodCount),na.rm=T),col='red');abline(v=median(with(plantsAllComm,AvPodMass*1000/AvPodCount),na.rm=T),col='red',lty='dashed')
+  # hist(with(plantsAllComm,AvPodMass*1000/AvPodCount),xlab='Actual weight per seed (mg)',
+  #      main=NULL,breaks=seq(0,upr,0.5))
+  
   
   #Simulate total yield for each plot
   simYield <- with(dat,mapply(genYield,pods=simPodCount,seedCount=simSeedCount,seedWeight=simSeedWeight,
@@ -1486,7 +1506,6 @@ left_join(results2,results3,by='ID') %>% #Range looks OK
 
 
 #Simulate pollination effects at generic fields
-
 dists <- rep(seq(1,501,10),3)
 hives <- rep(c(0,40,400),each=length(seq(1,501,10)))
 results <- replicate(1000,simCommodity(dist=dists,is2015=1,isIrrig=0,
@@ -1513,10 +1532,14 @@ results %>% mutate(numHives=factor(numHives,labels=c('No Hives','40 Hives','400 
 
 
 #Actual yield distribution
-  
 ggplot(aes(x=Distance,y=Yield))+geom_jitter(width=5,alpha=0.3)+
   geom_pointrange(data=allResults,aes(x=dist,y=pred,ymax=upr,ymin=lwr,col=scenario),position=position_dodge(width=1))
-  
+
+
+#Simulate plant density/size effects at generic fields
+test <- replicate(100,simCommodity(dist=50,is2015=0,isIrrig=0,isGP=0,numHives=20,dat=modPodcount,returnAll=F,useMean=F,plotVar=F,other=list(simPlDens=c(1:200))))
+
+plot(apply(test,1,mean))
 
 
 # Test commodity field analysis, using piecewiseSEM --------------------------
@@ -1933,7 +1956,7 @@ inits <- function() {with(datalist,list(
 
 #Full model
 modPodcount_seed <- stan(file='visitation_pollen_model_seed.stan',data=datalist,
-                         iter=2000,chains=4,control=list(adapt_delta=0.8),init=inits)
+                         iter=150,chains=3,control=list(adapt_delta=0.8),init=inits)
 beep(1)
 # Setting max_treedepth=15 takes about 2-3x as long to run model. Use with care.
 
@@ -1961,9 +1984,9 @@ pars=c('intVisitHbee','slopeHbeeDistHbee','slopeLbeeDistHbee','slopeLbeeHbeeDist
        'visitHbeePhi','zeroVisHbeeTheta') 
 pars=c('intPol','slopeHbeePol','slopeLbeePol','slopeCentPol','slopeHbeeDistPol','slopeFlDensPol', #Pollen
        'pollenPhi','sigmaPolField','sigmaPolPlot')
-pars=c('intFlwCount','slopePlSizeFlwCount', #Flower count per plant
+pars <- c('intFlwCount','slopePlSizeFlwCount', #Flower count per plant
        'slopeCentFlwCount','slopePolFlwCount',
-       'slopeFlDensFlwCount','sigmaFlwCount_field',
+       'slopeFlDensFlwCount','slopeFlwSurvFlwCount','sigmaFlwCount_field',
        'intPhiFlwCount','slopePlSizePhiFlwCount','sigmaPhiFlwCount_field')
 pars <- c('intFlwSurv','slopePolSurv','slopePlSizeSurv', #Flower survival
        'slopeEdgeCentSurv','slopeHbeeDistSurv','slopeLbeeDistSurv',
@@ -1988,6 +2011,10 @@ print(modPodcount_seed,pars=pars)
 
 #Check model fit:
 mod3 <- extract(modPodcount_seed)
+
+fastPairs(mod3[pars])
+
+#Coefficients
 (mod3coefs <- data.frame(par='NA',parname=rownames(coefs(mod3[pars])),coefs(mod3[pars]),row.names=NULL))
 print(xtable(mod3coefs,digits=c(0,0,0,3,3,3,3,3,3,0,4)),include.rownames=F)
 
