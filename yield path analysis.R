@@ -99,6 +99,7 @@ g2bushels <- function(x){
 
 #Everything above this line run to start
 
+
 # Data from Wang et al 2011 - ovule counts --------------------------------
 ovDat <- read.csv('wang2011ovData.csv') %>% 
   mutate(Freq=ifelse(Freq<0,0,Freq))
@@ -1895,6 +1896,7 @@ datalistPlot <- within(datalistPlot,{
 # datalistPlant$avgSeedCount <- datalistPlant$avgSeedMass <- NULL
 
 datalist <- c(datalistField,datalistPlot,datalistFlw,datalistPlant,datalistPod)
+datalist <- datalist[!sapply(datalist,function(x) any(is.na(x)))] #Get rid of indices with NAs in them
 rm(datalistField,datalistPlot,datalistFlw,datalistPlant,datalistPod,naPlant,naPod,rileyFields,samFields,naPlot) #Cleanup
 str(datalist)
 
@@ -1930,7 +1932,8 @@ inits <- function() {with(datalist,list(
   intPol_field=rep(0,Nfield),intPol_plot=rep(0,Nplot_F),
   #Flower count per plant
   intFlwCount=5.9,slopePlSizeFlwCount=0.9,slopeCentFlwCount=0.1,
-  slopePolFlwCount=-0.035,slopeFlDensFlwCount=0.005,
+  # slopePolFlwCount=-0.035,slopeFlDensFlwCount=0.005,
+  slopeFlwSurvFlwCount=0,
   sigmaFlwCount_field=0.09,sigmaFlwCount_plot=0.1,
   intFlwCount_field=rep(0,Nfield),intFlwCount_plot=rep(0,Nplot_F),flwCountPhi=35,
   #Flower survival
@@ -1954,9 +1957,15 @@ inits <- function() {with(datalist,list(
   intYield=-0.3,slopeYield=1,sigmaYield=0.32,sigmaYield_field=c(0.2,0.04),sigmaYield_plot=c(0.7,0.24) 
 )}
 
+#Feed datalist into stan_rdump for use in CmdStan
+with(datalist,stan_rdump(names(datalist),'tempDatSeed.data.R'))
+#Feed inits into stan_rdump
+temp <- inits()
+with(temp,stan_rdump(names(temp),'initsSeed.data.R'))
+
 #Full model
 modPodcount_seed <- stan(file='visitation_pollen_model_seed.stan',data=datalist,
-                         iter=150,chains=3,control=list(adapt_delta=0.8),init=inits)
+                         iter=1,chains=1,control=list(adapt_delta=0.8),init=inits)
 beep(1)
 # Setting max_treedepth=15 takes about 2-3x as long to run model. Use with care.
 
@@ -1972,7 +1981,7 @@ beep(1)
 pars=c('intPlDens','slopeHbeeDistPlDens',#'slopeHbeeDistSqPlDens', #Planting density
        'sigmaPlDens','sigmaPlDens_field') 
 pars=c('intPlSize','slopePlDensPlSize','slopeDistPlSize','sigmaPlSize') #Plant size
-pars=c('intFlDens','slopePlSizeFlDens','slopeBayFlDens',
+pars=c('intFlDens','slopePlSizeFlDens',
        'slope2016FlDens','slopeDistFlDens',
        'sigmaFlDens','sigmaFlDens_field') #Flower density
 pars=c('intVisitLbee','slopeHbeeDistLbee','slopeLbeeDistLbee','slopeCentLbee','slopeMBayLbee', #Lbee vis
@@ -1985,8 +1994,8 @@ pars=c('intVisitHbee','slopeHbeeDistHbee','slopeLbeeDistHbee','slopeLbeeHbeeDist
 pars=c('intPol','slopeHbeePol','slopeLbeePol','slopeCentPol','slopeHbeeDistPol','slopeFlDensPol', #Pollen
        'pollenPhi','sigmaPolField','sigmaPolPlot')
 pars <- c('intFlwCount','slopePlSizeFlwCount', #Flower count per plant
-       'slopeCentFlwCount','slopePolFlwCount',
-       'slopeFlDensFlwCount','slopeFlwSurvFlwCount','sigmaFlwCount_field',
+       'slopeCentFlwCount',#'slopePolFlwCount','slopeFlDensFlwCount',
+       'slopeFlwSurvFlwCount','sigmaFlwCount_field',
        'intPhiFlwCount','slopePlSizePhiFlwCount','sigmaPhiFlwCount_field')
 pars <- c('intFlwSurv','slopePolSurv','slopePlSizeSurv', #Flower survival
        'slopeEdgeCentSurv','slopeHbeeDistSurv','slopeLbeeDistSurv',
