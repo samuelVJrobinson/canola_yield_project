@@ -2600,23 +2600,10 @@ ggsave('../Figures/Seed/slopeStockingPodWeight.png',p1,width=4,height=4)
 
 # #Load all coefficients from models
 setwd('./Models')
-# load('modPodcount_seed.Rdata') #Seed count/weight model  + flw count + yield model
-# mod1 <- extract(modPodcount_seed)
-# rm(modPodcount_seed); gc()
-# load('modPodcount_seed2.Rdata') #Everything else
-# mod2 <- extract(modPodcount_seed)
-# rm(modPodcount_seed)
-# # load('modPodcount_seed3.Rdata') #All other params (visits,plSize,etc)
-# # mod3 <- extract(modPodcount_seed)
-# # rm(modPodcount_seed)
-# mod3 <- c(mod1,mod2)
-# mod3 <- mod3[unique(c(names(mod1),names(mod2)))] #Removes doubles
-# mod3$lp__ <- NULL #Removes LP
-# rm(mod1,mod2); gc();
-# save(mod3,file='modPodcount_seed3.Rdata')
-load('modPodcount_seed3.Rdata')
-#Fixes Fbay-Mbay names
-names(mod3)[grepl('FBay',names(mod3))] <- sub('FBay','MBay',names(mod3)[grepl('FBay',names(mod3))])
+modPodcount_seed <- read_stan_csv("./From cedar/visitation_pollen_model_seed4a.csv")  #model from cedar
+mod3 <- extract(modPodcount_seed)
+# #Fixes Fbay-Mbay names
+# names(mod3)[grepl('FBay',names(mod3))] <- sub('FBay','MBay',names(mod3)[grepl('FBay',names(mod3))])
 
 # transdens <- log(plDens)-3.573633 #Plant density
 # transPlSize <- log(plSize)-3.197572 #Plant size
@@ -2624,6 +2611,7 @@ names(mod3)[grepl('FBay',names(mod3))] <- sub('FBay','MBay',names(mod3)[grepl('F
 # transLbeeDist <- log(lbeeDist)-3.113714 #Lbee distance
 # transFlDens <- sqrt(flDens)-22 #Flw dens
 # transLbeeVis <- log(1+lbeeVis)
+# transSurv <- logit(surv) - 0.7384344 #Survival
 
 #Checks argument lengths and returns correct sample size
 getN <- function(args){
@@ -2743,30 +2731,12 @@ genAvgPol <- function(hbeeVis,lbeeVis,isCent,hbeeDist,flDens,
   if(transform) return(exp(a)) else return(a) 
 }
 
-#Generate flower counts from plant sizes
-genFlwCount <- function(plSize,isCent,avgPol,flDens,
-                        int,slopePlSize,slopeCent,slopePol,slopeFlDens,
-                        intPhi,slopePlSizePhi,addVar=T){
-  N <- getN(list(plSize,isCent,avgPol,flDens))
-  
-  #plSize=plant size, intercept,slope of plant size, phi
-  transPlSize <- log(plSize)-3.197572 #Plant size
-  transFlDens <- sqrt(flDens)-22 #Flw dens
-  mu <- int+slopePlSize*transPlSize+slopeCent*isCent+
-              slopePol*avgPol+slopeFlDens*transFlDens #Expected value
-  if(!addVar) return(exp(mu)) #No variance
-  phi <- exp(intPhi+slopePlSizePhi*transPlSize) #Dispersion
-  a <- round(exp(rnorm(N,mu,phi)))
-  if(any(is.na(a))) stop('NAs from rnorm')
-  return(a)
-}
-
-#Generate flower survival (pod count) from flower counts
-genPodCount <- function(flwCount,pol,plSize,isCent,hbeeDist,lbeeDist,flwDens,
+#Generate flower survival (proportion from beta-binomial) 
+genPodCount <- function(pol,plSize,isCent,hbeeDist,lbeeDist,flwDens,
                         int,slopePol,slopePlSize,slopeCent,slopeHbeeDist,slopeLbeeDist,slopeFlwDens,
                         intPhi,slopePlSizePhi,addVar=T){
   #noBeta removes beta-binomial step
-  N <- getN(list(flwCount,pol,plSize,isCent,hbeeDist,lbeeDist,flwDens))
+  N <- getN(list(pol,plSize,isCent,hbeeDist,lbeeDist,flwDens))
   transPlSize <- log(plSize)-3.197572 #Plant size
   transHbeeDist <- log(hbeeDist)-4.641845 #Hbee distance
   transLbeeDist <- log(lbeeDist)-3.113714 #Lbee distance
@@ -2775,10 +2745,27 @@ genPodCount <- function(flwCount,pol,plSize,isCent,hbeeDist,lbeeDist,flwDens,
   mu <- invLogit(int+slopePol*pol+slopePlSize*transPlSize+slopeCent*isCent+
                    slopeHbeeDist*transHbeeDist+slopeLbeeDist*transLbeeDist+
                    slopeFlwDens*transFlDens)
-  if(!addVar) return(mu*flwCount) #Without dispersion
+  if(!addVar) return(mu) #Without dispersion
   phi <- exp(intPhi+slopePlSizePhi*transPlSize) #Dispersion
   theta <- rbeta(N,mu*phi,(1-mu)*phi) #Adds beta
-  a <- rbinom(N,flwCount,theta)
+  return(theta)
+}
+
+#Generate flower counts from plant sizes, edgeCent, and survival rate
+genFlwCount <- function(plSize,isCent,surv,
+                        int,slopePlSize,slopeCent,slopeSurv,
+                        intPhi,slopePlSizePhi,addVar=T){
+  N <- getN(list(plSize,isCent,surv))
+  
+  #plSize=plant size, intercept,slope of plant size, phi
+  transPlSize <- log(plSize)-3.197572 #Plant size
+  transSurv <- logit(surv) - 0.7384344 #Survival
+  mu <- int+slopePlSize*transPlSize+slopeCent*isCent+
+    slopeSurv*transSurv #Expected value
+  if(!addVar) return(exp(mu)) #No variance
+  phi <- exp(intPhi+slopePlSizePhi*transPlSize) #Dispersion
+  a <- round(exp(rnorm(N,mu,phi)))
+  if(any(is.na(a))) stop('NAs from rnorm')
   return(a)
 }
 
@@ -2850,7 +2837,7 @@ simSeed <- function(hbeeDist,lbeeDist,isCent,is2016,isHalfStock,dat,returnAll=F,
   # plotVar=F
   # rm(hbeeDist,lbeeDist,isCent,is2016,returnAll,useMean,isHalfStock) #Cleanup
   # rm(simPlDens,simPlSize,simFlwDens,simLbeeVis,simHbeeVis,simAvgPol,simFlwCount,
-  #    simPodCount,simSurv,simSeedCount,simSeedWeight,simYield)
+  #    simPodCount,simPodSurv,simSeedCount,simSeedWeight,simYield)
   
   if(useMean) dat <- lapply(dat,mean)
   
@@ -2938,11 +2925,25 @@ simSeed <- function(hbeeDist,lbeeDist,isCent,is2016,isHalfStock,dat,returnAll=F,
   # hist(with(pollenAllSeed,tapply(Pollen,paste(Field,Year,Distance),mean)),
   #      xlab='Actual Avg Pollen/plot',main=NULL,breaks=seq(0,200,5))
   
+  #Simulate flower survival to pod
+  simPodSurv <- with(dat,mapply(genPodCount,pol=simAvgPol,plSize=simPlSize,isCent=isCent,
+                                 hbeeDist=hbeeDist,lbeeDist=lbeeDist,flwDens=simFlwDens,int=sample(intFlwSurv,1),
+                                 slopePol=sample(slopePolSurv,1),slopePlSize=sample(slopePlSizeSurv,1),
+                                 slopeCent=sample(slopeEdgeCentSurv,1),slopeHbeeDist=sample(slopeHbeeDistSurv,1),
+                                 slopeLbeeDist=sample(slopeLbeeDistSurv,1),slopeFlwDens=sample(slopeFlwDensSurv,1),
+                                 intPhi=sample(intPhiFlwSurv,1),slopePlSizePhi=sample(slopePlSizePhiFlwSurv,1),
+                                 addVar=plotVar,SIMPLIFY=F))
+  
+  # #Flower survivorship (proportion) - looks OK
+  # par(mfrow=c(2,1))
+  # hist(unlist(simPodCount)/unlist(simFlwCount),xlab='Sim flower survival',main=NULL,breaks=seq(0,1,0.05))
+  # hist(with(plantsAllSeed,Pods/(Pods+Missing)),xlab='Actual flower survival',main=NULL,breaks=seq(0,1,0.05))
+  
+  
   #Simulate flower count per plant
-  simFlwCount <- with(dat,mapply(genFlwCount,plSize=simPlSize,isCent=isCent,
-                     avgPol=simAvgPol,flDens=simFlwDens,int=sample(intFlwCount,1),
-                     slopePlSize=sample(slopePlSizeFlwCount,1),slopeCent=sample(slopeCentFlwCount,1),
-                     slopePol=sample(slopePolFlwCount,1),slopeFlDens=sample(slopeFlDensFlwCount,1),
+  simFlwCount <- with(dat,mapply(genFlwCount,plSize=simPlSize,isCent=isCent,surv=simPodSurv,
+                     int=sample(intFlwCount,1),slopePlSize=sample(slopePlSizeFlwCount,1),
+                     slopeCent=sample(slopeCentFlwCount,1),slopeSurv=sample(slopeFlwSurvFlwCount,1),
                      intPhi=sample(intPhiFlwCount,1),slopePlSizePhi=sample(slopePlSizePhiFlwCount,1),
                      addVar=plotVar,SIMPLIFY=F))
   
@@ -2952,26 +2953,12 @@ simSeed <- function(hbeeDist,lbeeDist,isCent,is2016,isHalfStock,dat,returnAll=F,
   # hist(unlist(simFlwCount),xlab='Sim Flowers/plant',main=NULL,breaks=seq(0,upr+50,50))
   # hist(with(plantsAllSeed,Pods+Missing),xlab='Actual Flowers/plant',main=NULL,breaks=seq(0,upr+50,50))
   
-  #Simulate flower survival to pod
-  simPodCount <- with(dat,mapply(genPodCount,flwCount=simFlwCount,pol=simAvgPol,plSize=simPlSize,isCent=isCent,
-                           hbeeDist=hbeeDist,lbeeDist=lbeeDist,flwDens=simFlwDens,int=sample(intFlwSurv,1),
-                           slopePol=sample(slopePolSurv,1),slopePlSize=sample(slopePlSizeSurv,1),
-                           slopeCent=sample(slopeEdgeCentSurv,1),slopeHbeeDist=sample(slopeHbeeDistSurv,1),
-                           slopeLbeeDist=sample(slopeLbeeDistSurv,1),slopeFlwDens=sample(slopeFlwDensSurv,1),
-                           intPhi=sample(intPhiFlwSurv,1),slopePlSizePhi=sample(slopePlSizePhiFlwSurv,1),
-                           addVar=plotVar,SIMPLIFY=F))
-  
-  # #Flower survivorship (proportion) - looks OK
-  # par(mfrow=c(2,1))
-  # hist(unlist(simPodCount)/unlist(simFlwCount),xlab='Sim flower survival',main=NULL,breaks=seq(0,1,0.05))
-  # hist(with(plantsAllSeed,Pods/(Pods+Missing)),xlab='Actual flower survival',main=NULL,breaks=seq(0,1,0.05))
-  
-  #Proportion survival
-  simSurv <- mapply(function(x,y) x/y,x=simPodCount,y=simFlwCount,SIMPLIFY=F) 
+  #Generate pod count
+  simPodCount <- mapply(function(x,y) round(x*y),x=simPodSurv,y=simFlwCount,SIMPLIFY=F) 
   
   #Simulate avg seeds per pod
   simSeedCount <- with(dat,mapply(genSeedCount,pol=simAvgPol,plSize=simPlSize,isCent=isCent,hbeeDist=hbeeDist,
-                    flDens=simFlwDens,flwSurv=simSurv,int=sample(intSeedCount,1),
+                    flDens=simFlwDens,flwSurv=simPodSurv,int=sample(intSeedCount,1),
                     slopePol=sample(slopePolSeedCount,1),slopePlSize=sample(slopePlSizeCount,1),
                     slopeCent=sample(slopeEdgeCentSeedCount,1),slopeHbeeDist=sample(slopeHbeeDistSeedCount,1),
                     slopeFlDens=sample(slopeFlDensSeedCount,1),slopeSurv=sample(slopeSurvSeedCount,1),
@@ -3031,15 +3018,15 @@ simSeed <- function(hbeeDist,lbeeDist,isCent,is2016,isHalfStock,dat,returnAll=F,
 #                 isCent=EdgeCent=='Center',is2016=Year==2016,
 #                 isHalfStock=Treatment=='Double tent',dat=mod3)))
 # 
-# results2 <- filter(surveyAllSeed,Bay=='F') %>% 
+# results2 <- filter(surveyAllSeed,Bay=='F') %>%
 #   select(Field,Distance,EdgeCent,PlDens) %>% #Simulated yield per plot
-#   unite(ID,Field:EdgeCent,sep='_') %>% 
+#   unite(ID,Field:EdgeCent,sep='_') %>%
 #   bind_cols(data.frame(t(apply(results,1,function(x) quantile(x,c(0.5,0.05,0.95),na.rm=T))))) %>%
 #   rename('pred'='X50.','lwr'='X5.','upr'='X95.')
 # 
 # #Looks OK, at least for average field
 # ungroup(plantsAllSeed) %>% select(Field,Distance,EdgeCent,SeedMass) %>% #Actual yield per plot
-#   unite(ID,Field:EdgeCent) %>% group_by(ID) %>% summarize(totalSeeds=mean(SeedMass,na.rm=T)) %>% 
+#   unite(ID,Field:EdgeCent) %>% group_by(ID) %>% summarize(totalSeeds=mean(SeedMass,na.rm=T)) %>%
 #   left_join(results2,by='ID') %>% mutate(actual=totalSeeds*PlDens) %>% select(-totalSeeds,-PlDens) %>%
 #   ggplot(aes(x=actual,y=pred))+
 #   # geom_point()+
