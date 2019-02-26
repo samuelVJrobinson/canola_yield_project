@@ -115,8 +115,6 @@ g2bushels <- function(x){
 
 #Everything above this line run to start
 
-
-
 # Data from Wang et al 2011 - ovule counts --------------------------------
 ovDat <- read.csv('wang2011ovData.csv') %>% 
   mutate(Freq=ifelse(Freq<0,0,Freq))
@@ -1986,7 +1984,7 @@ inits <- function() {with(datalist,list(
 
 #Full model
 modPodcount_seed <- stan(file='visitation_pollen_model_seed.stan',data=datalist,
-                         iter=500,chains=3,control=list(adapt_delta=0.8),init=inits)
+                         iter=400,chains=3,control=list(adapt_delta=0.8),init=inits)
 beep(1)
 # Setting max_treedepth=15 takes about 2-3x as long to run model. Use with care.
 
@@ -2001,10 +1999,10 @@ modPodcount_seed <- read_stan_csv(csvFiles[3])  #model from cedar
 # str(modPodcount_seed2)
 # modPodcount_seed2$par[names(modPodcount_seed2$par) %in% pars] #Get optim results
 
-pars=c('intPlDens','slopeHbeeDistPlDens',#'slopeHbeeDistSqPlDens', #Planting density
+pars <- c('intPlDens','slopeHbeeDistPlDens',#'slopeHbeeDistSqPlDens', #Planting density
        'sigmaPlDens','sigmaPlDens_field') 
-pars=c('intPlSize','slopePlDensPlSize','slopeDistPlSize','sigmaPlSize_field','sigmaPlSize','nuPlSize') #Plant size
-pars=c('intFlDens','slopePlSizeFlDens',
+pars <- c('intPlSize','slopePlDensPlSize','slopeDistPlSize','sigmaPlSize_field','sigmaPlSize','nuPlSize') #Plant size
+pars <- c('intFlDens','slopePlSizeFlDens',
        'slope2016FlDens','slopeDistFlDens',
        'sigmaFlDens','sigmaFlDens_field','nuFlDens') #Flower density
 pars <- c('intVisitLbee','slopeHbeeDistLbee','slopeLbeeDistLbee','slopeCentLbee','slopeMBayLbee', #Lbee vis
@@ -2017,10 +2015,10 @@ pars <- c('intVisitHbee','slopeHbeeDistHbee','slopeLbeeDistHbee','slopeLbeeHbeeD
        'visitHbeePhi','zeroVisHbeeTheta') 
 pars <- c('intPol','slopeHbeePol','slopeLbeePol','slopeCentPol','slopeHbeeDistPol','slopeFlDensPol', #Pollen
        'pollenPhi','sigmaPolField','sigmaPolPlot')
-pars <- c('intFlwCount','slopePlSizeFlwCount', #Flower count per plant
-       'slopeCentFlwCount',#'slopePolFlwCount','slopeFlDensFlwCount',
-       'slopeFlwSurvFlwCount','sigmaFlwCount_field',
-       'intPhiFlwCount','slopePlSizePhiFlwCount','sigmaPhiFlwCount_field')
+# pars <- c('intFlwCount','slopePlSizeFlwCount', #Flower count per plant
+#        'slopeCentFlwCount',#'slopePolFlwCount','slopeFlDensFlwCount',
+#        'slopeFlwSurvFlwCount','sigmaFlwCount_field',
+#        'intPhiFlwCount','slopePlSizePhiFlwCount','sigmaPhiFlwCount_field')
 pars <- c('intFlwSurv','slopePolSurv','slopePlSizeSurv', #Flower survival
        'slopeEdgeCentSurv','slopeHbeeDistSurv','slopeLbeeDistSurv',
        'slopeFlwDensSurv','sigmaFlwSurv_field','sigmaFlwSurv_plot',
@@ -2047,7 +2045,7 @@ mod3 <- extract(modPodcount_seed)
 # fastPairs(mod3[pars])
 
 # #Coefficients
-# (mod3coefs <- data.frame(par='NA',parname=rownames(coefs(mod3[pars])),coefs(mod3[pars]),row.names=NULL))
+(mod3coefs <- data.frame(par='NA',parname=rownames(coefs(mod3[pars])),coefs(mod3[pars]),row.names=NULL))
 # print(xtable(mod3coefs,digits=c(0,0,0,3,3,3,3,3,3,0,4)),include.rownames=F)
 
 # #Distribution of random effects intercepts
@@ -2064,7 +2062,7 @@ with(mod3,PPplots(apply(plDens_resid,1,function(x) sum(abs(x))),
                   main='Plant density'))
 r2calc(mod3,'plDensMu','sigmaPlDens_field','sigmaPlDens') 
 
-#plant size - OK
+#plant size - gets way worse after getting rid of flower count term. Why is this?
 with(mod3,PPplots(resid=apply(plSize_resid,1,function(x) sum(abs(x))),
                predResid=apply(predPlSize_resid,1,function(x) sum(abs(x))),
                actual=datalist$plantSize,pred=apply(plSizeMu,2,median),
@@ -2096,17 +2094,44 @@ with(mod3,PPplots(apply(pollen_resid,1,function(x) sum(abs(x))),
               apply(predPollen_resid,1,function(x) sum(abs(x))),
               datalist$pollenCount,apply(mod3$predPollenCount,2,median),
               main='Pollen counts')) 
+r2calc(mod3,'pollenMu',c('sigmaPolField','sigmaPolPlot'),'pollenPhi') 
 
-#Flower count - OK
-with(mod3,PPplots(apply(flwCount_resid,1,function(x) sum(abs(x))),
-               apply(predFlwCount_resid,1,function(x) sum(abs(x))),
-               datalist$flwCount,apply(mod3$predFlwCount,2,median),
-               main='Flower count per plant'))
+# #Flower count - OK
+# with(mod3,PPplots(apply(flwCount_resid,1,function(x) sum(abs(x))),
+#                apply(predFlwCount_resid,1,function(x) sum(abs(x))),
+#                datalist$flwCount,apply(mod3$predFlwCount,2,median),
+#                main='Flower count per plant'))
 
-#flower survival - good
-with(mod3,PPplots(apply(podCount_resid,1,function(x) sum(abs(x))),
-               apply(predPodCount_resid,1,function(x) sum(abs(x))),
-               datalist$podCount,apply(mod3$predPodCount,2,median),main='Pods per plant'))
+#flower survival - OK
+with(mod3,PPplots(resid=apply(podCount_resid,1,function(x) sum(abs(x))),
+               predResid=apply(predPodCount_resid,1,function(x) sum(abs(x))),
+               actual=datalist$podCount,pred=apply(predPodCount,2,median),main='Pods per plant'))
+r2calc(mod3,'flwSurv',c('sigmaFlwSurv_field','sigmaFlwSurv_plot'),'intPhiFlwSurv') 
+
+
+#Posterior predictive check plots
+PPplots <- function(resid,predResid,actual,pred,main=NULL){
+  par(mfrow=c(2,1))
+  plot(resid~predResid,ylab='Sum actual residuals',xlab='Sum simulated residuals',main=main)
+  x <- sum(resid<predResid)/length(resid)
+  legend('topleft',paste('p =',round(min(x,1-x),3)))
+  abline(0,1,col='red') #PP plot
+  
+  plot(actual~pred,type='p', #Predicted vs Actual
+       xlab=paste('Predicted',main),ylab=paste('Actual',main),pch=19,col=rgb(0,0,0,0.3),xlim=range(mod3$predPodCount)) 
+  
+  for(i in 1:ncol(mod3$predPodCount)){
+    lines(x=range(mod3$predPodCount[,i]),rep(actual[i],2),col=rgb(0,0,0,0.3))
+  }
+  dim(mod3$predPodCount)
+  
+  points(pred,actual, #Predicted vs Actual
+       col='red',pch=19) 
+  abline(0,1,col='red')
+  abline(lm(actual~pred),col='red',lty=2)
+  par(mfrow=c(1,1))
+}
+
 
 #seeds per pod - not good; weird distribution of seeds
 with(mod3,PPplots(apply(seedCount_resid,1,function(x) sum(abs(x))),
