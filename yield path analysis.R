@@ -930,7 +930,7 @@ plotDat <- with(datalist,data.frame(
 
 #Model matrix for hbee visits
 MM_hbee <- with(plotDat,data.frame(int=1,year,GP,yearGP=year*GP,dist,hives,flDens,irrigation)) %>% as.matrix()
-#Coefficient matrix for plant size
+#Coefficient matrix for hbee visits
 coef_hbee <- with(mod3,data.frame(intVisit,slopeYearVis,slopeGpVis,slopeYearGpVis,
                                   slopeDistVis,slopeHiveVis,slopeFlDens,slopeIrrigVis))
 
@@ -942,13 +942,27 @@ p1 <- data.frame(MM_temp,t(apply(MM_temp %*% t(coef_hbee),1,function(x) quantile
   rename(pred=X50.,upr=X97.5.,lwr=X2.5.) %>%
   mutate(resid=plotDat$hbeeResid+pred) %>% mutate_at(vars(pred:resid),exp) %>% 
   mutate(year=factor(year,labels=c('2014','2015')),GP=factor(GP,labels=c('Lethbridge','Grand Prairie'))) %>% 
-  mutate(yearGP=factor(paste(GP,year))) %>%
-  ggplot(aes(x=exp(dist+3.41)))+
+  mutate(yearGP=factor(paste(GP,year)),dist=exp(dist+3.41)) %>%
+  ggplot(aes(x=dist))+
   geom_ribbon(aes(ymax=upr,ymin=lwr),alpha=0.3)+
   geom_jitter(aes(y=resid))+
   geom_line(aes(y=pred),size=1)+facet_grid(year~GP)+ylim(0,10)+
   labs(x='Distance from edge(m)',y='Visits/10 mins')
 ggsave('../Figures/Commodity/slopeYearGPVis.png',p1)
+
+#Partial effect of stocking rates
+MM_temp <- MM_hbee %>% as.data.frame() %>% mutate_at(vars(-hives,-dist),mean) %>% 
+  as.matrix()
+
+data.frame(MM_temp,t(apply(MM_temp %*% t(coef_hbee),1,function(x) quantile(x,c(0.5,0.025,0.975))))) %>%
+  rename(pred=X50.,upr=X97.5.,lwr=X2.5.) %>%
+  mutate(resid=plotDat$hbeeResid+pred) %>% 
+  mutate_at(vars(pred:resid),function(x) exp(x)*6) %>% 
+  mutate(dist=exp(dist+3.41),hives=round(exp(hives)-1)) %>% 
+  filter(hives==20|hives==40) %>% 
+  # mutate(hives=factor(hives,levels=))
+  ggplot(aes(x=dist,y=pred,col=factor(hives)))+geom_line(size=1)
+  
 
 
 #Plant-level data (792 rows)
@@ -2029,17 +2043,18 @@ inits <- function() {with(datalist,list(
 # temp <- inits()
 # with(temp,stan_rdump(names(temp),'initsSeed.data.R'))
 
-#Full model
-modPodcount_seed <- stan(file='visitation_pollen_model_seed.stan',data=datalist,
-                         iter=300,chains=3,control=list(adapt_delta=0.8),init=inits)
-beep(1)
+# #Full model
+# modPodcount_seed <- stan(file='visitation_pollen_model_seed.stan',data=datalist,
+#                          iter=300,chains=3,control=list(adapt_delta=0.8),init=inits)
+# beep(1)
+
 # Setting max_treedepth=15 takes about 2-3x as long to run model. Use with care.
 
 # save(modPodcount_seed,file='modPodcount_seed.Rdata') #Flw count, seed, yield model - 4hrs for 2000 iter
 # save(modPodcount_seed,file='modPodcount_seed2.Rdata') #All other params (visits,plSize,etc)
-save(modPodcount_seed,file='modPodcount_seed3.Rdata') #No bee visits, no seed size/count, only flw count/survival
+# save(modPodcount_seed,file='modPodcount_seed3.Rdata') #No bee visits, no seed size/count, only flw count/survival
 
-# load('modPodcount_seed.Rdata')
+load('modPodcount_seed3.Rdata')
 # csvFiles <- paste("./From cedar/",dir("./From cedar",pattern='[0-9].csv'),sep='')
 # modPodcount_seed <- read_stan_csv(csvFiles[3])  #model from cedar
 
@@ -2072,10 +2087,10 @@ pars <- c('intFlwSurv','slopePolSurv','slopePlSizeSurv', #Flower survival
        'slopeEdgeCentSurv','slopeHbeeDistSurv','slopeLbeeDistSurv',
        'slopeFlwDensSurv','sigmaFlwSurv_field','sigmaFlwSurv_plot',
        'intPhiFlwSurv','slopePlSizePhiFlwSurv','sigmaPhiFlwSurv_field')
-# pars <- c('intSeedCount','slopePolSeedCount','slopePlSizeCount', #Seeds per pod
-#        'slopeEdgeCentSeedCount','slopeHbeeDistSeedCount','slopeFlDensSeedCount',
-#        'slopeSurvSeedCount','sigmaSeedCount_field','sigmaSeedCount_plot',
-#        'sigmaSeedCount_plant','seedCountPhi')
+pars <- c('intSeedCount','slopePolSeedCount','slopePlSizeCount', #Seeds per pod
+       'slopeEdgeCentSeedCount','slopeHbeeDistSeedCount','slopeFlDensSeedCount',
+       'slopeSurvSeedCount','sigmaSeedCount_field','sigmaSeedCount_plot',
+       'sigmaSeedCount_plant','seedCountPhi')
 # pars <- c('intSeedWeight','slopePolSeedWeight','slopeSeedCount', #Weight per seed
 #        'slopePlSizeSeedWeight',
 #        'slope2016SeedWeight','slopeLbeeDistSeedWeight','slopePlDensSeedWeight',
@@ -2094,8 +2109,8 @@ mod3 <- extract(modPodcount_seed)
 # fastPairs(mod3[pars])
 
 # #Coefficients
-(mod3coefs <- data.frame(par='NA',parname=rownames(coefs(mod3[pars])),coefs(mod3[pars]),row.names=NULL))
-# print(xtable(mod3coefs,digits=c(0,0,0,3,3,3,3,3,3,0,4)),include.rownames=F)
+(mod3coefs <- data.frame(par='flwCount',parname=rownames(coefs(mod3[pars])),coefs(mod3[pars]),row.names=NULL))
+print(xtable(mod3coefs,digits=c(0,0,0,3,3,3,3,3,3,0,4)),include.rownames=F)
 
 # #Distribution of random effects intercepts
 # t(apply(mod3$intPlDens_field,2,function(x) quantile(x,c(0.5,0.025,0.975)))) %>% 

@@ -1,59 +1,62 @@
-fileName,dependent,independent,conditioning
-claim1,plDens , is2016 , hbeeDist
-claim2,plDens , isCent , hbeeDist
-claim3,plDens , isMbay , hbeeDist
-claim4,plDens , lbeeDist , hbeeDist
-claim5,plDens , lbeeStocking , hbeeDist
-claim6,plSize , is2016 ," hbeeDist, plDens"
-claim7,plSize , isCent ," hbeeDist, plDens"
-claim8,plSize , isMbay ," hbeeDist, plDens"
-claim9,plSize , lbeeDist ," hbeeDist, plDens"
-claim10,plSize , lbeeStocking ," hbeeDist, plDens"
-claim11,flDens , isCent ," hbeeDist, is2016, isMbay, plSize"
-claim12,flDens , lbeeDist ," hbeeDist, is2016, isMbay, plSize"
-claim13,flDens , lbeeStocking ," hbeeDist, is2016, isMbay, plSize"
-claim14,flDens , plDens ," hbeeDist, is2016, isMbay, plSize"
-claim15,lbeeVis , plDens ," flDens, hbeeDist, is2016, isCent, isMbay, lbeeDist, lbeeStocking"
-claim16,lbeeVis , plSize ," flDens, hbeeDist, is2016, isCent, isMbay, lbeeDist, lbeeStocking, plDens"
-claim17,hbeeVis , is2016 ," flDens, hbeeDist, isCent, isMbay, lbeeDist, lbeeVis"
-claim18,hbeeVis , lbeeStocking ," flDens, hbeeDist, isCent, isMbay, lbeeDist, lbeeVis"
-claim19,hbeeVis , plDens ," flDens, hbeeDist, isCent, isMbay, lbeeDist, lbeeVis"
-claim20,hbeeVis , plSize ," flDens, hbeeDist, isCent, isMbay, lbeeDist, lbeeVis, plDens"
-claim21,pol , is2016 ," flDens, hbeeDist, hbeeVis, isCent, lbeeVis"
-claim22,pol , isMbay ," flDens, hbeeDist, hbeeVis, isCent, lbeeVis"
-claim23,pol , lbeeDist ," flDens, hbeeDist, hbeeVis, isCent, lbeeVis"
-claim24,pol , lbeeStocking ," flDens, hbeeDist, hbeeVis, isCent, lbeeVis"
-claim25,pol , plDens ," flDens, hbeeDist, hbeeVis, isCent, lbeeVis"
-claim26,pol , plSize ," flDens, hbeeDist, hbeeVis, isCent, lbeeVis, plDens"
-claim27,surv , is2016 ," flDens, hbeeDist, isCent, lbeeDist, plSize, pol"
-claim28,surv , isMbay ," flDens, hbeeDist, isCent, lbeeDist, plSize, pol"
-claim29,surv , lbeeStocking ," flDens, hbeeDist, isCent, lbeeDist, plSize, pol"
-claim30,surv , plDens ," flDens, hbeeDist, isCent, lbeeDist, plSize, pol"
-claim31,surv , lbeeVis ," flDens, hbeeDist, is2016, isCent, isMbay, lbeeDist, lbeeStocking, plSize, pol"
-claim32,surv , hbeeVis ," flDens, hbeeDist, isCent, isMbay, lbeeDist, lbeeVis, plSize, pol"
-claim33,flwCount , hbeeDist ," isCent, plSize, surv"
-claim34,flwCount , is2016 ," isCent, plSize, surv"
-claim35,flwCount , isMbay ," isCent, plSize, surv"
-claim36,flwCount , lbeeDist ," isCent, plSize, surv"
-claim37,flwCount , lbeeStocking ," isCent, plSize, surv"
-claim38,flwCount , plDens ," hbeeDist, isCent, plSize, surv"
-claim39,flwCount , flDens ," hbeeDist, is2016, isCent, isMbay, plSize, surv"
-claim40,flwCount , lbeeVis ," flDens, hbeeDist, is2016, isCent, isMbay, lbeeDist, lbeeStocking, plSize, surv"
-claim41,flwCount , hbeeVis ," flDens, hbeeDist, isCent, isMbay, lbeeDist, lbeeVis, plSize, surv"
-claim42,flwCount , pol ," flDens, hbeeDist, hbeeVis, isCent, lbeeVis, plSize, surv"
-claim43,flwCount , seedCount ," flDens, hbeeDist, isCent, plSize, pol, surv"
-claim44,seedCount , is2016 ," flDens, hbeeDist, isCent, plSize, pol, surv"
-claim45,seedCount , isMbay ," flDens, hbeeDist, isCent, plSize, pol, surv"
-claim46,seedCount , lbeeDist ," flDens, hbeeDist, isCent, plSize, pol, surv"
-claim47,seedCount , lbeeStocking ," flDens, hbeeDist, isCent, plSize, pol, surv"
-claim48,seedCount , plDens ," flDens, hbeeDist, isCent, plSize, pol, surv"
-claim49,seedCount , lbeeVis ," flDens, hbeeDist, is2016, isCent, isMbay, lbeeDist, lbeeStocking, plSize, pol, surv"
-claim50,seedCount , hbeeVis ," flDens, hbeeDist, isCent, isMbay, lbeeDist, lbeeVis, plSize, pol, surv"
-claim51,seedWeight , hbeeDist ," is2016, lbeeDist, lbeeStocking, plDens, plSize, pol, seedCount"
-claim52,seedWeight , isCent ," is2016, lbeeDist, lbeeStocking, plDens, plSize, pol, seedCount"
-claim53,seedWeight , isMbay ," is2016, lbeeDist, lbeeStocking, plDens, plSize, pol, seedCount"
-claim54,seedWeight , flDens ," hbeeDist, is2016, isMbay, lbeeDist, lbeeStocking, plDens, plSize, pol, seedCount"
-claim55,seedWeight , lbeeVis ," flDens, hbeeDist, is2016, isCent, isMbay, lbeeDist, lbeeStocking, plDens, plSize, pol, seedCount"
-claim56,seedWeight , hbeeVis ," flDens, hbeeDist, is2016, isCent, isMbay, lbeeDist, lbeeStocking, lbeeVis, plDens, plSize, pol, seedCount"
-claim57,seedWeight , surv ," flDens, hbeeDist, is2016, isCent, lbeeDist, lbeeStocking, plDens, plSize, pol, seedCount"
-claim58,seedWeight , flwCount ," is2016, isCent, lbeeDist, lbeeStocking, plDens, plSize, pol, seedCount, surv"
+fileName,parName,dependent,independent,conditioning set,mean,sd,median,upr,lwr,pval,status,
+seedMod_claim1,slopePlDens2016,plDens,is2016, hbeeDist,0.213668,0.118449,0.2161151,0.4363465,-0.04012862,0.0712,Done,1.14752000636314
+seedMod_claim2,slopePlDensCent,plDens,isCent, hbeeDist,-0.02865191,0.04154649,-0.02801282,0.0489708,-0.1108978,0.4904,Done,0.309449538489641
+NA,NA,plDens,isMbay, hbeeDist,NA,NA,NA,NA,NA,NA,"Impossible claim, since plants not measured in male bay",
+seedMod_claim4,slopePlDensLbeeDist,plDens,lbeeDist, hbeeDist,-0.02616986,0.04361387,-0.02664582,0.0560665,-0.1116259,0.5485,Done,0.26082336808927
+seedMod_claim5,slopePlDensStocking,plDens,lbeeStocking, hbeeDist,0.0404049,0.13731,0.02412066,0.3205721,-0.2138551,0.7686,Done,0.11429961987167
+seedMod_claim6,slope2016PlSize,plSize,is2016," hbeeDist, plDens",-0.028129839,0.05687575,-0.025868568,0.0815694,-0.13299565,0.6209,Done,0.206978340154017
+seedMod_claim7,slopeCentPlSize,plSize,isCent," hbeeDist, plDens",0.049457598,0.04672125,0.049952345,0.13788481,-0.03993156,0.2898,Done,0.537901618864844
+NA,NA,plSize,isMbay," hbeeDist, plDens",NA,NA,NA,NA,NA,NA,"Impossible claim, since plants not measured in male bay",
+seedMod_claim9,slopeLbeeDistPlSize,plSize,lbeeDist," hbeeDist, plDens",-0.028583847,0.05027073,-0.031690862,0.08384388,-0.11573173,0.5696,Done,0.2444300193712
+seedMod_claim10,slopeStockingPlSize,plSize,lbeeStocking," hbeeDist, plDens",-0.003812291,0.06179116,-0.004628505,0.12246135,-0.1247206,0.9508,Done,0.021910826943857
+seedMod_claim11,slopeCentFlDens,flDens,isCent," hbeeDist, is2016, isMbay, plSize",0.3000044,0.5731569,0.30621036,1.4268477,-0.8603522,0.6007,Done,0.221342368052645
+seedMod_claim12,slopeLbeeDistFlDens,flDens,lbeeDist," hbeeDist, is2016, isMbay, plSize",-0.0550335,0.2252111,-0.06099663,0.3946206,-0.4922833,0.8069,Done,0.093180284533455
+seedMod_claim13,slopeStockingFlDens,flDens,lbeeStocking," hbeeDist, is2016, isMbay, plSize",0.5846735,1.0947423,0.57373879,2.5729989,-1.6922691,0.5933,Done,0.226725651662546
+seedMod_claim14,slopePlDensFlDens,flDens,plDens," hbeeDist, is2016, isMbay, plSize",-0.6776071,1.9524784,-0.72320344,3.1417791,-4.6232381,0.7286,Done,0.137510833094103
+seedMod_claim15,slopePlDensLbeeVis,lbeeVis,plDens," flDens, hbeeDist, is2016, isCent, isMbay, lbeeDist, lbeeStocking",-0.2150105,0.4571609,-0.2170617,0.7302475,-1.103191,0.6381,Done,0.195111255377609
+seedMod_claim16,slopePlSizeLbeeVis,lbeeVis,plSize," flDens, hbeeDist, is2016, isCent, isMbay, lbeeDist, lbeeStocking, plDens",-2.7835325,2.6912602,-2.8055196,2.624476,-8.336058,0.301,Done,0.521433504406157
+seedMod_claim17,slope2016HbeeVis,hbeeVis,is2016," flDens, hbeeDist, isCent, isMbay, lbeeDist, lbeeVis",0.08131177,0.1825143,0.08544553,0.4204757,-0.2625545,0.656,Done,0.18309616062434
+seedMod_claim18,slopeStockingHbeeVis,hbeeVis,lbeeStocking," flDens, hbeeDist, isCent, isMbay, lbeeDist, lbeeVis",0.07718717,0.1894928,0.06304476,0.4639316,-0.2880507,0.6838,Done,0.165070903539424
+seedMod_claim19,slopePlDensHbeeVis,hbeeVis,plDens," flDens, hbeeDist, isCent, isMbay, lbeeDist, lbeeVis",0.05972067,0.2171932,0.06938003,0.456825,-0.3775444,0.7833,Done,0.106071873457393
+seedMod_claim20,slopePlSizeHbeeVis,hbeeVis,plSize," flDens, hbeeDist, isCent, isMbay, lbeeDist, lbeeVis, plDens",0.06812974,3.1241954,-0.07168081,6.6574616,-5.9890698,0.9826,Done,0.007623240201197
+seedMod_claim21,slope2016Pol,pol,is2016," flDens, hbeeDist, hbeeVis, isCent, lbeeVis",-0.04424015,0.3198639,-0.04788053,0.59364673,-0.6271373,0.89,Done,0.050609993355087
+NA,NA,pol,isMbay," flDens, hbeeDist, hbeeVis, isCent, lbeeVis",NA,NA,NA,NA,NA,NA,"Impossible claim, since plants not measured in male bay",
+seedMod_claim23,slopeLbeeDistPol,pol,lbeeDist," flDens, hbeeDist, hbeeVis, isCent, lbeeVis",-0.2926023,0.1456446,-0.28724324,-0.01468618,-0.5797134,0.0445,Done,1.35163998901907
+seedMod_claim24,slopeStockingPol,pol,lbeeStocking," flDens, hbeeDist, hbeeVis, isCent, lbeeVis",-0.08755504,0.2949561,-0.08646545,0.4791359,-0.6997271,0.7666,Done,0.115431185081667
+seedMod_claim25,slopePlDensPol,pol,plDens," flDens, hbeeDist, hbeeVis, isCent, lbeeVis",-0.09031383,0.2162623,-0.0861275,0.3448519,-0.5085162,0.6762,Done,0.16992483357025
+seedMod_claim26,slopePlSizePol,pol,plSize," flDens, hbeeDist, hbeeVis, isCent, lbeeVis, plDens",-0.67348665,1.456391,-0.6064288,2.0952392,-3.6960592,0.6438,Done,0.191249027650405
+seedMod_claim27,slope2016Surv,surv,is2016," flDens, hbeeDist, isCent, lbeeDist, plSize, pol",0.1648299,0.130948,0.1618366,0.4170882,-0.0955946,0.2081,Done,0.681727919788373
+NA,NA,surv,isMbay," flDens, hbeeDist, isCent, lbeeDist, plSize, pol",NA,NA,NA,NA,NA,NA,"Impossible claim, since plants not measured in male bay",
+seedMod_claim29,slopeStockingSurv,surv,lbeeStocking,"flDens, hbeeDist, isCent, lbeeDist, plSize, pol",-0.05447322,0.15194003,-0.05910713,0.250112,-0.33856803,0.72,Done,0.142667503568732
+seedMod_claim30,slopePlDensSurv,surv,plDens,"flDens, hbeeDist, isCent, lbeeDist, plSize, pol",0.06477103,0.08415477,0.05758558,0.2384013,-0.09117864,0.4415,Done,0.355069292086413
+seedMod_claim31,slopeLbeeVisSurv,surv,lbeeVis,"flDens, hbeeDist, isCent, lbeeDist, plSize, pol + is2016, lbeeStocking",-0.0165371,0.02786526,-0.01664966,0.04205691,-0.0690563,0.5529,Done,0.257353410061264
+seedMod_claim32,slopeHbeeVisSurv,surv,hbeeVis,"flDens, hbeeDist, isCent, lbeeDist, plSize, pol + lbeeVis ",0.00315915,0.01569523,0.00345026,0.03286453,-0.02931413,0.8405,Done,0.07546228222451
+seedMod_claim33,slopeHbeeDistFlwCount,flwCount,hbeeDist,"isCent, plSize, surv",-0.011413382,0.004685124,-0.011711418,-0.002218921,-0.020134222,0.0148,Done,1.82973828460504
+seedMod_claim34,slope2016FlwCount,flwCount,is2016,"isCent, plSize, surv",0.021945138,0.031399844,0.023274137,0.083546282,-0.0407793508,0.4846,Done,0.314616590198513
+NA,NA,flwCount,isMbay,"isCent, plSize, surv",NA,NA,NA,NA,NA,NA,"Impossible claim, since plants not measured in male bay",
+seedMod_claim36,slopeLbeeDistFlwCount,flwCount,lbeeDist,"isCent, plSize, surv",0.034685708,0.019006336,0.034524812,0.070240562,-0.0052279696,0.068,Done,1.16749108729376
+seedMod_claim37,slopeStockingFlwCount,flwCount,lbeeStocking,"isCent, plSize, surv",0.020124403,0.032708955,0.020695459,0.083046337,-0.0431109043,0.5384,Done,0.26889494878408
+seedMod_claim38,slopePlDensFlwCount,flwCount,plDens," isCent, plSize, surv +  hbeeDist",-0.061253191,0.026627571,-0.060485662,-0.009279882,-0.1143769909,0.0214,Done,1.66958622665081
+seedMod_claim39,slopeFlDensFlwCount,flwCount,flDens," isCent, plSize, surv + hbeeDist, is2016",0.004577775,0.002638978,0.004593282,0.009739584,-0.0006594464,0.0828,Done,1.08196966321512
+seedMod_claim40,slopeLbeeVisFlwCount,flwCount,lbeeVis," isCent, plSize, surv + flDens, hbeeDist, is2016, lbeeDist, lbeeStocking",-0.001696952,0.008756031,-0.001880685,0.014965818,-0.0184203886,0.8463,Done,0.072475659124971
+seedMod_claim41,slopeHbeeVisFlwCount,flwCount,hbeeVis," isCent, plSize, surv + flDens, hbeeDist, lbeeDist, lbeeVis",-0.004402465,0.005600299,-0.004515389,0.006239848,-0.0155907683,0.4318,Done,0.364717362001788
+seedMod_claim42,slopePolFlwCount,flwCount,pol," isCent, plSize, surv + flDens, hbeeDist, hbeeVis, lbeeVis",-0.002763677,0.013185407,-0.001964877,0.021340607,-0.0309639995,0.834,Done,0.078833949362261
+seedMod_claim43,slopeFlwCountSeedCount,seedCount,flwCount," flDens, hbeeDist, isCent, plSize, pol, surv",-0.410672657,0.03809412,-0.41020314,-0.333247942,-0.484790355,1E-06,Done,6
+seedMod_claim44,slope2016SeedCount,seedCount,is2016," flDens, hbeeDist, isCent, plSize, pol, surv",0.115480567,0.08257867,0.115540214,0.285318675,-0.048185836,0.162,Done,0.790484985457369
+NA,NA,seedCount,isMbay," flDens, hbeeDist, isCent, plSize, pol, surv",NA,NA,NA,NA,NA,NA,"Impossible claim, since plants not measured in male bay",
+seedMod_claim46,slopeLbeeDistSeedCount,seedCount,lbeeDist,"flDens, hbeeDist, isCent, plSize, pol, surv",0.024661427,0.03829034,0.024786816,0.099253607,-0.054235009,0.5195,Done,0.284414448106804
+seedMod_claim47,slopeStockingSeedCount,seedCount,lbeeStocking,"flDens, hbeeDist, isCent, plSize, pol, surv",0.053755898,0.08991615,0.051362418,0.226257153,-0.131783491,0.5499,Done,0.259716280318121
+seedMod_claim48,slopePlDensSeedCount,seedCount,plDens,"flDens, hbeeDist, isCent, plSize, pol, surv",0.132692647,0.05371761,0.133418828,0.243323155,0.025026314,0.0135,Done,1.86966623150499
+seedMod_claim49,slopeLbeeVisSeedCount,seedCount,lbeeVis,"flDens, hbeeDist, isCent, plSize, pol, surv + is2016, lbeeDist, lbeeStocking",-0.029717266,0.02379342,-0.028377657,0.013809543,-0.078107432,0.2117,Done,0.674279141980588
+seedMod_claim50,slopeHbeeVisSeedCount,seedCount,hbeeVis,"flDens, hbeeDist, isCent, plSize, pol, surv + lbeeDist, lbeeVis ",-0.005793194,0.01317863,-0.005439135,0.019687521,-0.031997556,0.6602,Done,0.180324480005707
+seedMod_claim51,slopeHbeeDistSeedWeight,seedWeight,hbeeDist,"is2016, lbeeDist, lbeeStocking, plDens, plSize, pol, seedCount",-0.041633299,0.021939,-0.041787863,0.001515705,-0.083818023,0.0577,Done,1.23882418684427
+seedMod_claim52,slopeCentSeedWeight,seedWeight,isCent,"is2016, lbeeDist, lbeeStocking, plDens, plSize, pol, seedCount",-0.032599267,0.07807475,-0.032556246,0.118173357,-0.18041408,0.6763,Done,0.169860612574657
+NA,NA,seedWeight,isMbay,"is2016, lbeeDist, lbeeStocking, plDens, plSize, pol, seedCount",NA,NA,NA,NA,NA,NA,"Impossible claim, since plants not measured in male bay",
+seedMod_claim54,slopeFlDensSeedWeight,seedWeight,flDens,"is2016, lbeeDist, lbeeStocking, plDens, plSize, pol, seedCount + hbeeDist ",0.014101787,0.01145964,0.013846078,0.037983186,-0.007249196,0.2185,Done,0.660548558693559
+seedMod_claim55,slopeLbeeVisSeedWeight,seedWeight,lbeeVis,"is2016, lbeeDist, lbeeStocking, plDens, plSize, pol, seedCount + flDens, hbeeDist, isCent",0.014101787,0.01145964,0.013846078,0.037983186,-0.007249196,0.2185,Done,0.660548558693559
+seedMod_claim56,slopeHbeeVisSeedWeight,seedWeight,hbeeVis,"is2016, lbeeDist, lbeeStocking, plDens, plSize, pol, seedCount + flDens, hbeeDist, isCent ",0.014808264,0.02101801,0.014775991,0.054830758,-0.024439503,0.4811,Done,0.317764643097436
+seedMod_claim57,slopeSurvSeedWeight,seedWeight,surv,"is2016, lbeeDist, lbeeStocking, plDens, plSize, pol, seedCount + flDens, hbeeDist, isCent ",-0.083683511,0.06878976,-0.082267753,0.052396564,-0.207230659,0.2238,Done,0.650139917807669
+seedMod_claim58,slopeFlwCountSeedWeight,seedWeight,flwCount,"is2016, lbeeDist, lbeeStocking, plDens, plSize, pol, seedCount + isCent, surv",-0.054424367,0.07091517,-0.055604434,0.085625102,-0.196747863,0.4428,Done,0.353792387793315
+,,,,,,,,,,,C=,58.1006061072334
+,,,,,,,,,,,df=,64
+,,,,,,,,,,,p=,0.684011670478055

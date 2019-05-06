@@ -369,7 +369,8 @@ transformed parameters {
 			slopePlSizePhiFlwCount*plantSize[i]); // Term for sigma				
 	
 		// Flower survival per plant
-		flwSurv[i] = flwSurvPlot[plantIndex[i]] + slopePlSizeSurv*plantSize[i] + //Plot-level plant survival + size effect		
+		flwSurv[i] = flwSurvPlot[plantIndex[i]] + //Plot-level plant survival 
+			slopePlSizeSurv*plantSize[i] + //individual size effect		
 			slopePlSizePlDensSurv*plantSize[i]*plDens[plantIndex[i]]; //Plant size:plant density 
 			// slopePlSizeIrrigSurv*(plantSize[i]*isIrrigated[plotIndex[plantIndex[i]]]); //Plant size:Irrigation interaction
 		//Phi (dispersion) for flower survival	
@@ -383,9 +384,9 @@ transformed parameters {
 		seedWeightPlantMu[i] = seedWeightMuPlot[plantIndex[i]] + intSeedWeight_plant[i] +			
 			slopePlSizeWeight*plantSize[i]; //Plant size 						
 		
-		// Predicted yield = intercept + random effects + 
-		logYieldMu[i] = (intYield+ranEffYield_field[1,plotIndex[plantIndex[i]]]+ranEffYield_plot[1,plantIndex[i]]) + //Intercept + random effects
-			logCalcYield[i]*(slopeYield+ranEffYield_field[2,plotIndex[plantIndex[i]]]+ranEffYield_plot[2,plantIndex[i]]); //Slope + random effects		
+		// // Predicted yield = intercept + random effects + 
+		// logYieldMu[i] = (intYield+ranEffYield_field[1,plotIndex[plantIndex[i]]]+ranEffYield_plot[1,plantIndex[i]]) + //Intercept + random effects
+			// logCalcYield[i]*(slopeYield+ranEffYield_field[2,plotIndex[plantIndex[i]]]+ranEffYield_plot[2,plantIndex[i]]); //Slope + random effects		
 	}	
 	
 	for(i in 1:Npod){ //For each pod

@@ -134,9 +134,31 @@ shipley.test(g1)
 # x5 _||_ x2 | x1, x4
 # x5 _||_ x3 | x2, x4
 
+
+# Dagitty claims list for commodity fields --------------------------------
+commDAG <- dagitty(" dag {
+        plDens <- is2015; plDens <- isIrrig; plDens <- hbeeDist; plDens <- isGP;
+        plSize <- plDens; plSize <- hbeeDist; plSize <- isGP; plSize <- is2015; plSize <- isIrrig;
+        flDens <- plSize; flDens <- hbeeDist;
+        hbeeVis <- is2015; hbeeVis <- isGP; hbeeVis <- hbeeDist; hbeeVis <- numHives; 
+        hbeeVis <- flDens; hbeeVis <- isIrrig;
+        pollen <- hbeeVis; pollen <- hbeeDist;
+        flwSurv <- hbeeVis; flwSurv <- pollen; flwSurv <- plDens; flwSurv <- isIrrig; flwSurv <- is2015;
+        flwSurv <- plSize; 
+        flwCount <- is2015; flwCount <- plSize; flwCount <- flwSurv;
+        seedCount <- hbeeVis; seedCount <- pollen;  seedCount <- is2015; seedCount <- plSize;
+        seedWeight <- hbeeVis; seedWeight <- pollen; seedWeight <- isIrrig; seedWeight <- is2015
+        seedWeight <- plSize; seedWeight <- seedCount
+}")
+
+plot(graphLayout(commDAG))
+
+shipley.test(commDAG)
+
+
 # Dagitty claims list for seed fields -------------------------------------
 
-g1 <- dagitty( "dag {
+seedDAG <- dagitty( "dag {
               plDens <- hbeeDist 
               plSize <- hbeeDist; plSize <- plDens
               flDens <- plSize; flDens <- isMbay; flDens <- is2016; flDens <- hbeeDist;
@@ -153,9 +175,9 @@ g1 <- dagitty( "dag {
               seedWeight <- is2016; seedWeight <- lbeeDist; seedWeight <- lbeeStocking
               }"
 )
-plot(graphLayout(g1))
+plot(graphLayout(seedDAG))
 
-shipley.test(g1)
+shipley.test(seedDAG)
 
 
 
