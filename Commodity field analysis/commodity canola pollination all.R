@@ -23,7 +23,7 @@ prestheme=theme(legend.position='right',
 theme_set(theme_classic()+prestheme) #Sets graph theme to B/Ws + prestheme
 rm(prestheme)
 
-# load("C:\\Users\\Samuel\\Documents\\Projects\\UofC\\Commodity field analysis\\commodityfieldDataAll.RData")
+# load("C:\\Users\\Samuel\\Documents\\Projects\\UofC\\canola_yield_project\\Commodity field analysis\\commodityfieldDataAll.RData")
 
 #Load and organize everything -----------
 fields2014=read.csv("C:\\Users\\Samuel\\Documents\\Projects\\UofC\\csv files\\field info 2014.csv",stringsAsFactors=F,strip.white=T,na.strings = c("",'NA'))
@@ -889,18 +889,19 @@ flowersAll %>%
 #Mean Volume = Vol_max/(DepletionRate*Vol_max+1)
 
 temp=filter(flowersAll) %>%
-  mutate(VisRate=Total/(FlDens*Time/60)) %>%
-  mutate(BeeVisRate=Honeybee/(FlDens*Time/60)) %>%
-  unite(group,Year,Area) %>%
-  dplyr::select(Vol,VisRate,BeeVisRate,group) %>%
+  mutate(VisRate=Total/(FlDens*Time/60)) %>% #Visits per flower per hour (all visitors)
+  mutate(BeeVisRate=Honeybee/(FlDens*Time/60)) %>% #Honeybees only
+  unite(group,Year,Area) %>% mutate(plot=paste(group,Field,Distance,sep='_')) %>% 
+  dplyr::select(Vol,VisRate,BeeVisRate,group,plot) %>% 
   na.omit
 
 #All visitors model
-nectarMod=nlsList(Vol~(Vol_max/((VisRate/Lambda)*Vol_max+1))|group,
+nectarMod=nlsList(Vol~(Vol_max/((VisRate/Lambda)*Vol_max+1))|group, #Separate models for each year/location
                   data=temp,start=list(Lambda=0.3,Vol_max=1))
-nectarMod_all=nls(Vol~(Vol_max/((VisRate/Lambda)*Vol_max+1)),
+nectarMod_all=nls(Vol~(Vol_max/((VisRate/Lambda)*Vol_max+1)), #Using all visitors
                data=temp,start=list(Lambda=0.3,Vol_max=1))
 summary(nectarMod)
+summary(nectarMod_all) #Vol_max = 0.82, se:0.022, lambda =0.14, se:0.025 
 
 pred=predict(nectarMod,newdata=data.frame(VisRate=seq(0,1,0.05)))
 pred=data.frame(VisRate=seq(0,1,0.05),
@@ -930,8 +931,8 @@ nectarMod=nlsList(Vol~(Vol_max/((BeeVisRate/Lambda)*Vol_max+1))|group,
 nectarMod_all=nls(Vol~(Vol_max/((BeeVisRate/Lambda)*Vol_max+1)),
                data=temp,start=list(Lambda=0.3,Vol_max=1))
 
-
 summary(nectarMod)
+summary(nectarMod_all)
 
 pred=predict(nectarMod,newdata=data.frame(BeeVisRate=seq(0,1,0.05)))
 pred=data.frame(BeeVisRate=seq(0,1,0.05),
@@ -980,6 +981,19 @@ p1=temp %>%
 
 ggsave(paste(folder,'nectVolVisAll.png',sep='\\'),p1,width=8,height=6)
 
+#Alternate form using the mean of each plot - roughly the same answer as before
+temp2 <- group_by(temp,plot) %>% 
+  summarize(Vol=mean(Vol),VisRate=first(VisRate),BeeVisRate=first(BeeVisRate)) 
+
+nectarVis_bees <- nls(Vol~(Vol_max/((BeeVisRate/Lambda)*Vol_max+1)),
+                      data=temp2,start=list(Lambda=0.3,Vol_max=1))
+nectarVis_all <- nls(Vol~(Vol_max/((VisRate/Lambda)*Vol_max+1)),
+                     data=temp2,start=list(Lambda=0.3,Vol_max=1))
+
+summary(nectarVis_all) #Lambda=0.14, Vol_max=0.82
+summary(nectarVis_bees) #Lambda=0.09, Vol_max=0.77
+
+
 #Alternate form using probability from Eqn 4
 
 #At t = Inf, p(x) = D_lambda(1 - x/x_m)^(D_lambda*x_m-1)
@@ -990,7 +1004,7 @@ necProb <- function(pars,x,visrate,LL=F){
   x_m <- pars[2]
   D_lambda <- visrate/necProd
   result <- D_lambda*(1 - (x/x_m))^((D_lambda*x_m)-1)
-  result <- ifelse(is.nan(result)|result<1e-2,1e-2,result)
+  result <- ifelse(is.nan(result)|result<1e-10,1e-10,result)
   if(LL) return(-sum(log(result))) else return(result)
 }
 
@@ -1000,6 +1014,22 @@ necProb(c(0.15,100),temp$Vol,temp$VisRate,T)
 optim(par=c(0.15,1),fn=necProb,
          x=temp$Vol,visrate=temp$VisRate,LL=T,
          method = "L-BFGS-B",lower=c(0,0),upper=c(10,10))
+
+optim(par=c(0.15,1),fn=necProb, #Similar for bees only: production = 0.05, max nect = 1.21
+      x=temp$Vol,visrate=temp$BeeVisRate,LL=T,
+      method = "L-BFGS-B",lower=c(0,0),upper=c(10,10))
+
+optim(par=c(0.15,1),fn=necProb, #Similar results, nectar production(0.04) and max volume (3.87)
+      x=temp2$Vol,visrate=temp2$VisRate,LL=T,
+      method = "L-BFGS-B",lower=c(0,0),upper=c(10,10),hessian=T)
+
+optim(par=c(0.15,1),fn=necProb, #Not properly converging
+      x=temp2$Vol,visrate=temp2$BeeVisRate,LL=T,
+      method = "L-BFGS-B",lower=c(1e-10,1e-10),upper=c(10,10),hessian=T)
+
+
+
+
 
 
 # Pollen deposition plots --------------------------------------------------

@@ -1,4 +1,4 @@
-fileName,parName,dependent,independent,conditioning set,mean,sd,median,upr,lwr,pval,status,
+fileName,parName,dependent,independent,conditioning set,mean,sd,median,upr,lwr,pval,status,-log(p)
 seedMod_claim1,slopePlDens2016,plDens,is2016, hbeeDist,0.213668,0.118449,0.2161151,0.4363465,-0.04012862,0.0712,Done,1.14752000636314
 seedMod_claim2,slopePlDensCent,plDens,isCent, hbeeDist,-0.02865191,0.04154649,-0.02801282,0.0489708,-0.1108978,0.4904,Done,0.309449538489641
 NA,NA,plDens,isMbay, hbeeDist,NA,NA,NA,NA,NA,NA,"Impossible claim, since plants not measured in male bay",

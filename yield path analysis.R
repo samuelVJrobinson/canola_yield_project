@@ -774,11 +774,11 @@ inits <- function() { with(datalist,
 #           'sigmaPolField','pollenPhi','sigmaPolPlot')	
 # newpar <- 'slopeStockingPollen'
 
-stan_trace(claims1,pars=c(pars,newpar))
+# stan_trace(claims1,pars=c(pars,newpar))
 # pairs(claims1,pars=c(pars,newpar)) #Takes a long time
-mod1 <- extract(claims1)
-coefs(mod1[c(pars,newpar)])
-
+# mod1 <- extract(claims1)
+# coefs(mod1[c(pars,newpar)])
+ 
 #Full model - 1.7 hrs for 1000 iter
 modPodcount <- stan(file='visitation_pollen_model.stan',data=datalist,iter=1,chains=1,
                    control=list(adapt_delta=0.8),init=inits)
@@ -946,9 +946,9 @@ p1 <- data.frame(MM_temp,t(apply(MM_temp %*% t(coef_hbee),1,function(x) quantile
   ggplot(aes(x=dist))+
   geom_ribbon(aes(ymax=upr,ymin=lwr),alpha=0.3)+
   geom_jitter(aes(y=resid))+
-  geom_line(aes(y=pred),size=1)+facet_grid(year~GP)+ylim(0,10)+
+  geom_line(aes(y=pred),size=1)+facet_grid(year~GP)+ylim(0,5)+
   labs(x='Distance from edge(m)',y='Visits/10 mins')
-ggsave('../Figures/Commodity/slopeYearGPVis.png',p1)
+ggsave('../Figures/Commodity/slopeYearGPVis.png',p1,width=8,height=6)
 
 #Partial effect of stocking rates
 MM_temp <- MM_hbee %>% as.data.frame() %>% mutate_at(vars(-hives,-dist),mean) %>% 
