@@ -23,403 +23,401 @@ prestheme=theme(legend.position='right',
 theme_set(theme_classic()+prestheme) #Sets graph theme to B/Ws + prestheme
 rm(prestheme)
 
-# load("C:\\Users\\Samuel\\Documents\\Projects\\UofC\\canola_yield_project\\Commodity field analysis\\commodityfieldDataAll.RData")
+#Load from Rdata file
+load("C:\\Users\\Samuel\\Documents\\Projects\\UofC\\canola_yield_project\\Commodity field analysis\\commodityfieldDataAll.RData")
 
-#Load and organize everything -----------
-fields2014=read.csv("C:\\Users\\Samuel\\Documents\\Projects\\UofC\\csv files\\field info 2014.csv",stringsAsFactors=F,strip.white=T,na.strings = c("",'NA'))
-survey2014=read.csv("C:\\Users\\Samuel\\Documents\\Projects\\UofC\\csv files\\survey data 2014.csv",stringsAsFactors=F,strip.white=T,na.strings = c("",'NA'))
-nectar2014=read.csv("C:\\Users\\Samuel\\Documents\\Projects\\UofC\\csv files\\nectar calibration.csv",stringsAsFactors=F,strip.white=T,na.strings = c("",'NA'))
-plants2014=read.csv("C:\\Users\\Samuel\\Documents\\Projects\\UofC\\csv files\\plant info 2014 commodity.csv",stringsAsFactors=T,strip.white=T,na.strings= c("",'NA'))
-
-fields2015=read.csv("C:\\Users\\Samuel\\Documents\\Projects\\UofC\\csv files\\field info 2015.csv",stringsAsFactors=F,strip.white=T,na.strings = c("",'NA'))
-survey2015=read.csv("C:\\Users\\Samuel\\Documents\\Projects\\UofC\\csv files\\survey data 2015.csv",stringsAsFactors=F,strip.white=T,na.strings = c("",'NA'))
-plants2015=read.csv("C:\\Users\\Samuel\\Documents\\Projects\\UofC\\csv files\\plant info 2015 commodity.csv",stringsAsFactors=T,strip.white=T,na.strings= c("",'NA'))
-
-AICc=function(model,...){ #Second-order bias corrected AIC
-  #require(plyr)
-  corAIC=function(x){
-    k=length(coef(x))
-    n=length(residuals(x))
-    return(AIC(x)+(2*k*k-1)/(n-k-1))
-  }
-  if(missing(...)){
-    return(corAIC(model))
-  }
-  else{
-    mlist=list(model,...)
-    len=plyr::laply(mlist,function(x) length(residuals(x)))
-    if(length(len)!=sum(len %in% len[1]))
-      warning('Models use different # data points. Comparing AICc values is invalid')
-    forms=sapply(mlist, function(x) paste(formula(x)))
-    data.frame(row.names=paste(forms[2,],forms[1,],forms[3,]),AICc=plyr::laply(mlist,corAIC))
-  }
-}
-
-deltaAIC=function(m1,m2,...,correct=TRUE){
-  if(correct) a=AICc(m1,m2,...) else a=AIC(m1,m2,...)
-  a$delta_AICc=a$AICc-min(a$AICc)
-  a$w_i=exp(-0.5*a$delta_AICc)/sum(exp(-0.5*a$delta_AICc)) #Model Probabilities (Akaike weights)
-  a
-}
-
-DIC=function(m1,...){ #Convenience function to extract DIC values from MCMCglmm models
-  modlist=list(m1,...)
-  dicvals=unlist(lapply(modlist,'[[',c('DIC')))
-  fixeffs=as.character(lapply((lapply(modlist,'[[','Fixed')),'[[','formula'))
-  raneffs=as.character(lapply((lapply(modlist,'[[','Random')),'[[','formula'))
-  data.frame(Fixed=fixeffs,Random=raneffs,DIC=dicvals,deltaDIC=dicvals-min(dicvals))
-}
-
-plotFixedTerms=function(m1){ #Convenience function to plot 95% distributions for MCMCglmm fixed effects
-  dat=as.data.frame(summary(m1)$solutions)
-  dat$params=as.factor(rownames(dat))
-  colnames(dat)[c(2,3)]=c('lwr','upr')
-  ggplot(dat,aes(x=params,y=post.mean,ymax=upr,ymin=lwr))+geom_pointrange()+labs(x='Fixed Effects',y='Posterior Mean')+geom_hline(yintercept=0,colour='red')+theme(axis.text.x=element_text(angle=90))
-}
-
-se=function(x) sd(x)/sqrt(length(x)) #Convenience SE function
-
-zeroCheck=function(mod,dat) { #Posterior predictive checks for zero-inflation (MCMCglmm course notes pg. 104)
-  require(MCMCglmm)
-  require(ggplot2)
-  try(if(is.null(mod$X)) stop("Needs fixed effect design matrix (use saveX=T in MCMCglmm arguments)"))
-  nz=1:nrow(mod$Sol) #Number of samples to hold
-  oz=sum(dat[as.character(mod$Fixed$formula[2])]==0) #Actual number of 0s in the dataset
-  for (i in 1:nrow(mod$Sol)) {
-    pred.l <- rnorm(nrow(dat), (mod$X %*% mod$Sol[i,])@x, sqrt(mod$VCV[i])) #Predicted mean
-    nz[i] <- sum(rpois(nrow(dat), exp(pred.l)) == 0)} #Expected number under poisson
-  qplot(nz,xlab='Expected number of zeros')+geom_vline(aes(xintercept=oz))
-  #Expected zeros, given the overdispersed poisson model
-}
-
-varComp=function(mod,units=T) { #Tabulates variance components of random effects for MCMCglmm models
-  VCV=mod$VCV
-  if(units==F) VCV=VCV[,c(1:ncol(VCV)-1)] #Strips out "units" column (for binomial models)
-  round(data.frame(mode=posterior.mode(VCV/rowSums(VCV)),HPDinterval(VCV/rowSums(VCV))),3)
-}
-
-#Predictions on the data scale for MCMCglmm
-predFixef=function(mod,X=NA,link=NA) { #Model, X coefficients, and scale ('gaussian','poisson','binomial')
-  if(length(X)!=ncol(mod$Sol)||is.na(X)) stop('All coefficients must have an X-value')
-  XB=matrix(mod$Sol,ncol=ncol(mod$Sol))%*%X
-  sigma2=matrix(mod$VCV,ncol=ncol(mod$VCV))%*%rep(1,ncol(mod$VCV))
-  #For eqns, see pg 46/47 of Hadfield's course notes. Also, see R-sig thread for discussion of back-transformation, and how to deal with variance from R and G-structures:
-  #https://stat.ethz.ch/pipermail/r-sig-mixed-models/2016q1/024543.html
-  #In Hadfield's eqn: E[y]=exp(XB+Zu+e), E_u,e[y]=exp(XB+0.5*sigma^2) (Poisson link)
-  if(link=='gaussian') {
-    return(mean(XB+sigma2))
-  } else if(link=='poisson') {
-    return(exp(mean(XB+0.5*sigma2)))
-  } else if(link=='binomial'){
-    invlogit=function(a) exp(a)/(1+exp(a))
-    return(invlogit(mean(XB-0.5*sigma2*tanh(XB*(1+2*exp(-0.5*sigma2))/6)))) #McCulloch and Searle 2001 formula
-    #invlogit(XB/sqrt(1+sigma2*(16*sqrt(3)/15*pi)^2)) #Diggle et al 2004 formula
-  } else stop('Link must be gaussian, poisson, or binomial')
-} #Appears to work
-
-
-#General field data
-fields2014=transmute(fields2014,Year=2014,Field=paste(Grower,X.), #Concatenates grower name and field number
-       Area=as.factor(Area), #Converts Area to factor
-       Lat=Deg.N+Min.N/60,Lon=-(Deg.W+Min.W/60), #Lat/Lon
-       Variety=as.factor(Variety), #Converts Area to factor
-       Irrigated=factor(Irrigated,labels=c('Unirrigated','Irrigated')),
-       Irrigated=factor(Irrigated,levels=c('Irrigated','Unirrigated')),
-       #Converts Irrigated from logical to factor
-       BeeYard=factor(Number.of.Hives>0,labels=c('Unstocked','Stocked')),
-       BeeYard=factor(BeeYard,levels=c('Stocked','Unstocked')),
-       NumHives=Number.of.Hives, #Converts BeeYard from logical to factor
-       Surveyed=as.POSIXct(Surveyed,format='%b %d, %Y'),
-       StartTime=as.POSIXct(paste(Surveyed,Start.Time),format='%Y-%m-%d %H:%M'),
-       EndTime=as.POSIXct(paste(Surveyed,End.Time),format='%Y-%m-%d %H:%M'),
-       Temp=Temperature,WindSp=Wind.Speed.m.s.,RH=Humidity,Cloud=Cloud.Cover, #Weather
-       Cloud=ifelse(grepl('overcast',Cloud),'8/8',Cloud),
-       Cloud=as.numeric(substr(Cloud,0,1))/8) %>%
-  filter(!is.na(Surveyed)) #Strips unsurveyed fields
-
-fields2015=filter(fields2015,Type=='Commodity') %>%
-  transmute(Field,Year=2015,
-            Area=as.factor(Area), #Converts Area to factor
-            Lat=Deg.N,Lon=-Deg.W, #Lat/Lon
-            Variety=as.factor(Variety), #Converts Area to factor
-            Irrigated=factor(Irrigated,labels=c('Unirrigated','Irrigated')), #Converts Irrigated from logical to factor
-            BeeYard=factor(Number.of.Hives>0,labels=c('Unstocked','Stocked')), #Converts BeeYard from logical to factor
-            BeeYard=factor(BeeYard,levels=c('Stocked','Unstocked')),
-            NumHives=Number.of.Hives,
-            Surveyed=as.POSIXct(Surveyed,format='%b %d, %Y'),
-            StartTime=as.POSIXct(paste(Surveyed,Start.Time),format='%Y-%m-%d %H:%M'),
-            EndTime=as.POSIXct(paste(Surveyed,End.Time),format='%Y-%m-%d %H:%M'),
-            BowlStart=as.POSIXct(paste(Surveyed,BowlStart),format='%Y-%m-%d %H:%M'),
-            BowlEnd=as.POSIXct(paste(Surveyed,BowlEnd),format='%Y-%m-%d %H:%M'),
-            Temp=Temperature,WindSp=Wind.Speed.km.hr.*(36/10),RH=Humidity,Cloud=Cloud.Cover) %>% #Wind speed in m/s
-  filter(!is.na(Surveyed)) #Strips unsurveyed fields
-
-matches2014=match(survey2014$Field,fields2014$Field)
-
-survey2014=transmute(survey2014,Field,Year=2014,Distance,Lat=DegN+MinN/60,Lon=-(DegW+MinW/60),
-                 Irrigated=fields2014$Irrigated[matches2014], #Matches Irrigation/Stocking from fields to survey
-                 BeeYard=fields2014$BeeYard[matches2014],
-                 NumHives=fields2014$NumHives[matches2014],
-                 Area=fields2014$Area[matches2014],
-                 Variety=fields2014$Variety[matches2014], #Matches crop varieties
-                 Temp=fields2014$Temp[matches2014], #Air Temperature
-                 WindSp=fields2014$WindSp[matches2014]*3.6, #Wind Speed, converting to km/hr
-                 RH=fields2014$RH[matches2014], #Relative Humidity
-                 FlDens=Fls.50cm.2*4,  #Flower Density, converting fls/50cm2 to fls/m2
-                 Date=fields2014$Surveyed[matches2014],
-                 StartTime=as.POSIXct(paste(Date,StartTime),format='%Y-%m-%d %H:%M'),
-                 EndTime=as.POSIXct(paste(Date,EndTime),format='%Y-%m-%d %H:%M'),
-                 TotalTime=as.numeric(EndTime-StartTime,units='mins'), #Total time spent on survey in minutes
-                 Honeybee,Leafcutterbee,Bumblebee,Otherbee,Hoverfly,Butterfly,
-                 Fly=LargerFly+SmallerFly+CalliphoridFly, #Combines all "fly" categories (-hoverfly))
-                 Total=Honeybee+Leafcutterbee+Bumblebee+Otherbee+Hoverfly+Butterfly+Fly, #Total visits category
-                 Len1,Len2,Len3,Len4,Len5,Perc1,Perc2,Perc3,Perc4,Perc5,Microcap.volume,
-                 Pollen1,Pollen2,Pollen3,Pollen4,Pollen5,MountingOK,PlDens=Plants.m.2)
-
-survey2015=filter(survey2015,Type=='Commodity') %>%
-  select(-Type:-EdgeDir,-LeafShelter1:-LeafShelter4,-BagNumbers) #Strips seed field data
-matches2015=match(survey2015$Field,fields2015$Field)
-
-survey2015=transmute(survey2015,Field,Year=2015,Distance,Lat=DegN,Lon=-DegW,
-                     Irrigated=fields2015$Irrigated[matches2015], #Matches Irrigation/Stocking from fields to survey
-                     BeeYard=fields2015$BeeYard[matches2015],
-                     NumHives=fields2015$NumHives[matches2015],
-                     Area=fields2015$Area[matches2015],
-                     Variety=fields2015$Variety[matches2015], #Matches crop varieties
-                     Temp=fields2015$Temp[matches2015], #Air Temperature
-                     WindSp=fields2015$WindSp[matches2015], #Wind Speed (km/hr)
-                     RH=fields2015$RH[matches2015], #Relative Humidity
-                     FlDens=Fls.50cm.2*4,  #Flower Density, converting fls/50cm2 to fls/m2
-                     Date=fields2015$Surveyed[matches2015],
-                     StartTime=as.POSIXct(paste(Date,StartTime),format='%Y-%m-%d %H:%M'),
-                     EndTime=as.POSIXct(paste(Date,EndTime),format='%Y-%m-%d %H:%M'),
-                     TotalTime=10, #Total time spent on survey in minutes (all plots in 2015 used 10 mins)
-                     HoneybeeTopPollen,HoneybeeTopNectar,HoneybeeSidePollen,HoneybeeSideNectar,
-                     NumHTP,NumHTN,NumHSP,NumHSN,Leafcutterbee,NumLeafcutterbee,Bumblebee,NumBumblebee,
-                     Otherbee,NumOtherbee,Hoverfly,NumHoverfly,Fly,NumFly,
-                     Honeybee=HoneybeeTopPollen+HoneybeeTopNectar+HoneybeeSidePollen+HoneybeeSideNectar,#Total honeybees
-                     NumHoneybee=NumHTP+NumHTN+NumHSP+NumHSN,
-                     Total=HoneybeeTopPollen+HoneybeeTopNectar+HoneybeeSidePollen+HoneybeeSideNectar+
-                       Leafcutterbee+Bumblebee+Otherbee+Hoverfly+Fly, #Total visits
-                     NumTotal=NumHTP+NumHTN+NumHSP+NumHSN+NumLeafcutterbee+NumBumblebee+NumOtherbee+
-                       NumHoverfly+NumFly, #Total number of visits
-                     Len1,Len2,Len3,Len4,Len5,Perc,Microcap.volume,
-                     Pollen1,Pollen2,Pollen3,Pollen4,Pollen5,MountingOK,PlDens=Plants.m.2,Soilwater)
-
-#Insect data only
-visitors2014=rowwise(survey2014) %>%
-  mutate(AvgNec=mean(c(Len1,Len2,Len3,Len4,Len5),na.rm=T)/Microcap.volume,
-         AvgPerc=mean(c(Perc1,Perc2,Perc3,Perc4,Perc5),na.rm=T),
-         AvgPol=mean(c(Pollen1,Pollen2,Pollen3,Pollen4,Pollen5),na.rm=T))%>%
-  select(Field,Year,Area,Distance,Irrigated,BeeYard,NumHives,Temp,WindSp,RH, #Selects survey2014 data
-         TotalTime,Honeybee:Butterfly,Fly,Total, #Flower visitors (minus "other")
-         FlDens,AvgNec,AvgPerc,AvgPol) %>%
-  filter(!is.na(TotalTime)) %>% #Removes NA rows (from extra nectar measurements)
-  gather('Clade','Visits',Honeybee:Total) %>% #Reshapes dataframe into long form, with pollinator class as a factor.
-  mutate(Field=as.factor(Field),Clade=as.factor(Clade)) #Field and Clade as factors
-
-visitors2015=rowwise(survey2015) %>%
-  mutate(AvgNec=mean(c(Len1,Len2,Len3,Len4,Len5),na.rm=T)/Microcap.volume,
-         AvgPol=mean(c(Pollen1,Pollen2,Pollen3,Pollen4,Pollen5),na.rm=T))%>%
-  select(Field,Year,Area,Distance,Irrigated,BeeYard,NumHives,Temp,WindSp,RH, #Selects survey2015 data
-         StartTime,TotalTime,HoneybeeTopPollen:NumTotal, #Flower visitors (minus "other")
-         FlDens,AvgNec,Perc,AvgPol,Soilwater) %>%
-  filter(!is.na(TotalTime)) %>% #Removes NA rows (from extra nectar measurements)
-  unite(HoneybeeTopPollen,HoneybeeTopPollen,NumHTP) %>% unite(HoneybeeTopNectar,HoneybeeTopNectar,NumHTN) %>%
-  unite(HoneybeeSidePollen,HoneybeeSidePollen,NumHSP) %>% unite(HoneybeeSideNectar,HoneybeeSideNectar,NumHSN) %>%
-  unite(Leafcutterbee,Leafcutterbee,NumLeafcutterbee) %>% unite(Bumblebee,Bumblebee,NumBumblebee) %>%
-  unite(Otherbee,Otherbee,NumOtherbee) %>% unite(Hoverfly,Hoverfly,NumHoverfly) %>%
-  unite(Fly,Fly,NumFly) %>% unite(Honeybee,Honeybee,NumHoneybee) %>% unite(Total,Total,NumTotal) %>%
-  gather('Clade','Count',HoneybeeTopPollen:Total) %>% #Reshapes dataframe into long form, with pollinator class as a factor.
-  separate(Count,c('Visits','Count'),convert=T,sep='_') %>%
-  mutate(Field=as.factor(Field),Clade=as.factor(Clade)) #Field and Clade as factors
-
-#Reshapes nectar length, %, and stigma pollen count
-flowers2014=select(survey2014,Field,Year,Area,Variety,Distance,Irrigated,BeeYard,NumHives,StartTime,Len1:MountingOK,FlDens) %>%
-  unite(Samp1,Len1,Perc1,Pollen1) %>% unite(Samp2,Len2,Perc2,Pollen2) %>% unite(Samp3,Len3,Perc3,Pollen3) %>%
-  unite(Samp4,Len4,Perc4,Pollen4) %>% unite(Samp5,Len5,Perc5,Pollen5) %>% #Pairs observations
-  gather(sample,values,Samp1:Samp5) %>% #Gathers samples into 1 column
-  separate(values,c('Len','Perc','Pollen'),sep='_',convert=T) %>% #Separates out observations
-  separate(sample,c('sample','Flower'),sep=4,convert=T) %>% #Separates observation number
-  mutate(Vol=Len*Microcap.volume/32) %>%
-  select(-sample,-Len) #Cleanup
-
-flowers2015=select(survey2015,Field,Year,Area,Variety,Distance,Irrigated,BeeYard,NumHives,StartTime,Len1:MountingOK,FlDens,Soilwater) %>%
-  unite(Samp1,Len1,Pollen1) %>% unite(Samp2,Len2,Pollen2) %>% unite(Samp3,Len3,Pollen3) %>%
-  unite(Samp4,Len4,Pollen4) %>% unite(Samp5,Len5,Pollen5) %>% #Pairs observations
-  gather(sample,values,Samp1:Samp5) %>% #Gathers samples into 1 column
-  separate(values,c('Len','Pollen'),sep='_',convert=T) %>% #Separates out observations
-  separate(sample,c('sample','Flower'),sep=4,convert=T) %>% #Separates observation number
-  mutate(Vol=Len*Microcap.volume/32) %>%
-  select(-sample,-Len) #Cleanup
-
-# Microcap calibration
-nectar2014=gather(nectar2014,'Microcap','Len',2:3,convert=T) %>% #Gathers values
-  mutate(Microcap=factor(Microcap,labels=c('2','5')),Microcap=as.numeric(as.character(Microcap)),
-         Measured=(Len/32)*Microcap,Microcap=as.factor(Microcap)) %>%
-  #Converts to numeric, calculates measured volume, then converts back to factor
-  filter(!is.na(Len)) #Strips NAs
-
-#Conversion formula for %brix (g/100g solution) to mg/uL sugar
-brix2mgul=function(B){ #B is corrected %brix read from refractometer
-  1.177*((0.9988*B) +(0.389*(B^2)/100) +(0.113*(B^3)/10000) +(0.091*(B^4)/1000000) -(0.039*(B^5)/100000000))/100} #Pyke's formula (from Ralph)
-
-a=lm(Vol~Measured+Measured:Microcap,nectar2014) #Model actual volume based on measured volume
-flowers2014=mutate(flowers2014,Vol=predict(a,data.frame(Measured=Vol,Microcap=as.factor(Microcap.volume))),
-               #Correct the nectar volume for field measurements ("flowers" dataframe)
-               Field=as.factor(Field), #Convert field to factor
-               Sugar=Vol*brix2mgul(Perc), #Calculates mg sugar per nectar reading
-               FullPollen=Pollen>159) %>% #Is flower fully pollinated? (Mequida & Renard 1984 estimate)
-  filter(!(is.na(Pollen)&is.na(Perc)&is.na(Sugar))) #Removes extra nectar measurements
-
-flowers2015=mutate(flowers2015,Vol=predict(a,data.frame(Measured=Vol,Microcap=as.factor(Microcap.volume))),
-                   #Correct the nectar volume for field measurements ("flowers" dataframe)
-                   Field=as.factor(Field), #Convert field to factor
-                   Sugar=Vol*brix2mgul(Perc), #Calculates mg sugar per nectar reading
-                   FullPollen=Pollen>159) %>% #Is flower fully pollinated? (Mequida & Renard 1984 estimate)
-  filter(!(is.na(Pollen)&is.na(Perc)&is.na(Sugar)))
-
-#Matches visitation rates to distance
-matches2014=match(paste(flowers2014$Field,flowers2014$Distance),paste(visitors2014$Field, visitors2014$Distance))
-
-flowers2014=mutate(flowers2014,Time=as.numeric(visitors2014$TotalTime)[matches2014],
-               Honeybee=filter(visitors2014,Clade=='Honeybee')$Visits[matches2014],
-               Fly=filter(visitors2014,Clade=='Fly')$Visits[matches2014],
-               Hoverfly=filter(visitors2014,Clade=='Hoverfly')$Visits[matches2014],
-               Total=filter(visitors2014,Clade=='Total')$Visits[matches2014]) %>%
-  select(-c(Microcap.volume)) #Cleanup field measurements
-
-matches2015=match(paste(flowers2015$Field,flowers2015$Distance),paste(visitors2015$Field, visitors2015$Distance))
-
-flowers2015=mutate(flowers2015,Time=as.numeric(visitors2015$TotalTime)[matches2015],
-         Honeybee=filter(visitors2015,Clade=='Honeybee')$Visits[matches2015],
-         Fly=filter(visitors2015,Clade=='Fly')$Visits[matches2015],
-         Hoverfly=filter(visitors2015,Clade=='Hoverfly')$Visits[matches2015],
-         Total=filter(visitors2015,Clade=='Total')$Visits[matches2015]) %>%
-  select(-c(Microcap.volume)) #Cleanup field measurements
-
-survey2014=filter(survey2014,!is.na(StartTime)) #Removes extra plots (2uL measurements)
-rm(a,matches2014,matches2015,nectar2014)
-
-#Plant data 2014
-plants2014=arrange(plants2014,FieldName,Plot,Plant) #Re-orders plant measurements
-
-seeds2014=transmute(plants2014,Field=FieldName,Plot,Plant,
-                VegMass=TotalMass-SeedMass,SeedMass,Branch,
-                Pods=Pods+Bag+Bag_Tscar,Missing=Missing-Bag,
-                Pod1,Pod2,Pod3,Pod4,Pod5,
-                Weigh1,Weigh2,Weigh3,Weigh4,Weigh5,SeedCount) %>% #Selects correct columns
-  
-  gather('Pod','Value',9:18) %>% #Melts pod count and pod weight
-  
-  separate(Pod,into=c('Param','PodNum'),sep=-1) %>%
-  mutate(Param=as.factor(Param),PodNum=as.numeric(PodNum)) %>%
-  spread(Param,Value) %>% #Casts pod count and pod weight back
-  rename(PodCount=Pod,PodMass=Weigh,Pod=PodNum) %>%
-  group_by(Field,Plot,Plant,Pod) %>%
-  mutate(FieldPlot=paste(Field,Plot,sep='_'))%>%
-  filter(paste(Field,Plot,Plant,sep='.')!='McKee 5.1.5') #Removes McKee5.1.5 (DISPUTE IN LABELLING)
-
-plants2014= group_by(seeds2014,Field,Plot,Plant) %>% 
-  summarise_at(vars(-FieldPlot),funs(mean(.,na.rm=T),se)) %>% #Mean and SE of metrics for each plant (all mean values except for pod measurements will equal plant-level metrics)
-  select(Field,Plot,Plant,VegMass=VegMass_mean,SeedMass=SeedMass_mean,
-         Branch=Branch_mean,Pods=Pods_mean,Missing=Missing_mean,SeedCount=SeedCount_mean,
-         AvPodCount=PodCount_mean,SEPodCount=PodCount_se,AvPodMass=PodMass_mean,SEPodMass=PodMass_se) %>%
-  mutate(FieldPlot=as.factor(paste(Field,Plot,sep='_'))) #Creates FieldPlot factor
-
-#Merge Plot to Distance, merging from some other dataframe. Merge other info (variety, stocking, etc.) as well
-dist=select(survey2014,Field,Distance,Area,Variety,Irrigated,BeeYard,NumHives,StartTime,EndTime,Temp,WindSp,RH,PlDens) %>%
-   unite(FieldPlot,Field,Distance)
-
-#Merges Distances and other data into seed and plant dataframes
-seeds2014=left_join(seeds2014,dist,by='FieldPlot') %>%
-  select(-FieldPlot) %>%
-  rename(Distance=Plot) %>%
-  arrange(Field,Distance,Plant,Pod)
-plants2014=left_join(plants2014,dist,by='FieldPlot') %>%
-  select(-FieldPlot) %>%
-  rename(Distance=Plot) %>%
-  mutate(PropMissing=Missing/(Pods+Missing)) %>%
-  arrange(Field,Distance,Plant)
-rm(dist) #Remove distance
-
-#Plant data 2015 (not used yet)
-plants2015=arrange(plants2015,FieldName,Plot,Plant) #Re-orders plant measurements
-seeds2015=transmute(plants2015,Field=FieldName,Plot,Plant,
-                    VegMass=TotalMass-SeedMass,SeedMass,Branch,
-                    Pods=Pods+Bag+Bag_Tscar,Missing=Missing-Bag,
-                    Pod1,Pod2,Pod3,Pod4,Pod5,
-                    Weigh1,Weigh2,Weigh3,Weigh4,Weigh5,SeedCount) %>% #Selects correct columns
-  gather('Pod','Value',9:18) %>% #Melts pod count and pod weight
-  separate(Pod,into=c('Param','PodNum'),sep=-1) %>%
-  mutate(Param=as.factor(Param),PodNum=as.numeric(PodNum)) %>%
-  spread(Param,Value) %>% #Casts pod count and pod weight back
-  rename(PodCount=Pod,PodMass=Weigh,Pod=PodNum) %>%
-  group_by(Field,Plot,Plant,Pod) %>%
-  mutate(FieldPlot=paste(Field,Plot,sep='_'))
-
-plants2015=group_by(seeds2015,Field,Plot,Plant) %>% 
-  summarise_at(vars(-FieldPlot),funs(mean(.,na.rm=T),se))%>% #Mean and SE of metrics for each plant (all mean values except for pod measurements will equal plant-level metrics)
-  select(Field,Plot,Plant,VegMass=VegMass_mean,SeedMass=SeedMass_mean,
-         Branch=Branch_mean,Pods=Pods_mean,Missing=Missing_mean,SeedCount=SeedCount_mean,
-         AvPodCount=PodCount_mean,SEPodCount=PodCount_se,AvPodMass=PodMass_mean,SEPodMass=PodMass_se) %>%
-  mutate(FieldPlot=as.factor(paste(Field,Plot,sep='_'))) #Creates FieldPlot factor
-
-#Merge Plot to Distance, merging from some other dataframe. Merge other info (variety, stocking, etc.) as well
-dist=select(survey2015,Field,Distance,Area,Variety,Irrigated,BeeYard,NumHives,StartTime,EndTime,Temp,WindSp,RH,PlDens) %>%
-  unite(FieldPlot,Field,Distance)
-
-#Merges Distances and other data into seed and plant dataframes
-seeds2015=left_join(seeds2015,dist,by='FieldPlot') %>%
-  select(-FieldPlot) %>%
-  rename(Distance=Plot) %>%
-  arrange(Field,Distance,Plant,Pod)
-plants2015=left_join(plants2015,dist,by='FieldPlot') %>%
-  select(-FieldPlot) %>%
-  rename(Distance=Plot) %>%
-  mutate(PropMissing=Missing/(Pods+Missing)) %>%
-  arrange(Field,Distance,Plant)
-rm(dist) #Remove distance
-
-#Merge 2014/2015 dataframes
-fieldsAll=bind_rows(fields2014,fields2015) %>%
-  mutate(Field=factor(Field),Variety=factor(Variety))
-surveyAll=bind_rows(survey2014,survey2015)%>%
-  mutate(Field=factor(Field))
-flowersAll=bind_rows(flowers2014,flowers2015)%>%
-  mutate(Field=factor(Field),Variety=factor(Variety))
-visitorsAll=bind_rows(visitors2014,visitors2015)
-
-seedsAll=bind_rows(mutate(seeds2014,Year=2014),mutate(seeds2015,Year=2015))
-plantsAll=bind_rows(mutate(plants2014,Year=2014),mutate(plants2015,Year=2015))
-
-#Filters out honeybee visit classifications (side,pollen,nectar) from 2015
-visitorsAll=visitorsAll %>%
-  filter(Clade!='Total',!grepl('Honeybee.',Clade))
-
-#Cleanup
-rm(fields2014,fields2015,flowers2014,flowers2015,survey2014,survey2015,visitors2014,seeds2014,seeds2015,plants2014,plants2015)
-
-#Calculate plot yield in bu/ac (only for plantsAll)
-#50 lbs/bushel * 453.492 g/lb = 22679.6 g/bushel = 4.409249e-05 bushels/g
-#1 acre = 4046.86m2 = 0.0002471052 acres/m2
-#Grams/m2 * (4.409249e-05/0.0002471052) = g/m2 * 0.1784361 = bushels/acre
-conversion= (1/(50*453.492))/(1/4046.86)
-plantsAll=mutate(plantsAll,Yield=SeedMass*PlDens*conversion)
-
-# Save workspace
-save.image("C:\\Users\\Samuel\\Documents\\Projects\\UofC\\canola_yield_project\\Commodity field analysis\\commodityfieldDataAll.RData")
-
-#Data frame descriptions:
-#FIELDS: general field information (not really used)
-#SURVEY: plot-level info taken from data sheets (not really used)
-#FLOWERS: flower-level nectar and pollen counts
-#VISITORS: plot-level visitation, with mean nectar, %sugar and pollen counts taken from flowers. Broken down by Clade.
-#PLANTS: plant-level yield metrics, matched with Honeybee, Fly, and Total visit
-#SEEDS: flower-level seed mass & seed count, matched with field- and plot-level measurements
-
-#Folder to save images
-folder="C:\\Users\\Samuel\\Documents\\Projects\\UofC\\Commodity field analysis\\Figures"
+# #Load and organize everything -----------
+# fields2014=read.csv("C:\\Users\\Samuel\\Documents\\Projects\\UofC\\csv files\\field info 2014.csv",stringsAsFactors=F,strip.white=T,na.strings = c("",'NA'))
+# survey2014=read.csv("C:\\Users\\Samuel\\Documents\\Projects\\UofC\\csv files\\survey data 2014.csv",stringsAsFactors=F,strip.white=T,na.strings = c("",'NA'))
+# nectar2014=read.csv("C:\\Users\\Samuel\\Documents\\Projects\\UofC\\csv files\\nectar calibration.csv",stringsAsFactors=F,strip.white=T,na.strings = c("",'NA'))
+# plants2014=read.csv("C:\\Users\\Samuel\\Documents\\Projects\\UofC\\csv files\\plant info 2014 commodity.csv",stringsAsFactors=T,strip.white=T,na.strings= c("",'NA'))
+# 
+# fields2015=read.csv("C:\\Users\\Samuel\\Documents\\Projects\\UofC\\csv files\\field info 2015.csv",stringsAsFactors=F,strip.white=T,na.strings = c("",'NA'))
+# survey2015=read.csv("C:\\Users\\Samuel\\Documents\\Projects\\UofC\\csv files\\survey data 2015.csv",stringsAsFactors=F,strip.white=T,na.strings = c("",'NA'))
+# plants2015=read.csv("C:\\Users\\Samuel\\Documents\\Projects\\UofC\\csv files\\plant info 2015 commodity.csv",stringsAsFactors=T,strip.white=T,na.strings= c("",'NA'))
+# 
+# AICc=function(model,...){ #Second-order bias corrected AIC
+#   #require(plyr)
+#   corAIC=function(x){
+#     k=length(coef(x))
+#     n=length(residuals(x))
+#     return(AIC(x)+(2*k*k-1)/(n-k-1))
+#   }
+#   if(missing(...)){
+#     return(corAIC(model))
+#   }
+#   else{
+#     mlist=list(model,...)
+#     len=plyr::laply(mlist,function(x) length(residuals(x)))
+#     if(length(len)!=sum(len %in% len[1]))
+#       warning('Models use different # data points. Comparing AICc values is invalid')
+#     forms=sapply(mlist, function(x) paste(formula(x)))
+#     data.frame(row.names=paste(forms[2,],forms[1,],forms[3,]),AICc=plyr::laply(mlist,corAIC))
+#   }
+# }
+# 
+# deltaAIC=function(m1,m2,...,correct=TRUE){
+#   if(correct) a=AICc(m1,m2,...) else a=AIC(m1,m2,...)
+#   a$delta_AICc=a$AICc-min(a$AICc)
+#   a$w_i=exp(-0.5*a$delta_AICc)/sum(exp(-0.5*a$delta_AICc)) #Model Probabilities (Akaike weights)
+#   a
+# }
+# 
+# DIC=function(m1,...){ #Convenience function to extract DIC values from MCMCglmm models
+#   modlist=list(m1,...)
+#   dicvals=unlist(lapply(modlist,'[[',c('DIC')))
+#   fixeffs=as.character(lapply((lapply(modlist,'[[','Fixed')),'[[','formula'))
+#   raneffs=as.character(lapply((lapply(modlist,'[[','Random')),'[[','formula'))
+#   data.frame(Fixed=fixeffs,Random=raneffs,DIC=dicvals,deltaDIC=dicvals-min(dicvals))
+# }
+# 
+# plotFixedTerms=function(m1){ #Convenience function to plot 95% distributions for MCMCglmm fixed effects
+#   dat=as.data.frame(summary(m1)$solutions)
+#   dat$params=as.factor(rownames(dat))
+#   colnames(dat)[c(2,3)]=c('lwr','upr')
+#   ggplot(dat,aes(x=params,y=post.mean,ymax=upr,ymin=lwr))+geom_pointrange()+labs(x='Fixed Effects',y='Posterior Mean')+geom_hline(yintercept=0,colour='red')+theme(axis.text.x=element_text(angle=90))
+# }
+# 
+# se=function(x) sd(x)/sqrt(length(x)) #Convenience SE function
+# 
+# zeroCheck=function(mod,dat) { #Posterior predictive checks for zero-inflation (MCMCglmm course notes pg. 104)
+#   require(MCMCglmm)
+#   require(ggplot2)
+#   try(if(is.null(mod$X)) stop("Needs fixed effect design matrix (use saveX=T in MCMCglmm arguments)"))
+#   nz=1:nrow(mod$Sol) #Number of samples to hold
+#   oz=sum(dat[as.character(mod$Fixed$formula[2])]==0) #Actual number of 0s in the dataset
+#   for (i in 1:nrow(mod$Sol)) {
+#     pred.l <- rnorm(nrow(dat), (mod$X %*% mod$Sol[i,])@x, sqrt(mod$VCV[i])) #Predicted mean
+#     nz[i] <- sum(rpois(nrow(dat), exp(pred.l)) == 0)} #Expected number under poisson
+#   qplot(nz,xlab='Expected number of zeros')+geom_vline(aes(xintercept=oz))
+#   #Expected zeros, given the overdispersed poisson model
+# }
+# 
+# varComp=function(mod,units=T) { #Tabulates variance components of random effects for MCMCglmm models
+#   VCV=mod$VCV
+#   if(units==F) VCV=VCV[,c(1:ncol(VCV)-1)] #Strips out "units" column (for binomial models)
+#   round(data.frame(mode=posterior.mode(VCV/rowSums(VCV)),HPDinterval(VCV/rowSums(VCV))),3)
+# }
+# 
+# #Predictions on the data scale for MCMCglmm
+# predFixef=function(mod,X=NA,link=NA) { #Model, X coefficients, and scale ('gaussian','poisson','binomial')
+#   if(length(X)!=ncol(mod$Sol)||is.na(X)) stop('All coefficients must have an X-value')
+#   XB=matrix(mod$Sol,ncol=ncol(mod$Sol))%*%X
+#   sigma2=matrix(mod$VCV,ncol=ncol(mod$VCV))%*%rep(1,ncol(mod$VCV))
+#   #For eqns, see pg 46/47 of Hadfield's course notes. Also, see R-sig thread for discussion of back-transformation, and how to deal with variance from R and G-structures:
+#   #https://stat.ethz.ch/pipermail/r-sig-mixed-models/2016q1/024543.html
+#   #In Hadfield's eqn: E[y]=exp(XB+Zu+e), E_u,e[y]=exp(XB+0.5*sigma^2) (Poisson link)
+#   if(link=='gaussian') {
+#     return(mean(XB+sigma2))
+#   } else if(link=='poisson') {
+#     return(exp(mean(XB+0.5*sigma2)))
+#   } else if(link=='binomial'){
+#     invlogit=function(a) exp(a)/(1+exp(a))
+#     return(invlogit(mean(XB-0.5*sigma2*tanh(XB*(1+2*exp(-0.5*sigma2))/6)))) #McCulloch and Searle 2001 formula
+#     #invlogit(XB/sqrt(1+sigma2*(16*sqrt(3)/15*pi)^2)) #Diggle et al 2004 formula
+#   } else stop('Link must be gaussian, poisson, or binomial')
+# } #Appears to work
+# 
+# 
+# #General field data
+# fields2014=transmute(fields2014,Year=2014,Field=paste(Grower,X.), #Concatenates grower name and field number
+#        Area=as.factor(Area), #Converts Area to factor
+#        Lat=Deg.N+Min.N/60,Lon=-(Deg.W+Min.W/60), #Lat/Lon
+#        Variety=as.factor(Variety), #Converts Area to factor
+#        Irrigated=factor(Irrigated,labels=c('Unirrigated','Irrigated')),
+#        Irrigated=factor(Irrigated,levels=c('Irrigated','Unirrigated')),
+#        #Converts Irrigated from logical to factor
+#        BeeYard=factor(Number.of.Hives>0,labels=c('Unstocked','Stocked')),
+#        BeeYard=factor(BeeYard,levels=c('Stocked','Unstocked')),
+#        NumHives=Number.of.Hives, #Converts BeeYard from logical to factor
+#        Surveyed=as.POSIXct(Surveyed,format='%b %d, %Y'),
+#        StartTime=as.POSIXct(paste(Surveyed,Start.Time),format='%Y-%m-%d %H:%M'),
+#        EndTime=as.POSIXct(paste(Surveyed,End.Time),format='%Y-%m-%d %H:%M'),
+#        Temp=Temperature,WindSp=Wind.Speed.m.s.,RH=Humidity,Cloud=Cloud.Cover, #Weather
+#        Cloud=ifelse(grepl('overcast',Cloud),'8/8',Cloud),
+#        Cloud=as.numeric(substr(Cloud,0,1))/8) %>%
+#   filter(!is.na(Surveyed)) #Strips unsurveyed fields
+# 
+# fields2015=filter(fields2015,Type=='Commodity') %>%
+#   transmute(Field,Year=2015,
+#             Area=as.factor(Area), #Converts Area to factor
+#             Lat=Deg.N,Lon=-Deg.W, #Lat/Lon
+#             Variety=as.factor(Variety), #Converts Area to factor
+#             Irrigated=factor(Irrigated,labels=c('Unirrigated','Irrigated')), #Converts Irrigated from logical to factor
+#             BeeYard=factor(Number.of.Hives>0,labels=c('Unstocked','Stocked')), #Converts BeeYard from logical to factor
+#             BeeYard=factor(BeeYard,levels=c('Stocked','Unstocked')),
+#             NumHives=Number.of.Hives,
+#             Surveyed=as.POSIXct(Surveyed,format='%b %d, %Y'),
+#             StartTime=as.POSIXct(paste(Surveyed,Start.Time),format='%Y-%m-%d %H:%M'),
+#             EndTime=as.POSIXct(paste(Surveyed,End.Time),format='%Y-%m-%d %H:%M'),
+#             BowlStart=as.POSIXct(paste(Surveyed,BowlStart),format='%Y-%m-%d %H:%M'),
+#             BowlEnd=as.POSIXct(paste(Surveyed,BowlEnd),format='%Y-%m-%d %H:%M'),
+#             Temp=Temperature,WindSp=Wind.Speed.km.hr.*(36/10),RH=Humidity,Cloud=Cloud.Cover) %>% #Wind speed in m/s
+#   filter(!is.na(Surveyed)) #Strips unsurveyed fields
+# 
+# matches2014=match(survey2014$Field,fields2014$Field)
+# 
+# survey2014=transmute(survey2014,Field,Year=2014,Distance,Lat=DegN+MinN/60,Lon=-(DegW+MinW/60),
+#                  Irrigated=fields2014$Irrigated[matches2014], #Matches Irrigation/Stocking from fields to survey
+#                  BeeYard=fields2014$BeeYard[matches2014],
+#                  NumHives=fields2014$NumHives[matches2014],
+#                  Area=fields2014$Area[matches2014],
+#                  Variety=fields2014$Variety[matches2014], #Matches crop varieties
+#                  Temp=fields2014$Temp[matches2014], #Air Temperature
+#                  WindSp=fields2014$WindSp[matches2014]*3.6, #Wind Speed, converting to km/hr
+#                  RH=fields2014$RH[matches2014], #Relative Humidity
+#                  FlDens=Fls.50cm.2*4,  #Flower Density, converting fls/50cm2 to fls/m2
+#                  Date=fields2014$Surveyed[matches2014],
+#                  StartTime=as.POSIXct(paste(Date,StartTime),format='%Y-%m-%d %H:%M'),
+#                  EndTime=as.POSIXct(paste(Date,EndTime),format='%Y-%m-%d %H:%M'),
+#                  TotalTime=as.numeric(EndTime-StartTime,units='mins'), #Total time spent on survey in minutes
+#                  Honeybee,Leafcutterbee,Bumblebee,Otherbee,Hoverfly,Butterfly,
+#                  Fly=LargerFly+SmallerFly+CalliphoridFly, #Combines all "fly" categories (-hoverfly))
+#                  Total=Honeybee+Leafcutterbee+Bumblebee+Otherbee+Hoverfly+Butterfly+Fly, #Total visits category
+#                  Len1,Len2,Len3,Len4,Len5,Perc1,Perc2,Perc3,Perc4,Perc5,Microcap.volume,
+#                  Pollen1,Pollen2,Pollen3,Pollen4,Pollen5,MountingOK,PlDens=Plants.m.2)
+# 
+# survey2015=filter(survey2015,Type=='Commodity') %>%
+#   select(-Type:-EdgeDir,-LeafShelter1:-LeafShelter4,-BagNumbers) #Strips seed field data
+# matches2015=match(survey2015$Field,fields2015$Field)
+# 
+# survey2015=transmute(survey2015,Field,Year=2015,Distance,Lat=DegN,Lon=-DegW,
+#                      Irrigated=fields2015$Irrigated[matches2015], #Matches Irrigation/Stocking from fields to survey
+#                      BeeYard=fields2015$BeeYard[matches2015],
+#                      NumHives=fields2015$NumHives[matches2015],
+#                      Area=fields2015$Area[matches2015],
+#                      Variety=fields2015$Variety[matches2015], #Matches crop varieties
+#                      Temp=fields2015$Temp[matches2015], #Air Temperature
+#                      WindSp=fields2015$WindSp[matches2015], #Wind Speed (km/hr)
+#                      RH=fields2015$RH[matches2015], #Relative Humidity
+#                      FlDens=Fls.50cm.2*4,  #Flower Density, converting fls/50cm2 to fls/m2
+#                      Date=fields2015$Surveyed[matches2015],
+#                      StartTime=as.POSIXct(paste(Date,StartTime),format='%Y-%m-%d %H:%M'),
+#                      EndTime=as.POSIXct(paste(Date,EndTime),format='%Y-%m-%d %H:%M'),
+#                      TotalTime=10, #Total time spent on survey in minutes (all plots in 2015 used 10 mins)
+#                      HoneybeeTopPollen,HoneybeeTopNectar,HoneybeeSidePollen,HoneybeeSideNectar,
+#                      NumHTP,NumHTN,NumHSP,NumHSN,Leafcutterbee,NumLeafcutterbee,Bumblebee,NumBumblebee,
+#                      Otherbee,NumOtherbee,Hoverfly,NumHoverfly,Fly,NumFly,
+#                      Honeybee=HoneybeeTopPollen+HoneybeeTopNectar+HoneybeeSidePollen+HoneybeeSideNectar,#Total honeybees
+#                      NumHoneybee=NumHTP+NumHTN+NumHSP+NumHSN,
+#                      Total=HoneybeeTopPollen+HoneybeeTopNectar+HoneybeeSidePollen+HoneybeeSideNectar+
+#                        Leafcutterbee+Bumblebee+Otherbee+Hoverfly+Fly, #Total visits
+#                      NumTotal=NumHTP+NumHTN+NumHSP+NumHSN+NumLeafcutterbee+NumBumblebee+NumOtherbee+
+#                        NumHoverfly+NumFly, #Total number of visits
+#                      Len1,Len2,Len3,Len4,Len5,Perc,Microcap.volume,
+#                      Pollen1,Pollen2,Pollen3,Pollen4,Pollen5,MountingOK,PlDens=Plants.m.2,Soilwater)
+# 
+# #Insect data only
+# visitors2014=rowwise(survey2014) %>%
+#   mutate(AvgNec=mean(c(Len1,Len2,Len3,Len4,Len5),na.rm=T)/Microcap.volume,
+#          AvgPerc=mean(c(Perc1,Perc2,Perc3,Perc4,Perc5),na.rm=T),
+#          AvgPol=mean(c(Pollen1,Pollen2,Pollen3,Pollen4,Pollen5),na.rm=T))%>%
+#   select(Field,Year,Area,Distance,Irrigated,BeeYard,NumHives,Temp,WindSp,RH, #Selects survey2014 data
+#          TotalTime,Honeybee:Butterfly,Fly,Total, #Flower visitors (minus "other")
+#          FlDens,AvgNec,AvgPerc,AvgPol) %>%
+#   filter(!is.na(TotalTime)) %>% #Removes NA rows (from extra nectar measurements)
+#   gather('Clade','Visits',Honeybee:Total) %>% #Reshapes dataframe into long form, with pollinator class as a factor.
+#   mutate(Field=as.factor(Field),Clade=as.factor(Clade)) #Field and Clade as factors
+# 
+# visitors2015=rowwise(survey2015) %>%
+#   mutate(AvgNec=mean(c(Len1,Len2,Len3,Len4,Len5),na.rm=T)/Microcap.volume,
+#          AvgPol=mean(c(Pollen1,Pollen2,Pollen3,Pollen4,Pollen5),na.rm=T))%>%
+#   select(Field,Year,Area,Distance,Irrigated,BeeYard,NumHives,Temp,WindSp,RH, #Selects survey2015 data
+#          StartTime,TotalTime,HoneybeeTopPollen:NumTotal, #Flower visitors (minus "other")
+#          FlDens,AvgNec,Perc,AvgPol,Soilwater) %>%
+#   filter(!is.na(TotalTime)) %>% #Removes NA rows (from extra nectar measurements)
+#   unite(HoneybeeTopPollen,HoneybeeTopPollen,NumHTP) %>% unite(HoneybeeTopNectar,HoneybeeTopNectar,NumHTN) %>%
+#   unite(HoneybeeSidePollen,HoneybeeSidePollen,NumHSP) %>% unite(HoneybeeSideNectar,HoneybeeSideNectar,NumHSN) %>%
+#   unite(Leafcutterbee,Leafcutterbee,NumLeafcutterbee) %>% unite(Bumblebee,Bumblebee,NumBumblebee) %>%
+#   unite(Otherbee,Otherbee,NumOtherbee) %>% unite(Hoverfly,Hoverfly,NumHoverfly) %>%
+#   unite(Fly,Fly,NumFly) %>% unite(Honeybee,Honeybee,NumHoneybee) %>% unite(Total,Total,NumTotal) %>%
+#   gather('Clade','Count',HoneybeeTopPollen:Total) %>% #Reshapes dataframe into long form, with pollinator class as a factor.
+#   separate(Count,c('Visits','Count'),convert=T,sep='_') %>%
+#   mutate(Field=as.factor(Field),Clade=as.factor(Clade)) #Field and Clade as factors
+# 
+# #Reshapes nectar length, %, and stigma pollen count
+# flowers2014=select(survey2014,Field,Year,Area,Variety,Distance,Irrigated,BeeYard,NumHives,StartTime,Len1:MountingOK,FlDens) %>%
+#   unite(Samp1,Len1,Perc1,Pollen1) %>% unite(Samp2,Len2,Perc2,Pollen2) %>% unite(Samp3,Len3,Perc3,Pollen3) %>%
+#   unite(Samp4,Len4,Perc4,Pollen4) %>% unite(Samp5,Len5,Perc5,Pollen5) %>% #Pairs observations
+#   gather(sample,values,Samp1:Samp5) %>% #Gathers samples into 1 column
+#   separate(values,c('Len','Perc','Pollen'),sep='_',convert=T) %>% #Separates out observations
+#   separate(sample,c('sample','Flower'),sep=4,convert=T) %>% #Separates observation number
+#   mutate(Vol=Len*Microcap.volume/32) %>%
+#   select(-sample,-Len) #Cleanup
+# 
+# flowers2015=select(survey2015,Field,Year,Area,Variety,Distance,Irrigated,BeeYard,NumHives,StartTime,Len1:MountingOK,FlDens,Soilwater) %>%
+#   unite(Samp1,Len1,Pollen1) %>% unite(Samp2,Len2,Pollen2) %>% unite(Samp3,Len3,Pollen3) %>%
+#   unite(Samp4,Len4,Pollen4) %>% unite(Samp5,Len5,Pollen5) %>% #Pairs observations
+#   gather(sample,values,Samp1:Samp5) %>% #Gathers samples into 1 column
+#   separate(values,c('Len','Pollen'),sep='_',convert=T) %>% #Separates out observations
+#   separate(sample,c('sample','Flower'),sep=4,convert=T) %>% #Separates observation number
+#   mutate(Vol=Len*Microcap.volume/32) %>%
+#   select(-sample,-Len) #Cleanup
+# 
+# # Microcap calibration
+# nectar2014=gather(nectar2014,'Microcap','Len',2:3,convert=T) %>% #Gathers values
+#   mutate(Microcap=factor(Microcap,labels=c('2','5')),Microcap=as.numeric(as.character(Microcap)),
+#          Measured=(Len/32)*Microcap,Microcap=as.factor(Microcap)) %>%
+#   #Converts to numeric, calculates measured volume, then converts back to factor
+#   filter(!is.na(Len)) #Strips NAs
+# 
+# #Conversion formula for %brix (g/100g solution) to mg/uL sugar
+# brix2mgul=function(B){ #B is corrected %brix read from refractometer
+#   1.177*((0.9988*B) +(0.389*(B^2)/100) +(0.113*(B^3)/10000) +(0.091*(B^4)/1000000) -(0.039*(B^5)/100000000))/100} #Pyke's formula (from Ralph)
+# 
+# a=lm(Vol~Measured+Measured:Microcap,nectar2014) #Model actual volume based on measured volume
+# flowers2014=mutate(flowers2014,Vol=predict(a,data.frame(Measured=Vol,Microcap=as.factor(Microcap.volume))),
+#                #Correct the nectar volume for field measurements ("flowers" dataframe)
+#                Field=as.factor(Field), #Convert field to factor
+#                Sugar=Vol*brix2mgul(Perc), #Calculates mg sugar per nectar reading
+#                FullPollen=Pollen>159) %>% #Is flower fully pollinated? (Mequida & Renard 1984 estimate)
+#   filter(!(is.na(Pollen)&is.na(Perc)&is.na(Sugar))) #Removes extra nectar measurements
+# 
+# flowers2015=mutate(flowers2015,Vol=predict(a,data.frame(Measured=Vol,Microcap=as.factor(Microcap.volume))),
+#                    #Correct the nectar volume for field measurements ("flowers" dataframe)
+#                    Field=as.factor(Field), #Convert field to factor
+#                    Sugar=Vol*brix2mgul(Perc), #Calculates mg sugar per nectar reading
+#                    FullPollen=Pollen>159) %>% #Is flower fully pollinated? (Mequida & Renard 1984 estimate)
+#   filter(!(is.na(Pollen)&is.na(Perc)&is.na(Sugar)))
+# 
+# #Matches visitation rates to distance
+# matches2014=match(paste(flowers2014$Field,flowers2014$Distance),paste(visitors2014$Field, visitors2014$Distance))
+# 
+# flowers2014=mutate(flowers2014,Time=as.numeric(visitors2014$TotalTime)[matches2014],
+#                Honeybee=filter(visitors2014,Clade=='Honeybee')$Visits[matches2014],
+#                Fly=filter(visitors2014,Clade=='Fly')$Visits[matches2014],
+#                Hoverfly=filter(visitors2014,Clade=='Hoverfly')$Visits[matches2014],
+#                Total=filter(visitors2014,Clade=='Total')$Visits[matches2014]) %>%
+#   select(-c(Microcap.volume)) #Cleanup field measurements
+# 
+# matches2015=match(paste(flowers2015$Field,flowers2015$Distance),paste(visitors2015$Field, visitors2015$Distance))
+# 
+# flowers2015=mutate(flowers2015,Time=as.numeric(visitors2015$TotalTime)[matches2015],
+#          Honeybee=filter(visitors2015,Clade=='Honeybee')$Visits[matches2015],
+#          Fly=filter(visitors2015,Clade=='Fly')$Visits[matches2015],
+#          Hoverfly=filter(visitors2015,Clade=='Hoverfly')$Visits[matches2015],
+#          Total=filter(visitors2015,Clade=='Total')$Visits[matches2015]) %>%
+#   select(-c(Microcap.volume)) #Cleanup field measurements
+# 
+# survey2014=filter(survey2014,!is.na(StartTime)) #Removes extra plots (2uL measurements)
+# rm(a,matches2014,matches2015,nectar2014)
+# 
+# #Plant data 2014
+# plants2014=arrange(plants2014,FieldName,Plot,Plant) #Re-orders plant measurements
+# 
+# seeds2014 <- transmute(plants2014,Field=FieldName,Plot,Plant,
+#                 VegMass=TotalMass-SeedMass,SeedMass,Branch,
+#                 Pods=Pods+Bag+Bag_Tscar,Missing=Missing-Bag,
+#                 Pod1,Pod2,Pod3,Pod4,Pod5,
+#                 Weigh1,Weigh2,Weigh3,Weigh4,Weigh5,SeedCount) %>% #Selects correct columns
+#   gather('Pod','Value',9:18) %>% #Melts pod count and pod weight
+#   separate(Pod,into=c('Param','PodNum'),sep=-1) %>%
+#   mutate(Param=as.factor(Param),PodNum=as.numeric(PodNum)) %>%
+#   spread(Param,Value) %>% #Casts pod count and pod weight back
+#   rename(PodCount=Pod,PodMass=Weigh,Pod=PodNum) %>%
+#   mutate(FieldPlot=paste(Field,Plot,sep='_')) %>%
+#   filter(paste(Field,Plot,Plant,sep='.')!='McKee 5.1.5')   #Removes McKee5.1.5 (DISPUTE IN LABELLING)
+#   
+# 
+# plants2014 <- group_by(seeds2014,Field,Plot,Plant) %>% 
+#   summarise_at(vars(-FieldPlot),funs(mean(.,na.rm=T),se)) %>% #Mean and SE of metrics for each plant (all mean values except for pod measurements will equal plant-level metrics)
+#   select(Field,Plot,Plant,VegMass=VegMass_mean,SeedMass=SeedMass_mean,
+#          Branch=Branch_mean,Pods=Pods_mean,Missing=Missing_mean,SeedCount=SeedCount_mean,
+#          AvPodCount=PodCount_mean,SEPodCount=PodCount_se,AvPodMass=PodMass_mean,SEPodMass=PodMass_se) %>%
+#   mutate(FieldPlot=as.factor(paste(Field,Plot,sep='_'))) #Creates FieldPlot factor
+# 
+# #Merge Plot to Distance, merging from some other dataframe. Merge other info (variety, stocking, etc.) as well
+# dist <- select(survey2014,Field,Distance,Area,Variety,Irrigated,BeeYard,NumHives,StartTime,EndTime,Temp,WindSp,RH,PlDens) %>%
+#    unite(FieldPlot,Field,Distance)
+# 
+# #Merges Distances and other data into seed and plant dataframes
+# seeds2014 <- left_join(seeds2014,dist,by='FieldPlot') %>%
+#   select(-FieldPlot) %>%
+#   rename(Distance=Plot) %>%
+#   arrange(Field,Distance,Plant,Pod)
+# plants2014 <- left_join(plants2014,dist,by='FieldPlot') %>%
+#   select(-FieldPlot) %>%
+#   rename(Distance=Plot) %>%
+#   mutate(PropMissing=Missing/(Pods+Missing)) %>%
+#   arrange(Field,Distance,Plant)
+# rm(dist) #Remove distance
+# 
+# #Plant data 2015 (not used yet)
+# plants2015 <- arrange(plants2015,FieldName,Plot,Plant) #Re-orders plant measurements
+# seeds2015 <- transmute(plants2015,Field=FieldName,Plot,Plant,
+#                     VegMass=TotalMass-SeedMass,SeedMass,Branch,
+#                     Pods=Pods+Bag+Bag_Tscar,Missing=Missing-Bag,
+#                     Pod1,Pod2,Pod3,Pod4,Pod5,
+#                     Weigh1,Weigh2,Weigh3,Weigh4,Weigh5,SeedCount) %>% #Selects correct columns
+#   gather('Pod','Value',9:18) %>% #Melts pod count and pod weight
+#   separate(Pod,into=c('Param','PodNum'),sep=-1) %>%
+#   mutate(Param=as.factor(Param),PodNum=as.numeric(PodNum)) %>%
+#   spread(Param,Value) %>% #Casts pod count and pod weight back
+#   rename(PodCount=Pod,PodMass=Weigh,Pod=PodNum) %>%
+#   mutate(FieldPlot=paste(Field,Plot,sep='_'))
+# 
+# plants2015 <- group_by(seeds2015,Field,Plot,Plant) %>% 
+#   summarise_at(vars(-FieldPlot),funs(mean(.,na.rm=T),se))%>% #Mean and SE of metrics for each plant (all mean values except for pod measurements will equal plant-level metrics)
+#   select(Field,Plot,Plant,VegMass=VegMass_mean,SeedMass=SeedMass_mean,
+#          Branch=Branch_mean,Pods=Pods_mean,Missing=Missing_mean,SeedCount=SeedCount_mean,
+#          AvPodCount=PodCount_mean,SEPodCount=PodCount_se,AvPodMass=PodMass_mean,SEPodMass=PodMass_se) %>%
+#   mutate(FieldPlot=as.factor(paste(Field,Plot,sep='_'))) #Creates FieldPlot factor
+# 
+# #Merge Plot to Distance, merging from some other dataframe. Merge other info (variety, stocking, etc.) as well
+# dist <- select(survey2015,Field,Distance,Area,Variety,Irrigated,BeeYard,NumHives,StartTime,EndTime,Temp,WindSp,RH,PlDens) %>%
+#   unite(FieldPlot,Field,Distance)
+# 
+# #Merges Distances and other data into seed and plant dataframes
+# seeds2015 <- left_join(seeds2015,dist,by='FieldPlot') %>%
+#   select(-FieldPlot) %>%
+#   rename(Distance=Plot) %>%
+#   arrange(Field,Distance,Plant,Pod)
+# plants2015 <- left_join(plants2015,dist,by='FieldPlot') %>%
+#   select(-FieldPlot) %>%
+#   rename(Distance=Plot) %>%
+#   mutate(PropMissing=Missing/(Pods+Missing)) %>%
+#   arrange(Field,Distance,Plant)
+# rm(dist) #Remove distance
+# 
+# #Merge 2014/2015 dataframes
+# fieldsAll <- bind_rows(fields2014,fields2015) %>%
+#   mutate(Field=factor(Field),Variety=factor(Variety))
+# surveyAll <- bind_rows(survey2014,survey2015)%>%
+#   mutate(Field=factor(Field))
+# flowersAll <- bind_rows(flowers2014,flowers2015)%>%
+#   mutate(Field=factor(Field),Variety=factor(Variety))
+# visitorsAll <- bind_rows(visitors2014,visitors2015)
+# 
+# seedsAll <- bind_rows(mutate(seeds2014,Year=2014),mutate(seeds2015,Year=2015))
+# plantsAll <- bind_rows(mutate(plants2014,Year=2014),mutate(plants2015,Year=2015))
+# 
+# #Filters out honeybee visit classifications (side,pollen,nectar) from 2015
+# visitorsAll <- visitorsAll %>%
+#   filter(Clade!='Total',!grepl('Honeybee.',Clade))
+# 
+# #Cleanup
+# rm(fields2014,fields2015,flowers2014,flowers2015,survey2014,survey2015,visitors2014,seeds2014,seeds2015,plants2014,plants2015)
+# 
+# #Calculate plot yield in bu/ac (only for plantsAll)
+# #50 lbs/bushel * 453.492 g/lb = 22679.6 g/bushel = 4.409249e-05 bushels/g
+# #1 acre = 4046.86m2 = 0.0002471052 acres/m2
+# #Grams/m2 * (4.409249e-05/0.0002471052) = g/m2 * 0.1784361 = bushels/acre
+# conversion <- (1/(50*453.492))/(1/4046.86)
+# plantsAll <- mutate(plantsAll,Yield=SeedMass*PlDens*conversion)
+# 
+# # Save workspace
+# save.image("C:\\Users\\Samuel\\Documents\\Projects\\UofC\\canola_yield_project\\Commodity field analysis\\commodityfieldDataAll.RData")
+# 
+# #Data frame descriptions:
+# #FIELDS: general field information (not really used)
+# #SURVEY: plot-level info taken from data sheets (not really used)
+# #FLOWERS: flower-level nectar and pollen counts
+# #VISITORS: plot-level visitation, with mean nectar, %sugar and pollen counts taken from flowers. Broken down by Clade.
+# #PLANTS: plant-level yield metrics, matched with Honeybee, Fly, and Total visit
+# #SEEDS: flower-level seed mass & seed count, matched with field- and plot-level measurements
+# 
+# #Folder to save images
+# folder="C:\\Users\\Samuel\\Documents\\Projects\\UofC\\Commodity field analysis\\Figures"
 
 # General visitation plots --------------------------------------------------------
 
@@ -888,7 +886,7 @@ flowersAll %>%
 #Eqn 6 from Possingham (equilibrium model)
 #Mean Volume = Vol_max/(DepletionRate*Vol_max+1)
 
-temp=filter(flowersAll) %>%
+temp <- filter(flowersAll) %>%
   mutate(VisRate=Total/(FlDens*Time/60)) %>% #Visits per flower per hour (all visitors)
   mutate(BeeVisRate=Honeybee/(FlDens*Time/60)) %>% #Honeybees only
   unite(group,Year,Area) %>% mutate(plot=paste(group,Field,Distance,sep='_')) %>% 
@@ -896,27 +894,29 @@ temp=filter(flowersAll) %>%
   na.omit
 
 #All visitors model
-nectarMod=nlsList(Vol~(Vol_max/((VisRate/Lambda)*Vol_max+1))|group, #Separate models for each year/location
+nectarMod <- nlsList(Vol~(Vol_max/((VisRate/Lambda)*Vol_max+1))|group, #Separate models for each year/location
                   data=temp,start=list(Lambda=0.3,Vol_max=1))
-nectarMod_all=nls(Vol~(Vol_max/((VisRate/Lambda)*Vol_max+1)), #Using all visitors
+nectarMod_all <- nls(Vol~(Vol_max/((VisRate/Lambda)*Vol_max+1)), #Using all visitors
                data=temp,start=list(Lambda=0.3,Vol_max=1))
 summary(nectarMod)
 summary(nectarMod_all) #Vol_max = 0.82, se:0.022, lambda =0.14, se:0.025 
 
-pred=predict(nectarMod,newdata=data.frame(VisRate=seq(0,1,0.05)))
-pred=data.frame(VisRate=seq(0,1,0.05),
+var(predict(nectarMod_all))/var(temp$Vol) #Poor R^2 values: only 0.064
+
+pred <- predict(nectarMod,newdata=data.frame(VisRate=seq(0,1,0.05)))
+pred <- data.frame(VisRate=seq(0,1,0.05),
                 group=names(pred),
                 predVol=unname(pred)) %>%
   arrange(group,VisRate) %>%
   separate(group,c('Year','Area'),sep='_') %>%
   unique()
 
-annotations=data.frame(coef(nectarMod)) %>%
+annotations <- data.frame(coef(nectarMod)) %>%
   round(.,2) %>%
   mutate(group=rownames(.)) %>%
   separate(group,c('Year','Area'),sep='_') 
 
-p1=separate(temp,group,c('Year','Area'),sep='_') %>%
+p1 <- separate(temp,group,c('Year','Area'),sep='_') %>%
   ggplot(aes(VisRate,Vol))+geom_point(size=1)+
   facet_grid(Year~Area)+
   geom_line(data=pred,aes(x=VisRate,y=predVol),col='red')+

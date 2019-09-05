@@ -115,7 +115,6 @@ g2bushels <- function(x){
 
 #Everything above this line run to start
 
-
 # Data from Wang et al 2011 - ovule counts --------------------------------
 ovDat <- read.csv('wang2011ovData.csv') %>% 
   mutate(Freq=ifelse(Freq<0,0,Freq))
@@ -610,7 +609,7 @@ library(rstan)
 setwd('./Models')
 rstan_options(auto_write = TRUE)
 options(mc.cores = 4)
-library(shinystan)
+# library(shinystan)
 
 #List structure for Stan
 datalistField <- with(arrange(fieldsAllComm,as.factor(paste(Year,Field))),list( #Field-level measurements
@@ -918,6 +917,7 @@ with(mod3,PPplots(apply(yield_resid,1,function(x) sum(abs(x))),
 # Partial effects plots for commodity fields -----------------------------
 # load('modPodcount.Rdata') #All extracted coefficients in list form (mod3)
 mod3 <- extract(modPodcount) #Get coefficients from stan model
+rm(modPodcount); gc()
 
 #Plot-level data (271 rows)
 plotDat <- with(datalist,data.frame( 
@@ -938,15 +938,25 @@ coef_hbee <- with(mod3,data.frame(intVisit,slopeYearVis,slopeGpVis,slopeYearGpVi
 MM_temp <- MM_hbee %>% as.data.frame() %>% mutate_at(vars(-year,-GP,-yearGP,-dist),mean) %>% 
    as.matrix()
 
+#Partial effect of distance only
+MM_temp2 <- MM_hbee %>% as.data.frame() %>% mutate_at(vars(-dist),mean) %>% 
+  as.matrix()
+MM_temp2 <- data.frame(MM_temp2,t(apply(MM_temp2 %*% t(coef_hbee),1,function(x) quantile(x,c(0.5,0.025,0.975))))) %>% 
+  rename(pred=X50.,upr=X97.5.,lwr=X2.5.) %>% unique() %>% mutate_at(vars(pred:lwr),exp) %>% mutate(dist=exp(dist+3.41)) %>% 
+  select(dist,pred) %>% unite(dat,dist,pred) %>% 
+  with(.,expand.grid(dat=dat,year=c('2014','2015'),GP=c('Lethbridge','Grande Prairie'))) %>% 
+  separate(dat,c('dist','pred'),sep='_',convert=T)
+
 p1 <- data.frame(MM_temp,t(apply(MM_temp %*% t(coef_hbee),1,function(x) quantile(x,c(0.5,0.025,0.975))))) %>% 
   rename(pred=X50.,upr=X97.5.,lwr=X2.5.) %>%
   mutate(resid=plotDat$hbeeResid+pred) %>% mutate_at(vars(pred:resid),exp) %>% 
-  mutate(year=factor(year,labels=c('2014','2015')),GP=factor(GP,labels=c('Lethbridge','Grand Prairie'))) %>% 
+  mutate(year=factor(year,labels=c('2014','2015')),GP=factor(GP,labels=c('Lethbridge','Grande Prairie'))) %>% 
   mutate(yearGP=factor(paste(GP,year)),dist=exp(dist+3.41)) %>%
   ggplot(aes(x=dist))+
   geom_ribbon(aes(ymax=upr,ymin=lwr),alpha=0.3)+
   geom_jitter(aes(y=resid))+
   geom_line(aes(y=pred),size=1)+facet_grid(year~GP)+ylim(0,5)+
+  geom_line(data=MM_temp2,aes(x=dist,y=pred),col='red')+
   labs(x='Distance from edge(m)',y='Visits/10 mins')
 ggsave('../Figures/Commodity/slopeYearGPVis.png',p1,width=8,height=6)
 
@@ -959,10 +969,44 @@ data.frame(MM_temp,t(apply(MM_temp %*% t(coef_hbee),1,function(x) quantile(x,c(0
   mutate(resid=plotDat$hbeeResid+pred) %>% 
   mutate_at(vars(pred:resid),function(x) exp(x)*6) %>% 
   mutate(dist=exp(dist+3.41),hives=round(exp(hives)-1)) %>% 
-  filter(hives==20|hives==40) %>% 
+  filter(hives==0|hives==20|hives==40) %>% 
   # mutate(hives=factor(hives,levels=))
-  ggplot(aes(x=dist,y=pred,col=factor(hives)))+geom_line(size=1)
+  ggplot(aes(x=dist,y=pred,col=factor(hives)))+geom_line(size=1)+
+  labs(col='Number\nof Hives',y='Visits/hr',x='Distance (m)')+
+  scale_colour_manual(values=c('black','red','blue'))
   
+
+#Pollen data (1294 rows)
+pollenDat <- with(datalist,data.frame(
+  field=plotIndex[plotIndex[flowerIndex]],
+  plot=plotIndex[flowerIndex],
+  pol=pollenCount,
+  visit=(hbeeVis/totalTime)[flowerIndex], #Visits/10 mins
+  logvisit=log((hbeeVis/totalTime)+0.5)[flowerIndex],
+  dist=dist[flowerIndex], #Distance
+  logdist=(log(dist)-mean(log(dist)))[flowerIndex], 
+  polResid=log(pollenCount+1)-apply(mod3$pollenMu,2,median)
+))
+
+#Model matrix for pollen
+MM_pol <- with(pollenDat,data.frame(int=1,logvisit,logdist)) %>% as.matrix()
+
+#Coefficient matrix for plant size
+coef_pol <- with(mod3,data.frame(intPollen,slopeVisitPol,slopeHbeeDistPollen))
+
+#Partial effect of hbee visitation
+MM_temp <- MM_pol %>% as.data.frame() %>% mutate_at(vars(-logvisit),mean) %>% as.matrix()
+
+p1 <- data.frame(MM_temp,t(apply(MM_temp %*% t(coef_pol),1,function(x) quantile(x,c(0.5,0.025,0.975))))) %>%
+  rename(pred=X50.,upr=X97.5.,lwr=X2.5.) %>% mutate(resid=pollenDat$polResid+pred) %>%
+  mutate_at(vars(upr,lwr,pred,resid), exp) %>% 
+  mutate(visit=pollenDat$visit) %>% 
+  ggplot(aes(x=visit))+
+  geom_ribbon(aes(ymax=upr,ymin=lwr),alpha=0.3)+
+  geom_jitter(aes(y=resid),alpha=0.7)+
+  geom_line(aes(y=pred),size=1)+
+  labs(x='Visits/10 mins',y='Pollen grains/stigma')+ylim(0,1000)
+ggsave('../Figures/Commodity/slopeHbeeVisPol.png',p1,width=8,height=6)
 
 
 #Plant-level data (792 rows)
@@ -994,31 +1038,25 @@ plantDat <- with(datalist,data.frame(
 
 #Model matrix for plant size
 MM_plSize <- with(plantDat,data.frame(int=1,plDens,logdist,GP,year2015,
-                    stocking,irrigation,plDensStocking)) %>% as.matrix()
+                    irrigation)) %>% as.matrix()
 #Coefficient matrix for plant size
 coef_plSize <- with(mod3,data.frame(intPlSize,slopePlDensPlSize,slopeDistPlSize,
-            slopeGpPlSize,slope2015PlSize,slopeStockingPlSize,slopeIrrigPlSize,
-            slopePlDensStockingPlSize))
+            slopeGpPlSize,slope2015PlSize,slopeIrrigPlSize))
 
-#Partial effect of plant density and stocking
-MM_temp <- MM_plSize %>% as.data.frame() %>% mutate_at(vars(-plDens,-stocking,-plDensStocking),mean) %>% as.matrix()
+#Partial effect of plant density
+MM_temp <- MM_plSize %>% as.data.frame() %>% mutate_at(vars(-plDens),mean) %>% as.matrix()
 
 p1 <- data.frame(MM_temp,t(apply(MM_temp %*% t(coef_plSize),1,function(x) quantile(x,c(0.5,0.025,0.975))))) %>%
   rename(pred=X50.,upr=X97.5.,lwr=X2.5.) %>%
   mutate(resid=plantDat$plSizeResid+pred) %>%
-  filter(stocking==0|stocking==40) %>%
-  mutate(stocking=factor(stocking,labels=c('No hives','40 hives'))) %>%
   mutate(plDens=exp(plDens+mean(log(surveyAllComm$PlDens),na.rm=T))) %>% #Untransform plant density
   mutate_at(vars(upr,lwr,pred,resid),function(x,y) exp(x+mean(log(plantsAllComm$VegMass),na.rm=T))) %>% 
   ggplot(aes(x=plDens))+
-  geom_ribbon(aes(ymax=upr,ymin=lwr,fill=stocking),alpha=0.3)+
-  geom_jitter(aes(y=resid,col=stocking))+
-  geom_line(aes(y=pred,col=stocking),size=1)+
-  labs(x=expression(paste('Plants per ',m^2)),y='Plant size (g)')+xlim(10,100)+ylim(0,40)+
-  scale_colour_manual(values=c('forestgreen','darkorange'))+
-  scale_fill_manual(values=c('forestgreen','darkorange'))+
-  theme(legend.position=c(0.8,0.9),legend.background=element_rect(fill='white',colour='black',linetype='solid'),
-        legend.title=element_blank())
+  geom_ribbon(aes(ymax=upr,ymin=lwr),alpha=0.3)+
+  geom_point(aes(y=resid),alpha=0.5)+
+  geom_line(aes(y=pred),size=1)+
+  labs(x=expression(paste('Plants per ',m^2)),y='Plant size (g)',title='Commodity')+ylim(0,50)
+ggsave('../Figures/Commodity/slopePlDensPlSize.png',p1,width=6,height=6)
 
 #Model matrix for flower production (per plant)
 MM_flwCount <- with(plantDat,data.frame(int=1,plSize)) %>% as.matrix()
@@ -1029,15 +1067,16 @@ coef_flwCount <- with(mod3,data.frame(intFlwCount,slopePlSizeFlwCount))
 #Effect of plant size on flower production
 MM_temp <- MM_flwCount 
 
-data.frame(MM_temp,t(apply(MM_temp %*% t(coef_flwCount),1,function(x) quantile(x,c(0.5,0.025,0.975))))) %>%
+p1 <- data.frame(MM_temp,t(apply(MM_temp %*% t(coef_flwCount),1,function(x) quantile(x,c(0.5,0.025,0.975))))) %>%
   rename(pred=X50.,upr=X97.5.,lwr=X2.5.) %>%  
   mutate(resid=plantDat$flwCountResid+pred) %>% 
   mutate_at(vars(pred:resid),exp) %>% 
   ggplot(aes(x=exp(plantDat$plSize+2.63)))+ #Transform to real scale
-  # geom_ribbon(aes(ymax=upr,ymin=lwr),alpha=0.3)+
+  geom_ribbon(aes(ymax=upr,ymin=lwr),alpha=0.3,fill='red')+
   geom_jitter(aes(y=resid),alpha=0.5)+
   geom_line(aes(y=pred),size=1,col='red')+
-  labs(x='Plant size (g)',y='Flowers per plant')
+  labs(x='Plant size (g)',y='Flowers per plant',title='Commodity')
+ggsave('../Figures/Commodity/slopePlSizeFlwCount.png',p1,width=6,height=6)
 
 #Model matrix for flower survival (pod count)
 MM_flwSurv <- with(plantDat,data.frame(int=1,logvisit,pollen,plSize,
@@ -1083,8 +1122,8 @@ p1 <- data.frame(MM_temp,t(apply(MM_temp %*% t(coef_flwSurv),1,function(x) quant
   ylim(45,90)+
   # xlim(-2,2)+
   geom_line(aes(y=pred*100),size=1)+
-  labs(x='Plant size (g)',y='Flower survival (%)')
-ggsave('../Figures/Commodity/slopePlSizeFlwSurv.png',p1,width=6,height=4)
+  labs(x='Plant size (g)',y='Fruit set (%)',title='Commodity')
+ggsave('../Figures/Commodity/slopePlSizeFlwSurv.png',p1,width=6,height=6)
 
 #Partial effects plot for plant density
 MM_temp <- MM_flwSurv %>% as.data.frame() %>% mutate_at(vars(-plDens),mean) %>% as.matrix()
@@ -1138,27 +1177,26 @@ podDat <- with(datalist,data.frame(
   seedCount2015=seedCount*is2015[plotIndex[plantIndex[podIndex]]],
   plSize2015=plantSize[podIndex]*is2015[plotIndex[plantIndex[podIndex]]],
   plSizeIrrig2015=plantSize[podIndex]*isIrrigated[plotIndex[plantIndex[podIndex]]]*is2015[plotIndex[plantIndex[podIndex]]],
-  seedWeight=seedMass,seedWeightResid=apply(mod3$seedMass_resid,2,median) #Median resid for seedMass
+  seedWeight=seedMass,seedWeightResid=apply(mod3$seedMass_resid,2,median), #Median resid for seedMass
   # seedCountResid=apply(mod3$seedCount_resid,2,median) #Residuals on real scale
-  # seedCountResid=apply(log(matrix(rep(datalist$seedCount,nrow(mod3$seedCountMu)),ncol=nrow(mod3$seedCountMu)))-t(mod3$seedCountMu),1,mean)
+  seedCountResid=apply(log(matrix(rep(datalist$seedCount,nrow(mod3$seedCountMu)),ncol=nrow(mod3$seedCountMu)))-t(mod3$seedCountMu),1,mean)
   )) 
 
 #Model matrix for seedCount
-MM_seedCount <- with(podDat,data.frame(int=1,visit,pollen,plSize,year2015,irrigation,irrig2015,
-                                       plSizeIrrig,plSize2015,plSizeIrrig2015)) %>% as.matrix()
+MM_seedCount <- with(podDat,data.frame(int=1,visit,pollen,plSize,year2015)) %>% as.matrix()
 #Coefficient matrix for seedCount
 coef_seedCount <- with(mod3,data.frame(intSeedCount,slopeVisitSeedCount,slopePolSeedCount,slopePlSizeCount,
-            slope2015SeedCount,slopeIrrigSeedCount,slopeIrrig2015SeedCount,slopePlSizeIrrigSeedCount,
-            slopePlSize2015SeedCount,slopePlSizeIrrig2015SeedCount))
+            slope2015SeedCount))
 
 #Partial effects plot for year
 MM_temp <- MM_seedCount %>% as.data.frame() %>% mutate_at(vars(-year2015),mean) %>% as.matrix()
 
 data.frame(MM_temp,t(apply(MM_temp %*% t(coef_seedCount),1,function(x) quantile(x,c(0.5,0.025,0.975))))) %>%
   rename(pred=X50.,upr=X97.5.,lwr=X2.5.) %>% 
-  mutate(resid=podDat$seedCountResid+pred) %>% mutate(year2015=factor(year2015,labels=c('2014','2015'))) %>% 
-  ggplot()+geom_jitter(aes(x=year2015,y=exp(resid)),width=0.25,alpha=0.3)+
-  geom_pointrange(aes(x=year2015,y=exp(pred),ymax=exp(upr),ymin=exp(lwr)),col='red',size=1)+
+  mutate(resid=exp(podDat$seedCountResid+pred),pred=exp(pred),lwr=exp(lwr),upr=exp(upr)) %>% 
+  mutate(year2015=factor(year2015,labels=c('2014','2015'))) %>% 
+  ggplot()+geom_jitter(aes(x=year2015,y=resid),width=0.25,alpha=0.3)+
+  geom_pointrange(aes(x=year2015,y=pred,ymax=upr,ymin=lwr),col='red',size=1)+
   labs(x='Year',y='Seeds per pod')+ylim(0,40)
 
 #Model matrix for seedMass 
@@ -1168,6 +1206,19 @@ MM_seedMass <- with(podDat,data.frame(int=1,visit,pollen,seedCount=seedCount,plS
 coef_seedMass <- with(mod3,data.frame(intSeedWeight,slopeVisitSeedWeight,slopePolSeedWeight,slopeSeedCount,
                       slopePlSizeWeight,slopeIrrigSeedWeight,slope2015SeedWeight,slope2015IrrigSeedWeight)) %>% as.matrix()
 
+#Partial effect of year
+MM_temp <- MM_seedMass %>% as.data.frame() %>% mutate_at(vars(-year2015),mean) %>% 
+  as.matrix()
+
+p1 <- data.frame(MM_temp,t(apply(MM_temp %*% t(coef_seedMass),1,function(x) quantile(x,c(0.5,0.025,0.975))))) %>%
+  rename(pred=X50.,upr=X97.5.,lwr=X2.5.) %>%
+  mutate(resid=podDat$seedWeightResid+pred) %>% 
+  mutate(year2015=factor(year2015,labels=c('2014','2015'))) %>% 
+  ggplot()+geom_jitter(aes(x=year2015,y=resid),width=0.25,alpha=0.3)+
+  geom_pointrange(aes(x=year2015,y=pred,ymax=upr,ymin=lwr),col='red',size=1)+
+  labs(x='Year',y='Weight per seed')
+
+  
 #Partial effect of seed count
 MM_temp <- MM_seedMass %>% as.data.frame() %>% mutate_at(vars(-seedCount),mean) %>% 
   as.matrix()
@@ -1787,7 +1838,7 @@ library(rstan)
 setwd('./Models')
 rstan_options(auto_write = TRUE)
 options(mc.cores = 4)
-library(shinystan)
+# library(shinystan)
 
 #List structure for Stan
 
@@ -2044,8 +2095,8 @@ inits <- function() {with(datalist,list(
 # with(temp,stan_rdump(names(temp),'initsSeed.data.R'))
 
 # #Full model
-# modPodcount_seed <- stan(file='visitation_pollen_model_seed.stan',data=datalist,
-#                          iter=300,chains=3,control=list(adapt_delta=0.8),init=inits)
+modPodcount_seed <- stan(file='visitation_pollen_model_seed.stan',data=datalist,
+                         iter=1000,chains=3,control=list(adapt_delta=0.8),init=inits)
 # beep(1)
 
 # Setting max_treedepth=15 takes about 2-3x as long to run model. Use with care.
@@ -2091,12 +2142,13 @@ pars <- c('intSeedCount','slopePolSeedCount','slopePlSizeCount', #Seeds per pod
        'slopeEdgeCentSeedCount','slopeHbeeDistSeedCount','slopeFlDensSeedCount',
        'slopeSurvSeedCount','sigmaSeedCount_field','sigmaSeedCount_plot',
        'sigmaSeedCount_plant','seedCountPhi')
-# pars <- c('intSeedWeight','slopePolSeedWeight','slopeSeedCount', #Weight per seed
-#        'slopePlSizeSeedWeight',
-#        'slope2016SeedWeight','slopeLbeeDistSeedWeight','slopePlDensSeedWeight',
-#        'slopeStockingSeedWeight','slopePlDensPlSizeSeedWeight',
-#        'sigmaSeedWeight','sigmaSeedWeight_field', #Random effects for plot don't converge well
-#        'sigmaSeedWeight_plant','lambdaSeedWeight')
+pars <- c('intSeedWeight','slopePolSeedWeight','slopeSeedCount', #Weight per seed
+       'slopePlSizeSeedWeight',
+       'slope2016SeedWeight','slopeLbeeDistSeedWeight','slopePlDensSeedWeight',
+       'slopeStockingSeedWeight','slopePlDensPlSizeSeedWeight',
+       'sigmaSeedWeight','sigmaSeedWeight_field', #Random effects for plot don't converge well
+       'sigmaSeedWeight_plant','lambdaSeedWeight')
+
 # pars <- c('intYield','slopeYield','sigmaYield','sigmaYield_field','sigmaYield_plot',
 #           'L_field','L_plot')
 stan_hist(modPodcount_seed,pars=pars)+geom_vline(xintercept=0,linetype='dashed')
@@ -2109,7 +2161,7 @@ mod3 <- extract(modPodcount_seed)
 # fastPairs(mod3[pars])
 
 # #Coefficients
-(mod3coefs <- data.frame(par='flwCount',parname=rownames(coefs(mod3[pars])),coefs(mod3[pars]),row.names=NULL))
+(mod3coefs <- data.frame(par='Weight per seed',parname=rownames(coefs(mod3[pars])),coefs(mod3[pars]),row.names=NULL))
 print(xtable(mod3coefs,digits=c(0,0,0,3,3,3,3,3,3,0,4)),include.rownames=F)
 
 # #Distribution of random effects intercepts
@@ -2210,8 +2262,9 @@ with(mod3,PPplots(apply(seedMass_resid,1,function(x) sum(abs(x))),
                main='Weight per seed'))
 
 # Partial effects plots for seed fields -----------------------------------
-#load('modPodcount_seed3.Rdata')
+load('modPodcount_seed3.Rdata')
 mod3 <- extract(modPodcount_seed)
+rm(modPodcount_seed); gc()
 
 #Plot-level data (647 rows) - visitation data
 plotDat <- with(datalist,data.frame(
@@ -2234,9 +2287,8 @@ MM_lbeeVis <- with(plotDat,data.frame(int=1,logLbeeDist,logHbeeDist,isMBay,isCen
                                       centHbeeDist=isCent*logHbeeDist,stockHbeeDist=halfStock*logHbeeDist)) %>% as.matrix()
 
 #Coefficent matrix for lbee visits
-coef_lbeeVis <- with(mod3,data.frame(intVisitLbee,slopeLbeeDistLbee,slopeHbeeDistLbee,slopeMBayLbee,slopeCentLbee,
-                                     slopeStockingLbee,slope2016Lbee,slopeFlDensLbee,slopeCentHbeeDistLbee,
-                                     slopeStockingHbeeDistLbee)) %>% as.matrix()
+coef_lbeeVis <- with(mod3,data.frame(intVisitLbee,slopeLbeeDistLbee,slopeHbeeDistLbee,slopeMBayLbee,slopeCentLbee,                                     slopeStockingLbee=slopeStockingLbee[,2],slope2016Lbee,slopeFlDensLbee,slopeCentHbeeDistLbee,
+                       slopeStockingHbeeDistLbee=slopeStockingHbeeDistLbee[,2])) %>% as.matrix()
 
 #Partial effect of lbee distance
 MM_temp <- MM_lbeeVis %>% as.data.frame() %>% 
@@ -2247,7 +2299,6 @@ p1 <- data.frame(MM_temp,t(apply(MM_temp %*% t(coef_lbeeVis),1,function(x) quant
   mutate(resid=plotDat$hbeeResid+pred) %>%  
   mutate_at(vars(pred:resid),exp) %>% 
   mutate(lbeeDist=exp(logLbeeDist+3.113714)) %>% 
-  # summary()
   ggplot(aes(x=lbeeDist))+
   geom_ribbon(aes(ymax=upr,ymin=lwr),alpha=0.3)+
   geom_line(aes(y=pred),size=1)+
@@ -2281,16 +2332,24 @@ ggsave('../Figures/Seed/slopeStockingHbeeDistLbee.png',p1,width=8,height=4.5)
 MM_temp <- MM_lbeeVis %>% as.data.frame() %>% 
   mutate_at(vars(-isCent),mean) %>% as.matrix()
 
-p1 <- data.frame(MM_temp,t(apply(MM_temp %*% t(coef_lbeeVis),1,function(x) quantile(x,c(0.5,0.025,0.975))))) %>% 
-  rename(pred=X50.,upr=X97.5.,lwr=X2.5.) %>%  
-  mutate(resid=plotDat$hbeeResid+pred) %>% 
-  mutate(edgeCent=factor(isCent,labels=c('Edge','Center'))) %>% 
-  mutate_at(vars(pred:resid),exp) %>% 
-  ggplot(aes(x=edgeCent))+
-  geom_jitter(aes(y=resid),alpha=0.5,size=1,width=0.2,col='forestgreen')+
-  geom_pointrange(aes(y=pred,ymax=upr,ymin=lwr),size=1)+
-  lims(y=c(0,50))+labs(x='Bay position',y='Visits/10 mins',title='Leafcutters')
-ggsave('../Figures/Seed/slopeEdgeCentLbee.png',p1,width=4,height=4)
+##Plot of bay centre effect on lbees
+# p1 <- data.frame(MM_temp,t(apply(MM_temp %*% t(coef_lbeeVis),1,function(x) quantile(x,c(0.5,0.025,0.975))))) %>% 
+#   rename(pred=X50.,upr=X97.5.,lwr=X2.5.) %>%  
+#   mutate(resid=plotDat$hbeeResid+pred) %>% 
+#   mutate(edgeCent=factor(isCent,labels=c('Edge','Center'))) %>% 
+#   mutate_at(vars(pred:resid),exp) %>% 
+#   ggplot(aes(x=edgeCent))+
+#   geom_jitter(aes(y=resid),alpha=0.5,size=1,width=0.2,col='forestgreen')+
+#   geom_pointrange(aes(y=pred,ymax=upr,ymin=lwr),size=1)+
+#   lims(y=c(0,50))+labs(x='Bay position',y='Visits/10 mins',title='Leafcutters')
+# ggsave('../Figures/Seed/slopeEdgeCentLbee.png',p1,width=4,height=4)
+
+#Data for combined lbee-hbee plot
+lbeeEdgeCent <- data.frame(MM_temp,t(apply(MM_temp %*% t(coef_lbeeVis),1,function(x) quantile(x,c(0.5,0.025,0.975))))) %>% 
+    rename(pred=X50.,upr=X97.5.,lwr=X2.5.) %>%
+    mutate(resid=plotDat$hbeeResid+pred) %>%
+    mutate(edgeCent=factor(isCent,labels=c('Edge','Center'))) %>%
+    mutate_at(vars(pred:resid),exp) %>% mutate(Spp='lbee')
 
 #Model matrix for hbees 
 MM_hbeeVis <- with(plotDat,data.frame(int=1,flDens,logHbeeDist,logLbeeDist,lbeeHbeeDist=logHbeeDist*logLbeeDist,lbeeVis=logLbeeVis,isMBay,isCent)) %>% as.matrix()
@@ -2307,7 +2366,8 @@ MM_temp <- MM_hbeeVis %>% as.data.frame() %>%
 p1 <- data.frame(MM_temp,t(apply(MM_temp %*% t(coef_hbeeVis[,-which(colnames(coef_hbeeVis)=='zeroVisHbeeTheta')]),1,function(x) quantile(x,c(0.5,0.025,0.975))))) %>% 
   rename(pred=X50.,upr=X97.5.,lwr=X2.5.) %>%
   mutate(resid=plotDat$hbeeResid+pred) %>% 
-  mutate_at(vars(pred:resid),function(x) exp(x)*(1-mean(coef_hbeeVis[,'zeroVisHbeeTheta']))) %>%
+  # mutate_at(vars(pred:resid),function(x) exp(x)*(1-mean(coef_hbeeVis[,'zeroVisHbeeTheta']))) %>%
+  mutate_at(vars(pred:resid),exp) %>%
   ggplot(aes(x=exp(logHbeeDist+4.641845)))+
   geom_ribbon(aes(ymax=upr,ymin=lwr),alpha=0.3,show.legend=F)+
   geom_line(aes(y=pred),size=1)+
@@ -2320,16 +2380,39 @@ ggsave('../Figures/Seed/slopeHbeeDistHbee.png',p1,width=8,height=4.5)
 MM_temp <- MM_hbeeVis %>% as.data.frame() %>% 
   mutate_at(vars(-isCent),mean) %>% as.matrix()
 
-p1 <- data.frame(MM_temp,t(apply(MM_temp %*% t(coef_hbeeVis[,-which(colnames(coef_hbeeVis)=='zeroVisHbeeTheta')]),1,function(x) quantile(x,c(0.5,0.025,0.975))))) %>% 
-  rename(pred=X50.,upr=X97.5.,lwr=X2.5.) %>%
-  mutate(resid=plotDat$hbeeResid+pred,edgeCent=factor(isCent,labels=c('Edge','Center'))) %>% 
-  mutate_at(vars(pred:resid),function(x) exp(x)*(1-mean(coef_hbeeVis[,'zeroVisHbeeTheta']))) %>%
-  ggplot(aes(x=edgeCent))+
-  geom_jitter(aes(y=resid),alpha=0.5,size=1,width=0.2,col='darkorange')+
-  geom_pointrange(aes(y=pred,ymax=upr,ymin=lwr),size=1)+
+# p1 <- data.frame(MM_temp,t(apply(MM_temp %*% t(coef_hbeeVis[,-which(colnames(coef_hbeeVis)=='zeroVisHbeeTheta')]),1,function(x) quantile(x,c(0.5,0.025,0.975))))) %>% 
+#   rename(pred=X50.,upr=X97.5.,lwr=X2.5.) %>%
+#   mutate(resid=plotDat$hbeeResid+pred,edgeCent=factor(isCent,labels=c('Edge','Center'))) %>% 
+#   mutate_at(vars(pred:resid),function(x) exp(x)*(1-mean(coef_hbeeVis[,'zeroVisHbeeTheta']))) %>%
+#   ggplot(aes(x=edgeCent))+
+#   geom_jitter(aes(y=resid),alpha=0.5,size=1,width=0.2,col='darkorange')+
+#   geom_pointrange(aes(y=pred,ymax=upr,ymin=lwr),size=1)+
+#   lims(y=c(0,50))+
+#   labs(x='Bay position',y='Visits/10 mins',title='Honeybees')
+# ggsave('../Figures/Seed/slopeEdgeCentHbee.png',p1,width=4,height=4)
+
+#Data for combined lbee-hbee plot
+hbeeEdgeCent <- data.frame(MM_temp,t(apply(MM_temp %*% t(coef_hbeeVis[,-which(colnames(coef_hbeeVis)=='zeroVisHbeeTheta')]),1,function(x) quantile(x,c(0.5,0.025,0.975))))) %>% 
+    rename(pred=X50.,upr=X97.5.,lwr=X2.5.) %>%
+    mutate(resid=plotDat$hbeeResid+pred,edgeCent=factor(isCent,labels=c('Edge','Center'))) %>%
+    mutate_at(vars(pred:resid),function(x) exp(x)*(1-mean(coef_hbeeVis[,'zeroVisHbeeTheta']))) %>% 
+  mutate(Spp='hbee')
+
+#Combined lbee-hbee plot, showing effect of bay center
+p1 <- bind_rows(hbeeEdgeCent,lbeeEdgeCent) %>% 
+  mutate(Spp=ifelse(Spp=='hbee','Honey bee','Leafcutter')) %>% 
+  mutate(edgeCent=ifelse(edgeCent=='Center','Centre','Edge')) %>% 
+  mutate(edgeCent=factor(edgeCent,levels=c('Edge','Centre'))) %>% 
+  ggplot(aes(x=edgeCent,col=Spp))+
+  geom_point(aes(y=resid),alpha=0.5,size=1,position=position_jitterdodge(jitter.width=0.4,dodge.width=0.75))+
+  geom_pointrange(aes(y=pred,ymax=upr,ymin=lwr),position=position_dodge(width=0.75,preserve='total'),size=1,show.legend=F)+
   lims(y=c(0,50))+
-  labs(x='Bay position',y='Visits/10 mins',title='Honeybees')
-ggsave('../Figures/Seed/slopeEdgeCentHbee.png',p1,width=4,height=4)
+  labs(x='Bay position',y='Visits/10 mins',col='Visitor')+
+  scale_colour_manual(values=c('darkorange','forestgreen'))+
+  theme(legend.position=c(0.88,0.88),
+        legend.background=element_rect(fill='white',colour='black',linetype='solid'),
+        legend.title=element_text(size=18))
+ggsave('../Figures/Seed/slopeEdgeCent_both.png',p1,width=8,height=6)
 
 
 #Partial effect of lbee distance on both hbees and lbees
@@ -2440,11 +2523,11 @@ p1 <- data.frame(MM_temp,t(apply(MM_temp %*% t(coef_pollen),1,function(x) quanti
   rename(pred=X50.,upr=X97.5.,lwr=X2.5.) %>%
   mutate(resid=polDat$pol_resid+pred,edgeCent=factor(edgeCent,labels=c('Edge','Center'))) %>% 
   mutate_at(vars(pred:resid),exp) %>%
-  ggplot(aes(x=exp(hbeeDist+4.641845))) +
-  # geom_ribbon(aes(ymax=upr,ymin=lwr,fill=edgeCent),alpha=0.3,show.legend=F)+
-  geom_pointrange(aes(y=pred,ymax=upr,ymin=lwr,col=edgeCent),size=1,alpha=0.3,show.legend=F)+
+  ggplot(aes(x=exp(hbeeDist+4.641845)))+
+  # geom_pointrange(aes(y=pred,ymax=upr,ymin=lwr,col=edgeCent),size=1,alpha=0.3,show.legend=F)+
+  geom_ribbon(aes(ymax=upr,ymin=lwr,fill=edgeCent),alpha=0.3,show.legend=F)+
+  geom_jitter(aes(y=resid,col=edgeCent),alpha=0.5,size=1,width=5)+
   geom_line(aes(y=pred,col=edgeCent),size=1)+
-  geom_jitter(aes(y=resid),alpha=0.5,size=1,width=5)+
   lims(y=c(0,75),x=c(0,400))+
   labs(x='Distance from edge',y='Pollen grains/stigma',col='Bay position')+
   scale_colour_manual(values=c('blue','red'))+scale_fill_manual(values=c('blue','red'))+
@@ -2458,6 +2541,7 @@ plantDat <- with(datalist,data.frame(
   plDens=apply(mod3$plDens,2,median)[plotIndex_F[plantIndex]], #Centered around 3.573633
   plSize=plantSize, #Centered around 3.197572
   hbeeDist=(log(hbee_dist)-mean(log(c(hbee_dist,hbee_dist_extra))))[plotIndex_F[plantIndex[1:Nplant]]], #Centered around 4.641845
+  hbeeDist_trans=hbee_dist[plotIndex_F[plantIndex[1:Nplant]]], #Back-transformed hbee distance
   lbeeDist=(log(lbee_dist)-mean(log(c(lbee_dist,lbee_dist_extra))))[plotIndex_F[plantIndex[1:Nplant]]], #Centered around 3.113714
   edgeCent=isCent[plotIndex_F[plantIndex[1:Nplant]]],
   pol=apply(mod3$pollenMu_plot,2,median)[plotIndex_F[plantIndex]], #Centered on 2.523904 (mean(mod3$intPol))
@@ -2465,12 +2549,32 @@ plantDat <- with(datalist,data.frame(
   hbeeVis=log(1+lbeeVis/totalTime)[plotIndex_F[plantIndex[1:Nplant]]],
   flDens=apply(mod3$flDens,2,median)[plotIndex_F[plantIndex[1:Nplant]]],
   flwCount=flwCount,podCount=podCount,
+  plSize_resid=apply(mod3$plSize_resid,2,median),
   flwCount_resid=apply(mod3$flwCountMu,2,median)-log(flwCount), #Log-residuals for flower count
   surv=podCount/flwCount, #Propotion Survival
   centSurvLogit=logit(podCount/flwCount)-mean(logit(podCount/flwCount)),
   # surv_resid= podCount/flwCount-invLogit(apply(mod3$flwSurv,2,median))
   surv_resid= logit(podCount/flwCount)-apply(mod3$flwSurv,2,median) #Logit-resid for flower surv
 ))
+
+#Model matrix for plant size
+MM_plSize <- with(plantDat,data.frame(int=1,plDens,hbeeDist)) %>% as.matrix()
+#Coefficient matrix for plant size
+coef_plSize <- with(mod3,data.frame(intPlSize,slopePlDensPlSize,slopeDistPlSize)) %>% as.matrix()
+
+#Partial effect of density on plant size
+MM_temp <- MM_plSize %>% as.data.frame() %>% mutate_at(vars(-plDens),mean) %>% as.matrix()
+
+p1 <- data.frame(MM_temp,t(apply(MM_temp %*% t(coef_plSize),1,function(x) quantile(x,c(0.5,0.025,0.975))))) %>%
+  rename(pred=X50.,upr=X97.5.,lwr=X2.5.) %>% 
+  mutate(resid=plantDat$plSize_resid+pred,plDens=exp(plDens+3.573633)) %>% arrange(plDens) %>% 
+  mutate_at(vars(pred:resid),function(x) exp(x+3.197572)) %>%
+  ggplot(aes(x=plDens))+
+  geom_ribbon(aes(ymax=upr,ymin=lwr),alpha=0.3,fill='black')+
+  geom_point(aes(y=resid),alpha=0.5)+#ylim(250,650)+
+  geom_line(aes(y=pred),size=1,col='black')+
+  labs(x=expression(paste('Plants per ',m^2)),y='Plant size (g)',title='Seed')
+ggsave('../Figures/Seed/slopePlDensPlSize.png',p1,width=6,height=6)
 
 #Model matrix for flower count 
 MM_flwCount <- with(plantDat,data.frame(int=1,plSize,edgeCent,centSurvLogit)) %>% 
@@ -2481,15 +2585,18 @@ coef_flwCount <- with(mod3,data.frame(intFlwCount,slopePlSizeFlwCount,slopeCentF
 #Partial effect of plant size
 MM_temp <- MM_flwCount %>% as.data.frame() %>% mutate_at(vars(-plSize),mean) %>% as.matrix()
 
-data.frame(MM_temp,t(apply(MM_temp %*% t(coef_flwCount),1,function(x) quantile(x,c(0.5,0.025,0.975))))) %>%
+p1 <- data.frame(MM_temp,t(apply(MM_temp %*% t(coef_flwCount),1,function(x) quantile(x,c(0.5,0.025,0.975))))) %>%
   rename(pred=X50.,upr=X97.5.,lwr=X2.5.) %>% 
-  mutate(resid=plantDat$flwCount_resid+pred) %>% arrange(plSize) %>% 
-  mutate_at(vars(pred:resid),exp) %>% 
-  ggplot(aes(x=exp(plSize+3.204388)))+
-  geom_ribbon(aes(ymax=upr,ymin=lwr),alpha=0.3)+
-  geom_line(aes(y=pred),size=1)+
+  mutate(resid=plantDat$flwCount_resid+pred,plSize=exp(plSize+3.204388)) %>% arrange(plSize) %>% 
+  mutate_at(vars(pred:resid),exp) %>%
+  filter(!(resid>1900&plSize<50&plSize>20)) %>% #Get rid of weird outlier
+  ggplot(aes(x=plSize))+
+  geom_ribbon(aes(ymax=upr,ymin=lwr),alpha=0.3,fill='red')+
   geom_point(aes(y=resid),alpha=0.5)+#ylim(250,650)+
-  labs(x='Plant size',y='Flowers per plant')
+  geom_line(aes(y=pred),size=1,col='red')+
+  labs(x='Plant size (g)',y='Flowers per plant',title='Seed')
+ggsave('../Figures/Seed/slopePlSizeFlwCount.png',p1,width=6,height=6)
+
 
 #Partial effect of bay center
 MM_temp <- MM_flwCount %>% as.data.frame() %>% mutate_at(vars(-edgeCent),mean) %>% as.matrix()
@@ -2505,7 +2612,7 @@ data.frame(MM_temp,t(apply(MM_temp %*% t(coef_flwCount),1,function(x) quantile(x
   ylim(250,650)+
   labs(x=NULL,y='Flowers per plant')
 
-#Model matrix for survivorship
+#Model matrix for flower survivorship
 MM_flwSurv <- with(plantDat,data.frame(int=1,pol,plSize,edgeCent,hbeeDist,lbeeDist,flDens)) %>% 
   as.matrix()
 #Coefficent matrix for survivorship
@@ -2524,9 +2631,9 @@ p1 <- data.frame(MM_temp,t(apply(MM_temp %*% t(coef_flwSurv),1,function(x) quant
   geom_jitter(aes(y=resid),alpha=0.5,width=0)+
   geom_ribbon(aes(ymax=upr,ymin=lwr),alpha=0.3)+
   geom_line(aes(y=pred),size=1)+
-  labs(x='Plant size (g)',y='Flower survival (%)')+
+  labs(x='Plant size (g)',y='Flower survival (%)',title='Seed')+
   lims(y=c(45,90))
-ggsave('../Figures/Seed/slopePlsizeSurv.png',p1,width=6,height=4)
+ggsave('../Figures/Seed/slopePlsizeSurv.png',p1,width=6,height=6)
 
 #Partial effect of pollen amount
 MM_temp <- MM_flwSurv %>% as.data.frame() %>% 
@@ -2597,14 +2704,27 @@ podDat <- with(datalist,data.frame(
 #Model matrix for seed count
 MM_seedCount <- with(podDat,data.frame(int=1,pol,plSize,edgeCent,lbeeDist,flDens,surv))
 #Coef matrix for seed count
-coef_flwSurv <- with(mod3,data.frame(intSeedCount,slopePolSeedCount,slopePlSizeCount,
+coef_seedCount <- with(mod3,data.frame(intSeedCount,slopePolSeedCount,slopePlSizeCount,
    slopeEdgeCentSeedCount,slopeHbeeDistSeedCount,slopeFlDensSeedCount,slopeSurvSeedCount)) %>% as.matrix()
+
+#Partial effect of year
+MM_temp <- MM_seedCount %>% as.data.frame() %>% mutate_at(vars(-year2016),mean) %>% as.matrix()
+
+data.frame(MM_temp,t(apply(MM_temp %*% t(coef_seedCount),1,function(x) quantile(x,c(0.5,0.025,0.975))))) %>% 
+  rename(pred=X50.,upr=X97.5.,lwr=X2.5.) %>% 
+  mutate(resid=podDat$seedCountResid+pred,year2016=factor(year2016,labels=c('2015','2016'))) %>% 
+  mutate_at(vars(pred:resid),exp) %>% 
+  ggplot(aes(x=year2016))+
+  geom_jitter(aes(y=resid),alpha=0.3,width=0.3)+
+  geom_pointrange(aes(y=pred,ymax=upr,ymin=lwr),col='red')+
+  labs(x='Year',y='Seeds per pod')
+
 
 #Partial effects of plant size
 MM_temp <- MM_seedCount %>% as.data.frame() %>% 
   mutate_at(vars(-plSize),mean) %>% as.matrix()
 
-p1 <- data.frame(MM_temp,t(apply(MM_temp %*% t(coef_flwSurv),1,function(x) 
+p1 <- data.frame(MM_temp,t(apply(MM_temp %*% t(coef_seedCount),1,function(x) 
     quantile(x,c(0.5,0.025,0.975))))) %>% 
   rename(pred=X50.,upr=X97.5.,lwr=X2.5.) %>% 
   mutate(resid=podDat$seedCountResid+pred) %>% 
@@ -2621,7 +2741,7 @@ ggsave('../Figures/Seed/slopePlSizeSeedCount.png',p1,width=4,height=4)
 MM_temp <- MM_seedCount %>% as.data.frame() %>% 
   mutate_at(vars(-pol),mean) %>% as.matrix()
 
-p1 <- data.frame(MM_temp,t(apply(MM_temp %*% t(coef_flwSurv),1,function(x) 
+p1 <- data.frame(MM_temp,t(apply(MM_temp %*% t(coef_seedCount),1,function(x) 
   quantile(x,c(0.5,0.025,0.975))))) %>% 
   rename(pred=X50.,upr=X97.5.,lwr=X2.5.) %>% 
   mutate(resid=podDat$seedCountResid+pred) %>% 
@@ -2638,7 +2758,7 @@ ggsave('../Figures/Seed/slopePolSeedCount.png',p1,width=4,height=4)
 MM_temp <- MM_seedCount %>% as.data.frame() %>% 
   mutate_at(vars(-surv),mean) %>% as.matrix()
 
-p1 <- data.frame(MM_temp,t(apply(MM_temp %*% t(coef_flwSurv),1,function(x) 
+p1 <- data.frame(MM_temp,t(apply(MM_temp %*% t(coef_seedCount),1,function(x) 
   quantile(x,c(0.5,0.025,0.975))))) %>% 
   rename(pred=X50.,upr=X97.5.,lwr=X2.5.) %>% 
   mutate(resid=podDat$seedCountResid+pred) %>% 
@@ -2655,7 +2775,7 @@ ggsave('../Figures/Seed/slopeSurvSeedCount.png',p1,width=4,height=4)
 MM_temp <- MM_seedCount %>% as.data.frame() %>% 
   mutate_at(vars(-edgeCent),mean) %>% as.matrix()
 
-p1 <- data.frame(MM_temp,t(apply(MM_temp %*% t(coef_flwSurv),1,function(x) 
+p1 <- data.frame(MM_temp,t(apply(MM_temp %*% t(coef_seedCount),1,function(x) 
   quantile(x,c(0.5,0.025,0.975))))) %>% 
   rename(pred=X50.,upr=X97.5.,lwr=X2.5.) %>% 
   mutate(resid=podDat$seedCountResid+pred,edgeCent=factor(edgeCent,labels=c('Edge','Center'))) %>% 
@@ -2677,6 +2797,17 @@ coef_seedMass <- with(mod3,data.frame(intSeedWeight,slopePolSeedWeight,slopeSeed
                   slopePlSizeSeedWeight,slopePlDensSeedWeight,slope2016SeedWeight,
                   slopeLbeeDistSeedWeight,slopeStockingSeedWeight,slopePlDensPlSizeSeedWeight)) %>% 
   as.matrix()
+
+#Partial effect of year
+MM_temp <- MM_seedMass %>% as.data.frame() %>% mutate_at(vars(-year2016),mean) %>% as.matrix()
+
+data.frame(MM_temp,t(apply(MM_temp %*% t(coef_seedMass),1,function(x) quantile(x,c(0.5,0.025,0.975))))) %>% 
+  rename(pred=X50.,upr=X97.5.,lwr=X2.5.) %>% 
+  mutate(resid=podDat$seedCountResid+pred,year2016=factor(year2016,labels=c('2015','2016'))) %>% 
+  ggplot(aes(x=year2016))+
+  geom_jitter(aes(y=resid),alpha=0.3,width=0.3)+
+  geom_pointrange(aes(y=pred,ymax=upr,ymin=lwr),col='red')+
+  labs(x='Year',y='Weight per seed (mg)')
 
 #Partial effect of seed count
 MM_temp <- MM_seedMass %>% as.data.frame() %>% mutate_at(vars(-seedCount),mean) %>% as.matrix()
