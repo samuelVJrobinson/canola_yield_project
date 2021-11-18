@@ -915,7 +915,7 @@ with(mod3,PPplots(apply(yield_resid,1,function(x) sum(abs(x))),
                   datalist$yield,exp(apply(mod3$predYield,2,median)),main='Total yield'))
 
 # Partial effects plots for commodity fields -----------------------------
-# load('modPodcount.Rdata') #All extracted coefficients in list form (mod3)
+load('modPodcount.Rdata') #All extracted coefficients in list form (mod3)
 mod3 <- extract(modPodcount) #Get coefficients from stan model
 rm(modPodcount); gc()
 
@@ -925,7 +925,7 @@ plotDat <- with(datalist,data.frame(
   dist=log(dist)-mean(log(dist)), #Centered on 3.412705
   GP=isGP[plotIndex],hives=log(numHives[plotIndex]+1), #Log-number of hives
   plDens=apply(mod3$plDens,2,mean),flDens=flDens,
-  hbeeResid=log(hbeeVis+1/totalTime)-apply(mod3$visitHbeeMu,2,median) #Log-residuals
+  hbeeResid=log((hbeeVis+0.2)/totalTime)-apply(mod3$visitHbeeMu,2,median) #Log-residuals - #maybe not the best
 ))
 
 #Model matrix for hbee visits
@@ -960,21 +960,43 @@ p1 <- data.frame(MM_temp,t(apply(MM_temp %*% t(coef_hbee),1,function(x) quantile
   labs(x='Distance from edge(m)',y='Visits/10 mins')
 ggsave('../Figures/Commodity/slopeYearGPVis.png',p1,width=8,height=6)
 
-#Partial effect of stocking rates
+#Partial effect of year/area, using 5m plot only, using 20 hives only
+MM_temp <- MM_hbee %>% as.data.frame() %>% mutate_at(vars(-year,-GP,-yearGP),mean) %>% 
+  mutate(dist=(log(5)-3.41),hives=log(20+1)) %>% 
+  as.matrix()
+
+data.frame(MM_temp,t(apply(MM_temp %*% t(coef_hbee),1,function(x) quantile(x,c(0.5,0.025,0.975))))) %>% 
+  rename(pred=X50.,upr=X97.5.,lwr=X2.5.) %>%
+  mutate(resid=plotDat$hbeeResid+pred) %>% mutate_at(vars(pred:resid),exp) %>% 
+  mutate(year=factor(year,labels=c('2014','2015')),GP=factor(GP,labels=c('Lethbridge','Grande\nPrairie'))) %>% 
+  select(year,GP,pred,upr,lwr) %>%   
+  distinct() %>% 
+  ggplot(aes(x=GP,y=pred))+
+  geom_pointrange(aes(ymax=upr,ymin=lwr,col=factor(year)),position=position_dodge(width=0.25))+
+  labs(x=NULL,y='Honey bee visits/10 mins',col='Year')+
+  scale_colour_manual(values=c('black','grey50'))
+
+
+#Partial effect of stocking rates and distance
 MM_temp <- MM_hbee %>% as.data.frame() %>% mutate_at(vars(-hives,-dist),mean) %>% 
   as.matrix()
 
-data.frame(MM_temp,t(apply(MM_temp %*% t(coef_hbee),1,function(x) quantile(x,c(0.5,0.025,0.975))))) %>%
+p1 <- data.frame(MM_temp,t(apply(MM_temp %*% t(coef_hbee),1,function(x) quantile(x,c(0.5,0.025,0.975))))) %>%
   rename(pred=X50.,upr=X97.5.,lwr=X2.5.) %>%
   mutate(resid=plotDat$hbeeResid+pred) %>% 
-  mutate_at(vars(pred:resid),function(x) exp(x)*6) %>% 
+  mutate_at(vars(pred:resid),exp) %>% 
   mutate(dist=exp(dist+3.41),hives=round(exp(hives)-1)) %>% 
   filter(hives==0|hives==20|hives==40) %>% 
   # mutate(hives=factor(hives,levels=))
-  ggplot(aes(x=dist,y=pred,col=factor(hives)))+geom_line(size=1)+
-  labs(col='Number\nof Hives',y='Visits/hr',x='Distance (m)')+
-  scale_colour_manual(values=c('black','red','blue'))
-  
+  ggplot(aes(x=dist,y=pred))+
+  geom_ribbon(aes(ymax=upr,ymin=lwr,fill=factor(hives)),alpha=0.3,show.legend=F)+
+  geom_line(aes(col=factor(hives)),size=1)+
+  geom_jitter(aes(y=resid,col=factor(hives)),width=5,height=0)+
+  labs(col='Number\nof Hives',y='Honey bee visits/10 mins',x='Distance (m)')+
+  scale_colour_manual(values=c('black','blue','red'))+
+  scale_fill_manual(values=c('black','blue','red'))
+ggsave('../Figures/Commodity/slopeNumHivesDistVis.png',p1,width=8,height=6)
+
 
 #Pollen data (1294 rows)
 pollenDat <- with(datalist,data.frame(

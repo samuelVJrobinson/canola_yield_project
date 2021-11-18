@@ -11,7 +11,7 @@ library(tidyr)
 #Big-text theme, no grid lines (used for Bayer 2016 presentation)
 prestheme=theme(legend.position='right',
                 legend.text=element_text(size=15),
-                axis.text=element_text(size=15), 
+                axis.text=element_text(size=15),
                 axis.title=element_text(size=20),
                 title=element_text(size=20),
                 axis.line.x=element_line(colour='black'),
@@ -19,7 +19,7 @@ prestheme=theme(legend.position='right',
                 #panel.grid.major=element_line(size=0.5,colour='black',linetype='dotted'),
                 #panel.grid.minor=element_blank,
                 panel.border=element_blank(),
-                strip.text=element_text(size=15))                
+                strip.text=element_text(size=15))
 theme_set(theme_classic()+prestheme) #Sets graph theme to B/Ws + prestheme
 rm(prestheme)
 
@@ -118,7 +118,6 @@ load("C:\\Users\\Samuel\\Documents\\Projects\\UofC\\canola_yield_project\\Commod
 #   } else stop('Link must be gaussian, poisson, or binomial')
 # } #Appears to work
 # 
-# 
 # #General field data
 # fields2014=transmute(fields2014,Year=2014,Field=paste(Grower,X.), #Concatenates grower name and field number
 #        Area=as.factor(Area), #Converts Area to factor
@@ -133,7 +132,8 @@ load("C:\\Users\\Samuel\\Documents\\Projects\\UofC\\canola_yield_project\\Commod
 #        Surveyed=as.POSIXct(Surveyed,format='%b %d, %Y'),
 #        StartTime=as.POSIXct(paste(Surveyed,Start.Time),format='%Y-%m-%d %H:%M'),
 #        EndTime=as.POSIXct(paste(Surveyed,End.Time),format='%Y-%m-%d %H:%M'),
-#        Temp=Temperature,WindSp=Wind.Speed.m.s.,RH=Humidity,Cloud=Cloud.Cover, #Weather
+#        Temp=Temperature,WindSp=Wind.Speed.m.s.*3.6, #Weather (wind speed in km/hr)
+#        RH=Humidity,Cloud=Cloud.Cover,
 #        Cloud=ifelse(grepl('overcast',Cloud),'8/8',Cloud),
 #        Cloud=as.numeric(substr(Cloud,0,1))/8) %>%
 #   filter(!is.na(Surveyed)) #Strips unsurveyed fields
@@ -152,7 +152,7 @@ load("C:\\Users\\Samuel\\Documents\\Projects\\UofC\\canola_yield_project\\Commod
 #             EndTime=as.POSIXct(paste(Surveyed,End.Time),format='%Y-%m-%d %H:%M'),
 #             BowlStart=as.POSIXct(paste(Surveyed,BowlStart),format='%Y-%m-%d %H:%M'),
 #             BowlEnd=as.POSIXct(paste(Surveyed,BowlEnd),format='%Y-%m-%d %H:%M'),
-#             Temp=Temperature,WindSp=Wind.Speed.km.hr.*(36/10),RH=Humidity,Cloud=Cloud.Cover) %>% #Wind speed in m/s
+#             Temp=Temperature,WindSp=Wind.Speed.km.hr.,RH=Humidity,Cloud=Cloud.Cover) %>% #Wind speed in km/hr
 #   filter(!is.na(Surveyed)) #Strips unsurveyed fields
 # 
 # matches2014=match(survey2014$Field,fields2014$Field)
@@ -164,7 +164,7 @@ load("C:\\Users\\Samuel\\Documents\\Projects\\UofC\\canola_yield_project\\Commod
 #                  Area=fields2014$Area[matches2014],
 #                  Variety=fields2014$Variety[matches2014], #Matches crop varieties
 #                  Temp=fields2014$Temp[matches2014], #Air Temperature
-#                  WindSp=fields2014$WindSp[matches2014]*3.6, #Wind Speed, converting to km/hr
+#                  WindSp=fields2014$WindSp[matches2014], #Wind Speed (km/hr)
 #                  RH=fields2014$RH[matches2014], #Relative Humidity
 #                  FlDens=Fls.50cm.2*4,  #Flower Density, converting fls/50cm2 to fls/m2
 #                  Date=fields2014$Surveyed[matches2014],
@@ -317,9 +317,9 @@ load("C:\\Users\\Samuel\\Documents\\Projects\\UofC\\canola_yield_project\\Commod
 #   rename(PodCount=Pod,PodMass=Weigh,Pod=PodNum) %>%
 #   mutate(FieldPlot=paste(Field,Plot,sep='_')) %>%
 #   filter(paste(Field,Plot,Plant,sep='.')!='McKee 5.1.5')   #Removes McKee5.1.5 (DISPUTE IN LABELLING)
-#   
 # 
-# plants2014 <- group_by(seeds2014,Field,Plot,Plant) %>% 
+# 
+# plants2014 <- group_by(seeds2014,Field,Plot,Plant) %>%
 #   summarise_at(vars(-FieldPlot),funs(mean(.,na.rm=T),se)) %>% #Mean and SE of metrics for each plant (all mean values except for pod measurements will equal plant-level metrics)
 #   select(Field,Plot,Plant,VegMass=VegMass_mean,SeedMass=SeedMass_mean,
 #          Branch=Branch_mean,Pods=Pods_mean,Missing=Missing_mean,SeedCount=SeedCount_mean,
@@ -356,7 +356,7 @@ load("C:\\Users\\Samuel\\Documents\\Projects\\UofC\\canola_yield_project\\Commod
 #   rename(PodCount=Pod,PodMass=Weigh,Pod=PodNum) %>%
 #   mutate(FieldPlot=paste(Field,Plot,sep='_'))
 # 
-# plants2015 <- group_by(seeds2015,Field,Plot,Plant) %>% 
+# plants2015 <- group_by(seeds2015,Field,Plot,Plant) %>%
 #   summarise_at(vars(-FieldPlot),funs(mean(.,na.rm=T),se))%>% #Mean and SE of metrics for each plant (all mean values except for pod measurements will equal plant-level metrics)
 #   select(Field,Plot,Plant,VegMass=VegMass_mean,SeedMass=SeedMass_mean,
 #          Branch=Branch_mean,Pods=Pods_mean,Missing=Missing_mean,SeedCount=SeedCount_mean,
