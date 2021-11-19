@@ -46,563 +46,9 @@ seedsAllSeed <- mutate(seedsAllSeed,Missing=ifelse(Missing<0,NA,Missing))
 rileyExtra <- read.csv('./Seed field analysis/rileyExtra.csv')
 setwd('~/Projects/UofC/canola_yield_project')
 
-#Convenience functions
-logit <- function(x){
-  return(log(x/(1-x)))
-}
-invLogit <- function(x){ 
-  i <- exp(x)/(1+exp(x)) 
-  i[is.nan(i)] <- 1 #If x is large enough, becomes Inf/Inf = NaN, but Lim(invLogit) x->Inf = 1
-  return(i)
-}
-coefs <- function(L){ #Shorter summary from list of L coefficients from a Stan list
-  upr=sapply(L,function(x) round(quantile(x,0.975),3))
-  lwr=sapply(L,function(x) round(quantile(x,0.025),3))
-  meanCoef=sapply(L, mean); stdev=sapply(L, sd)
-  data.frame(median=sapply(L,function(x) round(median(x),3)),
-             lwr=lwr,upr=upr,mean=round(meanCoef,3),sd=round(stdev,3),z=round(meanCoef/stdev,3),
-             overlap=sapply(L,function(x) overlap(x)),
-             pval=round(2*(1-pnorm(abs(meanCoef/stdev),0,1)),4)) }
-#Faster pair plot
-fastPairs <- function(l){ #List l
-  pairs(l,lower.panel=function(x,y){
-  par(usr=c(0,1,0,1))
-  text(0.5, 0.5, round(cor(x,y),2), cex = 1 * exp(abs(cor(x,y))))})
-}
-#Function to calculate R2 for GLMMs. fixVar, ranVar and resVar are either variable names (vector of var names for random effects), or NA, indicating no effect specified
-r2calc <- function(mod,fixVar,ranVar,resVar){
-  fixed <- ifelse(!is.na(fixVar),sd(apply(mod[[fixVar]],2,median)),0) #fixed effect sd
-  if(!is.na(ranVar[1])){
-    ran <- 0
-    for(i in 1:length(ranVar)){ #Adds variances from all levels of random effects
-      ran <- ran + median(mod[[ranVar[i]]])
-    }
-  } else ran <- 0
-  res <- ifelse(!is.na(resVar),median(mod[[resVar]]),0) #residual variance
-  print(paste('Fixed effect var =',round(fixed,4)))
-  print(paste('Random effect var =',round(ran,4)))
-  print(paste('Residual var =',round(res,4)))
-  print(paste('Conditional R2 =',round((fixed+ran)/(fixed+ran+res),4)))
-  print(paste('Marginal R2 =',round((fixed)/(fixed+ran+res),4)))
-}
-#Linear breakpoint function - two lines with intersection "b"
-bpoint <- function(x,int1,slope1,b,slope2) ifelse(x<b,int1+slope1*x,b*slope1+(x-b)*slope2+int1)
-#Effect size for Posterior samples
-effSize <- function(x) unname(median(x)/diff(quantile(x,c(0.025,0.975))))
-#Does 95% of posterior overlap zero?
-overlap <- function(x) {r <- quantile(x,c(0.025,0.975))>=0; xor(r[1],r[2]);}
-#Posterior predictive check plots
-PPplots <- function(resid,predResid,actual,pred,main=NULL){
-  par(mfrow=c(2,1))
-  plot(resid~predResid,ylab='Sum actual residuals',xlab='Sum simulated residuals',main=main)
-  x <- sum(resid<predResid)/length(resid)
-  legend('topleft',paste('p =',round(min(x,1-x),3)))
-  abline(0,1,col='red') #PP plot
-  plot(actual~pred, #Predicted vs Actual
-       xlab=paste('Predicted',main),ylab=paste('Actual',main)) 
-  abline(0,1,col='red')
-  abline(lm(actual~pred),col='red',lty=2)
-  par(mfrow=c(1,1))
-}
-
-#Convert g/m2 to bushels/acre
-g2bushels <- function(x){ 
-  x*4046.86/22679.6 
-  # 453.592*50/bushel - using 50 lbs/bushel estimate
-  # 44.0920 #bushels per tonne
-  # 2204.62 #lbs per tonne
-}
+source('helperFunctions.R')
 
 #Everything above this line run to start
-
-# Data from Wang et al 2011 - ovule counts --------------------------------
-ovDat <- read.csv('wang2011ovData.csv') %>% 
-  mutate(Freq=ifelse(Freq<0,0,Freq))
-
-ovDatNew <- expand.grid(Freq=NA,Count=20:50,Day=unique(ovDat$Day))
-for(i in unique(ovDat$Day)){
-  ovDatNew[ovDatNew$Day==i,'Freq'] <- with(ovDat,approx(x=Count[Day==i],y=Freq[Day==i],xout=c(20:50)))$y #Interpolate
-  ovDatNew$Freq[is.na(ovDatNew$Freq[ovDatNew$Day==i])] <- 0 #Turn NAs to zeros
-  ovDatNew[ovDatNew$Day==i,'Freq'] <- ovDatNew[ovDatNew$Day==i,'Freq']/sum(ovDatNew[ovDatNew$Day==i,'Freq']) #Normalize
-}
-ggplot(ovDatNew,aes(Count,Freq,col=Day))+geom_line()
-
-#Negative binomial/poisson from data has too much variance. Trying normal dist
-par(mfrow=c(5,1))
-for(i in unique(ovDatNew$Day)){
-  pars <- data.frame(mean=rep(NA,1000),sd=rep(NA,1000))
-  for(rep in 1:1000){
-    #Simulated count data
-    simCount <- with(ovDatNew[ovDatNew$Day==i,],sample(ovDatNew$Count,100,prob=ovDatNew$Freq,replace=T))
-    simPar <- optim(c(0.5,1),function(x,count) -sum(dnorm(x=count,mean=x[1],sd=x[2],log=T)),count=simCount)$par
-    pars$mean[rep] <- simPar[1]
-    pars$sd[rep] <- simPar[2]
-  }
-  plot(c(20:45),dnorm(c(20:45),mean=median(pars$mean),sd=median(pars$sd)),ylab='Density',type='l',ylim=c(0,max(ovDatNew$Freq)),
-       main=i)
-  with(ovDatNew[ovDatNew$Day==i,],lines(Count,Freq,col='red'))
-}
-
-#overall
-par(mfrow=c(1,1))
-pars <- data.frame(mean=rep(NA,1000),sd=rep(NA,1000))
-for(rep in 1:1000){
-  #Simulated count data
-  simCount <- with(ovDatNew,sample(ovDatNew$Count,100,prob=ovDatNew$Freq,replace=T))
-  simPar <- optim(c(0.5,1),function(x,count) -sum(dnorm(x=count,mean=x[1],sd=x[2],log=T)),count=simCount)$par
-  pars$mean[rep] <- simPar[1]
-  pars$sd[rep] <- simPar[2]
-}
-plot(c(20:45),dnorm(c(20:45),mean=median(pars$mean),sd=median(pars$sd)),ylab='Density',type='l',ylim=c(0,0.15))
-ovDatNew %>% group_by(Count) %>% summarize(Freq=sum(Freq)) %>% ungroup() %>% mutate(Freq=Freq/sum(Freq)) %>% 
-  with(.,lines(Count,Freq,col='red'))
-points(c(20:45),dpois(c(20:45),32.15),col='blue') #Poisson is too wide
-
-#Mean=32.15, SD=2.66 for overall ovule distribution. Discrete version:
-plot(10:55,log(pnorm(11:56,32.15,2.66)-pnorm(10:55,32.15,2.66)),ylab='LogLik')
-
-
-
-#Pod weight-count modelling (JAGS) -----------------------------
-library(jagsUI)
-setwd('./Models')
-#Pod count model
-datalist <- with(temp[!is.na(temp$PodCount)&temp$PodCount>0,],list( #Strips NAs and 0 counts
-  Npod=length(PodCount), #Number of observed seed counts
-  Nunique=length(unique(PodCount)), #Number of unique seed counts
-  uniquePodCount=sort(unique(PodCount)),
-  NuniquePodCount=as.vector(table(PodCount)),
-  uniqueMatches=match(PodCount,sort(unique(PodCount))), #Matching index
-  SeedCount=PodCount
-))
-
-datalist <- c(datalist,with(flowersAllComm[!is.na(flowersAllComm$Pollen),],{list(
-  Npollen=length(Pollen),
-  PollenCount=Pollen
-)})) #Append pollen data to list
-
-datalist <- c(datalist,with(plantsAllComm[!is.na(plantsAllComm$Pods)&!is.na(plantsAllComm$Missing)&plantsAllComm$Missing>0,],{list(
-  Nplants=length(Pods),
-  Pods=Pods,PodsMissing=Missing
-)})) #Append flower success data to list
-
-datalist$SeedCount2 <- datalist$SeedCount
-
-startlist <- function() list(
-  #lambda=5.6, r=0.6,
-  intPol=-1.15,
-  slopePol1=-3.1,
-  intPod=1.16,
-  slopePod=-0.001,
-  simPollenCount=datalist$SeedCount+10,
-  simOvCount=datalist$SeedCount+10
-)
-
-params <- c(#'lambda','r', #Params for negbin pollination process
-  # 'simPollenCount',
-  # 'simOvCount',
-  'simPollenZero','simFertFailPod','simPodFailPod','totalPodFail',
-  #'LLpod','LLseed','lik',
-  'simSeedCount','fitSeedCount','fitSimSeedCount',
-  'intPol','slopePol'
-  #'intPod','slopePod'
-  )
-
-tick <- Sys.time()
-mod2 <- jags(data=datalist,
-          inits=startlist,
-          parameters.to.save=params,
-          model.file='pod_count_weight.txt',
-          n.chains=3,n.adapt=200,n.iter=300,n.burnin=100,n.thin=1,parallel=T)
-tock <- Sys.time()
-tock-tick 
-beep(1)
-# save(mod2,file='./podCountResults.RData')
-# load('podCountResults.Rdata') 
-
-print(mod2)
-traceplot(mod2,parameters=c('intPol','slopePol'))
-# traceplot(mod2,parameters='totalPodFail')
-pp.check(mod2,actual='fitSeedCount',new='fitSimSeedCount') #Variance = higher in actual dataset. Poisson performs OK, but is weirdly above 1:1 line
-
-mod2samp <- mod2$sims.list #Samples from mod2
-str(mod2samp)
-
-plot(datalist$SeedCount,apply(mod2samp$LLpod,2,median),pch=19) #LL decreases with SeedCount. This should be in the opposite direction
-points(datalist$SeedCount,apply(mod2samp$LLpod,2,max),pch=3) 
-points(datalist$SeedCount,apply(mod2samp$LLpod,2,min),pch=3) 
-
-hist(apply(mod2samp$LLseed,2,median))
-
-
-
-#Predicted (median) seed counts vs actual
-data.frame(med=apply(mod2samp$simSeedCount,2,median),
-           upr=apply(mod2samp$simSeedCount,2,function(x) quantile(x,0.95)),
-           lwr=apply(mod2samp$simSeedCount,2,function(x) quantile(x,0.05)),
-           actual=datalist$SeedCount) %>%
-  ggplot(aes(actual,med,ymax=upr,ymin=lwr))+geom_pointrange()+
-  geom_abline(intercept=0,slope=1)+labs(x='Actual',y='Predicted')+
-  coord_cartesian(xlim=c(0,55),ylim=c(0,70))
-
-#Simulated seed count
-hist(mod2samp$simSeedCount[10,])
-table(mod2samp$simSeedCount[10,])
-
-with(mod2samp,{ #Shape of likelihood functions
-  lambda <- 5.685
-  r <- 0.615
-  p <- r/(r+exp(lambda))
-  meanNegBin <- (r*(1-p))/p
-  
-  par(mfrow=c(3,1))
-  # curve(invLogit(median(intPol)+(median(slopePol1)*((x-meanNegBin)/1000))+(median(slopePol2)*((x-meanNegBin)/1000)^2)),1,2500,
-  #       ylab='p(pollenSurv)')
-  # plot(invLogit(median(intPol)+(median(slopePol1)*((c(1:2500)-meanNegBin)/1000))+(median(slopePol2)*((c(1:2500)-meanNegBin)/1000)^2))*
-  #         dnbinom(c(1:2500),prob=p,size=r),ylab='p(pollenSurv)*p(pollen)',pch=19)
-  curve(invLogit(bpoint(x/1000,median(intPol),median(slopePol1),median(polBp),median(slopePol2))),1,2500,ylab='p(pollenSurv)')
-  plot(invLogit(bpoint(1:2500/1000,median(intPol),median(slopePol1),median(polBp),median(slopePol2)))*dnbinom(c(1:2500),
-        prob=p,size=r),ylab='p(pollenSurv)*p(pollen)',pch=19)
-  
-  plot(1:2500,((c(1:2500)-meanNegBin)/1000),pch=19,type='l')
-  print(((c(1)-meanNegBin)/1000))
-  par(mfrow=c(1,1))
-})
-
-#Pairplot of mean seeds vs other params
-with(mod2samp,data.frame(naSeeds=apply(simSeedCount,1,function(x) sum(is.na(x))),
-                         meanSeeds=apply(simSeedCount,1,function(x) mean(x,na.rm=T)),
-                         #meanOv=apply(simOvCount,1,mean),
-                         deviance,
-                         intPol,slopePol1,slopePol2,polBp)) %>% pairs()
-
-# #Ovule count compared to seed count
-# data.frame(SeedCount=datalist$SeedCount,simOvMed=apply(mod2samp$simOvCount,2,median),
-#            upr=apply(mod2samp$simOvCount,2,max),
-#            lwr=apply(mod2samp$simOvCount,2,min)) %>% 
-#   ggplot(aes(SeedCount,simOvMed))+geom_pointrange(aes(ymax=upr,ymin=lwr))+
-#   geom_abline(intercept=0,slope=1)
-# 
-# #Pollen count compared to seed count
-# data.frame(SeedCount=datalist$SeedCount,simPolMed=apply(mod2samp$simPollenCount,2,median),
-#            upr=apply(mod2samp$simPollenCount,2,max),
-#            lwr=apply(mod2samp$simPollenCount,2,min)) %>%
-#   ggplot(aes(SeedCount,simPolMed))+geom_pointrange(aes(ymax=upr,ymin=lwr))+
-#   geom_abline(intercept=0,slope=1)
-# 
-# data.frame(isna=is.na(mod2samp$simSeedCount[5,]),simSeed=mod2samp$simSeedCount[5,],
-#            simPol=mod2samp$simPollenCount[5,],#simOv=mod2samp$simOvCount[5,],
-#            seedCount=datalist$SeedCount) %>% 
-#   ggplot(aes(simOv,simSeed))+geom_point()+
-#   geom_point(aes(simOv,seedCount),col='red')
-
-
-hist(mod2samp$simSeedCount[100,])
-
-with(mod2samp,{
-  par(mfrow=c(2,1))
-  iter <- 51
-  hist(simPollenCount[iter,],main='Simulated pollen',xlab='Count') #Simulated pollen (50th iteration)
-  hist(simOvCount[iter,],main='Simulated ovules',xlab='Count') #Simulated fertilized ovules
-  # hist(simFertSeed[iter,],main='Simulated fertilized seeds',xlab='Count',breaks=seq(0,52,1)) #Simulated fertilized ovules 
-  hist(datalist$SeedCount,main='Acutual seed count',xlab='Count',breaks=seq(1,52,1))
-  print(c(intPol[iter],slopePol1[iter],slopePol2[iter],polBp[iter]))
-  par(mfrow=c(1,1))
-})
-
-
-
-#Test
-par(mfrow=c(2,1))
-simPolCount <- 
-simFertCount <- rpois(datalistPod$Npod,120*exp(mod2$q50$int.Pol)) #Simulate fert ov count
-simSeedCount <- rpois(datalistPod$Npod,(exp(mod2$q50$slope.Fert*simFertCount)*simFertCount)+0.01) #Simulate seed count
-hist(simFertCount,main=NULL,xlab='Fert Ov Count',xlim=c(0,60),breaks=30) 
-hist(simSeedCount,main=NULL,xlab='Sim Seed Count',xlim=c(0,60),breaks=30)
-hist(datalistPod$SeedCount,main=NULL,xlab='Actual Seed Count',xlim=c(0,60),breaks=30)
-
-pp.check(mod2,'fit.SeedCount','fit.SeedCount.new') #Good
-pp.check(mod2,'fit.PodMass','fit.PodMass.new') #Weird. Very close to 1:1, but offset by constant value. Does the variance change with podcount too?
-
-par(mfrow=c(2,1))
-hist(temp$PodMass,breaks=50,xlim=c(0,0.7),main='Actual Pod Mass',xlab='g')
-hist(rlnorm(1000,-3.04,1/sqrt(1.964)),breaks=100,xlim=c(0,0.7),main='Simulated Pod Mass',xlab='g')
-
-detach("package:jagsUI", unload=TRUE)
-
-
-#Pod weight-count modeling - custom likelihood (Stan) ------------------------------------
-
-library(rstan)
-setwd('./Models')
-rstan_options(auto_write = TRUE)
-options(mc.cores = 3)
-
-#Rows without missing seed counts/weights
-# noMiss <- with(temp,rowSums(is.na(cbind(PodCount,PodMass)))==0 & PodCount!=0)
-
-#List structure for Stan
-
-datalist <- with(temp[!is.na(temp$PodCount)&temp$PodCount>0,],list( #Strips NAs and 0 counts
-  Npod=length(PodCount), #Number of observed seed counts
-  Nunique=length(unique(PodCount)), #Number of unique seed counts
-  uniquePodCount=sort(unique(PodCount)),
-  NuniquePodCount=as.vector(table(PodCount)),
-  uniqueMatches=match(PodCount,sort(unique(PodCount))), #Matching index
-  SeedCount=PodCount
-))
-
-datalist <- c(datalist,with(flowersAllComm[!is.na(flowersAllComm$Pollen),],{list(
-  Npollen=length(Pollen),
-  PollenCount=Pollen
-)})) #Append pollen data to list
-
-datalist <- c(datalist,with(plantsAllComm[!is.na(plantsAllComm$Pods)&!is.na(plantsAllComm$Missing)&plantsAllComm$Missing>0,],{list(
-  Nplants=length(Pods),
-  Pods=Pods,PodsMissing=Missing
-)})) #Append flower success data to list
-
-modPodcount = stan(file='pod_level.stan',data=datalist,iter=100,chains=1,control=list(adapt_delta=0.8),
-                   init=function() list(intPolSurv=0,slopePolSurv=-3,intPodSurv=-2,slopePodSurv=3))
-print(modPodcount)
-traceplot(modPodcount) #Very poor traces, esp for pollen mu and phi. Likely what is happening is the mu and phi terms are being "influenced" by seed counts. Not sure how to separate these two, aside from heirarchical terms.
-#Try running model without pollen included, and use results from below for pollen input.
-#Same results occur even when using pollen. Try to run this in JAGS instead?
-
-modPolcount <- stan(file='pollenMod.stan',data=datalist[c('Npollen','PollenCount')],iter=1000,chains=3)
-print(modPolcount) #mu=293.75, phi=0.61
-traceplot(modPolcount)
-
-# podMod <- stan_model(file='pod_level.stan')
-# optFit <- optimizing(podMod,data=datalist,init=list(
-#   intPolSurv=-1,slopePolSurv=-3.5,intPodSurv=-2.9,slopePodSurv=3.5))
-# round(optFit$par,4) #Weird. Chooses super-low survival probs.
-
-#Check output
-pars <- c('intPol','intFert','slopeFert')
-print(modPodcount,pars=pars)
-traceplot(modPodcount,pars=pars)
-pairs(modPodcount,pars=pars)
-
-# #Simulate seed count
-# simcounts <- lapply(extract(modPodcount,pars=pars),median)
-# invLogit <- function(x) exp(x)/(1+exp(x))
-# par(mfrow=c(3,1))
-# simFertCount <- rbinom(datalist$Npod,120,invLogit(simcounts[[1]])) #Simulate fert ov count
-# simSeedCount <- rbinom(datalist$Npod,simFertCount,invLogit(simcounts[[2]]+simcounts[[3]]*simFertCount)) 
-# hist(simFertCount,main=NULL,xlab='Fert Ov Count',xlim=c(0,100)) 
-# hist(simSeedCount,main=NULL,xlab='Sim Seed Count',xlim=c(0,100),breaks=length(unique(simSeedCount)))
-# hist(datalist$SeedCount,main=NULL,xlab='Actual Seed Count',xlim=c(0,100),breaks=length(unique(datalist$SeedCount)))
-
-#Doesn't look very good. Perhaps try an arrival model of pollen?
-# #Fit distributions
-# poisFun <- function(x,dat) -sum(dpois(dat,x,log=T)) #Poisson
-# logLikPois <- optimize(f=poisFun,lower=0,upper=1000,dat=flowersAllComm$Pollen[!is.na(flowersAllComm$Pollen)])
-# geomFun <- function(x,dat) -sum(dgeom(dat,x,log=T)) #Geometric
-# logLikGeom <- optimize(f=geomFun,c(0,1),dat=flowersAllComm$Pollen[!is.na(flowersAllComm$Pollen)])
-# negbinFun <- function(x,dat) -sum(dnbinom(dat,mu=x[1],size=x[2],log=T)) #Neg Bin
-# logLikNB <- optim(c(1,1),negbinFun,dat=flowersAllComm$Pollen[!is.na(flowersAllComm$Pollen)])
-# 
-# 2*2+(2*logLikNB$value) #AIC for NB - best
-# 2*1+(2*logLikGeom$objective) #AIC for geom - worse
-# 2*1+(2*logLikPois$objective) #AIC for poisson - much worse
-# 
-# par(mfrow=c(4,1)) #Plot results
-# hist(rnbinom(datalist$Npod,mu=logLikNB[[1]][1],size=logLikNB[[1]][2]),main=NULL,xlab='Neg Bin',xlim=c(0,4000),breaks=seq(0,4000,20))
-# hist(rgeom(datalist$Npod,logLikGeom[[1]][1]),main=NULL,xlab='Geom',xlim=c(0,4000),breaks=seq(0,4000,20))
-# hist(rpois(datalist$Npod,logLikPois[[1]][1]),main=NULL,xlab='Pois',xlim=c(0,4000),breaks=seq(0,4000,20))
-# hist(flowersAllComm$Pollen[!is.na(flowersAllComm$Pollen)],xlim=c(0,4000),breaks=seq(0,4000,20),main=NULL,xlab='Actual pollen counts')
-
-
-# Test model to simulate seed counts --------------------------------------
-
-#Likelihood method: (non-vectorized version)
-
-#p(Seed)*p(Ovule)*p(Pollen)
-# prob <- array(NA,c(maxPolNum,maxOvNum,length(seedCount)))
-# # prob <- matrix(NA,nrow=maxPolNum,ncol=maxOvNum)
-# for(seed in 1:length(seedCount)){ #For each seed count
-#   for(polCount in seedCount[seed]:maxPolNum){ #For each potential pollen count
-#     for(ovCount in seedCount[seed]:min(maxOvNum,polCount)){ #For each potential ovule count
-#       prob[polCount,ovCount,seed] <- dnbinom(polCount,mu=292.9317,size=0.6136358,log=T)+
-#         dbinom(ovCount,polCount,0.05,log=T)+
-#         dbinom(seedCount[seed],ovCount,0.01,log=T)
-#     }
-#   }
-# }
-
-#Values for pollination process:
-#mu=292.9316584
-#size=0.6136358
-
-margProb <- function(coefs,dat,maxOvNum,maxPolNum,mu,size,lambda){
-  
-  seedCount <- c(1:maxOvNum) #Number of seeds to try
-  
-  #Replicate all levels of seed/ovule/pollen counts
-  prob <- expand.grid(seedCount=seedCount,ovCount=1:maxOvNum,polCount=1:maxPolNum)
-  #Remove impossible categories
-  prob <- prob[(prob$ovCount>=prob$seedCount) & (prob$polCount>=prob$seedCount),]
-  #Pollen survial prob
-  prob$probPol <- invLogit(coefs[1]+coefs[2]*(prob$polCount/1000))
-  #Pod survival prob
-  # prob$probSeed <- invLogit(coefs[3]+coefs[4]*prob$seedCount)
-  
-  lpPollen <- dnbinom(1:maxPolNum,mu=mu,size=size,log=T) #Pollen LP
-  lpOv <- dpois(1:maxOvNum,lambda=lambda,log=T) #Ovule LP
-  # lpPolSurv <- matrix(NA,nrow=maxPolNum,ncol=maxPolNum) #Pollen survival LP
-  # for(i in 1:maxPolNum){ #For each potential pollen receipt
-  #   lpPolSurv[i,1:i] <- dbinom(1:i,i,invLogit(coefs[1]+coefs[2]*i)) #Pollen survival lp
-  # }
-  lpPodSurv <- dbinom(1,1,invLogit(coefs[3]+coefs[4]*(seedCount/10)),log=T) #Pod survival prob
-  
-  #Calculate log-prob for each
-  prob$lp <- lpPollen[prob$polCount] +
-    lpOv[prob$ovCount]+
-    ifelse(prob$seedCount==prob$ovCount, #Fert prob
-           #if seeds==ovules, successful pollen count could have been anything between #seeds and #pollen
-           pbinom(prob$seedCount-1,prob$polCount,prob$probPol,log=T,lower.tail=F),
-           #if seeds<ovules, only one way to get seed count
-           # lpPolSurv[prob$seedCount,prob$polCount]
-           dbinom(prob$seedCount,prob$polCount,prob$probPol,log=T)
-           )+
-    lpPodSurv[prob$seedCount]
-  #Sum by seed counts
-  seedLp <- with(prob,tapply(lp,seedCount,function(x) log(sum(exp(x))))) 
-  # barplot(c(1-sum(exp(seedLp)),exp(seedLp)),pch=19,ylab='p(x)',xlab='Seed count')
-  
-  
-  #Match -lp to actual counts, sum
-  lp <- sum(seedLp[match(dat$SeedCount,names(seedLp))])+ #Seed count lp
-    sum(dbinom(dat$FailFlw,dat$AllFlw,1-sum(exp(seedLp)),log=T)) #Flw abortion lp
-  
-  return(-lp) 
-}
-
-margProb(c(-2,-1,-3.0506205,4.580386),dat=list(SeedCount=datalist$SeedCount,FailFlw=datalist$PodsMissing,AllFlw=datalist$PodsMissing+datalist$Pods),52,1800,292.9316584,0.6136358,32)
-
-library(doSNOW)
-cl <- makeCluster(3,type='SOCK')
-clusterExport(cl,list('margProb','invLogit','datalist'))
-
-#Try across various pollen survival probs (1st arg)
-ll3 <- parSapply(cl,seq(-3,3,length.out=15),function(x) 
-  margProb(c(x,-3.5249114,-2.8723591,0.3460556),dat=list(SeedCount=datalist$SeedCount,FailFlw=datalist$PodsMissing,AllFlw=datalist$PodsMissing+datalist$Pods),52,1800,292.9316584,0.6136358,32))
-
-#Pollen survival slopes (2nd arg)
-ll4 <- parSapply(cl,seq(-6,-2,length.out=15),function(x) 
-  margProb(c(-1.0314562,x,-2.8723591,0.3460556),dat=list(SeedCount=datalist$SeedCount,FailFlw=datalist$PodsMissing,AllFlw=datalist$PodsMissing+datalist$Pods),52,1800,292.9316584,0.6136358,32))
-
-#Try across various pod abortion intercepts (3rd arg)
-ll2 <- parSapply(cl,seq(-6,0,length.out=15),function(x) 
-  margProb(c(-1.0314562,-3.5249114,x,0.3460556),dat=list(SeedCount=datalist$SeedCount,FailFlw=datalist$PodsMissing,AllFlw=datalist$PodsMissing+datalist$Pods),52,1800,292.9316584,0.6136358,32))
-
-#Try across various pod abortion slopes (4th arg)
-ll <- parSapply(cl,seq(-3,3,length.out=15),function(x)
-  margProb(c(-1.0314562,-3.5249114,-2.8723591,x),dat=list(SeedCount=datalist$SeedCount,FailFlw=datalist$PodsMissing,AllFlw=datalist$PodsMissing+datalist$Pods),52,1800,292.9316584,0.6136358,32))
-
-par(mfrow=c(2,2))
-plot(seq(-3,3,length.out=15),ll3,xlab='Pollen surv int | Pod surv Intercept,Slope',ylab='-Log Lik',pch=19,main='Arg1: pol surv int')
-plot(seq(-6,-2,length.out=15),ll4,xlab='Pollen surv int | Pod surv Intercept,Slope',ylab='-Log Lik',pch=19,main='Arg2: pol surv slope') 
-plot(seq(-6,0,length.out=15),ll2,xlab='Intercept | Slope values, Pollen surv',ylab='-Log Lik',pch=19,main='Arg3: pod surv int')
-plot(seq(-3,3,length.out=15),ll,xlab='Pod surv slope | Pod surv int, Pol surv int, slope',ylab='-Log Lik',pch=19,main='Arg4: pod surv slope')
-par(mfrow=c(1,1))
-beep(1)
-
-stopCluster(cl)
-
-library(optimParallel)
-cl <- makeCluster(3,type='SOCK')
-clusterExport(cl,list('margProb','invLogit','datalist'))
-setDefaultCluster(cl=cl)
-
-# -1.031621,-3.524373,-2.871942,3.460029; LL:23946.96
-optFit <- optimParallel(c(-1.031,-3.524,-2.872,3.46),margProb,
-                dat=list(SeedCount=datalist$SeedCount,FailFlw=datalist$PodsMissing,AllFlw=datalist$PodsMissing+datalist$Pods),
-                maxOvNum=52,maxPolNum=1500,mu=292.9316584,size=0.6136358,lambda=32,
-                method='L-BFGS-B',lower=c(-10,-10,-20,-1),upper=c(10,10,10,13),parallel=cl)
-# optFit <- c(-1.031621,-3.524373,-2.871942,3.460029)
-
-stopCluster(cl)
-detach('package:optimParallel')
-
-simSeeds <- function(maxNovules,coefs,plotResults=T,actualSeeds=NA,propDiff=F){
-  #Idea: 
-  #Pollination is a Negative Binomial process with mu=292.9,size=0.61
-  mu <- coefs[1]
-  size <- coefs[2]
-  #Ovule number per flower is a Poisson process with lambda =~32. Wang et al 2011 found that there are cross-season difference, but they aren't that big (~30-35 ovules).
-  lambda <- 32
-  #Fertilization is a Binomial process, where Fert Ovules ~ Bin(Pollen,p)
-  #If more ovules are fertilized than available, fert ovules = total ovules (integrate all outcomes < Novules)
-  
-  #Pod abortion is a Bernoulli process where Abortion ~ Bern(invLogit(int1+slope1*Nfert))
-  int1 <- coefs[3]
-  slope1 <- coefs[4]
-  
-  int2 <- coefs[5]
-  slope2 <- coefs[6]
-  
-  set.seed(1)
-  #Generate pollen counts for 1000 flowers
-  simPol <- rnbinom(5000,mu=mu,size=size)
-  #Generate ovule counts for flowers
-  simOv <- rpois(5000,32)
-  simOv[simOv>maxNovules] <- maxNovules #Set all ovules > maxNovules to maxNovules
-  
-  #Ovules are fertilized by pollen
-  probFert <- invLogit(int1+slope1*simPol/1000)
-  simFert <- rbinom(length(simPol),simPol,probFert) #Fixed perc of pollen makes it to ovules
-  simFert[simFert>simOv] <- simOv[simFert>simOv] #If Npollen>Novules, reverts to ov number "first come first served"
-  
-  #Fertilized ovules become seeds
-  simSeed <- simFert[simFert>0] #Fertilized (suriving pollen>1) ovules become seeds
-  probSeed <- invLogit(int2+slope2*simSeed/10) #Prob of pod abortion ~ # of fertilized ovules
-  simSeed <- simSeed[rbinom(length(simSeed),1,probSeed)==1] #Plant aborts pods depending on number of ovules
-  
-  if(plotResults==T & (length(actualSeeds)!=1 & !is.na(actualSeeds[1]))){
-    #Plots
-    par(mfrow=c(5,1),mar=c(5,5,2,5))
-    #Pollen
-    hist(simPol,main=NULL,xlab='Pollen grains',breaks=50,xlim=c(0,max(simPol)))
-    par(new=T) #Pollen survival
-    curve(invLogit(int1+slope1*x/1000),0,max(simPol),xlab=NA,ylab=NA,col='red',lty=2,axes=F)
-    axis(side=4,cex.axis=1,col='red',col.axis='red') 
-    mtext(side=4,line=3,'Pollen survival ',col='red')
-    #Ovules
-    hist(simOv,xlab='Ovules',xlim=c(0,max(simOv)),breaks=seq(0,max(simOv),1),main=NULL)
-    #Fertilized ovules
-    hist(simFert,main=NULL,xlab='Fertilized Ovules',breaks=seq(0,max(simFert),1),xlim=c(0,max(simOv)))
-    par(new=T) #Survival prob
-    curve(invLogit(int2+slope2*x/10),0,max(simFert),xlab=NA,ylab=NA,col='red',lty=2,axes=F)
-    axis(side=4,cex.axis=1,col='red',col.axis='red') 
-    mtext(side=4,line=3,'Pod survival',col='red')
-    #Seed counts
-    hist(simSeed,main=NULL,xlab='Seeds/pod',xlim=c(0,max(simOv)),breaks=seq(0,max(simOv),1))
-    #Actual seeds
-    hist(actualSeeds,main=NULL,xlab='Actual Seed Count',xlim=c(0,max(simOv)),breaks=length(unique(datalist$SeedCount)))
-    par(mfrow=c(1,1),mar= c(5, 4, 4, 2) + 0.1)
-  } else if(propDiff==T) {
-    uniqueCounts <- sort(unique(c(actualSeeds,simSeed))) #Unique counts (from sim or actual)
-    props <- matrix(0,nrow=length(uniqueCounts),ncol=2) #Matrix to store proportions
-    propsActual <- table(actualSeeds)/length(actualSeeds)
-    propsSim <- table(simSeed)/length(simSeed)
-    props[match(names(propsActual),uniqueCounts),1] <- propsActual
-    props[match(names(propsSim),uniqueCounts),2] <- propsSim
-    return(sum(abs(props[,1]-props[,2])))
-  } else {
-    return(list(simPol=simPol,simFert=simFert,simSeed=simSeed))
-  }
-}
-
-simSeeds(maxNovules=52,coefs=c(292.9316584,0.6136358,optFit$par),plotResults=T,actualSeeds=datalist$SeedCount)
-#Looks pretty good, actually
-
-#Proportion missing seeds. Should be related to 
-plantsAllComm %>% mutate(PropMis=Missing/(Pods+Missing)) %>% filter(!is.na(PropMis),PropMis>0) %>% 
-  ggplot(aes(PropMis))+geom_histogram()
-
-
 
 # Commodity field visitation and pollen deposition (Stan) ---------------------------------
 library(rstan)
@@ -781,6 +227,8 @@ inits <- function() { with(datalist,
 #Full model - 1.7 hrs for 1000 iter
 modPodcount <- stan(file='visitation_pollen_model.stan',data=datalist,iter=1,chains=1,
                    control=list(adapt_delta=0.8),init=inits)
+
+
 beep(1)
 # save(modPodcount,file='modPodcount.Rdata')
 load('modPodcount.Rdata') #Load all parameters
@@ -4049,3 +3497,492 @@ lines(exp(powfun(c(0:500),3,-5,-8)),col='blue')
 #   ggplot(aes(x=hbeeDist,col=stocking))+geom_point(aes(y=exp(pred+res)))+geom_line(aes(y=exp(pred)))+
 #   labs(x='hbee Distance',y='Visitation rate')+xlim(0,400)+ylim(0,30)+
 #   scale_colour_manual(values=c('red','blue'))
+
+#' # Data from Wang et al 2011 - ovule counts - unused --------------------------------
+#' ovDat <- read.csv('wang2011ovData.csv') %>% 
+#'   mutate(Freq=ifelse(Freq<0,0,Freq))
+#' 
+#' ovDatNew <- expand.grid(Freq=NA,Count=20:50,Day=unique(ovDat$Day))
+#' for(i in unique(ovDat$Day)){
+#'   ovDatNew[ovDatNew$Day==i,'Freq'] <- with(ovDat,approx(x=Count[Day==i],y=Freq[Day==i],xout=c(20:50)))$y #Interpolate
+#'   ovDatNew$Freq[is.na(ovDatNew$Freq[ovDatNew$Day==i])] <- 0 #Turn NAs to zeros
+#'   ovDatNew[ovDatNew$Day==i,'Freq'] <- ovDatNew[ovDatNew$Day==i,'Freq']/sum(ovDatNew[ovDatNew$Day==i,'Freq']) #Normalize
+#' }
+#' ggplot(ovDatNew,aes(Count,Freq,col=Day))+geom_line()
+#' 
+#' #Negative binomial/poisson from data has too much variance. Trying normal dist
+#' par(mfrow=c(5,1))
+#' for(i in unique(ovDatNew$Day)){
+#'   pars <- data.frame(mean=rep(NA,1000),sd=rep(NA,1000))
+#'   for(rep in 1:1000){
+#'     #Simulated count data
+#'     simCount <- with(ovDatNew[ovDatNew$Day==i,],sample(ovDatNew$Count,100,prob=ovDatNew$Freq,replace=T))
+#'     simPar <- optim(c(0.5,1),function(x,count) -sum(dnorm(x=count,mean=x[1],sd=x[2],log=T)),count=simCount)$par
+#'     pars$mean[rep] <- simPar[1]
+#'     pars$sd[rep] <- simPar[2]
+#'   }
+#'   plot(c(20:45),dnorm(c(20:45),mean=median(pars$mean),sd=median(pars$sd)),ylab='Density',type='l',ylim=c(0,max(ovDatNew$Freq)),
+#'        main=i)
+#'   with(ovDatNew[ovDatNew$Day==i,],lines(Count,Freq,col='red'))
+#' }
+#' 
+#' #overall
+#' par(mfrow=c(1,1))
+#' pars <- data.frame(mean=rep(NA,1000),sd=rep(NA,1000))
+#' for(rep in 1:1000){
+#'   #Simulated count data
+#'   simCount <- with(ovDatNew,sample(ovDatNew$Count,100,prob=ovDatNew$Freq,replace=T))
+#'   simPar <- optim(c(0.5,1),function(x,count) -sum(dnorm(x=count,mean=x[1],sd=x[2],log=T)),count=simCount)$par
+#'   pars$mean[rep] <- simPar[1]
+#'   pars$sd[rep] <- simPar[2]
+#' }
+#' plot(c(20:45),dnorm(c(20:45),mean=median(pars$mean),sd=median(pars$sd)),ylab='Density',type='l',ylim=c(0,0.15))
+#' ovDatNew %>% group_by(Count) %>% summarize(Freq=sum(Freq)) %>% ungroup() %>% mutate(Freq=Freq/sum(Freq)) %>% 
+#'   with(.,lines(Count,Freq,col='red'))
+#' points(c(20:45),dpois(c(20:45),32.15),col='blue') #Poisson is too wide
+#' 
+#' #Mean=32.15, SD=2.66 for overall ovule distribution. Discrete version:
+#' plot(10:55,log(pnorm(11:56,32.15,2.66)-pnorm(10:55,32.15,2.66)),ylab='LogLik')
+#' 
+#' 
+#' 
+#' # Pod weight-count modelling (JAGS) - unused -----------------------------
+#' library(jagsUI)
+#' setwd('./Models')
+#' #Pod count model
+#' datalist <- with(temp[!is.na(temp$PodCount)&temp$PodCount>0,],list( #Strips NAs and 0 counts
+#'   Npod=length(PodCount), #Number of observed seed counts
+#'   Nunique=length(unique(PodCount)), #Number of unique seed counts
+#'   uniquePodCount=sort(unique(PodCount)),
+#'   NuniquePodCount=as.vector(table(PodCount)),
+#'   uniqueMatches=match(PodCount,sort(unique(PodCount))), #Matching index
+#'   SeedCount=PodCount
+#' ))
+#' 
+#' datalist <- c(datalist,with(flowersAllComm[!is.na(flowersAllComm$Pollen),],{list(
+#'   Npollen=length(Pollen),
+#'   PollenCount=Pollen
+#' )})) #Append pollen data to list
+#' 
+#' datalist <- c(datalist,with(plantsAllComm[!is.na(plantsAllComm$Pods)&!is.na(plantsAllComm$Missing)&plantsAllComm$Missing>0,],{list(
+#'   Nplants=length(Pods),
+#'   Pods=Pods,PodsMissing=Missing
+#' )})) #Append flower success data to list
+#' 
+#' datalist$SeedCount2 <- datalist$SeedCount
+#' 
+#' startlist <- function() list(
+#'   #lambda=5.6, r=0.6,
+#'   intPol=-1.15,
+#'   slopePol1=-3.1,
+#'   intPod=1.16,
+#'   slopePod=-0.001,
+#'   simPollenCount=datalist$SeedCount+10,
+#'   simOvCount=datalist$SeedCount+10
+#' )
+#' 
+#' params <- c(#'lambda','r', #Params for negbin pollination process
+#'   # 'simPollenCount',
+#'   # 'simOvCount',
+#'   'simPollenZero','simFertFailPod','simPodFailPod','totalPodFail',
+#'   #'LLpod','LLseed','lik',
+#'   'simSeedCount','fitSeedCount','fitSimSeedCount',
+#'   'intPol','slopePol'
+#'   #'intPod','slopePod'
+#' )
+#' 
+#' tick <- Sys.time()
+#' mod2 <- jags(data=datalist,
+#'              inits=startlist,
+#'              parameters.to.save=params,
+#'              model.file='pod_count_weight.txt',
+#'              n.chains=3,n.adapt=200,n.iter=300,n.burnin=100,n.thin=1,parallel=T)
+#' tock <- Sys.time()
+#' tock-tick 
+#' beep(1)
+#' # save(mod2,file='./podCountResults.RData')
+#' # load('podCountResults.Rdata') 
+#' 
+#' print(mod2)
+#' traceplot(mod2,parameters=c('intPol','slopePol'))
+#' # traceplot(mod2,parameters='totalPodFail')
+#' pp.check(mod2,actual='fitSeedCount',new='fitSimSeedCount') #Variance = higher in actual dataset. Poisson performs OK, but is weirdly above 1:1 line
+#' 
+#' mod2samp <- mod2$sims.list #Samples from mod2
+#' str(mod2samp)
+#' 
+#' plot(datalist$SeedCount,apply(mod2samp$LLpod,2,median),pch=19) #LL decreases with SeedCount. This should be in the opposite direction
+#' points(datalist$SeedCount,apply(mod2samp$LLpod,2,max),pch=3) 
+#' points(datalist$SeedCount,apply(mod2samp$LLpod,2,min),pch=3) 
+#' 
+#' hist(apply(mod2samp$LLseed,2,median))
+#' 
+#' 
+#' 
+#' #Predicted (median) seed counts vs actual
+#' data.frame(med=apply(mod2samp$simSeedCount,2,median),
+#'            upr=apply(mod2samp$simSeedCount,2,function(x) quantile(x,0.95)),
+#'            lwr=apply(mod2samp$simSeedCount,2,function(x) quantile(x,0.05)),
+#'            actual=datalist$SeedCount) %>%
+#'   ggplot(aes(actual,med,ymax=upr,ymin=lwr))+geom_pointrange()+
+#'   geom_abline(intercept=0,slope=1)+labs(x='Actual',y='Predicted')+
+#'   coord_cartesian(xlim=c(0,55),ylim=c(0,70))
+#' 
+#' #Simulated seed count
+#' hist(mod2samp$simSeedCount[10,])
+#' table(mod2samp$simSeedCount[10,])
+#' 
+#' with(mod2samp,{ #Shape of likelihood functions
+#'   lambda <- 5.685
+#'   r <- 0.615
+#'   p <- r/(r+exp(lambda))
+#'   meanNegBin <- (r*(1-p))/p
+#'   
+#'   par(mfrow=c(3,1))
+#'   # curve(invLogit(median(intPol)+(median(slopePol1)*((x-meanNegBin)/1000))+(median(slopePol2)*((x-meanNegBin)/1000)^2)),1,2500,
+#'   #       ylab='p(pollenSurv)')
+#'   # plot(invLogit(median(intPol)+(median(slopePol1)*((c(1:2500)-meanNegBin)/1000))+(median(slopePol2)*((c(1:2500)-meanNegBin)/1000)^2))*
+#'   #         dnbinom(c(1:2500),prob=p,size=r),ylab='p(pollenSurv)*p(pollen)',pch=19)
+#'   curve(invLogit(bpoint(x/1000,median(intPol),median(slopePol1),median(polBp),median(slopePol2))),1,2500,ylab='p(pollenSurv)')
+#'   plot(invLogit(bpoint(1:2500/1000,median(intPol),median(slopePol1),median(polBp),median(slopePol2)))*dnbinom(c(1:2500),
+#'                                                                                                               prob=p,size=r),ylab='p(pollenSurv)*p(pollen)',pch=19)
+#'   
+#'   plot(1:2500,((c(1:2500)-meanNegBin)/1000),pch=19,type='l')
+#'   print(((c(1)-meanNegBin)/1000))
+#'   par(mfrow=c(1,1))
+#' })
+#' 
+#' #Pairplot of mean seeds vs other params
+#' with(mod2samp,data.frame(naSeeds=apply(simSeedCount,1,function(x) sum(is.na(x))),
+#'                          meanSeeds=apply(simSeedCount,1,function(x) mean(x,na.rm=T)),
+#'                          #meanOv=apply(simOvCount,1,mean),
+#'                          deviance,
+#'                          intPol,slopePol1,slopePol2,polBp)) %>% pairs()
+#' 
+#' # #Ovule count compared to seed count
+#' # data.frame(SeedCount=datalist$SeedCount,simOvMed=apply(mod2samp$simOvCount,2,median),
+#' #            upr=apply(mod2samp$simOvCount,2,max),
+#' #            lwr=apply(mod2samp$simOvCount,2,min)) %>% 
+#' #   ggplot(aes(SeedCount,simOvMed))+geom_pointrange(aes(ymax=upr,ymin=lwr))+
+#' #   geom_abline(intercept=0,slope=1)
+#' # 
+#' # #Pollen count compared to seed count
+#' # data.frame(SeedCount=datalist$SeedCount,simPolMed=apply(mod2samp$simPollenCount,2,median),
+#' #            upr=apply(mod2samp$simPollenCount,2,max),
+#' #            lwr=apply(mod2samp$simPollenCount,2,min)) %>%
+#' #   ggplot(aes(SeedCount,simPolMed))+geom_pointrange(aes(ymax=upr,ymin=lwr))+
+#' #   geom_abline(intercept=0,slope=1)
+#' # 
+#' # data.frame(isna=is.na(mod2samp$simSeedCount[5,]),simSeed=mod2samp$simSeedCount[5,],
+#' #            simPol=mod2samp$simPollenCount[5,],#simOv=mod2samp$simOvCount[5,],
+#' #            seedCount=datalist$SeedCount) %>% 
+#' #   ggplot(aes(simOv,simSeed))+geom_point()+
+#' #   geom_point(aes(simOv,seedCount),col='red')
+#' 
+#' 
+#' hist(mod2samp$simSeedCount[100,])
+#' 
+#' with(mod2samp,{
+#'   par(mfrow=c(2,1))
+#'   iter <- 51
+#'   hist(simPollenCount[iter,],main='Simulated pollen',xlab='Count') #Simulated pollen (50th iteration)
+#'   hist(simOvCount[iter,],main='Simulated ovules',xlab='Count') #Simulated fertilized ovules
+#'   # hist(simFertSeed[iter,],main='Simulated fertilized seeds',xlab='Count',breaks=seq(0,52,1)) #Simulated fertilized ovules 
+#'   hist(datalist$SeedCount,main='Acutual seed count',xlab='Count',breaks=seq(1,52,1))
+#'   print(c(intPol[iter],slopePol1[iter],slopePol2[iter],polBp[iter]))
+#'   par(mfrow=c(1,1))
+#' })
+#' 
+#' 
+#' 
+#' #Test
+#' par(mfrow=c(2,1))
+#' simPolCount <- 
+#'   simFertCount <- rpois(datalistPod$Npod,120*exp(mod2$q50$int.Pol)) #Simulate fert ov count
+#' simSeedCount <- rpois(datalistPod$Npod,(exp(mod2$q50$slope.Fert*simFertCount)*simFertCount)+0.01) #Simulate seed count
+#' hist(simFertCount,main=NULL,xlab='Fert Ov Count',xlim=c(0,60),breaks=30) 
+#' hist(simSeedCount,main=NULL,xlab='Sim Seed Count',xlim=c(0,60),breaks=30)
+#' hist(datalistPod$SeedCount,main=NULL,xlab='Actual Seed Count',xlim=c(0,60),breaks=30)
+#' 
+#' pp.check(mod2,'fit.SeedCount','fit.SeedCount.new') #Good
+#' pp.check(mod2,'fit.PodMass','fit.PodMass.new') #Weird. Very close to 1:1, but offset by constant value. Does the variance change with podcount too?
+#' 
+#' par(mfrow=c(2,1))
+#' hist(temp$PodMass,breaks=50,xlim=c(0,0.7),main='Actual Pod Mass',xlab='g')
+#' hist(rlnorm(1000,-3.04,1/sqrt(1.964)),breaks=100,xlim=c(0,0.7),main='Simulated Pod Mass',xlab='g')
+#' 
+#' detach("package:jagsUI", unload=TRUE)
+#' 
+#' 
+#' # Pod weight-count modeling - custom likelihood (Stan) - unused ------------------------------------
+#' 
+#' library(rstan)
+#' setwd('./Models')
+#' rstan_options(auto_write = TRUE)
+#' options(mc.cores = 3)
+#' 
+#' #Rows without missing seed counts/weights
+#' # noMiss <- with(temp,rowSums(is.na(cbind(PodCount,PodMass)))==0 & PodCount!=0)
+#' 
+#' #List structure for Stan
+#' 
+#' datalist <- with(temp[!is.na(temp$PodCount)&temp$PodCount>0,],list( #Strips NAs and 0 counts
+#'   Npod=length(PodCount), #Number of observed seed counts
+#'   Nunique=length(unique(PodCount)), #Number of unique seed counts
+#'   uniquePodCount=sort(unique(PodCount)),
+#'   NuniquePodCount=as.vector(table(PodCount)),
+#'   uniqueMatches=match(PodCount,sort(unique(PodCount))), #Matching index
+#'   SeedCount=PodCount
+#' ))
+#' 
+#' datalist <- c(datalist,with(flowersAllComm[!is.na(flowersAllComm$Pollen),],{list(
+#'   Npollen=length(Pollen),
+#'   PollenCount=Pollen
+#' )})) #Append pollen data to list
+#' 
+#' datalist <- c(datalist,with(plantsAllComm[!is.na(plantsAllComm$Pods)&!is.na(plantsAllComm$Missing)&plantsAllComm$Missing>0,],{list(
+#'   Nplants=length(Pods),
+#'   Pods=Pods,PodsMissing=Missing
+#' )})) #Append flower success data to list
+#' 
+#' modPodcount = stan(file='pod_level.stan',data=datalist,iter=100,chains=1,control=list(adapt_delta=0.8),
+#'                    init=function() list(intPolSurv=0,slopePolSurv=-3,intPodSurv=-2,slopePodSurv=3))
+#' print(modPodcount)
+#' traceplot(modPodcount) #Very poor traces, esp for pollen mu and phi. Likely what is happening is the mu and phi terms are being "influenced" by seed counts. Not sure how to separate these two, aside from heirarchical terms.
+#' #Try running model without pollen included, and use results from below for pollen input.
+#' #Same results occur even when using pollen. Try to run this in JAGS instead?
+#' 
+#' modPolcount <- stan(file='pollenMod.stan',data=datalist[c('Npollen','PollenCount')],iter=1000,chains=3)
+#' print(modPolcount) #mu=293.75, phi=0.61
+#' traceplot(modPolcount)
+#' 
+#' # podMod <- stan_model(file='pod_level.stan')
+#' # optFit <- optimizing(podMod,data=datalist,init=list(
+#' #   intPolSurv=-1,slopePolSurv=-3.5,intPodSurv=-2.9,slopePodSurv=3.5))
+#' # round(optFit$par,4) #Weird. Chooses super-low survival probs.
+#' 
+#' #Check output
+#' pars <- c('intPol','intFert','slopeFert')
+#' print(modPodcount,pars=pars)
+#' traceplot(modPodcount,pars=pars)
+#' pairs(modPodcount,pars=pars)
+#' 
+#' # #Simulate seed count
+#' # simcounts <- lapply(extract(modPodcount,pars=pars),median)
+#' # invLogit <- function(x) exp(x)/(1+exp(x))
+#' # par(mfrow=c(3,1))
+#' # simFertCount <- rbinom(datalist$Npod,120,invLogit(simcounts[[1]])) #Simulate fert ov count
+#' # simSeedCount <- rbinom(datalist$Npod,simFertCount,invLogit(simcounts[[2]]+simcounts[[3]]*simFertCount)) 
+#' # hist(simFertCount,main=NULL,xlab='Fert Ov Count',xlim=c(0,100)) 
+#' # hist(simSeedCount,main=NULL,xlab='Sim Seed Count',xlim=c(0,100),breaks=length(unique(simSeedCount)))
+#' # hist(datalist$SeedCount,main=NULL,xlab='Actual Seed Count',xlim=c(0,100),breaks=length(unique(datalist$SeedCount)))
+#' 
+#' #Doesn't look very good. Perhaps try an arrival model of pollen?
+#' # #Fit distributions
+#' # poisFun <- function(x,dat) -sum(dpois(dat,x,log=T)) #Poisson
+#' # logLikPois <- optimize(f=poisFun,lower=0,upper=1000,dat=flowersAllComm$Pollen[!is.na(flowersAllComm$Pollen)])
+#' # geomFun <- function(x,dat) -sum(dgeom(dat,x,log=T)) #Geometric
+#' # logLikGeom <- optimize(f=geomFun,c(0,1),dat=flowersAllComm$Pollen[!is.na(flowersAllComm$Pollen)])
+#' # negbinFun <- function(x,dat) -sum(dnbinom(dat,mu=x[1],size=x[2],log=T)) #Neg Bin
+#' # logLikNB <- optim(c(1,1),negbinFun,dat=flowersAllComm$Pollen[!is.na(flowersAllComm$Pollen)])
+#' # 
+#' # 2*2+(2*logLikNB$value) #AIC for NB - best
+#' # 2*1+(2*logLikGeom$objective) #AIC for geom - worse
+#' # 2*1+(2*logLikPois$objective) #AIC for poisson - much worse
+#' # 
+#' # par(mfrow=c(4,1)) #Plot results
+#' # hist(rnbinom(datalist$Npod,mu=logLikNB[[1]][1],size=logLikNB[[1]][2]),main=NULL,xlab='Neg Bin',xlim=c(0,4000),breaks=seq(0,4000,20))
+#' # hist(rgeom(datalist$Npod,logLikGeom[[1]][1]),main=NULL,xlab='Geom',xlim=c(0,4000),breaks=seq(0,4000,20))
+#' # hist(rpois(datalist$Npod,logLikPois[[1]][1]),main=NULL,xlab='Pois',xlim=c(0,4000),breaks=seq(0,4000,20))
+#' # hist(flowersAllComm$Pollen[!is.na(flowersAllComm$Pollen)],xlim=c(0,4000),breaks=seq(0,4000,20),main=NULL,xlab='Actual pollen counts')
+#' 
+#' 
+#' # Test model to simulate seed counts - unused --------------------------------------
+#' 
+#' #Likelihood method: (non-vectorized version)
+#' 
+#' #p(Seed)*p(Ovule)*p(Pollen)
+#' # prob <- array(NA,c(maxPolNum,maxOvNum,length(seedCount)))
+#' # # prob <- matrix(NA,nrow=maxPolNum,ncol=maxOvNum)
+#' # for(seed in 1:length(seedCount)){ #For each seed count
+#' #   for(polCount in seedCount[seed]:maxPolNum){ #For each potential pollen count
+#' #     for(ovCount in seedCount[seed]:min(maxOvNum,polCount)){ #For each potential ovule count
+#' #       prob[polCount,ovCount,seed] <- dnbinom(polCount,mu=292.9317,size=0.6136358,log=T)+
+#' #         dbinom(ovCount,polCount,0.05,log=T)+
+#' #         dbinom(seedCount[seed],ovCount,0.01,log=T)
+#' #     }
+#' #   }
+#' # }
+#' 
+#' #Values for pollination process:
+#' #mu=292.9316584
+#' #size=0.6136358
+#' 
+#' margProb <- function(coefs,dat,maxOvNum,maxPolNum,mu,size,lambda){
+#'   
+#'   seedCount <- c(1:maxOvNum) #Number of seeds to try
+#'   
+#'   #Replicate all levels of seed/ovule/pollen counts
+#'   prob <- expand.grid(seedCount=seedCount,ovCount=1:maxOvNum,polCount=1:maxPolNum)
+#'   #Remove impossible categories
+#'   prob <- prob[(prob$ovCount>=prob$seedCount) & (prob$polCount>=prob$seedCount),]
+#'   #Pollen survial prob
+#'   prob$probPol <- invLogit(coefs[1]+coefs[2]*(prob$polCount/1000))
+#'   #Pod survival prob
+#'   # prob$probSeed <- invLogit(coefs[3]+coefs[4]*prob$seedCount)
+#'   
+#'   lpPollen <- dnbinom(1:maxPolNum,mu=mu,size=size,log=T) #Pollen LP
+#'   lpOv <- dpois(1:maxOvNum,lambda=lambda,log=T) #Ovule LP
+#'   # lpPolSurv <- matrix(NA,nrow=maxPolNum,ncol=maxPolNum) #Pollen survival LP
+#'   # for(i in 1:maxPolNum){ #For each potential pollen receipt
+#'   #   lpPolSurv[i,1:i] <- dbinom(1:i,i,invLogit(coefs[1]+coefs[2]*i)) #Pollen survival lp
+#'   # }
+#'   lpPodSurv <- dbinom(1,1,invLogit(coefs[3]+coefs[4]*(seedCount/10)),log=T) #Pod survival prob
+#'   
+#'   #Calculate log-prob for each
+#'   prob$lp <- lpPollen[prob$polCount] +
+#'     lpOv[prob$ovCount]+
+#'     ifelse(prob$seedCount==prob$ovCount, #Fert prob
+#'            #if seeds==ovules, successful pollen count could have been anything between #seeds and #pollen
+#'            pbinom(prob$seedCount-1,prob$polCount,prob$probPol,log=T,lower.tail=F),
+#'            #if seeds<ovules, only one way to get seed count
+#'            # lpPolSurv[prob$seedCount,prob$polCount]
+#'            dbinom(prob$seedCount,prob$polCount,prob$probPol,log=T)
+#'     )+
+#'     lpPodSurv[prob$seedCount]
+#'   #Sum by seed counts
+#'   seedLp <- with(prob,tapply(lp,seedCount,function(x) log(sum(exp(x))))) 
+#'   # barplot(c(1-sum(exp(seedLp)),exp(seedLp)),pch=19,ylab='p(x)',xlab='Seed count')
+#'   
+#'   
+#'   #Match -lp to actual counts, sum
+#'   lp <- sum(seedLp[match(dat$SeedCount,names(seedLp))])+ #Seed count lp
+#'     sum(dbinom(dat$FailFlw,dat$AllFlw,1-sum(exp(seedLp)),log=T)) #Flw abortion lp
+#'   
+#'   return(-lp) 
+#' }
+#' 
+#' margProb(c(-2,-1,-3.0506205,4.580386),dat=list(SeedCount=datalist$SeedCount,FailFlw=datalist$PodsMissing,AllFlw=datalist$PodsMissing+datalist$Pods),52,1800,292.9316584,0.6136358,32)
+#' 
+#' library(doSNOW)
+#' cl <- makeCluster(3,type='SOCK')
+#' clusterExport(cl,list('margProb','invLogit','datalist'))
+#' 
+#' #Try across various pollen survival probs (1st arg)
+#' ll3 <- parSapply(cl,seq(-3,3,length.out=15),function(x) 
+#'   margProb(c(x,-3.5249114,-2.8723591,0.3460556),dat=list(SeedCount=datalist$SeedCount,FailFlw=datalist$PodsMissing,AllFlw=datalist$PodsMissing+datalist$Pods),52,1800,292.9316584,0.6136358,32))
+#' 
+#' #Pollen survival slopes (2nd arg)
+#' ll4 <- parSapply(cl,seq(-6,-2,length.out=15),function(x) 
+#'   margProb(c(-1.0314562,x,-2.8723591,0.3460556),dat=list(SeedCount=datalist$SeedCount,FailFlw=datalist$PodsMissing,AllFlw=datalist$PodsMissing+datalist$Pods),52,1800,292.9316584,0.6136358,32))
+#' 
+#' #Try across various pod abortion intercepts (3rd arg)
+#' ll2 <- parSapply(cl,seq(-6,0,length.out=15),function(x) 
+#'   margProb(c(-1.0314562,-3.5249114,x,0.3460556),dat=list(SeedCount=datalist$SeedCount,FailFlw=datalist$PodsMissing,AllFlw=datalist$PodsMissing+datalist$Pods),52,1800,292.9316584,0.6136358,32))
+#' 
+#' #Try across various pod abortion slopes (4th arg)
+#' ll <- parSapply(cl,seq(-3,3,length.out=15),function(x)
+#'   margProb(c(-1.0314562,-3.5249114,-2.8723591,x),dat=list(SeedCount=datalist$SeedCount,FailFlw=datalist$PodsMissing,AllFlw=datalist$PodsMissing+datalist$Pods),52,1800,292.9316584,0.6136358,32))
+#' 
+#' par(mfrow=c(2,2))
+#' plot(seq(-3,3,length.out=15),ll3,xlab='Pollen surv int | Pod surv Intercept,Slope',ylab='-Log Lik',pch=19,main='Arg1: pol surv int')
+#' plot(seq(-6,-2,length.out=15),ll4,xlab='Pollen surv int | Pod surv Intercept,Slope',ylab='-Log Lik',pch=19,main='Arg2: pol surv slope') 
+#' plot(seq(-6,0,length.out=15),ll2,xlab='Intercept | Slope values, Pollen surv',ylab='-Log Lik',pch=19,main='Arg3: pod surv int')
+#' plot(seq(-3,3,length.out=15),ll,xlab='Pod surv slope | Pod surv int, Pol surv int, slope',ylab='-Log Lik',pch=19,main='Arg4: pod surv slope')
+#' par(mfrow=c(1,1))
+#' beep(1)
+#' 
+#' stopCluster(cl)
+#' 
+#' library(optimParallel)
+#' cl <- makeCluster(3,type='SOCK')
+#' clusterExport(cl,list('margProb','invLogit','datalist'))
+#' setDefaultCluster(cl=cl)
+#' 
+#' # -1.031621,-3.524373,-2.871942,3.460029; LL:23946.96
+#' optFit <- optimParallel(c(-1.031,-3.524,-2.872,3.46),margProb,
+#'                         dat=list(SeedCount=datalist$SeedCount,FailFlw=datalist$PodsMissing,AllFlw=datalist$PodsMissing+datalist$Pods),
+#'                         maxOvNum=52,maxPolNum=1500,mu=292.9316584,size=0.6136358,lambda=32,
+#'                         method='L-BFGS-B',lower=c(-10,-10,-20,-1),upper=c(10,10,10,13),parallel=cl)
+#' # optFit <- c(-1.031621,-3.524373,-2.871942,3.460029)
+#' 
+#' stopCluster(cl)
+#' detach('package:optimParallel')
+#' 
+#' simSeeds <- function(maxNovules,coefs,plotResults=T,actualSeeds=NA,propDiff=F){
+#'   #Idea: 
+#'   #Pollination is a Negative Binomial process with mu=292.9,size=0.61
+#'   mu <- coefs[1]
+#'   size <- coefs[2]
+#'   #Ovule number per flower is a Poisson process with lambda =~32. Wang et al 2011 found that there are cross-season difference, but they aren't that big (~30-35 ovules).
+#'   lambda <- 32
+#'   #Fertilization is a Binomial process, where Fert Ovules ~ Bin(Pollen,p)
+#'   #If more ovules are fertilized than available, fert ovules = total ovules (integrate all outcomes < Novules)
+#'   
+#'   #Pod abortion is a Bernoulli process where Abortion ~ Bern(invLogit(int1+slope1*Nfert))
+#'   int1 <- coefs[3]
+#'   slope1 <- coefs[4]
+#'   
+#'   int2 <- coefs[5]
+#'   slope2 <- coefs[6]
+#'   
+#'   set.seed(1)
+#'   #Generate pollen counts for 1000 flowers
+#'   simPol <- rnbinom(5000,mu=mu,size=size)
+#'   #Generate ovule counts for flowers
+#'   simOv <- rpois(5000,32)
+#'   simOv[simOv>maxNovules] <- maxNovules #Set all ovules > maxNovules to maxNovules
+#'   
+#'   #Ovules are fertilized by pollen
+#'   probFert <- invLogit(int1+slope1*simPol/1000)
+#'   simFert <- rbinom(length(simPol),simPol,probFert) #Fixed perc of pollen makes it to ovules
+#'   simFert[simFert>simOv] <- simOv[simFert>simOv] #If Npollen>Novules, reverts to ov number "first come first served"
+#'   
+#'   #Fertilized ovules become seeds
+#'   simSeed <- simFert[simFert>0] #Fertilized (suriving pollen>1) ovules become seeds
+#'   probSeed <- invLogit(int2+slope2*simSeed/10) #Prob of pod abortion ~ # of fertilized ovules
+#'   simSeed <- simSeed[rbinom(length(simSeed),1,probSeed)==1] #Plant aborts pods depending on number of ovules
+#'   
+#'   if(plotResults==T & (length(actualSeeds)!=1 & !is.na(actualSeeds[1]))){
+#'     #Plots
+#'     par(mfrow=c(5,1),mar=c(5,5,2,5))
+#'     #Pollen
+#'     hist(simPol,main=NULL,xlab='Pollen grains',breaks=50,xlim=c(0,max(simPol)))
+#'     par(new=T) #Pollen survival
+#'     curve(invLogit(int1+slope1*x/1000),0,max(simPol),xlab=NA,ylab=NA,col='red',lty=2,axes=F)
+#'     axis(side=4,cex.axis=1,col='red',col.axis='red') 
+#'     mtext(side=4,line=3,'Pollen survival ',col='red')
+#'     #Ovules
+#'     hist(simOv,xlab='Ovules',xlim=c(0,max(simOv)),breaks=seq(0,max(simOv),1),main=NULL)
+#'     #Fertilized ovules
+#'     hist(simFert,main=NULL,xlab='Fertilized Ovules',breaks=seq(0,max(simFert),1),xlim=c(0,max(simOv)))
+#'     par(new=T) #Survival prob
+#'     curve(invLogit(int2+slope2*x/10),0,max(simFert),xlab=NA,ylab=NA,col='red',lty=2,axes=F)
+#'     axis(side=4,cex.axis=1,col='red',col.axis='red') 
+#'     mtext(side=4,line=3,'Pod survival',col='red')
+#'     #Seed counts
+#'     hist(simSeed,main=NULL,xlab='Seeds/pod',xlim=c(0,max(simOv)),breaks=seq(0,max(simOv),1))
+#'     #Actual seeds
+#'     hist(actualSeeds,main=NULL,xlab='Actual Seed Count',xlim=c(0,max(simOv)),breaks=length(unique(datalist$SeedCount)))
+#'     par(mfrow=c(1,1),mar= c(5, 4, 4, 2) + 0.1)
+#'   } else if(propDiff==T) {
+#'     uniqueCounts <- sort(unique(c(actualSeeds,simSeed))) #Unique counts (from sim or actual)
+#'     props <- matrix(0,nrow=length(uniqueCounts),ncol=2) #Matrix to store proportions
+#'     propsActual <- table(actualSeeds)/length(actualSeeds)
+#'     propsSim <- table(simSeed)/length(simSeed)
+#'     props[match(names(propsActual),uniqueCounts),1] <- propsActual
+#'     props[match(names(propsSim),uniqueCounts),2] <- propsSim
+#'     return(sum(abs(props[,1]-props[,2])))
+#'   } else {
+#'     return(list(simPol=simPol,simFert=simFert,simSeed=simSeed))
+#'   }
+#' }
+#' 
+#' simSeeds(maxNovules=52,coefs=c(292.9316584,0.6136358,optFit$par),plotResults=T,actualSeeds=datalist$SeedCount)
+#' #Looks pretty good, actually
+#' 
+#' #Proportion missing seeds. Should be related to 
+#' plantsAllComm %>% mutate(PropMis=Missing/(Pods+Missing)) %>% filter(!is.na(PropMis),PropMis>0) %>% 
+#'   ggplot(aes(PropMis))+geom_histogram()
+#' 
+

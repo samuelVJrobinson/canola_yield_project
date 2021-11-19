@@ -1,0 +1,57 @@
+This is BibTeX, Version 0.99d
+Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
+The top-level auxiliary file: main.aux
+Reallocating 'name_of_file' (item size: 1) to 9 items.
+The style file: humanbio.bst
+Reallocating 'name_of_file' (item size: 1) to 11 items.
+Reallocating 'name_of_file' (item size: 1) to 23 items.
+A level-1 auxiliary file: extra_supplemental.aux
+Reallocating 'name_of_file' (item size: 1) to 26 items.
+A level-1 auxiliary file: visitors_supplemental.aux
+Reallocating 'name_of_file' (item size: 1) to 24 items.
+A level-1 auxiliary file: models_supplemental.aux
+Database file #1: references.bib
+Warning--can't use both author and editor fields in currie1997
+Warning--can't use both author and editor fields in kline2013
+You've used 131 entries,
+            1940 wiz_defined-function locations,
+            1253 strings with 30241 characters,
+and the built_in function-call counts, 57685 in all, are:
+= -- 5651
+> -- 2544
+< -- 79
++ -- 911
+- -- 874
+* -- 5609
+:= -- 9919
+add.period$ -- 395
+call.type$ -- 131
+change.case$ -- 1088
+chr.to.int$ -- 130
+cite$ -- 133
+duplicate$ -- 1851
+empty$ -- 3885
+format.name$ -- 1085
+if$ -- 10951
+int.to.chr$ -- 2
+int.to.str$ -- 0
+missing$ -- 133
+newline$ -- 660
+num.names$ -- 394
+pop$ -- 778
+preamble$ -- 1
+purify$ -- 1092
+quote$ -- 0
+skip$ -- 1397
+stack$ -- 0
+substring$ -- 4714
+swap$ -- 281
+text.length$ -- 4
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 776
+warning$ -- 2
+while$ -- 505
+width$ -- 0
+write$ -- 1710
+(There were 2 warnings)

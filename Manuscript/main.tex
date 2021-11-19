@@ -1,0 +1,705 @@
+\documentclass[12pt]{article} % use larger type; default would be 10pt
+
+\usepackage[utf8]{inputenc} % set input encoding (not needed with XeLaTeX)
+%%% Examples of Article customizations
+% These packages are optional, depending whether you want the features they provide.
+% See the LaTeX Companion or other references for full information.
+
+%%% PAGE DIMENSIONS
+\usepackage{geometry} % to change the page dimensions
+ \geometry{margin=1in} % for example, change the margins to 2 inches all round
+% \geometry{landscape} % set up the page for landscape
+%   read geometry.pdf for detailed page layout information
+
+\usepackage{graphicx} % support the \includegraphics command and options
+
+% \usepackage[parfill]{parskip} % Activate to begin paragraphs with an empty line rather than an indent
+
+%%% PACKAGES
+\usepackage{booktabs} % for much better looking tables
+\usepackage{array} % for better arrays (eg matrices) in maths
+\usepackage{paralist} % very flexible & customizable lists (eg. enumerate/itemize, etc.)
+\usepackage{verbatim} % adds environment for commenting out blocks of text & for better verbatim
+\usepackage{subfig} % make it possible to include more than one captioned figure/table in a single float
+\usepackage[round]{natbib} % Natural science bibliography package
+\usepackage{pdflscape} %Landscape pages
+\usepackage{amsmath} %Mathematics 
+\usepackage{hyperref} %URLs and Hyperlinks
+\hypersetup{hidelinks=true} %Turns off coloured links
+\usepackage{longtable} %Multi-page tables
+\usepackage{multirow} %Better tables
+\usepackage{marvosym} %Male/female/hermaphrodite symbols
+\usepackage{caption} %Add captions to non-floats
+\usepackage{calc} %Simple arithmetic for arguments
+\usepackage{ifthen} %Allows if-then statements
+\usepackage[breakable]{tcolorbox} %Allows boxes to be made, and allows boxes to be breakable
+\usepackage{capt-of} %Allows captions outside of float environments
+\usepackage{setspace} %Double/1.5 spacing
+
+%%% HEADERS & FOOTERS
+%\usepackage{fancyhdr} % This should be set AFTER setting up the page geometry
+%\pagestyle{fancy} % options: empty , plain , fancy
+%\renewcommand{\headrulewidth}{0pt} % customise the layout...
+%\lhead{}\chead{}\rhead{}
+%\lfoot{}\cfoot{\thepage}\rfoot{}
+
+%Function to create equation sets with captions. From:
+%https://tex.stackexchange.com/questions/172452/caption-for-align-environment
+
+%\newcounter{captionedequationset} %numbering
+%\newdimen\captionlength
+%\newcommand{\captionedequationset}[1]{
+%    \refstepcounter{captionedequationset}% Step counter
+%    \setlength{\captionlength}{\widthof{#1}} %
+%    \addtolength{\captionlength}{\widthof{Equation set~\thecaptionedequationset: }}
+%    %If the caption is shorter than the line width then
+%    % the caption is centred, otherwise is flushed left.
+%    \ifthenelse{\lengthtest{\captionlength < \linewidth }} %
+%    {\begin{center}
+%            Equation set~\thecaptionedequationset: #1
+%        \end{center}} 
+%    { \begin{flushleft} 
+%        Equation set~\thecaptionedequationset: #1 %
+%        \end{flushleft}}
+%}
+
+
+%%% SECTION TITLE APPEARANCE
+\usepackage{sectsty}
+\allsectionsfont{\sffamily\mdseries\upshape} % (See the fntguide.pdf for font help)
+% (This matches ConTeXt defaults)
+
+%%% END Article customizations
+
+%%% The "real" document content comes below...
+
+\title{Bee visitation, pollination services, and plant yield in commodity and hybrid seed canola} 
+\author{Samuel Robinson, Ralph Cartar, Stephen Pernal, Riley Waytes, Shelley Hoover}
+% \author{Samuel Robinson}
+
+\date{}
+
+\begin{document}
+\maketitle
+\doublespacing
+
+\begin{abstract}
+Insect-mediated pollination of crops is an important input to agricultural production, but pollination management suffers from key mechanistic gaps that hinder its greater utility. 
+While pollination services to plants have a solid theoretical and mechanistic framework, agricultural pollination is often treated as a statistical ``black box", without reference to the mechanisms underlying the process of pollination and fruit production.
+We present a causal model that links insect visitation to pollination to three separate components of yield, using two types of canola (\textit{Brassica napus}) production systems.
+%Visitation by honey bees was strongly related to distance in both commodity and seed canola fields, with visitation decreasing with distance away from the edge of the field (where the hives were located).
+%In seed fields, leafcutter bee visitation strongly decreased with distance away from their shelter, but interestingly, also decreased with distance from the edge of the field in high-density shelters, meaning that foragers may be migrating from shelters at the centre of the field to shelters at the edge.
+Commodity canola yield was mainly controlled by plant size, and there was no relationship between \textit{Apis mellifera} visitation and pollen deposition, or deposition and seed yield.
+In comparison, seed canola yield was also controlled by plant size, but there was also a strong relationship between visitation and pollen deposition, as well as deposition and seed yield.
+We also found that \textit{Megachile rotundata} visitation in seed canola strongly increased pollen deposition, but \textit{A. mellifera} visitation did not.
+This model serves as a step towards a mechanistic model of pollination services, and points to the contextual importance of pollination services in seed canola production.
+
+\end{abstract}
+
+% Current Intro Structure:
+% - Animal pollination = important ecosystem service
+%     - NEEDS LEAD-IN TO OTHER PARAGRAPHS
+% - Insect visitation can increase fruit production via better pollen deposition
+% - Size and number of seeds matured depends on availability of plant resources
+% - Trade-offs exist at plant and flower level
+% - Pollination is important in canola production
+% - Insect pollination can increase yields of commercial canola crops 
+% - Fruit production in flowering plants involves a sequence of processes
+%     - SEMs are convenient for modeling this
+% - In this study, We modeled how distance influences pollinator visitation, which in turn influences ...
+%     - List of 5 hypotheses
+    
+% Current Discussion structure
+% * Visitation
+% - Honey bee visitation in seed fields was much higher than commercial fields
+% - Hbee decline into field expected, Lbee decline surprising
+% - Hbee visitation lower near to leafcutter shelters
+%     - Which is causing which?
+% * Pollen deposition
+% - Hbees don't influence pollen in commodity fields
+% - In seed fields, lbees influence pollen, but not hbees
+% - Why did honey bees have so little influence on pollen deposition in both commodity and seed canola fields?
+% - Any positive pollination effect of honey bees in hybrid seed fields is likely indirect
+% * Pod production
+% - Commodity field pod production mainly controlled by plant size, not pollen
+% - Seed field pod production influenced by plant size & pollen
+% * Seed size/number
+% - Seed canola size not altered by pollen, but negative relationship b/w seeds per pod & seed size
+% - Number of seeds per pod not altered except by year
+% * Summary
+% - Why no effect of insect pollination in commodity?
+% - Implications for pollination management
+    
+% WHAT IS MY MAIN STORY?
+% Q: What is the relative contribution of bees to seed yield in canola? Do they matter relative to plant resources?
+% A: Plant size is the main driver of yield. Leafcutter bees increase pollen deposition and yield, but honey bees do not.
+% Hook:
+% Bee visitation can enhance seed production in crop plants, but only if pollen deposition is limited and plant resources are available.
+% We found that while commodity canola is not pollen-limited, hybrid seed canola is, and while leafcutter bees increase pollen deposition, honey bees do not.
+
+
+% WHAT DOES THE READER NEED TO KNOW?
+
+%Journals to consider (Impact Factor):
+% Behavioural Ecology (2.8): no page limit specified - I think this would be the best at this point
+% Ecological Modeling (2.5): no page limit specified
+% Ecology Letters (8.6): max 5000 words, 6 figures/tables
+% Journal of Applied Ecology (5.8): 7500 words, including refs and caption
+% Journal of Animal Ecology (4.6): 8500 words, including refs and captions
+% Oikos (3.4): no page limit specified
+% Oecologia (2.7): 10 printed pages (~35 submitted pages), 100 Euros per extra page
+
+
+\section{Introduction}
+%SH: PARAGRAPH COULD BE REMOVED/SHORTENED FOR PAPER, BUT FINE FOR THESIS
+Animal pollination of agricultural flowering plants is an important ecosystem service that contributes to about 10\% of total crop production value worldwide \citep{gallai2009}, and animal-pollinated plants produce a large number of important micronutrients in the human diet \citep{eilers2011}.
+Therefore, understanding the process of animal pollination in crops is economically and ecologically important. %REWORD? ECONOMICS DOESN'T COME INTO THE THESIS, SO MAYBE DON'T MENTION IT? 
+Agricultural pollination, however, is largely treated as a single process, even though there are many links in the chain of events that result in the production of a fruit.
+Visitation of flowers by animals, typically bees and other insects, can result in pollen deposition on the stigma of the flower, followed by the growth of pollen tubes into the style and fertilization of ovules \citep{erbar2003}. 
+After fertilization, the plant may provide resources to fertilized fruits (or ovules within a fruit) to mature them into fruit \citep{goldberg1994}.
+Each step has many other underlying processes (\textit{e.g.} stigma receptivity, pollen tube growth, ovule abortion, fruit maturation, reviewed in \citealp{real1983, giovannoni2001, erbar2003, takayama2005}, and others), but even at the level of this coarse approximation, most studies of agricultural pollination fail to account for important underlying processes.
+Pollinating animals rarely visit equally on all flowers in a blooming crop field\citep{currie1997, brosi2008, isaacs2010}, but some agronomic studies implicitly make this assumption \citep{phillips1989, bommarco2012, bartomeus2014}. 
+Pollen deposition from visitors depends on a number of factors (\textit{e.g} behaviour on flowers, size of pollinator), and whether this deposited pollen from visitors results in increased fruit production depends on the pollination context (\textit{e.g.} self-pollination) and the life history and resource contexts of the plant (\textit{e.g.} annual vs. perennial, determinate vs. indeterminate growth, light, soil nutrients and moisture).
+Moving beyond the ``black-box" model of agricultural pollination requires accounting for these steps, and is necessary for understanding the contextual value of pollination services, as well as optimizing crop yield in novel circumstances.
+%affect roughly one-third of the world's agricultural crops \citep{klein2007}
+
+Pollinator visitation is not spatially uniform within fields, as most pollinators are central-place foragers, meaning that visitation rates decline with distance away from their nest, and the bloom of flowering crops is not uniform. %REWORD
+Smaller bees fly shorter distances than larger bees \citep{greenleaf2007,zurbuchen2010}, so their presence at the centre of large fields can be limited \citep{isaacs2010}. 
+Hence, managing the location and density of managed pollinators in relation to their target crops is important for optimal yield of pollinator-dependent crops \citep{fries1983,cresswell2004b}.
+Foraging insects will often specialize on certain species or morphs of flowers in order to forage more efficiently \citep{heinrich1976b, goulson1997}. 
+However, pollination of hybrid seed crops requires movement of pollen between spatially separated lines of plants, so floral specialization can reduce the pollination services in these systems \citep{waytesMsc, gaffney2019}.
+Competition between different species of foraging insects can occur if they deplete floral resources, but foragers can spatially or temporally separate their foraging to reduce competition (\citealp{schaffer1979,thomson1987}, but see \citealp{steffan2000}), thereby increasing their fitness. 
+Both resource depletion or interference competition can motivate visitors to reduce competition by increasing their foraging distance, switching between floral morphs more often, or visiting less frequently \citep{heinrich1979, greenleaf2006}.
+Thus, variation in visitation is driven by both distance from their nest (see Chapter 2), as well as competition with foragers from other aggregations, and increased competition can benefit plant fitness.
+% Much of the worldwide agricultural demand for insect pollination is accomplished by the European honey bee, (\textit{Apis mellifera} L., hereafter ``honey bee") because of its large colony size, ease of transport, and ease of breeding (\citealp{winston1991}, but see also \citealp{winfree2008}).
+% However, several other types of pollinators are commonly used, including the alfalfa leafcutting bee, (\textit{Megachile rotundata} F., hereafter ``leafcutter bee"; \citealp{pitts2011}), and a large variety of wild pollinators \citep{rader2015}.
+
+Insect visitation of flowers can enhance fruit production in flowering plants by increasing either the quantity or quality of pollen deposited on the stigma \citep{stephenson1981,burd1994,aizen2007}, providing a larger range of female mate choice for each flower.
+Many flowering plant species are capable of self-pollination, but typically produce more fruit or seeds from outcrossed pollen \citep{knight2005} transported from conspecific plants by wind or an animal vector, but not all animal visitors are equal from a flowering plant's perspective.
+For example, large-bodied insects can deposit more pollen per visit on the stigma of the flower because they have a greater chance of contacting the stigmatic surface \citep{sahli2007}. 
+Pollinator behaviour is also important, as flower-visiting insects may steal nectar, clean off pollen between visits, or travel mainly between flowers on the same plant \citep{thomson1986, herrera1987}.
+Finally, the benefit of extra pollen deposition is diminishing \citep{plowright1981}, with very high numbers of pollen grains causing less and less of an increase in fruit production \citep{ashman2004, harder2016}.
+%; some are obligate outcrossers, and have self-incompatibility mechanisms in place to prevent fertilization by their own pollen.
+% Other plants have separate male and female flowers, or separate male and female plants, so their pollen must be transported from male flowers to female flowers, either by wind or an animal vector. 
+
+%REVIEW LANGUAGE
+%RC: POINT OF PARAGRAPH SHOULD BE THAT AFTER POLLEN RECEIPT, PLANT STILL HAS TO DECIDE WHETHER TO ACCEPT IT, OR WAIT TO INVEST LATER (FUTURE-PRESENT TRADEOFFS)
+%RALPH'S ARGUMENT IS WAY TOO GENERAL. POINT SHOULD BE THAT POLLEN OR RESOURCES CAN BE LIMITING (USUALLY RESOURCES), AND THAT PLANT MAY COMPENSATE FOR LOW POLLEN USING EXTRA GROWTH
+Seed production can be limited by plant resources as well as pollen \citep{galen1985, haig1988,campbell1993}, meaning that the benefits of insect pollination depend on the resources available to the plant \citep{stephenson1981, tamburini2017}.
+Pollen limitation can also occur at multiple levels within a plant, reducing the number of seeds per fruit, the number of mature fruit, or both \citep{burd1994}.
+Low pollen deposition may reduce the number of mature fruit via flower abortion \citep{knight2006}, where poorly-pollinated flowers are cut off from the plant.
+Plants with an indeterminate growth strategy may compensate for a high flower abortion rate by simply making more flowers, resulting in similar seed production to pollinated plants \citep{doust1982,lawrence1993, sabbahi2006, bos2007}.
+Whether individual plants can compensate for low pollination depends on the time remaining in the season, as well as the resources available to create extra shoots and flowers.
+Pollen limitation may also reduce the number of seeds per fruit, so additional pollen may result in a greater number of seeds per fruit \citep{knight2006}, which in turn may result in a reduction in the size per seed \citep{free1968, mazer1987} due to competition between ovules.
+Seed size can vary strongly among plants, and can be affected by resources available to the plant \citep{mazer1987, venable1992}. 
+For example, \citet{maddox1983} observed a negative size-number tradeoff in \emph{Plantago} seeds, but only after accounting for the positive effect of plant size, indicating that larger plants were better able to provision their seeds.
+Since the size and number of offspring are direct determinants of a given plant's fitness, and the yield of the plant in an agricultural setting, allocation strategies that plants use under situations of pollen or resource deficits are important both theoretically, and in the context of food production \citep{bos2007, tamburini2019}. 
+%, as the optimum seed size may differ depending on the growing conditions \citep{silvertown1989}.
+%Na\"{i}vely, we may expect a size-number tradeoff to result in a single optimal seed size regardless of plant size \citep{smith1974}, but 
+%\citep{galen1985} showed that \emph{Clintonia borealis} produced a greater number of larger seeds when supplemented with outcrossed pollen, but only when competing fruits on the stem were removed.
+%However, plants may produce more seeds of the same size (\citealp{smith1974}, but see \citealp{venable1992}), or may be limited by the number of ovules per flower \citep{wang2011}.
+%Alternatively, they can abort fertilized fruit to re-direct resources to higher-quality pods if too many flowers are fertilized \citep{stephenson1981}.
+%Commonly recognized in ecology, but less so in agronomy
+%understanding how plants allocate resources in situations of limited pollen deficit and pollen increase
+%understanding how pollen deficits change in the context of resource availability,
+
+Insect pollination is especially important in the production of hybrid canola crops (\textit{Brassica napus} L.).
+Hybrid ``commodity canola" (used for oil and meal production) is the offspring of two parental ``seed canola" breeding lines, a male-sterile ``female" line and a hermaphroditic  ``male" line \citep{westcott2001,steffan2003,clay2009}. 
+Seed canola production requires a large number of pollinators to ensure pollination of the female line (seed from the male line is not harvested), and extra pollination may also increase the yield of commodity canola \citep{morandin2005,rader_phd,bommarco2012,bartomeus2015,perrot2018}. 
+However, many studies of commodity canola pollination suffer from either a lack of realistic context, have a number of potential confounding variables, or infer plant-level outcomes from flower-level treatments. 
+Greenhouse experiments typically involve unrealistically high pollination, nutrient availability, and water, all of which can influence yield \citep{bartomeus2015,marini2015}.
+Field studies often relate yield to indirect measures of pollination services, such as insect abundance, species richness, or distance from sources of potential pollinators \citep{morandin2005,ricketts2008}, rather than direct measures, such as visitation rates or pollen deposition per stigma.
+These pollination proxies are then related to measures of yield, such as grams of seed per m$^2$, which may be useful to growers, but provide limited information about how plants dynamically respond to pollen exclusion or addition (but see \citealp{sabbahi2005}).
+Net- or cage-treatments exclude insect vistiation from certain plants or flowers, but can alter wind pollination, humidity, light, or pest pressure \citep{olsson1960, neal2004, jauker2008}, meaning that the sole effect of lower insect visitation is confounded by other factors.
+These methods offer an incomplete picture of how pollination relates to yield in canola crops \citep{ouvrard2019}, and obscure estimates of pollinator value in a globally valuable crop species \citep{melathopoulos2015}. 
+Thus, whether pollination impacts commodity canola production (or if not, why not) is poorly understood.
+%and both honey bees and leafcutter bees are used in Canada 
+%depending on the variety \citep{hudewenz2013, lindstrom2016}, 
+%has hermaphroditic flowers and 
+% typically has higher yields than non-hybrid (``traditional") varieties due to heterosis, as it
+%  Cross-pollination of two parental lines results in seeds produced by the female line that are used for growing hybrid ``commodity canola",
+%, with honey bee hives being placed at the field edge, whereas leafcutter bee shelters are dispersed within the field.
+% In Canada, hybrid canola (``commercial canola") was planted across 20.7 million ha of farmland in 2016 (roughly equivalent to the area of the United Kingdom), and contributed C\$26.7 billion to the Canadian economy \citep{statscan_canolaArea2019, CCC_economy2016}.
+% As of 2010, 93\% of this canola was transgenic, herbicide-tolerant canola, with transgenic traits encoding for glyphosate or glufocinate resistance in approximately equal proportions \citep{ccc2010}. 
+% The ``male" breeding line has both anthers and stigmas (hermaphroditic), but carries a nuclear fertility-restoring trait, meaning that the offspring they sire on the female line will have their anther production restored. 
+
+Fruit production in plants involves a sequence of processes (visitation $\rightarrow$ pollen deposition $\rightarrow$ fruit production $\leftarrow$ plant resources), that determine the magnitude of the link between pollination and the components of crop yield.
+However, most studies of how pollination relates to crop yield either examine each process independently, or omit intermediate steps in the sequence of events (but see \citealp{saez2018}), meaning that the relative importance of visitation and plant resources are unresolved.
+Structural equation models (SEM) provide a framework for empirical analysis of this sequence, as they allow underlying causal assumptions to be formally stated and tested \citep{shipley2009, grace2012}, provide insight into alternative mechanisms that may be at play, and are flexible in many of their assumptions \citep{clough2012}.
+SEMs represent an intermediate class of statistical models, occupying a space somewhere between regression-style models and dynamic or agent-based models, making them ideal for generating and testing sets of mechanistic hypotheses \citep{grace2006, kline2013}. 
+Using both commodity and seed canola provides an opportunity to compare two plant varieties that differ strongly in their pollination requirements, using a similar type of structural model, while accounting for agricultural differences between varieties (spatial arrangement, planting density, irrigation).
+% Since the process linking insect visitation to seed production has several intermediate steps, and is contingent on resource factors, we need a more complete model of crop yield that links plant-level responses to biological processes that occur at the plot and field level.
+%Introduce each component of the path analysis
+
+%SH: SEEMS ODD TO HAVE REFS MIXED IN WITH YOUR HYPOTHESES
+In this study, we modeled how distance influences pollinator visitation, which in turn influences pollen deposition and seed yield, using commodity and hybrid seed canola crops in Alberta, Canada.
+Our five main hypotheses are outlined as follows:
+\begin{enumerate} 
+    \item Foraging honey bees and leafcutter bees are sensitive to distance due to cost of flight \citep{schmid1985}, and deplete floral resources with visitation. Therefore, insect visitation should decline with distance from their hive or shelter to achieve equivalent rewards \citep{dukas1998, cresswell2000}. 
+    \item Visiting bees can deposit pollen on stigmas, so areas with high rates visitation should have more pollen deposition on stigmas than areas with low rates of visitation \citep{mesquida1988c, hoyle2007}, depending on foraging behaviour of the bee \citep{free1983}.
+    % \item Plant size is limited by resources, which can be reduced by competition with neighbours, so areas with fewer plants per m$^2$ should have larger plants \citep{angadi2003}. %Not revelvant
+    \item Seed production for a given plant is limited by the resources it is able to sequester. Therefore, large plants should have more resources at their disposal, and should produce more fruit per plant and produce a higher number of larger seeds per fruit \citep{galen1985, lawrence1993, marini2015}.
+    \item Seed production in resource-rich plants is also limited by pollination. Plants in areas with high pollen deposition should have a higher proportion of successful flowers \citep{sabbahi2005}, and a higher number of seeds per pod \citep{morandin2005}.
+\end{enumerate}
+
+%REVIEW
+This study assesses the strength of the connections between visitation, pollination, and yield, in a globally important crop species, and identifies the relative importance of bee pollination for seed production, using in-field data from two distinct cropping systems.
+Other studies of crop pollination focus on individual components, such as visitation and pollination \citep{cresswell1999, thomson2001}, or visitation and yield \citep{steffan2003, manning2005, hudewenz2013}, but have not incorporated the links in a single framework (but see \citealp{saez2018}, and few have used realistic field data \citep{morandin2005, isaacs2010}.
+This work adds to the body of literature examining the resource context of pollination services \citep{haig1988} within cropping systems \citep{marini2015, tamburini2016, fijen2018, tamburini2019}, and identifies directions of future research in seed production systems.
+
+\section{Methods}
+
+\subsection{Data collection}
+From June through August of 2014 and 2015, we surveyed 29 commodity canola fields (14 in 2014, 15 in 2015) near Beaverlodge, Alberta and 31 fields (17 in 2014, 14 in 2015) near Lethbridge, Alberta.
+Commodity canola fields were selected based on the proximity of honey bee apiaries and site access. 
+28 of the 60 fields were stocked with honey bees (mean: 0.6 hives/hectare, SD: 0.58) while 32 fields were unstocked. %range: 0.03 - 3.1 Apiaries were stationed at the edges of fields, often near to shrubs or tree-lines to act as a wind break.
+14 of 31 of the fields near Lethbridge were watered using central-pivot irrigation systems.
+% We assumed similar numbers of workers per colony at both localities.
+% Growers were asked for canola variety information, but there was not enough replication to test for difference between varieties.
+% Fields with central-pivot irrigation were mostly circular, but dryland (non-irrigated) fields were usually square or rectangular. 
+
+%Maps + climate graphs needed for publication
+During 2015 and 2016, we also surveyed 35 hybrid seed canola fields (15 in 2015, 20 in 2016) near Lethbridge, Alberta, from June through August of each year.
+Seed fields were all stocked with honey bee hives at a rate of 3.6 hives/ha, with apiaries stationed in the corners of fields, and were also stocked with leafcutter bees in shelters throughout the field.
+Shelters used either ``standard" or ``double"  leafcutter bee stocking ($\approx$50,000 vs. 100,000 cocoons/ha), and shelters were placed at either ``standard" or ``double" densities (1.3 vs. 2.6 shelters/ha) in each field.
+Double stocking rates were only used in fields with double shelter density. %, creating three combinations of leafcutter bee stocking: ``standard", ``double shelter", and ``double shelter and double stocking".
+All seed fields had central-pivot irrigation, and were mostly circular or semi-circular in shape.
+%Woudick 5,6 = 64 shelters (single), Woudick 2 = 113 shelters (double + bees), Woudick 3 = 128 shelters Graham 1 = 135 shelters
+
+% We recorded air temperature and wind speed before beginning observations (Table \ref{tab:weather}).
+% \begin{table}[h]
+%     \centering
+%     \begin{tabular}{r|r|l|l|l|l}
+%          Year & Area & Nectar volume & Nectar \% & Temperature & Wind Speed \\ \hline
+%          2014 & Grande Prairie & 0.82 $\pm$ 0.035 & 56.1 $\pm$ 0.14 & 22.8 $\pm 0.9$ & 16.4 $\pm 2.0$  \\
+%          2014 & Lethbridge & 0.85 $\pm$ 0.033 & 58.4 $\pm$ 0.15 & 24.7 $\pm 0.8$ & 4.6 $\pm 0.7$ \\
+%          2015 & Grande Prairie & 0.63 $\pm$ 0.025 & 60.4 $\pm$ 0.22 & 21.7 $\pm 0.7$ & 26.7 $\pm 3.9$ \\
+%          2015 & Lethbridge & 0.40 $\pm$ 0.021 & 58.4 $\pm$ 0.18 & 27.4 $\pm 0.7$ & 11.7 $\pm 1.5$ \\
+%          2016 & Lethbridge & 0 & 0 & 23.5 $\pm 0.7$ & 6.2 $\pm 0.9$ \\
+%     \end{tabular}
+%     \caption{Nectar volume ($\mu$L), concentration (\%), air temperature (C) and wind speed (km/hr), averaged across all observations for each year and area. Nectar standing crop in seed canola was negligible in 2015 and 2016.}
+%     \label{tab:weather}
+% \end{table}
+ 
+In commodity fields, we established plots at 5, 20, 100, and 500m along a transect into the field, starting at the field margin closest to the set of honey bee hives (271 total plots). %used a Garmin\texttrademark eTrex20 GPS, 
+In unstocked fields, we began the transect at a field edge close to potential sources of natural pollinating insects, such as forests or grasslands, but observed very few wild pollinators (Table \ref{tab:propVisitors}).
+In seed canola fields, bays of ``male" and ``female" plants were planted in 1- and 6-m wide bays, respectively, and leafcutter bee shelters were located in the female bays (Figure \ref{fig:seedfieldPhoto}, \ref{fig:seedfieldPlots}).
+We established plots at 5, 20, 100 (250 in 2016), and 400m into the field along a transect from the nearest set of honey bee hives.
+We made paired observations in adjacent male and female plots at each distance from the edge of the field (Figure \ref{fig:seedfieldPlots}).
+At the edge and centre of each field (5m and 400m), we established another plot in the centre of the female bay to examine the effect of distance away from the male bay.
+We also used plot-level leafcutter and honey bee visitation data from Waytes (\citeyear{waytesMsc}, and unpublished; same years and locations) to more accurately estimate the effect of distance from shelter on visitation rates (647 total plots).
+We used a Nikon\texttrademark Laser 800S Rangefinder to measure the distance from each plot to the nearest shelter.
+All surveys occurred on fair-weather days (median air temperature: 24.5$^\circ$C., range: 17--33) with no rain and as minimal wind as possible (less than 30km/hr).
+Mean air temperature was similar between years in Grande Prairie ($\approx$ 22$^\circ$C), but Lethbridge was warmer in 2015 (23 vs. 28$^\circ$C).
+Plots were marked with coloured stakes driven into the soil to locate them later in the season. %Full paper should have a table of climate variables. Windspeed needs sorting out (unit problems?)
+
+
+Within each 1m$^2$ plot, we recorded the number of insect contacting the stigmas and anthers of flowers during 10 minutes (5 min for seed fields during 2015), as well as their taxonomic identity.
+We counted visitable flowers in each plot, where ``visitable" was defined as an opened flower whose petals had not yet started to dehisce, and whose style had not elongated more than 3-4 millimeters beyond the anthers.
+To assess pollen deposition at the plot level, we collected stigmas from five random open, receptive flowers at each plot, mounted them in fuchsin gel \citep{beattie1971} on depression slides, and counted the pollen on each stigma using a Leica\texttrademark DME 13595 light microscope under 100x magnification (1294 commodity and 1050 seed canola stigmas).
+Each field was visited once during the main canola bloom (late June - late July), and again before harvest (mid - late August) to collect plant samples.
+We collected three plants and recorded the density of plants per m$^2$ at the same plot where we conducted the visitation observations (789 commodity canola plants, 582 seed canola plants).
+After drying the plants at 50$^\circ$C, we weighed the entire plant, counted mature pods, and counted the number of remaining flower pedicels to estimate total flower production.
+We randomly sampled five pods from each plant, and counted and weighed the seeds from each pod, (3872 commodity canola pods,  2885 seed canola pods).
+Finally, we threshed all the pods for each plant by hand, winnowed them using an air separator, and weighed the total mass of cleaned seeds.
+
+\subsection{Analysis}
+To examine how yield is influenced by visitation, we used a piecewise structural equation model framework (pSEM, \citealp{shipley2009}).
+Structural equation models are comprised of a set of underlying linear models arranged in a causal network, and provides a framework for testing hypotheses about a complex system \citep{grace2012,lefcheck2015}.
+Starting with a simple model (visitation $\rightarrow$ pollen deposition $\rightarrow$ fruit production $\leftarrow$ plant resources), we built more complex models that related measured variables within a causal framework (Figures \ref{fig:commoditySEM} and \ref{fig:seedSEM}).
+These models allowed us to infer the relative strength of the main terms (e.g. pollen deposition, plant size) while controlling for other confounding factors (e.g. distance into field).
+Fruit set can suppress future vegetative growth and flower production \citep{stephenson1981}, but SEMs do not allow for causal loops \citep{grace2012}, so we included a path from fruit set to flower production.
+The direction of the path could plausibly be reversed (whereby large number of flowers reduce the proportion of fruit set), but we considered only the first scenario, as \citet{sabbahi2006} showed that the converse process is more likely (low fruit set causes increased flower production).
+
+The underlying models of each pSEM were specified as generalized linear mixed-effects models (GLMMs, see Equation sets S1 and S2 for model specifications).
+We used hierarchical models in order to include processes that occur at different levels; for example, seed size-number trade-offs were modelled at the pod level, whereas pollen deposition was modeled at the flower level.
+Normal random effects were used to model variance between fields, within-field (pollen, flower survival, seed count \& size), and within-plot (seed count \& size); if the lowest-level variance term was inestimable, we fit the model without it.
+Continuous responses were modeled using log-normal (plant density, plant size), square-root normal (flower density), and exponential-normal distributions (weight per seed), while counts were modeled as a negative-binomial (honey bee visits, pollen grains per stigma, flowers per plant, seeds per pod) or zero-inflated negative-binomial distribution (leafcutter bee visits) with a log-link function.
+Visitation models used a $log$(time) term with a slope of 1 (``offset" variable) to account for differences in observation times.
+Fruit set (fraction of flowers that matured into pods) was modeled using a beta-binomial distribution with a logit-link function.
+Interactions between predictors were evident in honey bee visitation rate (Year:Locality interaction) and plant density (Irrigation:Year) in commodity canola, and for leafcutter bee visitation (Tent Stocking:Distance from edge) in seed canola, and were included in each model (represented as Y-shaped path in Figures \ref{fig:commoditySEM} and \ref{fig:seedSEM}). 
+Finally, we created bivariate partial-effect plots of relevant terms within each model to aid in visualising each relationship.
+
+Structural equation models do not have paths between all variables, which may bias the model results if this independence assumption is not true. 
+We evaluated evaluating independence claims (``basis set") by using Fisher's C statistic from Shipley's d-separation criteria \citep{shipley2000, shipley2009}.
+The initial commodity canola pSEM was misspecfied, as several missing paths were identified for the initial commodity model (Fisher's C=202.1, df=100, p$<<$0.001), but the updated pSEM that included missing paths was judged adequate (C=81.6, df=86, p=0.62).
+Similarly, the initial seed field pSEM also had several missing paths (C=37.54, df=56, p=0.027), which we corrected (C=58.10, df=64, p=0.68).
+D-separation criteria sets were generated using the \texttt{dagitty} library in R 3.5.1.
+
+% Our initial hypotheses for commodity fields:
+% \begin{itemize}
+% 	\item Honey bee visitation depends on distance from their hive
+%     \item Pollen deposition depends on honey bee visitation
+%     \item Seeds per pod depends on pollen deposition
+%     \item Weight per seed depends on pollen deposition
+%     \item Flower abortion rate depends on pollen deposition
+%     \item Total yield depends on seeds per pod, weight per seed, and flower abortion rate
+% \end{itemize}
+
+% Our initial hypotheses for seed fields:
+% \begin{itemize}
+% 	\item Honey bee visitation depends on distance from edge of field (proxy for distance from hives), bay position, bay type, and distance to leafcutter shelter
+%     \item leafcutter bee visitation depends on distance from their shelter, bay position, and bay type
+%     \item Pollen deposition depends on honey bee and leafcutter visitation
+%     \item Seeds per pod depends on pollen deposition
+%     \item Weight per seed depends on pollen deposition and seeds per pod
+%     \item Flower abortion rate depends on pollen deposition
+%     \item Total yield depends on seeds per pod, weight per seed, and flower abortion rate
+% \end{itemize}
+
+All component GLMMs of the pSEM were written in Stan 2.17.1 \citep{gelman2015}, and run using \texttt{rstan} 2.18.1.
+We used informative normal priors ($\mu=0, \sigma=5$) for fixed effects, and gamma priors ($\alpha=1, \beta=1$) for the variance components.
+We ran three separate chains with an adaptive phase of 2000 iterations, and a sampling phase of 2000 iterations, then checked for convergence of the chains ($\hat{R} \approx$1) and low autocorrelation within chains (high $N_{eff}$).
+We assessed the adequacy of the underlying probability distribution functions of each model using posterior predictive checks \citep{gelman2013}, and found that the probability distributions were specified correctly (p$\sim$0.5) for all components except seed count.
+This means that while the average seed counts (per plant) were unbiased, the variance within a plant was not. 
+However, the negative binomial distribution had the closest posterior predictive checks of any other distribution. 
+% p-values listed below (also in Tables S3 and S4) are \textit{posterior} p-values, representing the proportion of the posterior distribution that overlapped zero, with Z-scores (mean/standard deviation of posterior) showing the effect size.
+% Predictions from models are median values of the posterior, representing the median prediction, while intervals displayed in figures are credible intervals (CIs), representing 95\% of the samples drawn from the posterior distribution (analogous to confidence intervals, see \citealt{gelman2013}).
+
+%RC: REMIND READER OF THE EXPECTATIONS, AND WHETHER HYPOTHESES WERE SUPPORTED/REJECTED, RATHER THAN JUST STATING THE RESULTS
+%SH: 1) SET UP LOGIC MORE CLEARLY, FOLLOW IT THROUGH IN SAME WAY AS THE REST OF THE PAPER
+%2) BE CONSISTENT IN WORDS/PHRASES
+%3) BREAK UP PARAGRAPHS & PROVIDE MORE TRANSITION SENTENCES
+%4) TALK ABOUT THE REAL WORLD AS MUCH AS POSSIBLE, RATHER THAN VARIABLES
+
+\section{Results}
+
+%OVERALL SUMMARY FROM SEMS
+
+\subsection{Visitation}
+
+\subsection{Pollen Deposition}
+
+\subsection{Seed Production}
+
+The SEMs revealed that plant size and pollen deposition were the main drivers of yield in seed canola, while only plant size mattered in commodity canola.
+Distance from the field edge had a negative effect on honey bee visitation in commodity and seed canola (Z=-3.7, -2.5, respectively), and unexpectedly, had a negative effect on leafcutter bee visitation (Z= -4.4), showing that overall visitation decreases with distance into the field.
+The path from leafcutter bee visitation to pollen deposition was strong in seed canola (Z=3.2), but there was no path from honey bee visitation to pollen deposition in either crop type.
+Pollen deposition increased fruit set (Z=3.1) and seeds per pod (Z=2.3) in seed canola, but was not present in commodity canola, showing that yield in seed canola, but not commodity canola, is strongly dependent on pollination.
+%The path from seeds per pod to weight per seed was negative in seed canola (Z=-15.0) but positive in commodity canola (Z=6.1) 
+Both crop types had strong negative paths from flower survival to flowers per plant (commodity Z=-12.5, seed Z=-12.1), indicating that high flower survival suppressed future flower production.
+Commodity canola had a similar weight per seed, regardless of the plant size, but in seed canola, plant size had a strong influence on seeds per pod (Z=5.6) and weight per seed (4.6).
+Finally, in both crop types, the paths leading from plant size were the dominant signal influencing fruit set (commodity Z=5.8; seed Z=19.9), but the path from pollen deposition to fruit set was only present in seed canola, showing that plant resources matter strongly for both crop types, but that increased pollen deposition only benefits seed canola.
+
+The results of the underlying components of each pSEM are shown in Figures \ref{fig:commoditySEM} and \ref{fig:seedSEM}:
+
+\subsection{Prediction 1: Decline in visitation with distance}
+Bee visitation strongly declined with distance away from the hives and shelters, in both commodity and seed canola fields. 
+In commodity canola, honey bee visitation sharply declined with distance into the field (Z=-3.7, p$=$0.0002, Figure \ref{fig:hbeeDist_commodity}), decreasing from 8.5 visits/hr at the edge of the field to 3.1 visits/hr at 100 m into the field (at a stocking level of 20 hives).
+Visitation rates were higher in both years in Lethbridge (2014: 9.3 visits/hr, 2015: 7.1), but were higher in 2015 than 2014 at Grande Prairie (Z=2.3, p$=$0.02), rising from 5 visits/hr at the field edge in 2014 to 17 visits/hr in 2015. % (at a stocking level of 20 hives). 
+Honey bee visitation increased with the number of hives used for stocking (Z=5.3, p$<$0.0001); plot-level visitation at the edge of the field increased from 14.5 visits/hr with an apiary of 20 hives to 22.7 visits/hr with an apiary of 40 hives, while unstocked field edges had 1.8 visits/hr.
+In seed canola fields, honey bee visitation also declined with distance into the field (Z=-2.5, p$=$0.01), but not as strongly as in commodity fields (126 visits/hr at edge of field vs. 78 visits/hr at 100 m). 
+Honey bee visitation was lower near leafcutter shelters (Z=3.9, p$=$0.001), dropping from 60 visits/hr at 10 m to 34 visit/hr at 2 m, likely due to competition with leafcutter bees (Figure \ref{fig:hbeeDist_both}, \ref{fig:lbeeDist_both}).
+
+Leafcutter bees were much more sensitive to distance from their shelter than honey bees.
+Leafcutter bee visitation sharply declined with distance from their shelters (Z=-11.4, p$=$0.0001, 350 visit/hr at 2 m to 83 visit/hr at 10 m), and unexpectedly, was higher at the edge of the field than the centre (Z=-4.4, p$=$0.0001, 114 visits/hr vs 28 visits/hr).
+However, there was no difference in visitation rates when the stocking rate of cocoons per shelter was lower (Z=2.2, p$=$0.028), indicating that leafcutters at high stocking densities may migrate to shelters close to the edge of the field (Figure \ref{fig:hbeeDist_both}).
+Both leafcutter bees and honey bees visited at similar rates in the male and female bays (leafcutter bee: p$=$0.72, honey bee: p$=$0.32), but within the female bay, leafcutter bee visitation was lower in the centre of the bay (p$=$0.04, 51 vs. 29 visits/hr), while honey bee visitation was higher at the centre of the bay (p$=$0.008, 71 vs. 117 visits/hr, Figure \ref{fig:edgeCentVis_both}).
+%Therefore, visitation by both species strongly decreases with distance from the edge of the field, decreases with distance from the leafcutter shelters in seed canola fields, and is done by different bees at the centre of the female bay.
+
+%Visits/hr: In GP, 3.1 in 2014, 10.6 in 2015; in LB 5.9 in 2014, 4.5 in 2015
+\begin{figure}
+    \centering
+    \includegraphics[width=0.9\textwidth,keepaspectratio=true]{slopeNumHivesDistVis.png}
+    \caption[Partial effect of distance away from field edge and stocking on honey bee visitation in commodity canola fields]{Partial effect of distance away from field edge and stocking on honey bee visitation in commodity canola fields. Solid lines represents median, and shaded areas represent 95\% CIs. Red line represents overall slope (controlling for region and year).}
+    \label{fig:hbeeDist_commodity}
+\end{figure}
+%PERHAPS INCLUDE FIGURE OF AREA/YEAR EFFECTS IN THE SUPPLEMENTAL?
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.9\textwidth,keepaspectratio=true]{slopeHbeeDist_both.png}
+    \caption[Partial effect of distance from field edge on bee visitation in seed canola fields]{Partial effect of distance from field edge on honey bee and leafcutter bee visitation in seed canola fields. Solid lines represent medians, and shaded areas represent 95\% CIs.}
+    \label{fig:hbeeDist_both}
+\end{figure}
+
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.9\textwidth,keepaspectratio=true]{slopeLbeeDistBothBees.png}
+    \caption[Partial effect of distance from leafcutter shelter on bee visitation in seed canola fields]{Partial effect of distance from leafcutter shelter on honey bee and leafcutter bee visitation in seed canola fields. Solid lines represent medians, and shaded areas represent 95\% CIs.}
+    \label{fig:lbeeDist_both}
+\end{figure} %SH: WOULD BE COOL TO HAVE A ``SUM OF BOTH BEES" LINE AS WELL - perhaps in the manusript? may require a separate model of both bees, or possibly just adding model results together
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.9\textwidth,keepaspectratio=true]{slopeEdgeCent_both.png}
+    \caption[Partial effect of bay position on honey bee and leafcutter bee visitation]{Partial effect of bay position (edge or centre of female bay) on honey bee and leafcutter bee visitation. Coloured points represents median value, and vertical bars represent 95\% CIs.}
+    \label{fig:edgeCentVis_both}
+\end{figure}
+
+
+\subsection{Prediction 2: Pollen deposition increased by bee visitation}
+Pollen deposition was enhanced by bee visitation in seed canola, but not in commodity canola.
+In commodity canola, pollen deposition on stigmas was high (mean: 293 grains per stigma, SD: 385, range: 0--3981), but honey bee visitation did not affect deposition (p$=$0.77, Figure \ref{fig:hbeeVisPol}).
+Pollen grains per stigma weakly declined with distance from the edge of the field (p$=$0.07), but this only amounted to an average decrease of 290 grains per stigma at the edge compared to 240 at the field centre (6\% decrease), meaning that distance did not strongly affect pollen deposition either.
+Flies were common visitors in commodity fields (Table \ref{tab:propVisitors}), but had no detectable effect on pollen deposition (p$=$0.577), and other flower visitors were rare, so only honey bees and leafcutter bees were considered as potential pollinators.
+In seed canola, overall pollen deposition was much lower (mean: 22 grains per stigma, SD: 43, range: 0--578), was strongly increased by leafcutter bee visitation (Z=3.2, p$=$0.002, Figure \ref{fig:visPol_both}, 12 grains/stigma at 6 visits/hr vs. 16 pollen grains at 60 visits/hr), and also decreased with distance from the edge of field (Z=-4.4, p$=$0.0001, Figure \ref{fig:distCentPol}, 23 vs. 11 grains/stigma).
+Pollen deposition was lower in the centre of the female bay (Z=-4.5, p$=$0.0001, 23 vs. 13 grains/stigma) independent of visitation rate, suggesting that pollen is lost from bees crossing from male bays, who likely visit flowers at the edge of the bay first \citep{pinnisch1990}. 
+There was no direct effect of honey bees on pollen deposition (Z=0.98, p$=$0.33), implying that most of the pollen deposition occurs via leafcutter visitation. 
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.9\textwidth,keepaspectratio=true]{slopeHbeeVisPol.png}
+    \caption[Partial effect of honey bee visitation on pollen deposition in commodity canola]{Partial effect of honey bee visitation on pollen deposition in commodity canola. Solid line represents median, and shaded areas represent 95\% CIs.}
+    \label{fig:hbeeVisPol}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.9\textwidth,keepaspectratio=true]{slopeVisPol_both.png}
+    \caption[Partial effects of honey bee and leafcutter bee visitation on pollen deposition in seed canola]{Partial effects of honey bee and leafcutter bee visitation on pollen deposition in seed canola. Solid lines represent medians, and shaded areas represent 95\% CIs.}
+    \label{fig:visPol_both}
+\end{figure}
+
+\begin{figure} 
+    \centering
+    \includegraphics[width=0.9\textwidth,keepaspectratio=true]{slopeDistCentPol.png}
+    \caption[Partial effect of distance from field edge and bay position on pollen deposition in seed canola]{Partial effect of distance from field edge and bay position on pollen deposition in seed canola. Coloured points represents median, and shaded areas represent 95\% CIs.}
+    \label{fig:distCentPol}
+\end{figure}
+
+%LH: WRITING BELOW THIS POINT COULD BE MORE ECONOMICAL
+\subsection{Prediction 3: Larger plants produce more seeds} 
+
+Plant size was largely influenced by plant density, but this differed between commodity and seed canola crops.
+Plant density was higher overall in commodity fields (mean: 48.5 plants/m$^2$, SD: 22.9, range: 6--151 ) than seed fields (mean: 39.4 plants/m$^2$, SD: 17.0, range: 11--89), and commodity canola plants were smaller on average (mean: 18.2 g, SD: 14.4, range: 0.8--110.2) than seed canola plants (mean: 30.7 g, SD: 21.2, range: 1.2--144.3).
+However, commodity canola plant size was not influenced by plant density (Z=-1.62, p$=$0.10, Figure \ref{fig:plDensPlSize}), indicating that any density-dependence was overwhelmed by other factors, but plant size in seed canola was negatively influenced by planting density (Z=-13.2, p$<$0.0001), and plants were larger at the centre of the field independent of density (Z=5.4, p$<$0.0001).%, possibly because of proximity to the centre of the irrigation system. 
+Plant density was slightly lower at the edge of commodity canola fields (Z=1.68, p=0.09), but was much lower in seed canola (Z=5.2, p$<$0.0001), indicating lower seedling survival or seeding density at the edges of the field.
+Neither irrigation (p=0.76), site (p=0.86), nor distance from field edge (p=0.70) directly influenced commodity canola plant size, but plants were larger in 2015 (Z=2.5, p=0.01). 
+
+\begin{figure} 
+    \centering
+    \includegraphics[width=\textwidth,keepaspectratio=true]{plDensPlSize_both.png}
+    \caption[Partial effects of plant density on plant size]{Partial effects of plant density on plant size, for commodity and seed canola plants. Solid lines represents median, and shaded areas represent 95\% CIs.}
+    \label{fig:plDensPlSize}
+\end{figure}
+
+Plant size had a strong effect on the number of pods produced, and there was evidence of fruit set suppressing future flower production.
+Commodity canola plants produced fewer flowers per plant (mean: 198, SD: 157, range: 13--1419) than seed canola plants (mean: 468, SD: 328, range: 26--2712), and also produced fewer pods per plant (mean: 143, SD: 114, range: 5--892) than seed canola plants (mean: 303, SD: 208, range: 10--1410).
+In both commodity and seed canola, plant size had a strong positive effect on the total number of flowers per plant (commodity: Z=92.4, p$<$0.0001, seed: Z=82.7, p$<$0.0001, Figure \ref{fig:plSizeFlwCount}), as well as fruit set (commodity: Z=5.5, p$=$0.0002, seed: Z=19.9, p$<$0.0001, Figure \ref{fig:flwSurv_both}).
+Fruit set had a strong negative influence on total flowers per plant (p$<$0.0001) in both commodity (Z=-12.5) and seed canola (Z=-12.1), indicating that high levels of fruit set suppressed future flower production.
+Finally, commodity plants were also lower-yielding (mean: 6.8 g of seeds per plant, SD: 6.0, range: 0.01--47.9) than seed canola plants (mean: 9.6, SD: 7.9, range: 0.02--60.8).
+However, the harvest index of commodity canola (mean: 0.26, SD: 0.08, range: 0.005--0.65) was higher than seed canola (mean: 0.23, SD: 0.09, range: 0.003--0.55), meaning that commodity plants produced more seeds per gram of biomass than seed canola plants, likely due to the lack of pollen limitation (see below).
+
+
+\begin{figure} %SH: HARD TO COMPARE BECAUSE OF DIFFERENT AXES
+    \centering
+    \includegraphics[width=\textwidth,keepaspectratio=true]{plSizeflwCount_both.png}
+    \caption[Partial effect of plant size on number of flowers per plant]{Partial effect of plant size on number of flowers per plant, for commodity and seed canola plants. Solid lines represent median, and shaded areas represent 95\% CIs.}
+    \label{fig:plSizeFlwCount}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=\textwidth,keepaspectratio=true]{plSizeFlwSurv_both.png} 
+    \caption[Partial effect of plant size on fruit set]{Partial effect of plant size on fruit set (\% of flowers that became pods), for both commodity and seed canola. Solid lines represent median, and shaded areas represent 95\% CIs.}
+    \label{fig:flwSurv_both}
+\end{figure}
+
+
+Plant size had a positive effect on seed size and seeds per pod in seed canola, but not in commodity canola, and the relationship between seed size and number was negative in seed canola but positive in commodity canola.
+Commodity canola plants produced more seeds per pod (mean: 23.0 seeds per pod, SD: 7.4) than seed canola (mean: 16.3 seeds per pod, SD: 9.1), but seed mass was lower in commodity canola (mean: 2.74 mg/seed, SD: 1.04) than seed canola mean (mean: 3.59 mg/seed, SD: 1.33).
+In commodity canola, plant size did not impact seeds per pod (Z=1.00, p=0.32) or seed size (Z=-0.40, p=0.69, Figure \ref{fig:seedWeightCount_both}), but eed size was positively related to seeds per pod (Z=6.1, p$<$0.0001, Figure \ref{fig:seedWeightCount_both}).
+In seed canola, however, seed size increased with plant size (Z=4.7, p$<$0.0001, Figure \ref{fig:seedWeightCount_both}), decreased with seeds per pod (Z=-13.1, p$<$0.0001), and interestingly, increased with plant density (Z=2.9, p$=$0.004), suggesting resource limitation at both the pod and the plant level. 
+There were also between-year differences in seeds per pod (commodity canola only: Z=4.7, p$<$0.0001, 21.7 seeds per pod in 2014, 24.6 in 2015) and seed size (commodity canola: Z=2.2, p=0.031, 2.04 mg/seed in 2014, 2.31 mg/seed in 2015; seed canola: Z=3.6, p=0.0003, 3.11mg/seed in 2015, 3.59mg/seed in 2016), pointing to differences in overall growing conditions between years.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.9\textwidth,keepaspectratio=true]{seedWeightSeedCount_both.png}
+    \caption[Partial effects of seed count and plant size on seed size]{Partial effects of seed count and plant size on seed size, for both commodity and seed canola. Solid lines represent median, and shaded areas represent 95\% CIs.}
+    \label{fig:seedWeightCount_both}
+\end{figure}
+
+\subsection{Prediction 4: Pollinated plants produce more seeds}
+
+Pollen deposition increased fruit production and seed production in seed canola, but not in commodity canola.
+Pollen deposition had no effect on fruit set (p=0.12), seeds per pod (p=0.94) or seed size (p=0.56) in commodity canola, and there was also no direct effect of honey bee visitation on fruit set (p=0.38), seeds per pod (p=0.55), or seed size (p=0.34).
+Seed canola, in contrast, was highly dependent on pollen deposition.
+Pollen deposition increased fruit set (Z=3.1, p$=$0.002), and seeds per pod (Z=2.3, p$=$0.02), but had no direct effect on seed size (p$=$0.35).
+Fruit set also decreased with three types of distance: distance into the field (Z=-5.3, p$<$0.0001), distance from leafcutter shelters (Z=-3.2, p$=$0.002), and distance from the edge of the female bay (Z=-4.0, p$=$0.0001).
+Seeds per pod decreased in the centre of the female bay (Z=-4.6, p$<$0.0001), and was higher in plants with high fruit set (Z=6.0, p$<$0.0001).
+
+\section{Discussion}
+%LH: DISCUSSION TOO NARROWLY FOCUSED. WHAT ARE THE BROADER IMPLICATIONS? CONTAINS A LOT OF SPECULATION WITHOUT ANY EVIDENCE/REFERENCES
+%SH: RELATE RESULTS TO HYPOTHESES, AND START WITH BIG PICTURE IN ORDER TO DISCUSS
+This study examined the relative strength of the path between visitation, pollination, and yield, in two types of canola crops, and showed a strong path between visitation and yield in seed canola, but not in commodity canola.
+First, honey bee and leafcutter bee visitation decreased with distance from their hive or shelter, but unexpectedly, leafcutter bees visited more frequently at the edge of the field.
+Secondly, honey bees had little (direct) influence on pollen deposition in either crop type, leafcutter bees had a positive effect on pollen deposition in seed canola.
+Finally, the model revealed that commodity canola production is largely limited by plant size, while seed canola production is limited by both pollen and plant size.
+
+\subsubsection{Bee visitation} 
+Honey bee visitation in both field types declined with distance into the field, but overall visitation was much higher than commodity fields, due to the higher honey bee stocking rate used in seed fields (3.6 vs. mean 0.6 hives/ha).
+Since honey bees travel from their hive outside the edge of the field, this decline was not surprising, but we did not expect the similar decrease observed in leafcutter bee visitation with distance into the field, as their shelters are located \textit{within} the field.
+This decrease with distance into the field may have been caused by leafcutter bees migrating from shelters at the centre of the field to the edge \citep{goerzen1995}.
+Like honey bees, female leafcutter bees are central-place foragers, and tend to not forage far from their nests \citep{peterson2005,pitts2011, brunet2019}.
+However, leafcutter bees are not as constrained to their nest site as honey bees, and can drift between shelters in a given field \citep{goerzen1995, pittsSinger2013}.
+Leafcutter bees must also forage for leaf materials to create cocoons, but they prefer to build cocoons out of thinner, non-canola leaf types, mainly plants in the families Fabaceae and Rosaceae \citep{sinu2018}.
+Seed canola fields have very few weeds within the area of the crop, meaning that leafcutter bees at the centre of the field may have few choices of leaf material, or alternative pollen and nectar sources.
+Therefore, leafcutter bees likely move from the shelters at which they were released in the centre of the field to the shelters at the edge of the field, so as to gain access to better leaf material \citep{horne1995}, which is more available off-field, or to better forage for off-field pollen or nectar \citep{horne1995b}.
+This would explain why greater visitation occurred at the edge of the field, and may also explain why this pattern was not seen in fields with half-stocked shelters.
+To test this, a mark-recapture study of female leafcutter bees could be done to see if bees migrate to shelters at the edge of the field, or if visitation is higher due to other reasons (\textit{e.g.} feral populations migrating to edge of field, long-distance foraging from centre of field as in \citealp{peterson2005}).  %SH: FINE FOR THESIS, BUT CAN BE REMOVED FOR MANUSCRIPT
+It would be interesting to see if there is a critical threshold of leafcutter bee density per-shelter that causes them to move to shelters at the edge of the field (similar to \citealp{pittsSinger2013}).
+%Honey bees visited flowers at the edge of the field more frequently than those in the middle of the field, as predicted for central-place foragers with nesting aggregations outside the field (\citealp{olsson2014}, see Chapter 2).
+%Similarly, the high concentration of canola nectar (\citealp{mohr1990}, 58.3\% brix from Chapter 2) may cause leafcutter bees to choose more diluted nectar under hot and dry conditions, similar to honey bees \citep{ohguchi1983}. % canola pollen is valuable to bees \citep{mohr1988,huang2004},
+% Potential future studies should investigate how leafcutter bees shift among shelters after emergence, how cocoon production in seed fields varies with distance, and should investigate inter-cropping leaf material plants (e.g. \emph{Polygonum}, \emph{Pisum}, or other large, thin-leaved plants) to encourage leafcutter bees to stay within the field.
+
+%Leafcutter-honeybee interactions
+Honey bee visitation in hybrid seed fields was lower at areas near to leafcutter shelters. 
+This may have been driven by avoidance of nectar and pollen competition near shelters, as areas close to leafcutter shelters may become depleted in nectar and pollen, deterring honey bee visitation (similar to \citealp{currie1997}).
+Honey bees also suffer from direct interference by leafcutter bees near to their shelters.
+Several times during the study, \textit{M. rotundata} females and males directly harassed honey bees during the plot-level observations, tackling honey bees both on the flowers and in the air (also seen by \citealp{batra1978} and \citealp{waytesMsc}). 
+Honey bees were never the aggressor in these interactions, so interference between leafcutter bees and honey bees may be unidirectional, at least in areas near leafcutter bee shelters. 
+For this reason, we treated high leafcutter visitation as causing lower honey bee visitation in our SEM (Figure \ref{fig:seedSEM}, arrow from leafcutter visit rate to honey bee visit rate).
+
+Honey bee visitation and foraging behaviour varied strongly between the male and female bays of seed fields, as well as within the female bays.
+Visitation rates of honey bee foragers were almost twice as high in the centre of the female bay, and conversely, leafcutter bee visitation was almost twice as low.
+This could be due to leafcutter bees avoiding competition for nectar with honey bees, but more likely reflects a stronger need for pollen among leafcutter bees than honey bees \citep{cane2011}.
+Only 1.4\% of the honey bees in the female bay were pollen foragers (Table \ref{tab:sideWorking}), meaning that foragers who have (recently) come into contact with pollen rare.
+Both \citet{waytesMsc} and \citet{gaffney2019} showed that honey bees exhibit floral fidelity during foraging trips, with minimal crossing between male and female bays ($\sim$5\% of observations, \citealp{waytesMsc}), limiting pollen transfer between the male and female flowers.
+Side-working was a very common behaviour among honey bees in commodity fields (65\% of the total visits from honey bees during 2015 were side-working), as well as the male bays of seed fields (36\%), but not in the female bays (3\%, Table \ref{tab:sideWorking}).
+This behaviour is relatively common on male-fertile flowers of \textit{Brassica} \citep{free1973,free1983,delbrassine1988,mohr1988} as well as other flowering crop flowers \citep{thomson2001}, and may be due to honey bees avoiding contact with the stigmas to increase ease of access to nectar, or to reduce the amount of grooming needed during a nectar foraging bout.
+The foragers who were side-working tended to not switch to top-working (personal observation), so this is likely a consistent individual behaviour (at least in experienced foragers).
+Therefore, honey bees pollen foragers in seed canola fields appear to avoid flowers in the female bay, and commonly engage in side-working behaviour in both commodity and seed canola fields, limiting their opportunities for pollen transfer (see below).
+%However, after controlling for stocking rates, visitation in commodity fields was higher in Grande Prairie in 2015.
+%This may have been caused by greater food availability outside of canola fields in 2015, causing foragers to concentrate in canola fields.
+%Canola nectar tends to have high sugar concentrations \citep{szabo1985}, so workers may have selected lower-concentration flowers in field margins and ditches, such as \textit{Trifolium} and \textit{Medicago}, instead of the flowers in the canola fields, depending on local abundances in each year and location, but this seems unlikely, as nectar concentrations were higher in 2015 in Grande Prairie (Chapter 2 Appendix).
+%Water foraging differences between years may also help to explain this effect, as foraging honey bees tend to avoid concentrated nectar or prioritize water foraging \citep{lindauer1955,kuhnholz1997} during hot weather.
+%During 2015, we did notice a large number of foragers in Lethbridge gathering water from pools of water near fields instead of visiting flowers (personal observation), so foragers may have been gathering water instead of foraging on flowers (at least in that region), but this is anecdotal, and would require a formal study to confirm this. 
+% Avoidance of concentrated nectar may reflect slower rates of imbibing them \citep{harder1986}.
+% Nectar concentrations were slightly higher in GP in 2015 (60 vs 56), but were about 58.4 each year in LB. Soil water and irrigation don't appear to do much (ultimately needs better modelling, though)
+
+\subsection{Pollen deposition}
+%Pollen deposition in commodity fields
+Honey bee visitation did not increase pollen deposition in commodity canola fields compared to unstocked fields, meaning that wind and/or self-pollination are the likely agents of pollen transfer.
+The stigmas and flowers of \emph{Brassica} are not aligned for optimal dispersal and deposition from the wind, so cross-pollination likely occurs mainly via insects \citep{mesquida1982,cresswell2004}.
+However, wind-induced self-pollination (plant shaking) can increase yield in \textit{Brassica} \citep{williams1986, mesquida1988c}, and fields without bee pollination have outcrossing rates of about 20\% within the field \citep{rakow1987,becker1992}.
+The style of \textit{Brassica} grows past the anthers during maturation, allowing deposition of large amounts of self-pollen, suggesting that self-pollination is the dominant mode of pollination.
+Honey bees can assist in deposition of self-pollen, as \citet{ali2011} found that \textit{Apis dorsata} and \textit{Apis florea} can both deposit 100-200 grains of pollen per visit on a canola flower (\emph{B. napus} var. \emph{Bulbul}).
+However, \citet{waytesMsc} used male-sterile flowers and found that \textit{A. mellifera} deposit far less outcrossed pollen ($\sim$ 2 grains per visit), suggesting that much of the pollen deposited by honey bees on canola stigmas is self-pollen. 
+Because the overall pollen deposition rates found in this study were so high (mean: 293, SD: 385), honey bee visitation seems to have made little difference in the amount of self-pollination.
+The typical lifetime of a canola flower is approximately 3 days, and the stigmatic surface is receptive for 24--36 hours within this period \citep{eisikowitch1981,hoyle2007}, so it may be that 10-minutes of observing flower visitors was too short of a time interval to relate to pollen deposition.
+This is unlikely, however, as large amounts of pollen were present on commodity canola stigmas even at the centre of unstocked fields (average plot-level visitation rate was 0.23 visits/hr).
+These results suggest that stigmas are largely saturated with self-pollen, swamping any extra pollen deposition by honey bees.
+%SH: DOING A BACK-OF-ENVELOPE CALC: 0.23 VISITS/HR X 2 GRAINS/VISIT X 12 HR X 3 DAYS = 5-6 GRAINS PER DAY, LESS THAN 1% OF STIGMA LOAD
+% This runs contrary to other studies in commodity canola (\citealp{sabbahi2005}, but see \citealp{garibaldi2013} and \citealp{waytesMsc}), so why did 
+
+%REVIEW THIS
+Honey bee behaviour in seed fields made pollen transfer between male and female plants unlikely, and this was also reflected in the measurements of stigma deposition. 
+Deposition was not affected by honey bee visitation, but was strongly increased by leafcutter bee visitation.
+Leafcutter bees tend to switch between male and female flowers more frequently than honey bees do \citep{waytesMsc}, transport more viable pollen between flowers \citep{parker2015}, and tend not to side-work canola flowers (\citealp{soroka2001}, personal observation), which may explain their increased pollination efficacy.
+We also found that pollen deposition also decreased with distance from the edge of the field, was lower in the centre of the female bays, and that this was not solely explained by leafcutter bee abundance (Figure \ref{fig:seedSEM}).
+During foraging bouts, leafcutter bees may travel further between flowers than honey bees do; \citet{brunet2019} found that leafcutter bees foraging in alfalfa (\emph{Medicago sativa} L.) travelled an average of 21 cm between flowers, while honey bees only travelled 16 cm.
+However, pollen carryover \citep{thomson1986} to the middle of the bay female is likely reduced, as leafcutters likely visit the edge of the female bay before venturing into the centre.
+The decrease of pollen deposition with distance into the field (independent of visitation rates) also suggests that the same visitation rate of pollinators in the centre of the field results in less pollen deposition.
+This may be due to lower levels of competition at the centre of the field, leading to a higher nectar (or pollen) standing crop. %LH: more likely that bees at centre of F bays carry less pollen
+Foraging \textit{Bombus} take smaller trips between flowers and will forage in smaller areas under nectar-rich conditions (area-restricted search, \citealp{pyke1978b, heinrich1979}), so leafcutter foraging may follow a similar pattern, causing lower pollen deposition at the centre of the field where competition is lower.
+%Leafcutter bees are extremely fast fliers, and are difficult to follow after they leave an inflorescence, meaning that tracking their movements during an entire foraging bout would be almost impossible.
+% Visits by honey bee foragers were almost twice as high in the centre of the female bay, but pollen deposition was about 40\% lower (  Figure \ref{fig:distCentPol}), which correspondingly is 
+% Honey bees in seed fields tended to visit more in the centre of the female bay, even close to the edge of the field, yet pollen deposition was still about 40\% lower (Figure \ref{fig:distCentPol}).
+% While we found that leafcutter bees also tend to avoid the centre of the female bays, and decrease with distance into the field, this extra dependence could have been caused by the fact that the visitation data represents a short ``snapshot'' of the pollen deposition process.
+% For example, canola flowers are receptive for 1-2 days before the petals dehisce, while the surveys only recorded 5 or 10 minutes of visitation, meaning we may have not captured the deposition process on the time scale that it occurs, and the extra variance is being accounted for by distance from field edge and the centre of the female bay.
+% Leafcutter visitation can be extremely sporadic, so the distance and bay position measurements capture differences in the average visitation process better than 10 minute measurements.
+% Pollen deposition also likely changes over the course of the season, as flower availability decreases.
+
+Honey bees may have an indirect positive effect on pollen deposition, as they may cause leafcutter bees to travel farther by lowering overall nectar and pollen standing crop, or release airborne pollen from male-fertile flowers.
+\citet{pierre2010} showed that honey bees can increase the amount of airborne pollen by foraging on male-fertile flowers and releasing pollen from the anthers, causing increased yields in nearby male-sterile flowers; therefore, honey bees may indirectly contribute to a higher rate of wind pollination.
+Honey bees may also cause leafcutter bees to forage at further distances away from their shelters.
+Bumble bees move further between flowers when foraging in \textit{Trifolium} fields that have been depleted by honey bees \citet{heinrich1979}, so a similar process could occur in canola seed fields. 
+Leafcutter bees do not appear to use area-restricted search \citep{brunet2019}, but we expect that the foraging range of leafcutter bees around their shelters would sitill decrease, because if honey bees lower pollen and nectar levels at the edge of the field, then leafcutter bees should travel shorter distances to gather the same reward (according to the predictions of Chapter 2).
+%RC: MAY HAVE TO CHOP FOR THE MANUSCRIPT, BECAUSE IT DOESN'T HAVE OTHER AREA-RESTRICTED SEARCH LIT
+We also expect that foraging leafcutter bees would make shorter trips between flowers (similar to \citealp{heinrich1979}), and possibly may switch between bays less frequently \citep{waytesMsc,gaffney2019}, due to a greater floral fidelity on higher-rewarding flowers in the male bay \citep{mesquida1978}.
+If this is true, this would result in a lower rate of (overall) pollen deposition by leafcutter bees during the same period.
+However, testing this would require observations of seed canola fields that were only stocked with leafcutter bees, which is extremely rare in southern Alberta.
+%A simple test of this would be to remove honey bee hives from a seed field, mid-season, and perform observations of leafcutter visitation patterns before and after the removal.
+
+\subsection{Pod production} % The total yield of a canola plant is a function of three components: number of pods per plant, number of seeds per pod, and seed size.
+Fruit set (i.e. pod production) in commodity canola was positively affected by plant size, but not by pollen deposition or honey bee visitation.
+Both pod production and seeds per pod can increase with extra pollination \citep{jauker2008,sabbahi2005,sabbahi2006,duran2010}, so this lack of effect may be due to a high overall level of pollen deposition (Figure \ref{fig:hbeeVisPol}), even in fields without honey bees.
+There was no effect of honey bee visitation on fruit set, seeds per pod, or seed size, indicating that visitation did not seem to cause either \textit{a)} a greater quantity of pollen (see above) or \textit{b)} higher quality (outcrossed) pollen.
+Self-pollination (geitanogamy) in canola can result in similar fruit production as outcrossing \citep{rosa2011}, implying that pollen quality is not likely a limiting factor in canola fruit set, at least in some varieties.
+Flower number was negatively related to fruit set, which implies a response to pollination (high flower fertilization suppresses further flower production) and/or a reproductive trade-off (greater pod development rate means more competition among pods for resources).
+%RC: THESE SCENARIOS AREN'T MUTUALLY EXCLUSIVE
+We considered the first scenario to be the stronger effect, as \citet{sabbahi2006} and \citet{mesquida1981} both found that canola plants compensated for experimental removal of flowers by increasing branch and flower production, until the plant reached about 170 pods.
+Their final number of pods is similar to the plants from our study (median: 112, range: 5--892), but we found that larger plants also had greater fruit set, in addition to higher flower production, presumably caused by the larger pool of resources that large plants are able to invest into reproduction. 
+%This could indicate stronger overall competition between plants in seed fields, but that plant resources are higher in the centre of the crop field than at the edge.
+
+Pollination increased pod production in seed canola, but not in commodity canola, meaning that extra pollination is valuable for seed canola crops, but not commodity canola. 
+This is similar to the findings of \citet{mesquida1981} and \citet{steffan2003}, who found that fruit set in male-sterile plants responded positively to visitation, while male-fertile plants (``male" plants in seed fields, all plants in commodity fields) had no response (but see \citealp{adegas1992}).
+Pod production in seed canola increased with both pollen deposition and plant size, suggesting that both pollen availability and plant resources constrain pod production. %(\citealp{mesquida1981} did not consider plant size).
+However, the effect size of pollen deposition (Z=3.1) was much smaller than that of plant size (Z=19.9), indicating that the factors controlling plant size (fertilizer, plant density, and soil quality) likely constrain pod production more strongly than pollination alone, in both commodity and seed canola plants. %RC: SEEMS AN INTERACTION WOULD TEST THIS BETTER
+There were also effects of distance on fruit set, independent of pollen deposition: pod set decreased with distance from the edge of the field and distance to leafcutter shelters independent of pollen deposition, and was lower in the centre of the female bays.
+\citet{mesquida1978} also found that fruit set in male-sterile canola declined quickly with distance from the male-fertile plants (due to wind pollination), but the effect we found is likely related to the earlier effect of lower pollen carryover at the centre of the female bays, and possibly the centre of the field.
+However, our analysis points to the strong relative importance of plant resources, as well as pollination services \citep{marini2015}, mediated through the effect of leafcutter bee visitation, to the production of hybrid seed canola. 
+
+\subsection{Seed number and size}
+In commodity canola plants, the number of seeds per pod was only affected by between-year variation, and was unaffected by plant size and pollination.
+In contrast, the number of seeds per pod in seed canola was increased by pollen deposition, flower survival, and plant size, and was reduced in the centre of the female bay. 
+Position in the female bay influenced pollen deposition, both by wind and insects, indicating that the decrease in seed number at the centre of the bay is ultimately caused by reduced pollen deposition from lower visitation \citep{mesquida1981,mesquida1982}.
+Seeds per pod also increased with pollen deposition and plant size, but the effect size of pollen deposition (Z=2.3) was smaller than that of plant size (Z=5.6), suggesting that plant resources limit seed production more strongly than pollen deposition in seed canola.
+\citet{mesquida1982} found that in seed canola, pod production, rather than seeds per pod, was the main variable that was reduced by low pollen deposition.
+Interestingly, plant density had a positive effect on seed size in seed canola, pointing to a possible reduction in seed count because of shading or crowding, causing an increase in seed size (but see \citealp{angadi2003}).
+%Increased plant density within a patch can lead to more pollinator visitation \citep{kunin1997}, but not necessarily more visits per flower \citep{klinkhamer1990}.  
+%The between-year differences in commodity canola indicate an influence of weather, as air temperatures above 22$^\circ$C can cause flower sterility in canola \citep{morrison1992, gan2004}. %SH: EFFECT OF WEATHER GOES MUCH DEEPER THAN 22C THRESHOLD
+%However, since year did not affect fruit set, the weather effect seems to be limited to ovules, rather than flower abortion (at least in this data set).
+% Seeds per pod is highly correlated with ovule number \citep{clark1979,wang2011} and ovule fertility \citep{bouttier1992}, causing variance of seed within plants. 
+%\citet{duran2010} showed that complete exclusion of insects (1 mm nets) from commodity canola plants reduced seeds per pod, but that partial exclusion (2.5mm) and control plots had similar seeds per pod.
+%Net exclusion of insects can be problematic for comparing yields because exclosures can change microclimate (shade, wind reduction, increased humidity, \citealp{williams1987, kearns1993}), so exclosures may over- or under-estimate the effect of pollination \citep{ouvrard2019}.
+
+%Seed size
+Plant size was one of the dominant factors controlling seed size in seed canola, while in commodity canola, plant size did not influence seed size.
+Plant size can positively influence seed size in some plant species \citep{maddox1983}, and this appears to be true in canola \citep{riffkin2012} as well as other Brassicaceae \citep{mazer1987}.
+Similarly, seeds per pod and seed weight varied positively in commodity canola, this pattern was reversed in seed canola (Figure \ref{fig:seedWeightCount_both}). 
+These differences likely occurred because of variation in available seed resources among the parts of the plant \citep{vanNoordwijk1986}, which can cause a positive size-number relationship even in resource-limited plants. 
+In commodity canola, pollen is readily available, and there seems to be little difference between outcrossed- and self-pollen \citep{steffan2003, rosa2011}. 
+Canola plants produce flowers from the bottom up, and produce fewer, smaller seeds at the ends of the branches because the younger pods have access to fewer resources at the end of the season \citep{sabbahi2006}, resulting in an increased rate of seed abortion \citep{clarke1979}.
+Pods with low resources at the end of the season are forced to abort more ovules \citep{wang2011}, causing a positive relationship between seed number and size.
+Thus, in commodity canola, variation in resources with plant size is masked by resource variation over time.  
+In seed canola, pollen is much rarer (median: 7 grains/stigma vs. 155 in commodity), but plant sizes are similar (or larger) than commodity canola, such that plant resources are still available to developing pods at the end of the season.
+This causes a size-number trade-off within pods that is mediated by plant size.
+Most studies on commodity canola report a seed size-number trade-off at the level of plant \citep{angadi2003,koltowski2005}, we found a positive relationship at the pod level (but see \citealp{sabbahi2005}).
+Perhaps within-plant resource variation is a more likely driver of seed number than pollen deposition, as pollination did not appear to be limiting (Figure \ref{fig:commoditySEM}, weak paths from pollen to yield metrics).
+%While we did not quantify pod position on branches, the pods at the end of the branches did appear to have fewer seeds, meaning that some of the variation within plants likely occurred because of late-season seed.
+%Why did the same species of plant experience such different relationships between seed size and seed number, and such different effects of plant size (a proxy of resource availability)?
+%Because of this abundance of pollen, resource availability decreases over time as the plant matures ovules into seeds, becoming restricted at the end of the season.
+% Ovule abortion in \textit{Brassica} is also higher at the beginning and end of the flowering season, likely because of a lower amount of high-quality pollen available at the tails of the season \citep{wang2011}.
+% Similarly, the main raceme of canola tends to produce the most seeds per pod, with accessory branches producing fewer, smaller seeds, again due to flowers on branches being produced later in the season than the flowers on the main raceme \citep{clarke1979}.
+
+\subsection{Summary} %RC: VERY CANOLA-FOCUSED
+This study assesses the relative importance of pollination and plant resources for the production of canola crops, using field-realistic data from central and southern Alberta.
+First, it shows that insect visitation changes across small spatial scales (meters for leafcutter bees, tens of meters for honey bees), and are at odds with the large scales of Albertan crop fields \citep{fritz2015}.
+Visitation of both honey bees and leafcutter bees in canola fields is concentrated at the edge of fields, and is lower at the centre of the female bays in seed canola.	
+Second, honey bees have little direct influence on pollen deposition in either crop system, likely due to a high background level of pollen deposition on stigmas in commodity canola, whereby extra pollen deposition is of little benefit to plant reproduction.
+Seed canola plants, in contrast, have much lower levels of pollen deposition overall, and leafcutter bees deliver a large direct benefit to fruit and seed production. 
+The centre of the female bays illustrates this effect: honey bees have a higher visitation rate, but pollen deposition, fruit set, and seed set are all lower.
+Finally, both plant size and pollination limit seed production in seed canola, but only plant size limits commodity canola production, showing the relative importance of both pollination and plant resources using in-field data.
+
+Several future lines of work could be followed based on this study.
+First, other factors besides total seed yield are important for commodity canola production, such as green seed and oil content \citep{tautorus1994, abbadi2011, ghazani2013}.
+Our work identified the effect of bee pollination on seed production in terms of total weight, but may have overlooked these aspects of yield valuation \citep{bommarco2012}. 
+Secondly, we found that honey bees appear to add little pollination value for seed canola crops, but since we did not use fields that had no honey bees, there may be unobserved indirect benefits that honey bees add.
+For example, they may contribute to better pollination by leafcutter bees by reducing the nectar and pollen standing crop, causing leafcutter bees to forager further away from their shelter \citep{pyke1978b, heinrich1979}, or by increasing the amount of airborne pollen \citep{eisikowitch1981,mesquida1982}.
+Third, while the random-intercept model that we used accounts for field-to-field variation in growing conditions, this also means that we may have marginalized across other factors that were not accounted for by plant size, such as nutrients, soil moisture, crop pests, and variety.
+Pollination benefits to all flowering crops are contextual, even in highly-pollination dependent crops \citep{tamburini2017, tamburini2019}; that is, the effect of additional pollination depends on the levels of other plant resources available during growth \citep{marini2015, bartomeus2015, gagic2017}.
+Finally, SEMs cannot model causal loops \citep{grace2006}, which is closer to the method by which plants respond to lack of pollination (\emph{i.e.} pollination failure $\rightarrow$ plant growth $\rightarrow$ flower production).
+Our model serves as an approximation of this process, but could be built upon by using dynamic linear programming techniques \citep{iwasa2000,nord2011} to examine how plants dynamically respond to pollen failure.
+These would lend greater understanding to the process of hybrid seed production, and could be used to more accurately predict crop yields in novel scenarios.
+
+%First, honey bees have lower per-visit pollen deposition on canola than \textit{Bombus} or \textit{Megachile} \citep{sahli2007, woodcock2013}.
+%This can be compensated for by using a high density of honey bee hives in comparison to the crop area \citep{manning2005, clay2009}, but canola fields in Alberta are very large \citep{fritz2015}, so 
+%This suggests that honey bees may not be beneficial to commodity canola production, at least at the low levels of visitation typically provided by smaller apiaries (20-40 hives per apiary) that are typically meant for honey production rather than pollination.
+%Second, different canola varieties have different pollination dependence \citep{hudewenz2013}
+%Most farmers in Alberta use hybrid varieties of canola, which may be less dependent on insect pollination than traditional canola \citep{lindstrom2016}, so extra pollination may provide very little benefit simply because hybrid varieties have a greater degree of self-compatibility, or are able to compensate for pollination failure better than open-pollinated varieties by producing extra branches and flowers.
+
+\singlespacing
+
+\bibliographystyle{humanbio}
+\bibliography{references}
+%\bibliography{\string{~/Documents/Papers/bibtexRefs/references}}
+
+\clearpage %Supplemental material
+\include{extra_supplemental}
+\include{visitors_supplemental}
+\include{models_supplemental}
+
+\end{document}
