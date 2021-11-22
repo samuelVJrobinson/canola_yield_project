@@ -6,3 +6,4 @@ yield path analysis.R
 *.rds
 .~lock.*.csv#
 .Rproj.user
+./Models/*.rds
