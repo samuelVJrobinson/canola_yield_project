@@ -1,0 +1,128 @@
+#BASIC STRUCTURE OF THESIS CHAPTER 3 (SEED PRODUCTION)
+
+Abstract:
+
+Insect-mediated pollination of crops is an important input to agricultural production, but pollination management suffers from key mechanistic gaps that hinder its greater utility. 
+While pollination services to plants have a solid theoretical and mechanistic framework, agricultural pollination is often treated as a statistical ``black box", without reference to the mechanisms underlying the process of pollination and fruit production.
+We present a causal model that links insect visitation to pollination to three separate components of yield, using two types of canola (\textit{Brassica napus}) production systems.
+Commodity canola yield was mainly controlled by plant size, and there was no relationship between \textit{Apis mellifera} visitation and pollen deposition, or deposition and seed yield.
+In comparison, seed canola yield was also controlled by plant size, but there was also a strong relationship between visitation and pollen deposition, as well as deposition and seed yield.
+We also found that \textit{Megachile rotundata} visitation in seed canola strongly increased pollen deposition, but \textit{A. mellifera} visitation did not.
+This model serves as a step towards a mechanistic model of pollination services, and points to the contextual importance of pollination services in seed canola production.
+
+%Journals to consider (Impact Factor):
+% Behavioural Ecology (2.8): no page limit specified - I think this would be the best at this point
+% Ecological Modeling (2.5): no page limit specified
+% Ecology Letters (8.6): max 5000 words, 6 figures/tables
+% Journal of Applied Ecology (5.8): 7500 words, including refs and caption
+% Journal of Animal Ecology (4.6): 8500 words, including refs and captions
+% Oikos (3.4): no page limit specified
+% Oecologia (2.7): 10 printed pages (~35 submitted pages), 100 Euros per extra page
+
+
+**Intro:
+
+- Animal pollination is important
+
+- Pollination isn't the same throughout fields
+
+- Insect visitation can increase quantity/quality of pollen
+
+- Seed production can be limited by plant resources as well as pollen
+
+- Insect pollination is important for hybrid canola
+
+- Fruit production involves a sequence (visit -> pollen -> fruit <- resources) that mediate crop yield
+
+- In this study we modeled distance -> visits -> pollen
+  Hypotheses:
+  - Bees sensitive to flight costs, so greater distance = fewer bees
+  - Visiting bees deposit pollen, so more bees = more pollen
+  - Seed production is limited by resources, so bigger plants = more seeds
+  - Seed production is limited by pollen, so more pollen = more/bigger seeds
+  
+**Methods:
+
+*Data collection:
+
+- We surveyed 29 commodity fields, stocking was ...
+
+- We also surveyed 35 seed canola fields, stocking was ...
+
+- In both fields, we established plots and made observations...
+
+- We counted flowers, stigmas, and then collected plants at the end of the season
+
+* Analysis:
+
+- We used a piecewise SEM
+
+- Underlying models were specified as GLMMs
+
+- SEMs independence claims evaluated
+
+- GLMMs were written in Stan, and evaluated ...
+
+** Results:
+
+- Plant size and pollen were drivers of yield in seed canola, only plant size in commodity canola
+
+* Visits & Distance
+
+- Bee visitation declined with distance from hives/shelters
+
+- Leafcutter bees were more sensitive to distance
+
+* Pollen & Visits
+
+- Pollen enhanced by visits in seed canola, but not commodity
+
+* Plant size & Seeds
+
+- Plant size was influence by density, but not in commodity fields
+
+- Plant size increased number of pods
+
+- Plant size increased seed size and number in seeds, but not commodity canola
+
+* Pollen & Seeds
+
+- Pollen increased number of pods and seeds in seed canola, but not commodity canola
+
+** Discussion:
+
+- Study examined the strength of paths between these variables
+
+* Visitation
+
+- Honey bee visits declined with distance; visitation was higher in seed fields due to stocking rate
+
+- Honey bee visitation was lower near leafcutter shelters
+
+- Honey bee visitation and foraging differed between M and F bays, and within the F bays
+
+* Pollen deposition
+
+- Honey bee visitation did not increase pollen in commodity canola
+
+- Honey bee behaviour in seed fields made pollen transfer unlikely
+
+- Honey bees may have an indirectly positive effect on pollen deposition, by making leafcutters travel further
+
+* Pod production
+
+- Pod production in commodity canola increased with plant size, but not pollen
+ 
+- Pollination increased crop production in seed canola, but not commodity canola
+
+* Seed size/number
+
+- In commdity canola, seeds per pod was not affected by plant size/pollen
+
+- Plant size had a strong influence on seed size in seed canola, but not in commodity
+
+* Summary
+
+- This study assesses the relative importance of pollination and plant resources
+
+- Future work
