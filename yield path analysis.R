@@ -224,10 +224,19 @@ inits <- function() { with(datalist,
 # mod1 <- extract(claims1)
 # coefs(mod1[c(pars,newpar)])
  
-#Full model - 1.7 hrs for 1000 iter
-modPodcount <- stan(file='visitation_pollen_model.stan',data=datalist,iter=1,chains=1,
-                   control=list(adapt_delta=0.8),init=inits)
+# #Full model - 1.7 hrs for 1000 iter
+# modPodcount <- stan(file='visitation_pollen_model.stan',data=datalist,iter=1,chains=1,
+#                    control=list(adapt_delta=0.8),init=inits)
 
+
+#Smaller example - only visitation
+# datalist <- datalist
+modPodcount <- stan(file='visitation_pollen_model2.stan',data=datalist,iter=2000,chains=3,
+                   control=list(adapt_delta=0.8),init=inits)
+print(modPodcount)
+traceplot(modPodcount,pars=c('intVisit',
+                             'slopeDistVis','slopeHiveVis','slopeFlDens', #Visitation
+                             'sigmaVisField','lambdaVisField','visitHbeePhi'))
 
 beep(1)
 # save(modPodcount,file='modPodcount.Rdata')
