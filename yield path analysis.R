@@ -34,9 +34,6 @@ plantsAllSeed$Field <- gsub('Unrah','Unruh',plantsAllSeed$Field) #Fixes spelling
 seedsAllSeed$Field <- gsub('Unrah','Unruh',seedsAllSeed$Field)
 seedsAllSeed$EdgeCent <- ifelse(seedsAllSeed$EdgeCent=='Cent','Center',seedsAllSeed$EdgeCent) #Fixes cent/center
 rm(allFields,allPlants,allPollen,allSeeds,allSurvey,behav2015,visitors2016,nectar2016,folder)
-#Remove Warnock 4 - plants/seeds observed but not field
-plantsAllSeed <- filter(plantsAllSeed,Field!='Warnock 4')
-seedsAllSeed <- filter(seedsAllSeed,Field!='Warnock 4')
 #Set 'negative' missing pods (mistake in counting) to NA.
 plantsAllComm <- mutate(plantsAllComm,Missing=ifelse(Missing<0,NA,Missing))
 plantsAllSeed <- mutate(plantsAllSeed,Missing=ifelse(Missing<0,NA,Missing))
@@ -150,6 +147,9 @@ datalistPod$seedMass[datalistPod$seedMass>8] <- with(datalistPod,seedMass[seedMa
 datalist <- c(datalistField,datalistPlot,datalistFlw,datalistPlant,datalistPod)
 rm(datalistField,datalistPlot,datalistFlw,datalistPlant,datalistPod,a,b,keep) #Cleanup
 str(datalist)
+
+#Check for NAs
+if(any(sapply(datalist,function(x) sum(is.na(x)))>0)) print("NAs found in datalist")
  
 inits <- function() { with(datalist,
   list(plDens_miss=rep(0,Nplot_densMiss),intPlDens=1, slopeGPPlDens=0, #Plant density
@@ -224,52 +224,54 @@ inits <- function() { with(datalist,
 # mod1 <- extract(claims1)
 # coefs(mod1[c(pars,newpar)])
  
-# #Full model - 1.7 hrs for 1000 iter
-# modPodcount <- stan(file='visitation_pollen_model.stan',data=datalist,iter=1,chains=1,
+#Full model - 1.7 hrs for 1000 iter
+modPodcount <- stan(file='visitation_pollen_model.stan',data=datalist,iter=1,chains=1,
+                   control=list(adapt_delta=0.8),init=0)
+
+# #Smaller example - only visitation
+# # datalist <- datalist
+# modPodcount <- stan(file='visitation_pollen_model2.stan',data=datalist,iter=2000,chains=4,
 #                    control=list(adapt_delta=0.8),init=inits)
-
-
-#Smaller example - only visitation
-# datalist <- datalist
-modPodcount <- stan(file='visitation_pollen_model2.stan',data=datalist,iter=2000,chains=3,
-                   control=list(adapt_delta=0.8),init=inits)
-print(modPodcount)
-traceplot(modPodcount,pars=c('intVisit',
-                             'slopeDistVis','slopeHiveVis','slopeFlDens', #Visitation
-                             'sigmaVisField','lambdaVisField','visitHbeePhi'))
+# p <- c('intVisit',
+#   'slopeDistVis','slopeHiveVis','slopeFlDens', #Visitation
+#   'sigmaVisField','lambdaVisField','visitHbeePhi')
+# 
+# print(modPodcount,pars=p)
+# traceplot(modPodcount,pars=p)
 
 beep(1)
 # save(modPodcount,file='modPodcount.Rdata')
 load('modPodcount.Rdata') #Load all parameters
 
-# print(modPodcount)
-pars=c('intPlDens','slope2015PlDens','slopeIrrigPlDens','slope2015IrrigPlDens',
+p <- c('intPlDens','slope2015PlDens','slopeIrrigPlDens','slope2015IrrigPlDens',
        'slopeDistPlDens','slopeGPPlDens','sigmaPlDens','sigmaPlDens_field') #Planting density
-pars=c('intPlSize','slopePlDensPlSize','slopeDistPlSize','slopeGpPlSize', #Plant size
+p <- c('intPlSize','slopePlDensPlSize','slopeDistPlSize','slopeGpPlSize', #Plant size
        'slopeIrrigPlSize','slope2015PlSize',
        'sigmaPlSize_field','sigmaPlSize_plot','sigmaPlSize')
-pars=c('intFlDens','slopePlSizeFlDens','slopeHbeeDistFlDens','sigmaFlDens','sigmaFlDens_field') #Flower density
-pars=c('intVisit','slopeYearVis','slopeGpVis','slopeYearGpVis','slopeIrrigVis',
+p <- c('intFlDens','slopePlSizeFlDens','slopeHbeeDistFlDens','sigmaFlDens','sigmaFlDens_field') #Flower density
+p <- c('intVisit','slopeYearVis','slopeGpVis','slopeYearGpVis','slopeIrrigVis',
        'slopeDistVis','slopeHiveVis','slopeFlDens', #Visitation
        'sigmaVisField','lambdaVisField','visitHbeePhi')
-pars=c('intPollen','slopeVisitPol','slopeHbeeDistPollen',#'slopeFlyVisPol',
+p <- c('intPollen','slopeVisitPol','slopeHbeeDistPollen',#'slopeFlyVisPol',
        'sigmaPolField','sigmaPolPlot','pollenPhi') #Pollen deposition
-pars=c('intFlwCount','slopePlSizeFlwCount','slopeSurvFlwCount','slope2015FlwCount', #Flower count per plant
+p <- c('intFlwCount','slopePlSizeFlwCount','slopeSurvFlwCount','slope2015FlwCount', #Flower count per plant
        'phiFlwCount_field','intPhiFlwCount','slopePlSizePhiFlwCount','sigmaPhiFlwCount_field')
-pars=c('intFlwSurv','slopeVisitSurv','slopePolSurv','slopePlSizeSurv',
+p <- c('intFlwSurv','slopeVisitSurv','slopePolSurv','slopePlSizeSurv',
        'slopePlDensSurv','slopeIrrigSurv','slope2015Surv','sigmaFlwSurv_field',
        # 'flwSurvPhi') #Flower survival
        'intPhiFlwSurv','slopePlSizePhiFlwSurv','sigmaPhiFlwSurv_field')
-pars=c('intSeedCount','slopeVisitSeedCount','slopePolSeedCount','slopePlSizeCount',
+p <- c('intSeedCount','slopeVisitSeedCount','slopePolSeedCount','slopePlSizeCount',
        'slope2015SeedCount','seedCountPhi','sigmaSeedCount_plant','sigmaSeedCount_field') #Seed count
-pars=c('intSeedWeight','slopeVisitSeedWeight','slopePolSeedWeight',#Seed weight
+p <- c('intSeedWeight','slopeVisitSeedWeight','slopePolSeedWeight',#Seed weight
        'slopeSeedCount','slopePlSizeWeight','slopeIrrigSeedWeight',
        'slope2015SeedWeight','slope2015IrrigSeedWeight','sigmaSeedWeight',
        'sigmaSeedWeight_plant','sigmaSeedWeight_field','lambdaSeedWeight')
-pars=c('intYield','slopeYield','sigmaYield',
+p <- c('intYield','slopeYield','sigmaYield',
        'sigmaYield_field[1]','sigmaYield_field[2]','sigmaYield_plot[1]','sigmaYield_plot[2]',
        'L_field','L_plot')
-stan_hist(modPodcount,pars=pars)+geom_vline(xintercept=0,linetype='dashed')
+print(modPodcount,pars=p)
+
+stan_hist(modPodcount,pars=p)+geom_vline(xintercept=0,linetype='dashed')
 traceplot(modPodcount,pars=c(pars),inc_warmup=F)
 # launch_shinystan(modPodcount)
 # print(modPodcount,pars=pars) #Takes way too long

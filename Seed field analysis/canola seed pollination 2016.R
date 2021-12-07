@@ -89,8 +89,9 @@ survey=rename(survey,FlDens=Fls.50cm.2) %>%
   #Minimum distance to leafcutter shelter
   mutate(Surveyed=as.Date(Surveyed,format='%b %d, %Y'),minDist=min(LeafShelter1,LeafShelter2,LeafShelter3,LeafShelter4,na.rm=T)) %>%
   select(-LeafShelter1:-LeafShelter4) %>%
-  mutate(StartTime=as.POSIXct(paste(Surveyed,StartTime),format='%b %d, %Y %H:%M'),
-         EndTime=as.POSIXct(paste(Surveyed,EndTime),format='%b %d, %Y %H:%M')) %>%
+  mutate(StartTime=paste(Surveyed,StartTime),EndTime=paste(Surveyed,EndTime)) %>% 
+  mutate(StartTime=as.POSIXct(StartTime,format='%Y-%m-%d %H:%M'),
+         EndTime=as.POSIXct(EndTime,format='%Y-%m-%d %H:%M')) %>%
   mutate(Surveyed=as.Date(Surveyed,format='%b %d, %Y %H:%M'))
 
 #Pollen data
