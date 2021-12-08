@@ -51,7 +51,7 @@ source('helperFunctions.R')
 library(rstan)
 setwd('./Models')
 rstan_options(auto_write = TRUE)
-options(mc.cores = 4)
+options(mc.cores = 5)
 # library(shinystan)
 
 #List structure for Stan
@@ -149,7 +149,9 @@ rm(datalistField,datalistPlot,datalistFlw,datalistPlant,datalistPod,a,b,keep) #C
 str(datalist)
 
 #Check for NAs
-if(any(sapply(datalist,function(x) sum(is.na(x)))>0)) print("NAs found in datalist")
+if(any(sapply(datalist,function(x) sum(is.na(x)))>0)){
+  beep(1); print("NAs found in datalist")
+}
  
 inits <- function() { with(datalist,
   list(plDens_miss=rep(0,Nplot_densMiss),intPlDens=1, slopeGPPlDens=0, #Plant density
@@ -205,6 +207,13 @@ inits <- function() { with(datalist,
    ))
 }
 
+# #Look at distributions of average seedcount/seedmass
+# tempdat <- with(datalist,data.frame(avgSeedCount,avgSeedMass,
+#                          plantIndex=factor(plantIndex)))
+# par(mfrow=c(2,1))
+# lm(avgSeedCount~plantIndex,data=tempdat) %>% plot(.,which=c(1,2)) #Looks normal-ish to me
+# lm(avgSeedMass~plantIndex,data=tempdat) %>% plot(.,which=c(1,2))
+
 # #Feed datalist into stan_rdump for use in CmdStan
 # with(datalist,stan_rdump(names(datalist),'tempDat.data.R'))
 # #Feed inits into stan_rdump
@@ -224,9 +233,9 @@ inits <- function() { with(datalist,
 # mod1 <- extract(claims1)
 # coefs(mod1[c(pars,newpar)])
  
-#Full model - 1.7 hrs for 1000 iter
-modPodcount <- stan(file='visitation_pollen_model.stan',data=datalist,iter=1,chains=1,
-                   control=list(adapt_delta=0.8),init=0)
+# #Full model - 1.7 hrs for 1000 iter
+# modPodcount <- stan(file='visitation_pollen_model.stan',data=datalist,iter=1,chains=1,
+#                    control=list(adapt_delta=0.8),init=0)
 
 # #Smaller example - only visitation
 # # datalist <- datalist
@@ -239,40 +248,93 @@ modPodcount <- stan(file='visitation_pollen_model.stan',data=datalist,iter=1,cha
 # print(modPodcount,pars=p)
 # traceplot(modPodcount,pars=p)
 
-beep(1)
-# save(modPodcount,file='modPodcount.Rdata')
-load('modPodcount.Rdata') #Load all parameters
+#Version without pod-level effects
 
-p <- c('intPlDens','slope2015PlDens','slopeIrrigPlDens','slope2015IrrigPlDens',
-       'slopeDistPlDens','slopeGPPlDens','sigmaPlDens','sigmaPlDens_field') #Planting density
-p <- c('intPlSize','slopePlDensPlSize','slopeDistPlSize','slopeGpPlSize', #Plant size
-       'slopeIrrigPlSize','slope2015PlSize',
-       'sigmaPlSize_field','sigmaPlSize_plot','sigmaPlSize')
-p <- c('intFlDens','slopePlSizeFlDens','slopeHbeeDistFlDens','sigmaFlDens','sigmaFlDens_field') #Flower density
-p <- c('intVisit','slopeYearVis','slopeGpVis','slopeYearGpVis','slopeIrrigVis',
-       'slopeDistVis','slopeHiveVis','slopeFlDens', #Visitation
-       'sigmaVisField','lambdaVisField','visitHbeePhi')
-p <- c('intPollen','slopeVisitPol','slopeHbeeDistPollen',#'slopeFlyVisPol',
-       'sigmaPolField','sigmaPolPlot','pollenPhi') #Pollen deposition
-p <- c('intFlwCount','slopePlSizeFlwCount','slopeSurvFlwCount','slope2015FlwCount', #Flower count per plant
-       'phiFlwCount_field','intPhiFlwCount','slopePlSizePhiFlwCount','sigmaPhiFlwCount_field')
-p <- c('intFlwSurv','slopeVisitSurv','slopePolSurv','slopePlSizeSurv',
-       'slopePlDensSurv','slopeIrrigSurv','slope2015Surv','sigmaFlwSurv_field',
-       # 'flwSurvPhi') #Flower survival
-       'intPhiFlwSurv','slopePlSizePhiFlwSurv','sigmaPhiFlwSurv_field')
-p <- c('intSeedCount','slopeVisitSeedCount','slopePolSeedCount','slopePlSizeCount',
-       'slope2015SeedCount','seedCountPhi','sigmaSeedCount_plant','sigmaSeedCount_field') #Seed count
-p <- c('intSeedWeight','slopeVisitSeedWeight','slopePolSeedWeight',#Seed weight
-       'slopeSeedCount','slopePlSizeWeight','slopeIrrigSeedWeight',
-       'slope2015SeedWeight','slope2015IrrigSeedWeight','sigmaSeedWeight',
-       'sigmaSeedWeight_plant','sigmaSeedWeight_field','lambdaSeedWeight')
-p <- c('intYield','slopeYield','sigmaYield',
-       'sigmaYield_field[1]','sigmaYield_field[2]','sigmaYield_plot[1]','sigmaYield_plot[2]',
-       'L_field','L_plot')
-print(modPodcount,pars=p)
+#NOTE: something's going wrong with the plant level flower count/survival. Models before this are OK, but collapse once these are added. Dropping plot-level random intercepts doesn't help.
 
-stan_hist(modPodcount,pars=p)+geom_vline(xintercept=0,linetype='dashed')
-traceplot(modPodcount,pars=c(pars),inc_warmup=F)
+modPodcount <- stan(file='visitation_pollen_model3.stan',data=datalist,iter=1000,chains=5,
+                    control=list(adapt_delta=0.8),init=0); beep(1)
+# save(modPodcount,file='modPodcount3.Rdata')
+# load('modPodcount.Rdata') #Load all parameters
+
+#List of parameters
+parList <- list(
+  plDens = c('intPlDens','slope2015PlDens','slopeIrrigPlDens','slope2015IrrigPlDens',
+             'slopeDistPlDens','slopeGPPlDens','sigmaPlDens','sigmaPlDens_field'), #Planting density
+  plSize = c('intPlSize','slopePlDensPlSize','slopeDistPlSize','slopeGpPlSize', #Plant size
+             'slopeIrrigPlSize','slope2015PlSize',
+             'sigmaPlSize_field','sigmaPlSize_plot','sigmaPlSize'),
+  flDens = c('intFlDens','slopePlSizeFlDens','slopeHbeeDistFlDens','sigmaFlDens','sigmaFlDens_field'), #Flower density
+  
+  hbeeVis = c('intVisit','slopeYearVis','slopeGpVis','slopeYearGpVis','slopeIrrigVis', #Visitation
+    'slopeDistVis','slopeHiveVis','slopeFlDens', #Visitation
+    'sigmaVisField','lambdaVisField','visitHbeePhi'),
+  
+  pollen = c('intPollen','slopeVisitPol','slopeHbeeDistPollen',
+          'sigmaPolField',#'sigmaPolPlot',
+          'pollenPhi'), #Pollen deposition,
+  
+  flwCount = c('intFlwCount','slopePlSizeFlwCount','slopeSurvFlwCount','slope2015FlwCount', #Flower count per plant
+    'phiFlwCount_field','phiFlwCount_plot',
+    'intPhiFlwCount','slopePlSizePhiFlwCount','sigmaPhiFlwCount_field','sigmaPhiFlwCount_plot'),
+  
+  flwSurv = c('intFlwSurv','slopeVisitSurv','slopePolSurv','slopePlSizeSurv', #Flower survival
+              'slopePlDensSurv','slopeIrrigSurv','slope2015Surv','sigmaFlwSurv_field','sigmaFlwSurv_plot',
+              'intPhiFlwSurv','slopePlSizePhiFlwSurv','sigmaPhiFlwSurv_field','sigmaPhiFlwSurv_plot'), 
+  
+  seedCount = c('intSeedCount','slopeVisitSeedCount','slopePolSeedCount','slopePlSizeCount',
+                'slope2015SeedCount',
+                'sigmaSeedCount','lambdaSeedWeight','sigmaSeedCount_plot','sigmaSeedCount_field'), #Seed count
+  
+  seedWeight = c('intSeedWeight','slopeVisitSeedWeight','slopePolSeedWeight',#Seed weight
+                 'slopeSeedCount','slopePlSizeWeight','slopeIrrigSeedWeight',
+                 'slope2015SeedWeight','sigmaSeedWeight',
+                 'sigmaSeedWeight_plot','sigmaSeedWeight_field','lambdaSeedWeight'),
+  
+  yield = c('intYield','slopeYield','sigmaYield', #Total seed weight
+            'sigmaYield_field[1]','sigmaYield_field[2]','sigmaYield_plot[1]','sigmaYield_plot[2]',
+            'L_field','L_plot')
+)
+
+for(i in 1:length(parList)){ #Sub-model summaries
+  if(any(names(modPodcount) %in% parList[[i]])) {
+    writeLines(paste0('\nParameters: ',names(parList[i]),' ',paste(rep('-',40),collapse=''),'\n'))
+    print(modPodcount,pars=parList[[i]]) 
+    a <- readline('Press Return to continue: ')
+    if(a!='') break()
+  }
+}
+
+for(i in 1:length(parList)){ #Sub-model traceplots
+  if(any(names(modPodcount) %in% parList[[i]])){
+    writeLines(paste0('\nParameters: ',names(parList[i]),' ',paste(rep('-',40),collapse=''),'\n'))
+    # stan_hist(modPodcount,pars=parList[[i]])+geom_vline(xintercept=0,linetype='dashed')
+    p <- traceplot(modPodcount,pars=parList[[i]],inc_warmup=FALSE)+
+      labs(title=names(parList[i]))
+    print(p)
+    a <- readline('Press Return to continue: ')
+    if(a!='') break()
+  } 
+}
+
+print(modPodcount,pars='intPollen_plot') 
+
+extract(modPodcount,pars='intPollen_plot')$intPollen_plot %>% 
+  apply(.,2,function(x) quantile(x,c(0.1,0.5,0.9))) %>% 
+  t() %>% data.frame() %>% setNames(c('lwr','med','upr')) %>% 
+  ggplot(aes(sample=med))+ ##q-q plot
+  geom_qq()+
+  geom_qq_line()  
+  
+extract(modPodcount,pars='intPollen_plot')$intPollen_plot %>% 
+  apply(.,2,function(x) quantile(x,c(0.1,0.5,0.9))) %>% 
+  t() %>% data.frame() %>% setNames(c('lwr','med','upr')) %>% 
+  tibble::rownames_to_column() %>%
+  ggplot(aes(x=rowname,y=med))+
+  geom_pointrange(aes(ymax=upr,ymin=lwr))
+
+
+
 # launch_shinystan(modPodcount)
 # print(modPodcount,pars=pars) #Takes way too long
 # pairs(modPodcount,pars=pars) #Takes way too long

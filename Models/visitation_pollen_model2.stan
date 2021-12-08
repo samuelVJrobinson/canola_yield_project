@@ -1,3 +1,4 @@
+//Visitation-only model of commodity canola pollination
 
 data {
 	//Field level

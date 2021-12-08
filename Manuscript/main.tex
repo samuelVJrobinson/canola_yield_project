@@ -299,27 +299,25 @@ After drying the plants, we weighed the entire plant, counted mature pods, and c
 We randomly sampled five pods from each plant, and counted and weighed the seeds from each pod (3872 commodity canola pods, 2885 seed canola pods), then we threshed all the pods for each plant by hand, winnowed them using an air separator, and weighed the total mass of cleaned seeds.
 
 \subsection{Analysis}
-To examine how yield is influenced by visitation, we used a piecewise structural equation model framework (pSEM, \citealp{shipley2009}).
-Structural equation models are comprised of a set of underlying linear models arranged in a causal network, and provides a framework for testing hypotheses about a complex system \citep{grace2012, lefcheck2015}.
-Starting with a simple model (visitation $\rightarrow$ pollen deposition $\rightarrow$ fruit production $\leftarrow$ plant resources), we built more complex models that related measured variables within a causal framework (Figures \ref{fig:commoditySEM} and \ref{fig:seedSEM}).
-These models allowed us to infer the relative strength of the main terms (e.g. pollen deposition, plant size) while controlling for other confounding factors (e.g. distance into field).
-Fruit set can suppress future vegetative growth and flower production \citep{stephenson1981}, but SEMs do not allow for causal loops \citep{grace2012}, so we included a path from fruit set to flower production.
-The direction of the path could plausibly be reversed (where large number of flowers reduce the proportion of fruit set), but we considered only the first scenario, as \citet{sabbahi2006} showed that the converse process is more likely (low fruit set causes increased flower production).
+To examine how yield is influenced by visitation, we used piecewise structural equation models (pSEM, \citealp{shipley2009}).
+Structural equation models are a set of linear models arranged in a causal network, which provides a framework for testing hypotheses about complex systems \citep{grace2012, lefcheck2015}.
+Starting with a simple model (visitation $\rightarrow$ pollen deposition $\rightarrow$ fruit production $\leftarrow$ plant resources), we built a detailed model relating visitation to pollination to seed yield within a causal framework (Figures \ref{fig:commoditySEM} and \ref{fig:seedSEM}).
+These models allowed us to model how visitation ultimately influences seed yield, while controlling for other confounding factors (e.g. distance into field, measurements taken at different fields).
+Fruit set can suppress future vegetative growth and flower production \citep{stephenson1981}, but SEMs do not allow for causal loops \citep{grace2012}, so we included a path from fruit set to flower production as the closest approximation of this process.
+The direction of the path could plausibly be reversed (implying that large flower production reduces the proportion of fruit set), but we considered only the first scenario, as \citet{sabbahi2006} showed that the converse process is more likely (where low fruit set causes increased flower production).
 
 The underlying models of each pSEM were specified as generalized linear mixed-effects models (GLMMs, see Equation sets S1 and S2 for model specifications).
-We used hierarchical (random effects) models to model processes that occur at different levels; for example, seed size-number trade-offs were modelled at the pod level, whereas pollen deposition was modeled at the flower level.
+We used GLMMs to model processes that occur at different levels; for example, seed size-number trade-offs were modelled at the pod level, whereas pollen deposition was modeled at the flower level.
 Random intercepts were used to model variance between fields, within-field (pollen, flower survival, seed count \& size), and within-plot (seed count \& size).
 Continuous responses were modeled using log-normal (plant density, plant size), square-root normal (flower density), and exponential-normal distributions (weight per seed), while counts were modeled as a negative-binomial (honey bee visits, pollen grains per stigma, flowers per plant, seeds per pod) or zero-inflated negative-binomial distribution (leafcutter bee visits) with a log-link function.
-Visitation models used a $log$(time) term with a slope of 1 (``offset" variable) to account for differences in observation times.
-Fruit set (fraction of flowers that matured into pods) was modeled using a beta-binomial distribution with a logit-link function.
+Visitation models used $log$(time) as an ``offset" variable to account for differences in observation times.
+Pod set (fraction of flowers that matured into pods) was modeled using a beta-binomial distribution with a logit-link function.
 Interactions between predictors were evident in honey bee visitation rate (Year:Locality interaction) and plant density (Irrigation:Year) in commodity canola, and for leafcutter bee visitation (Tent Stocking:Distance from edge) in seed canola, and were included in each model (represented as Y-shaped path in Figures \ref{fig:commoditySEM} and \ref{fig:seedSEM}). 
-%Finally, we created bivariate partial-effect plots of relevant terms within each model to aid in visualising each relationship.
 
-Structural equation models do not have paths between all variables, which may bias the model results if this independence assumption is not true. 
-We evaluated evaluating independence claims (``basis set") by using Fisher's C statistic from Shipley's d-separation criteria \citep{shipley2000, shipley2009}.
-The initial commodity canola pSEM was misspecfied, as several missing paths were identified for the initial commodity model (Fisher's C=202.1, df=100, p$<<$0.001), but the updated pSEM that included missing paths was judged adequate (C=81.6, df=86, p=0.62).
-Similarly, the initial seed field pSEM also had several missing paths (C=37.54, df=56, p=0.027), which we corrected (C=58.10, df=64, p=0.68).
-D-separation criteria sets were generated using the \texttt{dagitty} library in R 3.5.1.
+Structural equation models do not have paths between all variables, which may bias the model results if this independence assumption is incorrect; this requires testing a ``basis set" of independence claims using Shipley's d-separation criteria \citep{shipley2000, shipley2009}.
+The initial commodity canola pSEM was misspecfied, as several missing paths were identified for the initial commodity model (Fisher's C = 202.1, df = 100, p$<<$0.001), but the updated pSEM that included missing paths was adequate (C = 81.6, df = 86, p = 0.62).
+Similarly, the initial seed field pSEM also had several missing paths (C = 37.54, df = 56, p = 0.027), which we corrected (C = 58.10, df = 64, p = 0.68).
+Basis sets were generated using the \texttt{dagitty} library in R 3.5.1.
 
 % Our initial hypotheses for commodity fields:
 % \begin{itemize}

@@ -1,3 +1,6 @@
+//Commodity canola pollination model used for thesis
+//  Uses pod-level data
+
 data {
 	//Field level
 	int Nfield; //Number of fields	
