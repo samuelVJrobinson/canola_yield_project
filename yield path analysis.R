@@ -27,7 +27,7 @@ fieldsAllComm <- fieldsAll; flowersAllComm <- flowersAll; plantsAllComm <- plant
 seedsAllComm <- seedsAll; surveyAllComm <- surveyAll;
 rm(fieldsAll,flowersAll,plantsAll,seedsAll,surveyAll)
 #Seed field data
-load("./Seed field analysis/seedFieldDataAll.RData")
+load("./Seed field analysis/seedfieldDataAll.RData")
 fieldsAllSeed <- allFields; plantsAllSeed <- allPlants; pollenAllSeed <- allPollen; seedsAllSeed <- allSeeds;
 surveyAllSeed <- allSurvey; 
 plantsAllSeed$Field <- gsub('Unrah','Unruh',plantsAllSeed$Field) #Fixes spelling error
@@ -50,8 +50,8 @@ source('helperFunctions.R')
 # Commodity field visitation and pollen deposition (Stan) ---------------------------------
 library(rstan)
 setwd('./Models')
-rstan_options(auto_write = TRUE)
-options(mc.cores = 5)
+rstan_options(auto_write = TRUE) #Avoids recompilation
+options(mc.cores = 6)
 # library(shinystan)
 
 #List structure for Stan
@@ -247,15 +247,31 @@ inits <- function() { with(datalist,
 # 
 # print(modPodcount,pars=p)
 # traceplot(modPodcount,pars=p)
-
+#
 #Version without pod-level effects
+# #NOTE: something's going wrong with the plant level flower count/survival. Models before this are OK, but collapse once these are added. Dropping plot-level random intercepts doesn't help.
+# modPodcount <- stan(file='visitation_pollen_model3.stan',data=datalist,iter=2000,chains=6,
+#                     control=list(adapt_delta=0.8),init=0); beep(1)
+# # save(modPodcount,file='modPodcount3.Rdata')
 
-#NOTE: something's going wrong with the plant level flower count/survival. Models before this are OK, but collapse once these are added. Dropping plot-level random intercepts doesn't help.
+#Models split into separate stan files (faster)
+modFiles <- dir(pattern = 'commodity.*\\.stan')
+modList <- vector(mode = 'list',length = length(modFiles))
+names(modList) <- gsub('(commodity.*[0-9]{2}|\\.stan)','',modFiles)
 
-modPodcount <- stan(file='visitation_pollen_model3.stan',data=datalist,iter=1000,chains=5,
-                    control=list(adapt_delta=0.8),init=0); beep(1)
-# save(modPodcount,file='modPodcount3.Rdata')
-# load('modPodcount.Rdata') #Load all parameters
+for(i in 1:length(modFiles)){
+  modList[i] <- stan(file=modFiles[i],data=datalist,iter=1000,chains=4,control=list(adapt_delta=0.8),init=0)
+}
+
+print(modList[i])
+
+modFiles[i]
+n <- names(modList[[i]]) #Model parameters
+n <- n[!grepl('(\\[[0-9]+\\]|lp)',n)] #Gets rid of parameter vectors
+print(modList[[i]],pars=n) #Traceplots
+traceplot(modList[[i]],pars=n) #Traceplots
+
+save(modPodcount,file='modPodcount_1.Rdata')
 
 #List of parameters
 parList <- list(
@@ -275,8 +291,8 @@ parList <- list(
           'pollenPhi'), #Pollen deposition,
   
   flwCount = c('intFlwCount','slopePlSizeFlwCount','slopeSurvFlwCount','slope2015FlwCount', #Flower count per plant
-    'phiFlwCount_field','phiFlwCount_plot',
-    'intPhiFlwCount','slopePlSizePhiFlwCount','sigmaPhiFlwCount_field','sigmaPhiFlwCount_plot'),
+               'phiFlwCount_field','phiFlwCount_plot',
+               'intPhiFlwCount','slopePlSizePhiFlwCount','sigmaPhiFlwCount_field','sigmaPhiFlwCount_plot'),
   
   flwSurv = c('intFlwSurv','slopeVisitSurv','slopePolSurv','slopePlSizeSurv', #Flower survival
               'slopePlDensSurv','slopeIrrigSurv','slope2015Surv','sigmaFlwSurv_field','sigmaFlwSurv_plot',
@@ -297,19 +313,23 @@ parList <- list(
 )
 
 for(i in 1:length(parList)){ #Sub-model summaries
-  if(any(names(modPodcount) %in% parList[[i]])) {
+  n <- parList[[i]] #Parameter names
+  if(any(names(modPodcount) %in% n)) {
+    n <- n[n %in% names(modPodcount)] #Drops unused parameters
     writeLines(paste0('\nParameters: ',names(parList[i]),' ',paste(rep('-',40),collapse=''),'\n'))
-    print(modPodcount,pars=parList[[i]]) 
+    print(modPodcount,pars=n) 
     a <- readline('Press Return to continue: ')
     if(a!='') break()
   }
 }
 
 for(i in 1:length(parList)){ #Sub-model traceplots
-  if(any(names(modPodcount) %in% parList[[i]])){
+  n <- parList[[i]] #Parameter names
+  if(any(names(modPodcount) %in% n)){
+    n <- n[n %in% names(modPodcount)] #Drops unused parameters
     writeLines(paste0('\nParameters: ',names(parList[i]),' ',paste(rep('-',40),collapse=''),'\n'))
     # stan_hist(modPodcount,pars=parList[[i]])+geom_vline(xintercept=0,linetype='dashed')
-    p <- traceplot(modPodcount,pars=parList[[i]],inc_warmup=FALSE)+
+    p <- traceplot(modPodcount,pars=n,inc_warmup=FALSE)+
       labs(title=names(parList[i]))
     print(p)
     a <- readline('Press Return to continue: ')
@@ -317,21 +337,30 @@ for(i in 1:length(parList)){ #Sub-model traceplots
   } 
 }
 
-print(modPodcount,pars='intPollen_plot') 
+print(modPodcount,pars='intFlwSurv_field') 
 
-extract(modPodcount,pars='intPollen_plot')$intPollen_plot %>% 
-  apply(.,2,function(x) quantile(x,c(0.1,0.5,0.9))) %>% 
-  t() %>% data.frame() %>% setNames(c('lwr','med','upr')) %>% 
-  ggplot(aes(sample=med))+ ##q-q plot
-  geom_qq()+
-  geom_qq_line()  
+compareRE <- function(mod,parSet){
+  require(ggpubr)
+  p1 <- extract(mod,pars=parSet)[[1]] %>% 
+    apply(.,2,function(x) quantile(x,c(0.1,0.5,0.9))) %>% 
+    t() %>% data.frame() %>% setNames(c('lwr','med','upr')) %>% 
+    ggplot(aes(sample=med))+ ##q-q plot
+    geom_qq()+
+    geom_qq_line()  
+  p2 <- extract(mod,pars=parSet)[[1]] %>% 
+    apply(.,2,function(x) quantile(x,c(0.1,0.5,0.9))) %>% 
+    t() %>% data.frame() %>% setNames(c('lwr','med','upr')) %>% 
+    tibble::rownames_to_column() %>%
+    ggplot(aes(x=rowname,y=med))+
+    geom_pointrange(aes(ymax=upr,ymin=lwr))
+  ggarrange(p1,p2,ncol=1,nrow=2)
+}
+
+# debugonce(compareRE)
+compareRE(modPodcount,'intFlwSurv_field')
+
   
-extract(modPodcount,pars='intPollen_plot')$intPollen_plot %>% 
-  apply(.,2,function(x) quantile(x,c(0.1,0.5,0.9))) %>% 
-  t() %>% data.frame() %>% setNames(c('lwr','med','upr')) %>% 
-  tibble::rownames_to_column() %>%
-  ggplot(aes(x=rowname,y=med))+
-  geom_pointrange(aes(ymax=upr,ymin=lwr))
+
 
 
 
