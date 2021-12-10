@@ -178,37 +178,37 @@ model {
 	
 	// Priors
 	//Plant density	- informative priors
-	intPlDens ~ normal(0,0.1); //Global intercept
+	intPlDens ~ normal(0,1); //Global intercept
 	slope2015PlDens ~ normal(0,1); //Year effect
 	slopeIrrigPlDens ~ normal(0,1); //Irrigation effect
 	slope2015IrrigPlDens ~ normal(0,1); //Year:irrigation interaction
-	slopeDistPlDens ~ normal(0,0.05); //Slope of distance into field	
+	slopeDistPlDens ~ normal(0,1); //Slope of distance into field	
 	slopeGPPlDens ~ normal(0,1); // Grand Prairie effect 
-	sigmaPlDens ~ gamma(3,10); //Sigma for within-field (residual)
-	sigmaPlDens_field ~ gamma(3,10); //Sigma for field
+	sigmaPlDens ~ gamma(1.1,1); //Sigma for within-field (residual)
+	sigmaPlDens_field ~ gamma(1.1,1); //Sigma for field
 	intPlDens_field ~ normal(0,sigmaPlDens_field); //Random intercept for field
 	
 	// Plant size - informative priors
-	intPlSize ~ normal(0,0.5); //Intercept
-	slopePlDensPlSize ~ normal(0,0.5); //Plant density
-	slopeDistPlSize ~ normal(0,0.05); //Distance effect
-	slopeGpPlSize ~ normal(0,0.5); //Grand Prairie effect
-	slopeIrrigPlSize ~ normal(0,0.5); //Irrigation effect
-	slope2015PlSize ~ normal(0.3,0.5); //2015 effect
+	intPlSize ~ normal(0,1); //Intercept
+	slopePlDensPlSize ~ normal(0,1); //Plant density
+	slopeDistPlSize ~ normal(0,1); //Distance effect
+	slopeGpPlSize ~ normal(0,1); //Grand Prairie effect
+	slopeIrrigPlSize ~ normal(0,1); //Irrigation effect
+	slope2015PlSize ~ normal(0,1); //2015 effect
 	// slopeStockingPlSize ~ normal(0,0.1); //Stocking effect
 	// slopePlDensStockingPlSize ~ normal(0,0.1); //Density:Stocking interaction
-	sigmaPlSize_field ~ gamma(3,10); //Sigma for random field
-	sigmaPlSize_plot ~ gamma(3,10); //Sigma for random plot
-	sigmaPlSize ~ gamma(7,10); //Sigma for residual
+	sigmaPlSize_field ~ gamma(1.1,1); //Sigma for random field
+	sigmaPlSize_plot ~ gamma(1.1,1); //Sigma for random plot
+	sigmaPlSize ~ gamma(1.1,1); //Sigma for residual
 	intPlSize_field ~ normal(0,sigmaPlSize_field); //Random field int
 	intPlSize_plot ~ normal(0,sigmaPlSize_plot); //Random int plot
 
 	// Flower density per plot
 	intFlDens ~ normal(0,1); //Global intercept
-	slopePlSizeFlDens ~ normal(2,1); //plant size effect
+	slopePlSizeFlDens ~ normal(0,1); //plant size effect
 	slopeHbeeDistFlDens ~ normal(0,1); //distance into field
-	sigmaFlDens ~ gamma(7,2); //Sigma for within-field (residual)
-	sigmaFlDens_field ~ gamma(4,2); //Sigma for field
+	sigmaFlDens ~ gamma(1.1,1); //Sigma for within-field (residual)
+	sigmaFlDens_field ~ gamma(1.1,1); //Sigma for field
 	intFlDens_field ~ normal(0,sigmaFlDens_field); //Random intercept for field
 	
 }

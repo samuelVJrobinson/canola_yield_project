@@ -45,18 +45,44 @@ bpoint <- function(x,int1,slope1,b,slope2) ifelse(x<b,int1+slope1*x,b*slope1+(x-
 effSize <- function(x) unname(median(x)/diff(quantile(x,c(0.025,0.975))))
 #Does 95% of posterior overlap zero?
 overlap <- function(x) {r <- quantile(x,c(0.025,0.975))>=0; xor(r[1],r[2]);}
+
 #Posterior predictive check plots
 PPplots <- function(resid,predResid,actual,pred,main=NULL){
   par(mfrow=c(2,1))
-  plot(resid~predResid,ylab='Sum actual residuals',xlab='Sum simulated residuals',main=main)
+  resRange <- range(resid)
+  pResRange <- range(predResid)
+  xl <- yl <- c(pmin(resRange[1],pResRange[1]),pmax(resRange[2],pResRange[2]))
   x <- sum(resid<predResid)/length(resid)
-  legend('topleft',paste('p =',round(min(x,1-x),3)))
+  plot(resid~predResid,ylab='Sum actual residuals',xlab='Sum simulated residuals',xlim=xl,ylim=yl,
+       main=paste(main,' (p =',round(min(x,1-x),3),')'))
+  # legend('topleft',)
   abline(0,1,col='red') #PP plot
   plot(actual~pred, #Predicted vs Actual
        xlab=paste('Predicted',main),ylab=paste('Actual',main)) 
   abline(0,1,col='red')
   abline(lm(actual~pred),col='red',lty=2)
   par(mfrow=c(1,1))
+}
+
+#Plot of random intercepts
+compareRE <- function(mod,parSet){
+  require(ggpubr)
+  p1 <- extract(mod,pars=parSet)[[1]] %>% 
+    apply(.,2,function(x) quantile(x,c(0.1,0.5,0.9))) %>% 
+    t() %>% data.frame() %>% setNames(c('lwr','med','upr')) %>% 
+    ggplot(aes(sample=med))+ ##q-q plot
+    geom_qq()+
+    geom_qq_line()  
+  p2 <- extract(mod,pars=parSet)[[1]] %>% 
+    apply(.,2,function(x) quantile(x,c(0.1,0.5,0.9))) %>% 
+    t() %>% data.frame() %>% setNames(c('lwr','med','upr')) %>% 
+    tibble::rownames_to_column() %>%
+    mutate(rowname=as.numeric(rowname)) %>% 
+    ggplot(aes(x=rowname,y=med))+
+    geom_pointrange(aes(ymax=upr,ymin=lwr))+
+    geom_hline(yintercept = 0,col='red',linetype='dashed')+
+    labs(x='Intercept',y='Posterior Dist.')
+  ggarrange(p1,p2,ncol=1,nrow=2)
 }
 
 #Convert g/m2 to bushels/acre

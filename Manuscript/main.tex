@@ -1,4 +1,4 @@
-\documentclass[12pt]{article} % use larger type; default would be 10pt
+\documentclass[12pt, draft]{article} % use larger type; default would be 10pt
 
 \usepackage[utf8]{inputenc} % set input encoding (not needed with XeLaTeX)
 %%% Examples of Article customizations
@@ -351,29 +351,50 @@ However, the negative binomial distribution had the closest posterior predictive
 
 \section{Results}
 
-Plant size and pollen deposition were the main drivers of yield in seed canola, while plant size was the main driver of yield in commodity canola.
-Distance from the field edge had a negative effect on honey bee visitation in both commodity and seed canola (Z=-3.7, -2.5, respectively), and unexpectedly, had a negative effect on leafcutter bee visitation (Z= -4.4), showing that overall visitation decreases with distance into the field.
-The path from leafcutter bee visitation to pollen deposition was strong in seed canola (Z=3.2), but there was no path from honey bee visitation to pollen deposition in either crop type.
-Pollen deposition increased fruit set (Z=3.1) and seeds per pod (Z=2.3) in seed canola, but was not present in commodity canola, showing that yield in seed canola, but not commodity canola, is strongly dependent on pollination.
-%The path from seeds per pod to weight per seed was negative in seed canola (Z=-15.0) but positive in commodity canola (Z=6.1) 
-Both crop types had strong negative paths from flower survival to flowers per plant (commodity Z=-12.5, seed Z=-12.1), indicating that high flower survival suppressed future flower production.
-Commodity canola had a similar weight per seed, regardless of the plant size, but in seed canola, plant size had a strong influence on seeds per pod (Z=5.6) and weight per seed (4.6).
-Finally, in both crop types, the paths leading from plant size were the dominant signal influencing fruit set (commodity Z=5.8; seed Z=19.9), but the path from pollen deposition to fruit set was only present in seed canola, showing that plant resources matter strongly for both crop types, but that increased pollen deposition only benefits seed canola.
+% %This could probably be reduced to a blurb
+% Plant size and pollen deposition were the main drivers of yield in seed canola, while plant size was the main driver of yield in commodity canola.
+% Distance from the field edge had a negative effect on honey bee visitation in both commodity and seed canola (Z=-3.7, -2.5, respectively), and unexpectedly, had a negative effect on leafcutter bee visitation (Z= -4.4), showing that overall visitation decreases with distance into the field.
+% The path from leafcutter bee visitation to pollen deposition was strong in seed canola (Z=3.2), but there was no path from honey bee visitation to pollen deposition in either crop type.
+% Pollen deposition increased fruit set (Z=3.1) and seeds per pod (Z=2.3) in seed canola, but was not present in commodity canola, showing that yield in seed canola, but not commodity canola, is strongly dependent on pollination.
+% %The path from seeds per pod to weight per seed was negative in seed canola (Z=-15.0) but positive in commodity canola (Z=6.1) 
+% Both crop types had strong negative paths from flower survival to flowers per plant (commodity Z=-12.5, seed Z=-12.1), indicating that high flower survival suppressed future flower production.
+% Commodity canola had a similar weight per seed, regardless of the plant size, but in seed canola, plant size had a strong influence on seeds per pod (Z=5.6) and weight per seed (4.6).
+% Finally, in both crop types, the paths leading from plant size were the dominant signal influencing fruit set (commodity Z=5.8; seed Z=19.9), but the path from pollen deposition to fruit set was only present in seed canola, showing that plant resources matter strongly for both crop types, but that increased pollen deposition only benefits seed canola.
 
 The results of the underlying components of each pSEM are shown in Figures \ref{fig:commoditySEM} and \ref{fig:seedSEM}:
 
+\begin{table}
+\centering
+\caption{Summary of main measured variables. Vegetative mass refers to the non-seed plant mass.}
+\begin{tabular}{r|llllll|llllll}
+                                       & \multicolumn{6}{l|}{Commodity Fields}           & \multicolumn{6}{l}{Seed Fields}                    \\
+Parameter                              & Min  & Median & Mean   & Max   & SD     & N    & Min    & Median & Mean   & Max    & SD     & N     \\ \hline
+Honey bee visitation (per min)      & 0    & 0      & 0.17   & 3.64  & 0.48   & 271  & 0      & 2      & 14.15  & 215    & 25.13  & 665   \\
+Leafcutter bee visitation (per min) & -    & -      & -      & -     & -      & -    & 0      & 2      & 13.93  & 212    & 25.49  & 665   \\
+Pollen (\# per stigma)                 & 0    & 155    & 293.32 & 3891  & 385.04 & 1355 & 0      & 7      & 21.76  & 578    & 42.53  & 1080  \\
+Flowers per plant                      & 13   & 157    & 196.05 & 1094  & 150.87 & 789  & 26     & 362.50 & 461.33 & 2712   & 326.59 & 600   \\
+Pods per plant                         & 5    & 112    & 143.17 & 892   & 114.57 & 789  & 10     & 244.50 & 299.41 & 1410   & 207.68 & 600   \\
+Seeds per pod                          & 4.6  & 23.6   & 22.95  & 35.4  & 4.97   & 789  & 1.8    & 16.6   & 16.40  & 30.60  & 5.52   & 600   \\
+Weight per 1000 seeds (g)              & 0.39 & 2.72   & 2.74   & 5.35  & 0.8    & 789  & 1.04   & 3.42   & 3.43   & 5.59   & 0.88   & 600  \\
+Total vegetative mass (g)                    & 0.77 & 14.29  & 18.19  & 110.2 & 14.41  & 789  & 1.1849 & 25.20  & 30.32  & 144.32 & 21.16  & 600   \\
+Total seed mass (g)                          & 0.01 & 5.46   & 6.87   & 47.9  & 5.97   & 789  & 0.02   & 7.54   & 9.50   & 60.77  & 7.90   & 600   
+\end{tabular}
+\end{table}
+
+
 \subsection{Visitation}
 
-Bee visitation strongly declined with distance away from the hives and shelters, in both commodity and seed canola fields. 
-In commodity canola, honey bee visitation declined with distance into the field (Z=-3.7, p$=$0.0002, Figure \ref{fig:hbeeDist_commodity}), decreasing from 8.5 visits/hr at the edge of the field to 3.1 visits/hr at 100 m into the field (at a stocking level of 20 hives).
+Honey bee visitation decreased with distance away from the apiary, in both commodity and seed canola fields.
+In commodity fields, honey bee visitation decreased with distance from the apiary at the field edge (Z=-3.7, p$=$0.0002, Figure \ref{fig:hbeeDist_commodity}), decreasing from 8.5 visits/hr at the edge of the field to 3.1 visits/hr at 100 m into the field (given a stocking level of 20 hives).
 % Visitation rates were higher in both years in Lethbridge (2014: 9.3 visits/hr, 2015: 7.1), but were higher in 2015 than 2014 at Grande Prairie (Z=2.3, p$=$0.02), rising from 5 visits/hr at the field edge in 2014 to 17 visits/hr in 2015. % (at a stocking level of 20 hives). 
-Honey bee visitation increased with the number of hives used for stocking (Z=5.3, p$<$0.0001); plot-level visitation at the edge of the field increased from 14.5 visits/hr with an apiary of 20 hives to 22.7 visits/hr with an apiary of 40 hives, while unstocked field edges had an average of 1.8 visits/hr.
-In seed canola fields, honey bee visitation also declined with distance into the field (Z=-2.5, p$=$0.01), but not as strongly as in commodity fields (126 visits/hr at edge of field vs. 78 visits/hr at 100 m). 
+Greater stocking rates increased the honey bee visitation (Z=5.3, p$<$0.0001), with visitation at the edge of the field increasing from 14.5 visits/hr with an apiary of 20 hives to 22.7 visits/hr with an apiary of 40 hives, while unstocked field edges had an average of 1.8 visits/hr.
+In seed canola fields, honey bee visitation also decreased with distance from the apiary (Z=-2.5, p$=$0.01), but the rate of decline was weaker (126 visits/hr at edge of field vs. 78 visits/hr at 100 m). 
 Honey bee visitation was lower near leafcutter shelters (Z=3.9, p$=$0.001), dropping from 60 visits/hr at 10 m to 34 visits/hr at 2 m, likely due to competition with leafcutter bees (Figure \ref{fig:hbeeDist_both}, \ref{fig:lbeeDist_both}).
 
-Leafcutter bees were much more sensitive to distance than honey bees, and visitation declined quickly with distance from their shelters (Z=-11.4, p$=$0.0001, 350 visit/hr at 2 m to 83 visit/hr at 10 m), and unexpectedly, was higher at the edge of the field than the centre (Z=-4.4, p$=$0.0001, 114 visits/hr vs 28 visits/hr).
-However, there was no difference in visitation rates when the stocking rate of cocoons per shelter was lower (Z=2.2, p$=$0.028), indicating that leafcutters at high stocking densities may migrate to shelters close to the edge of the field (Figure \ref{fig:hbeeDist_both}).
-Both leafcutter bees and honey bees visited at similar rates in the male and female bays (leafcutter bee: p$=$0.72, honey bee: p$=$0.32), but within the female bay, leafcutter bee visitation was lower in the centre of the bay (p$=$0.04, 51 vs. 29 visits/hr), while honey bee visitation was higher at the centre of the bay (p$=$0.008, 71 vs. 117 visits/hr, Figure \ref{fig:edgeCentVis_both}).
+Leafcutter bee visitation declined rapidly with distance from their shelters (Z=-11.4, p$=$0.0001, 75\% reduction in 10 m), and unexpectedly, was higher at the edge of the field than the centre (Z=-4.4, p$=$0.0001, 114 visits/hr vs 28 visits/hr). %350 visit/hr at 2 m to 83 visit/hr at 10 m
+However, there was no difference in visitation rates between the edge and the centre when leafcutter cocoon stocking was lower (Z=2.2, p$=$0.028), indicating that leafcutters at high stocking densities likely aggregate in shelters close to the edge of the field (Figure \ref{fig:hbeeDist_both}).
+There was no difference in visitation rates between the male bay and the edge of the female bays (leafcutter bee: p$=$0.72, honey bee: p$=$0.32). 
+However, leafcutter bee visitation was lower in the centre of the female bay (p$=$0.04, 51 vs. 29 visits/hr), and honey bee visitation was higher at the centre of the bay (p$=$0.008, 71 vs. 117 visits/hr, Figure \ref{fig:edgeCentVis_both}).
 %Therefore, visitation by both species strongly decreases with distance from the edge of the field, decreases with distance from the leafcutter shelters in seed canola fields, and is done by different bees at the centre of the female bay.
 
 %Visits/hr: In GP, 3.1 in 2014, 10.6 in 2015; in LB 5.9 in 2014, 4.5 in 2015
@@ -409,12 +430,12 @@ Both leafcutter bees and honey bees visited at similar rates in the male and fem
 
 \subsection{Pollen Deposition}
 
-Leafcutter bee visitation increased pollen deposition in seed canola, but honey bees did not increase pollen deposition in either commodity or seed canola.
+Leafcutter bee visitation increased pollen deposition in seed canola fields, but honey bees did not increase pollen deposition in either commodity or seed canola fields.
 Pollen deposition on stigmas was high in commodity canola (mean: 293 grains per stigma, SD: 385, range: 0--3981), but honey bee visitation did not effect deposition (p$=$0.77, Figure \ref{fig:hbeeVisPol}).
-Pollen deposition declined with distance from the edge of the field (p$=$0.07), but this only amounted to a 6\% average decrease (290 grains per stigma at the edge, 240 at field centre).
-Flies were common visitors in commodity fields (Table \ref{tab:propVisitors}), but had no effect on pollen deposition (p$=$0.577), so only honey bees and leafcutter bees were considered as potential pollinators (other flower visitors were rare).
-In seed canola, pollen deposition was much lower (mean: 22 grains per stigma, SD: 43, range: 0--578), and leafcutter bee visitation had a strong positive effect (Z=3.2, p$=$0.002, Figure \ref{fig:visPol_both}, 12 grains/stigma at 6 visits/hr vs. 16 pollen grains at 60 visits/hr), and also decreased with distance from the edge of field (Z=-4.4, p$=$0.0001, Figure \ref{fig:distCentPol}, 23 vs. 11 grains/stigma).
-Pollen deposition was lower in the centre of the female bay (Z=-4.5, p$=$0.0001, 23 vs. 13 grains/stigma) independent of visitation rate, suggesting that pollen is lost from bees crossing from male bays, who likely visit flowers at the edge of the bay first \citep{pinnisch1990}. 
+Pollen deposition slighly declined with distance from the edge of the field, but this relationship was weak (p$=$0.07) and only amounted to a 6\% average decrease (290 grains per stigma at the edge, 240 at field centre).
+Flies were also common visitors in commodity fields (Table \ref{tab:propVisitors}), but had no effect on pollen deposition (p$=$0.577), so only honey bees and leafcutter bees were considered as potential pollinators (other flower visitors were rare).
+In seed canola, pollen deposition was much lower overall (mean: 22 grains per stigma, SD: 43, range: 0--578), leafcutter bee visitation had a strong positive effect (Z=3.2, p$=$0.002, Figure \ref{fig:visPol_both}, 12 grains/stigma at 6 visits/hr vs. 16 pollen grains at 60 visits/hr), and was lower at the centre of the field (Z=-4.4, p$=$0.0001, Figure \ref{fig:distCentPol}, 23 vs. 11 grains/stigma).
+Pollen deposition was also lower at the centre of the female bay (Z=-4.5, p$=$0.0001, 23 vs. 13 grains/stigma) independent of visitation rate, suggesting that pollen may be lost from bees crossing from male bays, who likely visit flowers at the edge of the bay first \citep{pinnisch1990}. 
 Finally, there was no effect of honey bees on pollen deposition in seed canola fields (Z=0.98, p$=$0.33), implying that most of the pollen deposition is the result of leafcutter visitation. 
 
 \begin{figure}
@@ -440,14 +461,13 @@ Finally, there was no effect of honey bees on pollen deposition in seed canola f
 
 \subsection{Seed Production}
 
-%LH: WRITING BELOW THIS POINT COULD BE MORE ECONOMICAL
-\subsection{Prediction 3: Larger plants produce more seeds} 
-
-Plant size was largely influenced by plant density, but this differed between commodity and seed canola crops.
-Plant density was higher overall in commodity fields (mean: 48.5 plants/m$^2$, SD: 22.9, range: 6--151 ) than seed fields (mean: 39.4 plants/m$^2$, SD: 17.0, range: 11--89), and commodity canola plants were smaller on average (mean: 18.2 g, SD: 14.4, range: 0.8--110.2) than seed canola plants (mean: 30.7 g, SD: 21.2, range: 1.2--144.3).
-However, commodity canola plant size was not influenced by plant density (Z=-1.62, p$=$0.10, Figure \ref{fig:plDensPlSize}), indicating that any density-dependence was overwhelmed by other factors, but plant size in seed canola was negatively influenced by planting density (Z=-13.2, p$<$0.0001), and plants were larger at the centre of the field independent of density (Z=5.4, p$<$0.0001).%, possibly because of proximity to the centre of the irrigation system. 
-Plant density was slightly lower at the edge of commodity canola fields (Z=1.68, p=0.09), but was much lower in seed canola (Z=5.2, p$<$0.0001), indicating lower seedling survival or seeding density at the edges of the field.
-Neither irrigation (p=0.76), site (p=0.86), nor distance from field edge (p=0.70) directly influenced commodity canola plant size, but plants were larger in 2015 (Z=2.5, p=0.01). 
+% % Not sure that this paragraph needs to be here - move to Appendix
+% Plant size was influenced by plant density, but this differed between commodity and seed canola crops.
+% Plant density was higher overall in commodity fields (mean: 48.5 plants/m$^2$, SD: 22.9, range: 6--151 ) than seed fields (mean: 39.4 plants/m$^2$, SD: 17.0, range: 11--89), and commodity canola plants were smaller on average (mean: 18.2 g, SD: 14.4, range: 0.8--110.2) than seed canola plants (mean: 30.7 g, SD: 21.2, range: 1.2--144.3).
+% Plant size was negatively influenced by plant density in seed canola fields (Z=-13.2, p$<$0.0001), but not in commodity canola fields (Z=-1.62, p$=$0.10, Figure \ref{fig:plDensPlSize}), indicating that density-dependence is more variable in commodity fields. 
+% Plants were larger at the centre of the field independent of density (Z=5.4, p$<$0.0001).%, possibly because of proximity to the centre of the irrigation system. 
+% Plant density was slightly lower at the edge of commodity canola fields (Z=1.68, p=0.09), but was much lower in seed canola (Z=5.2, p$<$0.0001), indicating lower seedling survival at the edges of the field.
+% Neither irrigation (p=0.76), site (p=0.86), nor distance from field edge (p=0.70) directly influenced commodity canola plant size, but plants were larger in 2015 (Z=2.5, p=0.01). 
 
 \begin{figure} 
     \centering
@@ -456,8 +476,8 @@ Neither irrigation (p=0.76), site (p=0.86), nor distance from field edge (p=0.70
     \label{fig:plDensPlSize}
 \end{figure}
 
-Plant size had a strong effect on the number of pods produced, and there was evidence of fruit set suppressing future flower production.
-Commodity canola plants produced fewer flowers per plant (mean: 198, SD: 157, range: 13--1419) than seed canola plants (mean: 468, SD: 328, range: 26--2712), and also produced fewer pods per plant (mean: 143, SD: 114, range: 5--892) than seed canola plants (mean: 303, SD: 208, range: 10--1410).
+Plant size had by far the strongest positive effect on the number of pods produced, and there was evidence of fruit set suppressing flower production.
+Commodity canola plants produced fewer flowers (mean: 198, SD: 157, range: 13--1419) than seed canola plants (mean: 468, SD: 328, range: 26--2712), and also produced fewer pods per plant (mean: 143, SD: 114, range: 5--892) than seed canola plants (mean: 303, SD: 208, range: 10--1410).
 In both commodity and seed canola, plant size had a strong positive effect on the total number of flowers per plant (commodity: Z=92.4, p$<$0.0001, seed: Z=82.7, p$<$0.0001, Figure \ref{fig:plSizeFlwCount}), as well as fruit set (commodity: Z=5.5, p$=$0.0002, seed: Z=19.9, p$<$0.0001, Figure \ref{fig:flwSurv_both}).
 Fruit set had a strong negative influence on total flowers per plant (p$<$0.0001) in both commodity (Z=-12.5) and seed canola (Z=-12.1), indicating that high levels of fruit set suppressed future flower production.
 Finally, commodity plants were also lower-yielding (mean: 6.8 g of seeds per plant, SD: 6.0, range: 0.01--47.9) than seed canola plants (mean: 9.6, SD: 7.9, range: 0.02--60.8).

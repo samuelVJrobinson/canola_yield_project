@@ -97,6 +97,7 @@ datalistPlant <-
   mutate(plantIndex=as.numeric(factor(paste(Year,Field,Distance)))) %>% #Index for plant (which plot?)
   arrange(plantIndex) %>% 
   with(list(Nplant=length(VegMass), #Number of plant samples (some missing)
+            VegMass=VegMass,
   # Nplant_obs=sum(!is.na(VegMass)), #Observed plants
   # Nplant_miss=sum(is.na(VegMass)), #Missing plants
   podCount=Pods, #Successful pods
@@ -259,19 +260,44 @@ modFiles <- dir(pattern = 'commodity.*\\.stan')
 modList <- vector(mode = 'list',length = length(modFiles))
 names(modList) <- gsub('(commodity.*[0-9]{2}|\\.stan)','',modFiles)
 
-for(i in 1:length(modFiles)){
-  modList[i] <- stan(file=modFiles[i],data=datalist,iter=1000,chains=4,control=list(adapt_delta=0.8),init=0)
-}
+# for(i in 1:length(modFiles)){
+#   modList[i] <- stan(file=modFiles[i],data=datalist,iter=1000,chains=4,control=list(adapt_delta=0.8),init=0)
+# }
 
-print(modList[i])
+modList[1] <- stan(file=modFiles[1],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #OK
+modList[2] <- stan(file=modFiles[2],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #OK
+modList[3] <- stan(file=modFiles[3],data=datalist,iter=1000,chains=4,control=list(adapt_delta=0.8),init=0) #OK
+modList[4] <- stan(file=modFiles[4],data=datalist,iter=1000,chains=4,control=list(adapt_delta=0.8),init=0) #OK
+modList[5] <- stan(file=modFiles[5],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0); beep(1) #Trouble here - try without plDens + pollen components
+modList[6] <- stan(file=modFiles[6],data=datalist,iter=1000,chains=4,control=list(adapt_delta=0.8),init=0)
+modList[7] <- stan(file=modFiles[7],data=datalist,iter=1000,chains=4,control=list(adapt_delta=0.8),init=0)
+modList[8] <- stan(file=modFiles[8],data=datalist,iter=1000,chains=4,control=list(adapt_delta=0.8),init=0)
+modList[9] <- stan(file=modFiles[9],data=datalist,iter=1000,chains=4,control=list(adapt_delta=0.8),init=0)
+modList[10] <- stan(file=modFiles[10],data=datalist,iter=1000,chains=4,control=list(adapt_delta=0.8),init=0)
 
+# #Betabinomial flower success model not working
+# library(glmmTMB)
+# dat <- with(datalist,data.frame(succ=podCount,fail=flwCount-podCount,plSize=plantSize,
+#                                 field=factor(plotIndex[plantIndex])))
+# m1 <- glmmTMB(cbind(succ,fail)~plSize+(1|field),
+#               dispformula=~plSize,family = 'betabinomial',data=dat)
+# summary(m1)
+
+i <- 2
+# print(modList[i])
 modFiles[i]
 n <- names(modList[[i]]) #Model parameters
 n <- n[!grepl('(\\[[0-9]+\\]|lp)',n)] #Gets rid of parameter vectors
-print(modList[[i]],pars=n) #Traceplots
-traceplot(modList[[i]],pars=n) #Traceplots
+print(modList[[i]],pars=n) #Parameters
+traceplot(modList[[i]],pars=n,inc_warmup=FALSE) #Traceplots
 
-save(modPodcount,file='modPodcount_1.Rdata')
+compareRE(modList[[i]],'intVisit_field')
+
+with(extract(modList[[i]]),PPplots(apply(podCount_resid,1,function(x) sum(abs(x))),
+                  apply(predPodCount_resid,1,function(x) sum(abs(x))),
+                  datalist$podCount,apply(predPodCount,2,median),main='Pods per plant'))
+
+# save(modPodcount,file='modPodcount_1.Rdata')
 
 #List of parameters
 parList <- list(
@@ -338,23 +364,6 @@ for(i in 1:length(parList)){ #Sub-model traceplots
 }
 
 print(modPodcount,pars='intFlwSurv_field') 
-
-compareRE <- function(mod,parSet){
-  require(ggpubr)
-  p1 <- extract(mod,pars=parSet)[[1]] %>% 
-    apply(.,2,function(x) quantile(x,c(0.1,0.5,0.9))) %>% 
-    t() %>% data.frame() %>% setNames(c('lwr','med','upr')) %>% 
-    ggplot(aes(sample=med))+ ##q-q plot
-    geom_qq()+
-    geom_qq_line()  
-  p2 <- extract(mod,pars=parSet)[[1]] %>% 
-    apply(.,2,function(x) quantile(x,c(0.1,0.5,0.9))) %>% 
-    t() %>% data.frame() %>% setNames(c('lwr','med','upr')) %>% 
-    tibble::rownames_to_column() %>%
-    ggplot(aes(x=rowname,y=med))+
-    geom_pointrange(aes(ymax=upr,ymin=lwr))
-  ggarrange(p1,p2,ncol=1,nrow=2)
-}
 
 # debugonce(compareRE)
 compareRE(modPodcount,'intFlwSurv_field')
@@ -1500,6 +1509,7 @@ datalistFlw <- with(pollenAllSeed,list( #Pollen samples
 
 datalistPlant <- plantsAllSeed %>% filter(!is.na(Pods),!is.na(Missing)) %>% #Filter out plants with missing pods/flw counts
   with(.,list(
+  VegMass=VegMass,
   Nplant=length(Distance), #Number of plant samples
   podCount=Pods, #Successful pods
   flwCount=Pods+Missing, #Pods + Missing (total flw production)
