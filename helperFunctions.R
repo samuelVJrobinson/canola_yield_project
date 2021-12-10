@@ -46,8 +46,31 @@ effSize <- function(x) unname(median(x)/diff(quantile(x,c(0.025,0.975))))
 #Does 95% of posterior overlap zero?
 overlap <- function(x) {r <- quantile(x,c(0.025,0.975))>=0; xor(r[1],r[2]);}
 
+# #Posterior predictive check plots - older version
+# PPplots <- function(resid,predResid,actual,pred,main=NULL){
+#   par(mfrow=c(2,1))
+#   resRange <- range(resid)
+#   pResRange <- range(predResid)
+#   xl <- yl <- c(pmin(resRange[1],pResRange[1]),pmax(resRange[2],pResRange[2]))
+#   x <- sum(resid<predResid)/length(resid)
+#   plot(resid~predResid,ylab='Sum actual residuals',xlab='Sum simulated residuals',xlim=xl,ylim=yl,
+#        main=paste(main,' (p =',round(min(x,1-x),3),')'))
+#   # legend('topleft',)
+#   abline(0,1,col='red') #PP plot
+#   plot(actual~pred, #Predicted vs Actual
+#        xlab=paste('Predicted',main),ylab=paste('Actual',main)) 
+#   abline(0,1,col='red')
+#   abline(lm(actual~pred),col='red',lty=2)
+#   par(mfrow=c(1,1))
+# }
+
 #Posterior predictive check plots
-PPplots <- function(resid,predResid,actual,pred,main=NULL){
+PPplots <- function(mod,actual=NULL,pars=c('resid','predResid','pred'),main=''){
+  modVals <- extract(mod)
+  nam <- names(modVals)
+  resid <- apply(modVals[[which(nam==pars[1])]],1,function(x) sum(abs(x)))
+  predResid <- apply(modVals[[which(nam==pars[2])]],1,function(x) sum(abs(x)))
+  pred <- apply(modVals[[which(nam==pars[3])]],2,median)
   par(mfrow=c(2,1))
   resRange <- range(resid)
   pResRange <- range(predResid)
@@ -58,7 +81,7 @@ PPplots <- function(resid,predResid,actual,pred,main=NULL){
   # legend('topleft',)
   abline(0,1,col='red') #PP plot
   plot(actual~pred, #Predicted vs Actual
-       xlab=paste('Predicted',main),ylab=paste('Actual',main)) 
+       xlab=paste('Predicted',main),ylab=paste('Actual',main))
   abline(0,1,col='red')
   abline(lm(actual~pred),col='red',lty=2)
   par(mfrow=c(1,1))

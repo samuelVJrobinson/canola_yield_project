@@ -51,6 +51,7 @@ source('helperFunctions.R')
 library(rstan)
 setwd('./Models')
 rstan_options(auto_write = TRUE) #Avoids recompilation
+rstan_options(javascript = FALSE)
 options(mc.cores = 6)
 # library(shinystan)
 
@@ -268,8 +269,8 @@ modList[1] <- stan(file=modFiles[1],data=datalist,iter=2000,chains=4,control=lis
 modList[2] <- stan(file=modFiles[2],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #OK
 modList[3] <- stan(file=modFiles[3],data=datalist,iter=1000,chains=4,control=list(adapt_delta=0.8),init=0) #OK
 modList[4] <- stan(file=modFiles[4],data=datalist,iter=1000,chains=4,control=list(adapt_delta=0.8),init=0) #OK
-modList[5] <- stan(file=modFiles[5],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0); beep(1) #Trouble here - try without plDens + pollen components
-modList[6] <- stan(file=modFiles[6],data=datalist,iter=1000,chains=4,control=list(adapt_delta=0.8),init=0)
+modList[5] <- stan(file=modFiles[5],data=datalist,iter=1000,chains=4,control=list(adapt_delta=0.8),init=0); beep(1) #Trouble here - segFault when using plDens
+modList[6] <- stan(file=modFiles[6],data=datalist,iter=1000,chains=4,control=list(adapt_delta=0.8),init=0) #OK
 modList[7] <- stan(file=modFiles[7],data=datalist,iter=1000,chains=4,control=list(adapt_delta=0.8),init=0)
 modList[8] <- stan(file=modFiles[8],data=datalist,iter=1000,chains=4,control=list(adapt_delta=0.8),init=0)
 modList[9] <- stan(file=modFiles[9],data=datalist,iter=1000,chains=4,control=list(adapt_delta=0.8),init=0)
@@ -283,15 +284,21 @@ modList[10] <- stan(file=modFiles[10],data=datalist,iter=1000,chains=4,control=l
 #               dispformula=~plSize,family = 'betabinomial',data=dat)
 # summary(m1)
 
-i <- 2
+i <- 6
 # print(modList[i])
 modFiles[i]
 n <- names(modList[[i]]) #Model parameters
 n <- n[!grepl('(\\[[0-9]+\\]|lp)',n)] #Gets rid of parameter vectors
 print(modList[[i]],pars=n) #Parameters
+# plot(modList[[i]],pars=n) #Pointrange plot
 traceplot(modList[[i]],pars=n,inc_warmup=FALSE) #Traceplots
 
-compareRE(modList[[i]],'intVisit_field')
+compareRE(modList[[i]],'intSeedCount_field')
+compareRE(modList[[i]],'intSeedCount_plot')
+
+PPplots(modList[[5]],datalist$avgSeedCount,c('seedCount_resid','predSeedCount_resid','predSeedCount'))
+PPplots(modList[[6]],datalist$avgSeedCount,c('seedCount_resid','predSeedCount_resid','predSeedCount'))
+
 
 with(extract(modList[[i]]),PPplots(apply(podCount_resid,1,function(x) sum(abs(x))),
                   apply(predPodCount_resid,1,function(x) sum(abs(x))),

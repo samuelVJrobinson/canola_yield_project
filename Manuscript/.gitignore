@@ -2,3 +2,8 @@
 *.blg
 *.log
 *.synctex.gz
+main.bbl
+main.pdf
+main.synctex.gz
+models_supplemental.aux
+visitors_supplemental.aux

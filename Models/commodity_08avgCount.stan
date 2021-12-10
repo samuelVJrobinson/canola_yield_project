@@ -83,17 +83,17 @@ transformed data {
 }
 
 parameters {
-	// Plant density	
-	vector[Nplot_densMiss] plDens_miss; 
-	real intPlDens; //Global intercept
-	real slope2015PlDens; //Effect of 2015
-	real slopeIrrigPlDens; //Effect of irrigation
-	real slope2015IrrigPlDens; //Year:irrigation interaction	
-	real slopeGPPlDens; //GP effect on plant density	
-	real slopeDistPlDens; //Slope of distance into field		
-	real<lower=0> sigmaPlDens; //Sigma for within-field (residual)
-	real<lower=0> sigmaPlDens_field; //Sigma for field
-	vector[Nfield] intPlDens_field; //Random intercept for field
+	// // Plant density	
+	// vector[Nplot_densMiss] plDens_miss; 
+	// real intPlDens; //Global intercept
+	// real slope2015PlDens; //Effect of 2015
+	// real slopeIrrigPlDens; //Effect of irrigation
+	// real slope2015IrrigPlDens; //Year:irrigation interaction	
+	// real slopeGPPlDens; //GP effect on plant density	
+	// real slopeDistPlDens; //Slope of distance into field		
+	// real<lower=0> sigmaPlDens; //Sigma for within-field (residual)
+	// real<lower=0> sigmaPlDens_field; //Sigma for field
+	// vector[Nfield] intPlDens_field; //Random intercept for field
 
 	// Pollen deposition
 	// Plot level random effect has bad trace, strongly correlated with lp__
@@ -112,11 +112,11 @@ parameters {
   real slopePolSeedCount; //Slope of pollen deposition - p=0.74
   real slopePlSizeCount; //Slope of plant size - p=0.22
   real slope2015SeedCount; //Year effect - p=0.0003
-  real<lower=0> sigmaSeedCount_plot; //SD of plot random effect - not converging well, Rhat 1.1, small n_eff.
-  real<lower=0> sigmaSeedCount_field; //SD of field random effect - OK
-  vector[Nplot] intSeedCount_plot; //plot-level random intercepts
-  vector[Nfield] intSeedCount_field; //field-level random intercepts
   real<lower=0> sigmaSeedCount; //SD of seed count
+  real<lower=0> sigmaSeedCount_field; //SD of field random effect - OK
+  vector[Nfield] intSeedCount_field; //field-level random intercepts
+  // real<lower=0> sigmaSeedCount_plot; //SD of plot random effect - bad traces, high Rhat
+  // vector[Nplot] intSeedCount_plot; //plot-level random intercepts - almost all overlap 0 
   real<lower=0> lambdaSeedCount; //Lambda term for exponential process
  
 }
@@ -124,9 +124,9 @@ parameters {
 transformed parameters {		
 	//Expected values
 	
-	//Plant density
-	vector[Nplot] plDensMu; //Expected plant density
-	vector[Nplot] plDens; //Planting density - imputed
+	// //Plant density
+	// vector[Nplot] plDensMu; //Expected plant density
+	// vector[Nplot] plDens; //Planting density - imputed
 
 	//Pollen deposition
 	vector[Nplot] pollenPlot; //Plot-level pollen per stigma
@@ -136,19 +136,19 @@ transformed parameters {
   vector[Nplot] seedCountMuPlot; //Plot-level seed count
   vector[Nplant] seedCountMu; //Plant-level seed count
 	
-	//Assign imputed data
-	plDens[obsPlDens_ind]=plDens_obs; //Observed data
-	plDens[missPlDens_ind]=plDens_miss;	//Missing data
+	// //Assign imputed data
+	// plDens[obsPlDens_ind]=plDens_obs; //Observed data
+	// plDens[missPlDens_ind]=plDens_miss;	//Missing data
 
 	for(i in 1:Nplot){ 
-		// Plant density per plot
-		plDensMu[i] = intPlDens + //Intercept
-		  intPlDens_field[plotIndex[i]] + //Field level random intercept
-			slope2015PlDens*is2015[plotIndex[i]]+ //Year effect
-			slopeIrrigPlDens*isIrrigated[plotIndex[i]]+ //Irrigation effect
-			slope2015IrrigPlDens*isIrrigated[plotIndex[i]]*is2015[plotIndex[i]]+ //Year:irrigation interaction
-			slopeDistPlDens*logHbeeDist[i] + //Distance effect
-			slopeGPPlDens*isGP[plotIndex[i]]; //Location effect
+		// // Plant density per plot
+		// plDensMu[i] = intPlDens + //Intercept
+		//   intPlDens_field[plotIndex[i]] + //Field level random intercept
+		// 	slope2015PlDens*is2015[plotIndex[i]]+ //Year effect
+		// 	slopeIrrigPlDens*isIrrigated[plotIndex[i]]+ //Irrigation effect
+		// 	slope2015IrrigPlDens*isIrrigated[plotIndex[i]]*is2015[plotIndex[i]]+ //Year:irrigation interaction
+		// 	slopeDistPlDens*logHbeeDist[i] + //Distance effect
+		// 	slopeGPPlDens*isGP[plotIndex[i]]; //Location effect
 
 		// Plot-level pollen deposition
 		pollenPlot[i] = intPollen_field[plotIndex[i]] + //Field-level random intercept
@@ -160,7 +160,7 @@ transformed parameters {
 		// Plot-level seed count
 		seedCountMuPlot[i] = intSeedCount + //Intercept
 		  intSeedCount_field[plotIndex[i]] + //Field-level random intercept
-		  intSeedCount_plot[i] + //Plot-level random intercept
+		  // intSeedCount_plot[i] + //Plot-level random intercept
 			slopeVisitSeedCount*logHbeeVis[i] + //(log) hbee visits
 			slopePolSeedCount*pollenPlot[i] + //pollen deposition - large correlation b/w slopePolSeedCount and intFlwSurv
 			slope2015SeedCount*is2015[plotIndex[i]]; //Year effect
@@ -182,21 +182,22 @@ transformed parameters {
 	
 model {	
 	//Likelihood		
-	plDens ~ normal(plDensMu,sigmaPlDens); //Plant density
+	// plDens ~ normal(plDensMu,sigmaPlDens); //Plant density
+	pollenCount ~ neg_binomial_2_log(pollenMu,pollenPhi); //Pollination rate
 	avgSeedCount ~ exp_mod_normal(seedCountMu,sigmaSeedCount,lambdaSeedCount); //Average seeds per pod
 		
 	// Priors
-	//Plant density	- informative priors
-	intPlDens ~ normal(0,0.1); //Global intercept
-	slope2015PlDens ~ normal(0,1); //Year effect
-	slopeIrrigPlDens ~ normal(0,1); //Irrigation effect
-	slope2015IrrigPlDens ~ normal(0,1); //Year:irrigation interaction
-	slopeDistPlDens ~ normal(0,0.05); //Slope of distance into field	
-	slopeGPPlDens ~ normal(0,1); // Grand Prairie effect 
-	sigmaPlDens ~ gamma(3,10); //Sigma for within-field (residual)
-	sigmaPlDens_field ~ gamma(3,10); //Sigma for field
-	intPlDens_field ~ normal(0,sigmaPlDens_field); //Random intercept for field
-	
+	// //Plant density	- informative priors
+	// intPlDens ~ normal(0,0.1); //Global intercept
+	// slope2015PlDens ~ normal(0,1); //Year effect
+	// slopeIrrigPlDens ~ normal(0,1); //Irrigation effect
+	// slope2015IrrigPlDens ~ normal(0,1); //Year:irrigation interaction
+	// slopeDistPlDens ~ normal(0,0.05); //Slope of distance into field	
+	// slopeGPPlDens ~ normal(0,1); // Grand Prairie effect 
+	// sigmaPlDens ~ gamma(3,10); //Sigma for within-field (residual)
+	// sigmaPlDens_field ~ gamma(3,10); //Sigma for field
+	// intPlDens_field ~ normal(0,sigmaPlDens_field); //Random intercept for field
+	// 
 	// Pollen deposition - informative priors	
 	intPollen ~ normal(5.5,1); //Intercept	
 	slopeVisitPol ~ normal(0,0.1); //hbee Visitation effect	
@@ -214,11 +215,11 @@ model {
   slopePlSizeCount ~ normal(0,0.05); //Slope of plant size
   slope2015SeedCount ~ normal(0,0.5); //Year effect
   // slopeIrrigSeedCount ~ normal(0,0.5); //Irrigation
-  sigmaSeedCount_field ~ gamma(2,10); //SD of field random effect
-  sigmaSeedCount_plot ~ gamma(2,10); //SD of plot random effect
-  intSeedCount_field ~ normal(0,sigmaSeedCount_field); //field-level random intercepts
-  intSeedCount_plot ~ normal(0,sigmaSeedCount_plot); //plot-level random intercepts
   sigmaSeedCount ~ gamma(1,1); //SD of seed count
+  sigmaSeedCount_field ~ gamma(2,10); //SD of field random effect
+  intSeedCount_field ~ normal(0,sigmaSeedCount_field); //field-level random intercepts
+  // sigmaSeedCount_plot ~ gamma(2,10); //SD of plot random effect
+  // intSeedCount_plot ~ normal(0,sigmaSeedCount_plot); //plot-level random intercepts
   lambdaSeedCount ~ gamma(1,1); //Lambda for exp-normal distribution
 }
 
