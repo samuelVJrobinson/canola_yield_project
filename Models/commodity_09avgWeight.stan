@@ -169,19 +169,19 @@ model {
 	// intPollen_plot ~ normal(0,sigmaPolPlot); //Random plot int - not a lot of info at plot level
 	
   // Average weight per seed - informative priors
-  intSeedWeight ~ normal(1.5,1); //Intercept
-  slopeVisitSeedWeight ~ normal(0,0.5); //Slope of hbee visits
+  intSeedWeight ~ normal(0,1); //Intercept
+  slopeVisitSeedWeight ~ normal(0,1); //Slope of hbee visits
   slopePolSeedWeight ~ normal(0,1); //Slope of pollen deposition
   slopeSeedCount ~ normal(0,1); //Slope of (log) seed count
-  slopePlSizeWeight ~ normal(0,0.5); //Slope of plant size
+  slopePlSizeWeight ~ normal(0,1); //Slope of plant size
   slopeIrrigSeedWeight ~ normal(0,1); //Slope of irrigation
   slope2015SeedWeight ~ normal(0,1); //Slope of 2015
-  sigmaSeedWeight ~ gamma(3,6); //SD of seed weight
-  sigmaSeedWeight_field ~ gamma(4,10); //SD of field random effect
-  sigmaSeedWeight_plot ~ gamma(3,10); //SD of plot random effect
+  sigmaSeedWeight ~ gamma(1.1,1); //SD of seed weight
+  sigmaSeedWeight_field ~ gamma(1.1,1); //SD of field random effect
+  sigmaSeedWeight_plot ~ gamma(1.1,1); //SD of plot random effect
   intSeedWeight_field ~ normal(0,sigmaSeedWeight_field); //field-level random intercepts
   intSeedWeight_plot ~ normal(0,sigmaSeedWeight_plot); //plot-level random intercepts
-  lambdaSeedWeight ~ gamma(15,10); //Lambda for exp-normal distribution
+  lambdaSeedWeight ~ gamma(1.1,1); //Lambda for exp-normal distribution
 }
 
 generated quantities {

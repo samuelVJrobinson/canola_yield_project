@@ -265,26 +265,16 @@ names(modList) <- gsub('(commodity.*[0-9]{2}|\\.stan)','',modFiles)
 #   modList[i] <- stan(file=modFiles[i],data=datalist,iter=1000,chains=4,control=list(adapt_delta=0.8),init=0)
 # }
 
-modList[1] <- stan(file=modFiles[1],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #OK
-modList[2] <- stan(file=modFiles[2],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #OK
-modList[3] <- stan(file=modFiles[3],data=datalist,iter=1000,chains=4,control=list(adapt_delta=0.8),init=0) #OK
-modList[4] <- stan(file=modFiles[4],data=datalist,iter=1000,chains=4,control=list(adapt_delta=0.8),init=0) #OK
-modList[5] <- stan(file=modFiles[5],data=datalist,iter=1000,chains=4,control=list(adapt_delta=0.8),init=0); beep(1) #Trouble here - segFault when using plDens
-modList[6] <- stan(file=modFiles[6],data=datalist,iter=1000,chains=4,control=list(adapt_delta=0.8),init=0) #OK
-modList[7] <- stan(file=modFiles[7],data=datalist,iter=1000,chains=4,control=list(adapt_delta=0.8),init=0)
-modList[8] <- stan(file=modFiles[8],data=datalist,iter=1000,chains=4,control=list(adapt_delta=0.8),init=0)
-modList[9] <- stan(file=modFiles[9],data=datalist,iter=1000,chains=4,control=list(adapt_delta=0.8),init=0)
-modList[10] <- stan(file=modFiles[10],data=datalist,iter=1000,chains=4,control=list(adapt_delta=0.8),init=0)
+modList[1] <- stan(file=modFiles[1],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #OK - Plant density, Plant size, Flower Density
+modList[2] <- stan(file=modFiles[2],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #OK - Visitation
+modList[3] <- stan(file=modFiles[3],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #OK - Pollen
+modList[4] <- stan(file=modFiles[4],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #OK - Flower count
+modList[5] <- stan(file=modFiles[5],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0); beep(1) #Trouble here - segFault when using plDens - Flower survival
+modList[6] <- stan(file=modFiles[6],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #OK - Seed Count
+modList[7] <- stan(file=modFiles[7],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #OK - Seed weight
+modList[8] <- stan(file=modFiles[8],data=datalist,iter=1000,chains=4,control=list(adapt_delta=0.8),init=0) #OK - Total yield
 
-# #Betabinomial flower success model not working
-# library(glmmTMB)
-# dat <- with(datalist,data.frame(succ=podCount,fail=flwCount-podCount,plSize=plantSize,
-#                                 field=factor(plotIndex[plantIndex])))
-# m1 <- glmmTMB(cbind(succ,fail)~plSize+(1|field),
-#               dispformula=~plSize,family = 'betabinomial',data=dat)
-# summary(m1)
-
-i <- 6
+i <- 8
 # print(modList[i])
 modFiles[i]
 n <- names(modList[[i]]) #Model parameters
@@ -293,11 +283,12 @@ print(modList[[i]],pars=n) #Parameters
 # plot(modList[[i]],pars=n) #Pointrange plot
 traceplot(modList[[i]],pars=n,inc_warmup=FALSE) #Traceplots
 
-compareRE(modList[[i]],'intSeedCount_field')
-compareRE(modList[[i]],'intSeedCount_plot')
-
+# compareRE(modList[[i]],'intSeedCount_field')
+# compareRE(modList[[i]],'intSeedCount_plot')
 PPplots(modList[[5]],datalist$avgSeedCount,c('seedCount_resid','predSeedCount_resid','predSeedCount'))
 PPplots(modList[[6]],datalist$avgSeedCount,c('seedCount_resid','predSeedCount_resid','predSeedCount'))
+PPplots(modList[[7]],datalist$avgSeedMass,c('seedWeight_resid','predSeedWeight_resid','predSeedWeight'))
+PPplots(modList[[8]],log(datalist$yield),c('yield_resid','predYield_resid','predYield'))
 
 
 with(extract(modList[[i]]),PPplots(apply(podCount_resid,1,function(x) sum(abs(x))),
