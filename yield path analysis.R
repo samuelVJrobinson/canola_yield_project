@@ -20,7 +20,8 @@ theme_set(theme_bw()+prestheme) #Sets graph theme to B/Ws + prestheme
 rm(prestheme)
 
 #Commodity field data
-setwd('~/Projects/UofC/canola_yield_project')
+# setwd('~/Projects/UofC/canola_yield_project') #Multivac path
+setwd('~/Documents/canola_yield_project') #Galpern machine path
 load("./Commodity field analysis/commodityfieldDataAll.RData") 
 rm(AICc,brix2mgul,deltaAIC,DIC,plotFixedTerms,predFixef,se,varComp,zeroCheck,conversion,visitorsAll,visitors2015)
 fieldsAllComm <- fieldsAll; flowersAllComm <- flowersAll; plantsAllComm <- plantsAll;
@@ -68,6 +69,7 @@ datalistField <- with(arrange(fieldsAllComm,as.factor(paste(Year,Field))),list( 
 datalistPlot <- with(arrange(surveyAllComm,factor(paste(Year,Field,Distance))),list( #Plot-level measurements
   Nplot=length(Distance), #Number of plots
   plotIndex=as.numeric(as.factor(paste(Year,Field))), #Index for field (which field?)
+  plotIndex_char = as.factor(paste(Year,Field)), #Character version
   dist=Distance, #Distance from edge
   hbeeVis=Honeybee, #Visits by honeybees
   flyVis=Fly, #Visits by flies
@@ -155,60 +157,6 @@ if(any(sapply(datalist,function(x) sum(is.na(x)))>0)){
   beep(1); print("NAs found in datalist")
 }
  
-inits <- function() { with(datalist,
-  list(plDens_miss=rep(0,Nplot_densMiss),intPlDens=1, slopeGPPlDens=0, #Plant density
-    slopeDistPlDens=0,sigmaPlDens=0.5,sigmaPlDens_field=0.5,
-    intPlSize=0,slopePlDensPlSize=0, #Plant size
-    slopeDistPlSize=0,slopeGpPlSize=0,slopeIrrigPlSize=0,slope2015PlSize=0,
-    sigmaPlSize_field=0.5,sigmaPlSize_plot=0.5,sigmaPlSize=0.5,
-    intPlSize_field=rep(0,Nfield),intPlSize_plot=rep(0,Nplot),
-    intFlDens=1,slopePlSizeFlDens=0, slopeHbeeDistFlDens=0, #Flower density
-    sigmaFlDens=0.5,sigmaFlDens_field=0.5,intFlDens_field=rep(0,Nfield),
-    intVisit=-1,slopeYearVis=0,slopeGpVis=0,slopeYearGpVis=1.5,slopeDistVis=0, #Visitation
-    slopeHiveVis=0.5,slopeFlDens=0,sigmaVisField=2,visitHbeePhi=0.7,intVisit_field=rep(0.5,Nfield),lambdaVisField=1,
-    #Pollen deposition
-    intPollen=5.5,slopeVisitPol=0,slopeHbeeDistPollen=0,slopeStockingPollen=0, 
-    slopeStockingHbeeDistPollen=0,sigmaPolField=0.5,sigmaPolPlot=0.4,pollenPhi=0.7,
-    intPollen_field=rep(0,datalist$Nfield),intPollen_plot=rep(0,datalist$Nplot),
-    #Flower count per plant
-    intFlwCount=1,slopePlSizeFlwCount=0,slopeSurvFlwCount=0,slope2015FlwCount=0,
-    sigmaFlwCount_field=0.5,sigmaFlwSurv_plot=0.5, 
-    phiFlwCount_field=0.1,intPhiFlwCount=0,slopePlSizePhiFlwCount=0,sigmaPhiFlwCount_field=0.1,
-    intPhiFlwCount_field=rep(0,Nfield),
-    intFlwSurv_plot=rep(0,Nplot),intFlwCount_field=rep(0,Nfield),flwCountPhi=1,
-    #Flower survival
-    intFlwSurv=1,slopeVisitSurv=0,slopePolSurv=0,slopePlSizeSurv=0.02, 
-    slopeIrrigSurv=0,slope2015Surv=0,slopeIrrig2015Surv=0,slopePlSizeIrrigSurv=0,
-    slopeFlwCountSurv=0,slopePlDensSurv=0,sigmaFlwSurv_plot=0.3,sigmaFlwSurv_field=0.3, 
-    intFlwSurv_field=rep(0,Nfield),intFlwSurv_plot=rep(0,Nplot),flwSurvPhi=1,
-    slopePlSizePlDensSurv=0,intPhiFlwSurv=0,slopePlSizePhiFlwSurv=0,sigmaPhiFlwSurv_field=0.1,
-    intPhiFlwSurv_field=rep(0,Nfield),
-    #Seed count
-    intSeedCount=3.15,slopeVisitSeedCount=0,slopePolSeedCount=0,
-    slopePlSizeCount=0.01,slope2015SeedCount=0.15,
-    seedCountPhi=21, sigmaSeedCount_plant=0.14,sigmaSeedCount_plot=0.08,sigmaSeedCount_field=0.06,
-    intSeedCount_field=rep(0,datalist$Nfield),intSeedCount_plot=rep(0,datalist$Nplot),
-    intSeedCount_plant=rep(0,datalist$Nplant),
-    #Seed weight
-    intSeedWeight=2,slopeVisitSeedWeight=0,slopePolSeedWeight=0,slopeSeedCount=0.02, 
-    slopePlSizeWeight=0,slopeIrrigSeedWeight=0,slope2015SeedWeight=0.5,
-    slope2015IrrigSeedWeight=0,slopeSeedCountVegMassSeedWeight=0,
-    slopePlSizeIrrigSeedWeight=0,slopeSeedCount2015SeedWeight=0,slopePlSize2015SeedWeight=0,
-    slopePlSizeIrrig2015SeedWeight=0,
-    sigmaSeedWeight=0.5,sigmaSeedWeight_plant=0.2,sigmaSeedWeight_plot=0.5,sigmaSeedWeight_field=0.4,
-    intSeedWeight_field=rep(0,datalist$Nfield),slopePlSizeSeedWeight=0,
-    intSeedWeight_plot=rep(0,datalist$Nplot),intSeedWeight_plant=rep(0,datalist$Nplant),
-    lambdaSeedWeight=1.5,
-    #Yield
-    intYield=-0.3,slopeYield=1,sigmaYield=0.25,
-    sigmaYield_field=c(0.1,0.05),sigmaYield_plot=c(0.4,0.17),
-    L_field=t(chol(matrix(c(1,-0.5,-0.5,1),ncol=2))),
-    L_plot=t(chol(matrix(c(1,-0.5,-0.5,1),ncol=2))),
-    zYield_field=matrix(rep(0,datalist$Nfield*2),nrow=2),
-    zYield_plot=matrix(rep(0,datalist$Nplot*2),nrow=2)
-   ))
-}
-
 # #Look at distributions of average seedcount/seedmass
 # tempdat <- with(datalist,data.frame(avgSeedCount,avgSeedMass,
 #                          plantIndex=factor(plantIndex)))
@@ -269,12 +217,14 @@ modList[1] <- stan(file=modFiles[1],data=datalist,iter=2000,chains=4,control=lis
 modList[2] <- stan(file=modFiles[2],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #OK - Visitation
 modList[3] <- stan(file=modFiles[3],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #OK - Pollen
 modList[4] <- stan(file=modFiles[4],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #OK - Flower count
-modList[5] <- stan(file=modFiles[5],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0); beep(1) #Trouble here - segFault when using plDens - Flower survival
+modList[5] <- stan(file=modFiles[5],data=datalist,iter=1000,chains=4,control=list(adapt_delta=0.8),init=0); beep(1) #Trouble here - segFault when using plDens - Flower survival
 modList[6] <- stan(file=modFiles[6],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #OK - Seed Count
 modList[7] <- stan(file=modFiles[7],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #OK - Seed weight
 modList[8] <- stan(file=modFiles[8],data=datalist,iter=1000,chains=4,control=list(adapt_delta=0.8),init=0) #OK - Total yield
 
-i <- 8
+modList[5] <- stan(file='commodity_07flwSurv2.stan',data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0); beep(1) #Count version
+
+i <- 5
 # print(modList[i])
 modFiles[i]
 n <- names(modList[[i]]) #Model parameters
@@ -283,9 +233,10 @@ print(modList[[i]],pars=n) #Parameters
 # plot(modList[[i]],pars=n) #Pointrange plot
 traceplot(modList[[i]],pars=n,inc_warmup=FALSE) #Traceplots
 
-# compareRE(modList[[i]],'intSeedCount_field')
-# compareRE(modList[[i]],'intSeedCount_plot')
-PPplots(modList[[5]],datalist$avgSeedCount,c('seedCount_resid','predSeedCount_resid','predSeedCount'))
+compareRE(modList[[5]],'intFlwSurv_field')
+compareRE(modList[[5]],'intPhiFlwSurv_field')
+
+PPplots(modList[[5]],datalist$podCount,c('podCount_resid','predPodCount_resid','predPodCount'))
 PPplots(modList[[6]],datalist$avgSeedCount,c('seedCount_resid','predSeedCount_resid','predSeedCount'))
 PPplots(modList[[7]],datalist$avgSeedMass,c('seedWeight_resid','predSeedWeight_resid','predSeedWeight'))
 PPplots(modList[[8]],log(datalist$yield),c('yield_resid','predYield_resid','predYield'))
