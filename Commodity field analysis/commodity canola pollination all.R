@@ -342,7 +342,7 @@ load("C:\\Users\\Samuel\\Documents\\Projects\\UofC\\canola_yield_project\\Commod
 #   arrange(Field,Distance,Plant)
 # rm(dist) #Remove distance
 # 
-# #Plant data 2015 (not used yet)
+# #Plant data 2015
 # plants2015 <- arrange(plants2015,FieldName,Plot,Plant) #Re-orders plant measurements
 # seeds2015 <- transmute(plants2015,Field=FieldName,Plot,Plant,
 #                     VegMass=TotalMass-SeedMass,SeedMass,Branch,
@@ -415,9 +415,9 @@ load("C:\\Users\\Samuel\\Documents\\Projects\\UofC\\canola_yield_project\\Commod
 # #VISITORS: plot-level visitation, with mean nectar, %sugar and pollen counts taken from flowers. Broken down by Clade.
 # #PLANTS: plant-level yield metrics, matched with Honeybee, Fly, and Total visit
 # #SEEDS: flower-level seed mass & seed count, matched with field- and plot-level measurements
-# 
-# #Folder to save images
-# folder="C:\\Users\\Samuel\\Documents\\Projects\\UofC\\Commodity field analysis\\Figures"
+
+#Folder to save images
+folder="C:\\Users\\Samuel\\Documents\\Projects\\UofC\\Commodity field analysis\\Figures"
 
 # General visitation plots --------------------------------------------------------
 
