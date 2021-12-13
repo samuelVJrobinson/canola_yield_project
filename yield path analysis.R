@@ -20,8 +20,8 @@ theme_set(theme_bw()+prestheme) #Sets graph theme to B/Ws + prestheme
 rm(prestheme)
 
 #Commodity field data
-setwd('~/Projects/UofC/canola_yield_project') #Multivac path
-# setwd('~/Documents/canola_yield_project') #Galpern machine path
+# setwd('~/Projects/UofC/canola_yield_project') #Multivac path
+setwd('~/Documents/canola_yield_project') #Galpern machine path
 load("./Commodity field analysis/commodityfieldDataAll.RData") 
 rm(AICc,brix2mgul,deltaAIC,DIC,plotFixedTerms,predFixef,se,varComp,zeroCheck,conversion,visitorsAll,visitors2015)
 fieldsAllComm <- fieldsAll; flowersAllComm <- flowersAll; plantsAllComm <- plantsAll;
@@ -226,7 +226,7 @@ modList[6] <- stan(file=modFiles[6],data=datalist,iter=2000,chains=4,control=lis
 modList[7] <- stan(file=modFiles[7],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #OK - Seed weight
 modList[8] <- stan(file=modFiles[8],data=datalist,iter=1000,chains=4,control=list(adapt_delta=0.8),init=0) #OK - Total yield
 
-modList[5] <- stan(file='commodity_07flwSurv2.stan',data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0); beep(1) #Count-only version
+# modList[5] <- stan(file='commodity_07flwSurv2.stan',data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0); beep(1) #Count-only version
 
 i <- 5
 # print(modList[i])

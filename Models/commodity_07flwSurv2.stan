@@ -1,5 +1,6 @@
 //Commodity canola pollination model used for publication
 //  Uses plant-level data
+//  Pod count model using only 
 
 data {
 	//Field level
