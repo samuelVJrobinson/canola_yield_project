@@ -540,6 +540,8 @@ model {
 			
 	}
 	
+	
+	
 	plDens ~ normal(plDensMu,sigmaPlDens); //Plant density per plot		
 	plantSize ~ student_t(exp(nuPlSize),plSizeMu,sigmaPlSize); //Plant size			
 	flDens ~ student_t(exp(nuFlDens),flDensMu,sigmaFlDens); 	
@@ -554,162 +556,162 @@ model {
 			
 	// Priors
 	// Planting density
-	intPlDens ~ normal(0,0.5); //Intercept
-	slopeHbeeDistPlDens ~ normal(0,0.1); //Distance into field	
-	// slopeHbeeDistSqPlDens ~ normal(-0.01,0.1); //Distance into field squared	- doesn't appear to add anything
-	sigmaPlDens ~ gamma(2,10); //Sigma for within-field (residual)
-	sigmaPlDens_field ~ gamma(4,10); //Sigma for field
+	intPlDens ~ normal(0,1); //Intercept
+	slopeHbeeDistPlDens ~ normal(0,1); //Distance into field	
+	// slopeHbeeDistSqPlDens ~ normal(0,1); //Distance into field squared	- doesn't appear to add anything
+	sigmaPlDens ~ gamma(1,1); //Sigma for within-field (residual)
+	sigmaPlDens_field ~ gamma(1,1); //Sigma for field
 	intPlDens_field ~ normal(0,sigmaPlDens_field); //Random intercept for field	
 	
 	//Plant size - informative priors
-	intPlSize ~ normal(0,0.1); //Intercept
+	intPlSize ~ normal(0,1); //Intercept
 	slopePlDensPlSize ~ normal(0,1); //Planting density
-	slopeDistPlSize ~ normal(0,0.1); //Distance from edge of field	
-	sigmaPlSize ~ gamma(6,10); //Sigma for residual
-	sigmaPlSize_field ~ gamma(1.1,10); //Sigma for field	
+	slopeDistPlSize ~ normal(0,1); //Distance from edge of field	
+	sigmaPlSize ~ gamma(1,1); //Sigma for residual
+	sigmaPlSize_field ~ gamma(1,1); //Sigma for field	
 	intPlSize_field	~ normal(0,sigmaPlSize_field); //Random intercept for field
 	// sigmaPlSize_plot ~ gamma(1,1); //Sigma for plot
 	// intPlSize_plot ~ normal(0,sigmaPlSize_plot); //Random intercept for plot
-	nuPlSize ~ normal(0,3); //nu for student's t
+	nuPlSize ~ normal(0,1); //nu for student's t
 	
 	// Flower density	
 	intFlDens ~ normal(0,1); //Intercept
-	slopePlSizeFlDens ~ normal(0,2); //Plant size effect
-	slope2016FlDens ~ normal(0,2); //Effect of 2016
-	slopeDistFlDens ~ normal(0,2); //Distance from edge
-	slopeMBayFlDens ~ normal(0,5); //Effect of male bay
+	slopePlSizeFlDens ~ normal(0,1); //Plant size effect
+	slope2016FlDens ~ normal(0,1); //Effect of 2016
+	slopeDistFlDens ~ normal(0,1); //Distance from edge
+	slopeMBayFlDens ~ normal(0,1); //Effect of male bay
 	// slopePlDensFlDens ~ normal(0,1); //Plant density 
-	sigmaFlDens ~ gamma(20,4); //Sigma for plot (residual)
-	sigmaFlDens_field ~ gamma(16,4); ; //Sigma for field
+	sigmaFlDens ~ gamma(1,1); //Sigma for plot (residual)
+	sigmaFlDens_field ~ gamma(1,1); ; //Sigma for field
 	intFlDens_field ~ normal(0,sigmaFlDens_field); //Random intercept for field	
 	nuFlDens ~ normal(0,1); //nu for student's t
 	
 	// Hbee Visitation - informative priors
-	intVisitHbee ~ normal(2,1); //Intercept	
+	intVisitHbee ~ normal(0,1); //Intercept	
 	slopeHbeeDistHbee ~ normal(0,1); //Slope of distance effect on hbee visits	
 	slopeLbeeDistHbee ~ normal(0,1); //Effect of leafcutter shelter distance	
 	slopeLbeeHbeeDistHbee ~ normal(0,1); //Hbee-lbee distance interaction	
-	slopeLbeeVisHbee ~ normal(0,0.5); //Direct effect of (log) leafcutter visitation
+	slopeLbeeVisHbee ~ normal(0,1); //Direct effect of (log) leafcutter visitation
 	slopeCentHbee ~ normal(0,1); //Effect of center of bay
 	slopeMBayHbee ~ normal(0,1); //Effect of male bay
-	slopeFlDensHbee ~ normal(0,0.1); //Flower density effect	
-	visitHbeePhi ~ gamma(3.5,5); //Dispersion parameter		
-	zeroVisHbeeTheta ~ beta(5,7); // Zero-inflation parameter
+	slopeFlDensHbee ~ normal(0,1); //Flower density effect	
+	visitHbeePhi ~ gamma(1,1); //Dispersion parameter		
+	zeroVisHbeeTheta ~ beta(2,2); // Zero-inflation parameter
 	sigmaHbeeVis_field ~ gamma(1,1); //Sigma for field
 	intVisitHbee_field ~ normal(0,sigmaHbeeVis_field); //Random intercept for field
 		
 	// Lbee Visitation - informative priors
-	intVisitLbee ~ normal(4,1); //Intercept	
+	intVisitLbee ~ normal(0,1); //Intercept	
 	slopeHbeeDistLbee ~ normal(0,1); //Slope of honeybee distance on lbee visits
-	slopeLbeeDistLbee ~ normal(-1,1); //Slope of shelter distance on lbee visits
+	slopeLbeeDistLbee ~ normal(0,1); //Slope of shelter distance on lbee visits
 	slopeCentLbee ~ normal(0,1); //Effect of center of bay
 	slopeMBayLbee ~ normal(0,1); //Effect of male bay
-	slopeStockingLbee ~ normal(0,2); //Effect of half-stocking	
+	slopeStockingLbee ~ normal(0,1); //Effect of half-stocking	
 	slope2016Lbee ~ normal(0,1); //Year effect
-	slopeFlDensLbee ~ normal(0,0.1); //Flower density effect	
+	slopeFlDensLbee ~ normal(0,1); //Flower density effect	
 	slopeCentHbeeDistLbee ~ normal(0,1); //Bay center: hbee distance interaction
 	slopeStockingHbeeDistLbee ~ normal(0,1); //Half-stocking: hbee distance interaction				
 	// slopeStockingLbeeDistLbee ~ normal(0,1); //Half-stocking: lbee dist interaction
-	sigmaLbeeVisField ~ gamma(2,2); //Sigma for random field 
-	visitLbeePhi ~ gamma(4,10); //Dispersion parameter	
+	sigmaLbeeVisField ~ gamma(1,1); //Sigma for random field 
+	visitLbeePhi ~ gamma(1,1); //Dispersion parameter	
 	intVisitLbee_field ~ normal(0,sigmaLbeeVisField); //Random field intercepts		
 	zeroVisLbeeTheta ~ beta(2,2); //Zero-inflation
 	
 	// // Pollen deposition - informative priors
-	// intPol ~ normal(2.5,1); //Intercept		
-	// slopeHbeePol ~ normal(0,0.1); //hbee Visitation effect
-	// slopeLbeePol ~ normal(0,0.2); //lbee Visitation effect
+	// intPol ~ normal(0,1); //Intercept		
+	// slopeHbeePol ~ normal(0,1); //hbee Visitation effect
+	// slopeLbeePol ~ normal(0,1); //lbee Visitation effect
 	// slopeCentPol~ normal(0,1); //Bay center effect
-	// slopeHbeeDistPol ~ normal(-0.15,0.1); //(log) hbee distance effect
+	// slopeHbeeDistPol ~ normal(0,1); //(log) hbee distance effect
 	// // slopeStockingHbeeDistPol ~ normal(0,1); //Stocking:hbee distance interaction
-	// slopeFlDensPol ~ normal(0,0.1); //Flower density
-	// sigmaPolField ~ gamma(2,2); //Sigma for random field
-	// sigmaPolPlot ~ gamma(2,2); //Sigma for random plot	
-	// pollenPhi ~ gamma(8,10); //Dispersion parameter
+	// slopeFlDensPol ~ normal(0,1); //Flower density
+	// sigmaPolField ~ gamma(1,1); //Sigma for random field
+	// sigmaPolPlot ~ gamma(1,1); //Sigma for random plot	
+	// pollenPhi ~ gamma(1,1); //Dispersion parameter
 	// intPol_field ~ normal(0,sigmaPolField); //Random field int
 	// intPol_plot ~ normal(0,sigmaPolPlot); //Random plot int	
 			
 	// // Flower count (per plant) - negbin version
-	// intFlwCount ~ normal(5.9,1); //Intercept
+	// intFlwCount ~ normal(0,1); //Intercept
 	// slopePlSizeFlwCount ~ normal(0,1); //Slope of plant size
 	// slopeCentFlwCount ~ normal(0,1); //Bay center effect
 	// // slopePolFlwCount ~ normal(0,1); //(Centered) log(pollen)
-	// // slopeLbeeVisFlwCount ~ normal(0,0.05); //Leafcutter visits
+	// // slopeLbeeVisFlwCount ~ normal(0,1); //Leafcutter visits
 	// // slopeFlDensFlwCount ~ normal(0,1); //Flower density
-	// slopeFlwSurvFlwCount ~ normal(0,2); //Flower survival
-	// sigmaFlwCount_field ~ gamma(1,10); //SD of field-level random effect	
+	// slopeFlwSurvFlwCount ~ normal(0,1); //Flower survival
+	// sigmaFlwCount_field ~ gamma(1,1); //SD of field-level random effect	
 	// intFlwCount_field ~ normal(0,sigmaFlwCount_field); //Field-level random effect	
-	// sigmaFlwCount_plot ~ gamma(2,2); //SD of plot-level random effect	
+	// sigmaFlwCount_plot ~ gamma(1,1); //SD of plot-level random effect	
 	// intFlwCount_plot ~ normal(0,sigmaFlwCount_plot); //Plot-level random effects
 	// // flwCountPhi ~ gamma(1,1); //Variance parameter	
-	// intPhiFlwCount ~ normal(5,2); //Terms for variance
-	// slopePlSizePhiFlwCount ~ normal(1,1);
+	// intPhiFlwCount ~ normal(0,1); //Terms for variance
+	// slopePlSizePhiFlwCount ~ normal(0,1);
 	// sigmaPhiFlwCount_field ~ gamma(1,1); //Sigma for field level sigma
 	// intPhiFlwCount_field ~ normal(0,sigmaPhiFlwCount_field); //Field-level random effect for sigma			
 	
 	// // Flower survival (pod count)
-	// intFlwSurv ~ normal(5.5,1); //Intercept	
-	// slopePolSurv ~ normal(0,0.5); //Slope of pollen deposition
-	// slopePlSizeSurv ~ normal(1,0.5); //Slope of plant size
-	// slopeEdgeCentSurv ~ normal(0,0.1); //Slope of edge effect	
-	// slopeHbeeDistSurv ~ normal(0,0.1); //Distance from edge
-	// slopeLbeeDistSurv ~ normal(0,0.1); //Distance from lbee shelter	
-	// slopeFlwDensSurv ~ normal(0,0.1); //Flower density effect	
-	// sigmaFlwSurv_field ~ gamma(2,10); //SD of field random effect
-	// sigmaFlwSurv_plot ~ gamma(2,10); //SD of plot random effect	
+	// intFlwSurv ~ normal(0,1); //Intercept	
+	// slopePolSurv ~ normal(0,1); //Slope of pollen deposition
+	// slopePlSizeSurv ~ normal(0,1); //Slope of plant size
+	// slopeEdgeCentSurv ~ normal(0,1); //Slope of edge effect	
+	// slopeHbeeDistSurv ~ normal(0,1); //Distance from edge
+	// slopeLbeeDistSurv ~ normal(0,1); //Distance from lbee shelter	
+	// slopeFlwDensSurv ~ normal(0,1); //Flower density effect	
+	// sigmaFlwSurv_field ~ gamma(1,1); //SD of field random effect
+	// sigmaFlwSurv_plot ~ gamma(1,1); //SD of plot random effect	
 	// intFlwSurv_field ~ normal(0,sigmaFlwSurv_field); //field-level random intercepts
 	// intFlwSurv_plot ~ normal(0,sigmaFlwSurv_plot); //plot-level random intercepts
-	// intPhiFlwSurv ~ normal(4,1); //Intercept for sigma
+	// intPhiFlwSurv ~ normal(0,1); //Intercept for sigma
 	// slopePlSizePhiFlwSurv ~ normal(0,1); //Effect of plant size on phi
-	// sigmaPhiFlwSurv_field ~ gamma(2,2); //Sigma for field level sigma
+	// sigmaPhiFlwSurv_field ~ gamma(1,1); //Sigma for field level sigma
 	// intPhiFlwSurv_field ~ normal(0,sigmaPhiFlwSurv_field); //Field-level random effect for sigma	
 			
 	// // Seed count 	
-	// intSeedCount ~ normal(2.8,0.5); //Intercept	
-	// slopePolSeedCount ~ normal(0.7,0.05); //Slope of pollen deposition
-	// slopePlSizeCount ~ normal(0.7,0.05); //Slope of plant size
-	// slopeEdgeCentSeedCount ~ normal(-0.2,0.1); // Slope of edge effect on seed count 	
-	// slopeHbeeDistSeedCount ~ normal(0,0.05); //Slope of leafcutter distance on seed count	- correlated with other predictors, and not very strong
-	// slopeFlDensSeedCount ~ normal(0.01,0.02); //Slope of flower density on seed count
-	// // slopeFlwCountSeedCount ~ normal(0,0.001); //Slope of flower count on seed count
-	// slopeSurvSeedCount ~ normal(0.15,0.1); //Slope of survival	
-	// sigmaSeedCount_field ~ gamma(2,10); //SD of field random effect
-	// sigmaSeedCount_plot ~ gamma(2,10); //SD of plot random effect
-	// sigmaSeedCount_plant ~ gamma(2,10); //SD of plant random effect	
+	// intSeedCount ~ normal(0,1); //Intercept	
+	// slopePolSeedCount ~ normal(0,1); //Slope of pollen deposition
+	// slopePlSizeCount ~ normal(0,1); //Slope of plant size
+	// slopeEdgeCentSeedCount ~ normal(0,1); // Slope of edge effect on seed count 	
+	// slopeHbeeDistSeedCount ~ normal(0,1); //Slope of leafcutter distance on seed count	- correlated with other predictors, and not very strong
+	// slopeFlDensSeedCount ~ normal(0,1); //Slope of flower density on seed count
+	// // slopeFlwCountSeedCount ~ normal(0,1); //Slope of flower count on seed count
+	// slopeSurvSeedCount ~ normal(0,1); //Slope of survival	
+	// sigmaSeedCount_field ~ gamma(1,1); //SD of field random effect
+	// sigmaSeedCount_plot ~ gamma(1,1); //SD of plot random effect
+	// sigmaSeedCount_plant ~ gamma(1,1); //SD of plant random effect	
 	// intSeedCount_field ~ normal(0,sigmaSeedCount_field); //field-level random intercepts	
 	// intSeedCount_plot ~ normal(0,sigmaSeedCount_plot); //plot-level random intercepts	
 	// intSeedCount_plant ~ normal(0,sigmaSeedCount_plant); //plant-level random intercepts
-	// seedCountPhi ~ normal(4,1); //Dispersion parameter
+	// seedCountPhi ~ normal(0,1); //Dispersion parameter
 		
 	// // Weight per seed 	
-	// intSeedWeight ~ normal(3.5,0.5); //Intercept	
-	// slopePolSeedWeight ~ normal(0,0.5); //Slope of pollen deposition
-	// slopeSeedCount ~ normal(-0.035,0.01); //Slope of seed count
-	// slopePlSizeSeedWeight ~ normal(0.25,0.2); //Slope of plant size
-	// slope2016SeedWeight ~ normal(0.5,0.5); //Effect of year
-	// slopeLbeeDistSeedWeight ~ normal(0.1,0.3); //Slope of (log) lbee distance
-	// slopePlDensSeedWeight ~ normal(0.4,0.5); //Slope of plant density
-	// slopeStockingSeedWeight ~ normal(0.25,0.25); //Effect of half-stocking	
+	// intSeedWeight ~ normal(0,1); //Intercept	
+	// slopePolSeedWeight ~ normal(0,1); //Slope of pollen deposition
+	// slopeSeedCount ~ normal(0,1); //Slope of seed count
+	// slopePlSizeSeedWeight ~ normal(0,1); //Slope of plant size
+	// slope2016SeedWeight ~ normal(0,1); //Effect of year
+	// slopeLbeeDistSeedWeight ~ normal(0,1); //Slope of (log) lbee distance
+	// slopePlDensSeedWeight ~ normal(0,1); //Slope of plant density
+	// slopeStockingSeedWeight ~ normal(0,1); //Effect of half-stocking	
 	// //Interactions
 	// slopePlDensPlSizeSeedWeight ~ normal(0,1); //Plant density:plant size
-	// sigmaSeedWeight ~ gamma(5,5); //SD of seed weight
-	// sigmaSeedWeight_field ~ gamma(2,10); //SD of field random effect	
-	// // sigmaSeedWeight_plot ~ gamma(2,10); //SD of plot random effect
-	// sigmaSeedWeight_plant ~ gamma(2,10); //SD of plant random effect		
+	// sigmaSeedWeight ~ gamma(1,1); //SD of seed weight
+	// sigmaSeedWeight_field ~ gamma(1,1); //SD of field random effect	
+	// // sigmaSeedWeight_plot ~ gamma(1,1); //SD of plot random effect
+	// sigmaSeedWeight_plant ~ gamma(1,1); //SD of plant random effect		
 	// intSeedWeight_field ~ normal(0,sigmaSeedWeight_field); //field-level random intercepts	
 	// // intSeedWeight_plot ~ normal(0,sigmaSeedWeight_plot); //plot-level random intercepts	
 	// intSeedWeight_plant ~ normal(0,sigmaSeedWeight_plant); //plant-level random intercepts
-	// lambdaSeedWeight ~ gamma(4,1); //Lambda term for exponential process	
+	// lambdaSeedWeight ~ gamma(1,1); //Lambda term for exponential process	
 	
 	// // Yield per plant
 	// intYield ~ normal(0,1); //Intercept
-	// slopeYield ~ normal(1,0.5); //Slope of calculated yield	
-	// sigmaYield ~ gamma(3,10); //Sigma for yield			
+	// slopeYield ~ normal(0,1); //Slope of calculated yield	
+	// sigmaYield ~ gamma(1,1); //Sigma for yield			
 	// // Correlated random effects:
-	// sigmaYield_field[1] ~ gamma(2,10); //SD of field-level yield intercepts/slopes
-	// sigmaYield_field[2] ~ gamma(1.5,25);
-	// sigmaYield_plot[1] ~ gamma(6,10); //SD of plot-level yield intercepts/slopes
-	// sigmaYield_plot[2] ~ gamma(3,10);
+	// sigmaYield_field[1] ~ gamma(1,1); //SD of field-level yield intercepts/slopes
+	// sigmaYield_field[2] ~ gamma(1,1);
+	// sigmaYield_plot[1] ~ gamma(1,1); //SD of plot-level yield intercepts/slopes
+	// sigmaYield_plot[2] ~ gamma(1,1);
 	// to_vector(zYield_field) ~ normal(0,1); //Unit normals for correlated random effects
 	// to_vector(zYield_plot) ~ normal(0,1);
 	// L_field ~ lkj_corr_cholesky(2); //Standard prior for lkj cholesky matrix - higher values make extreme correlations less likely (see p.394 in McElreath 2016)	
