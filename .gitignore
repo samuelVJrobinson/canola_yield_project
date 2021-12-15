@@ -1,6 +1,7 @@
 *.Rproj.user
 *.Rhistory
 *.RData
+!modSummaries_commodity.Rdata
 *.Ruserdata
 yield path analysis.R
 *.rds

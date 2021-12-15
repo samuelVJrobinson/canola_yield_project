@@ -106,13 +106,16 @@ transformed parameters {
 	matrix[2,Nplot] ranEffYield_plot = diag_pre_multiply(sigmaYield_plot,L_plot) * zYield_plot; //Plot level random effects
 	
 	for(i in 1:Nplant){ //For each plant 	
-		// Predicted yield = intercept + random effects +
-		logYieldMu[i] = (intYield+ranEffYield_field[1,plotIndex[plantIndex[i]]]+ranEffYield_plot[1,plantIndex[i]]) + //Intercept + random effects
-		logCalcYield[i]*(slopeYield+ranEffYield_field[2,plotIndex[plantIndex[i]]]+ranEffYield_plot[2,plantIndex[i]]); //Slope + random effects
+		// Predicted yield
+		logYieldMu[i] = intYield + //Intercept
+  		ranEffYield_field[1,plotIndex[plantIndex[i]]]+ //Field level random intercepts
+  		ranEffYield_plot[1,plantIndex[i]] + //Plot level random intercepts
+  		logCalcYield[i] * ( slopeYield + //Slope
+  		ranEffYield_field[2,plotIndex[plantIndex[i]]] + //Field-level random slopes
+  		ranEffYield_plot[2,plantIndex[i]]); //Plot-level random slopes
 	}	
-	
 }
-	
+
 model {	
   
 	//Likelihood		
@@ -121,13 +124,13 @@ model {
 	// Priors
 	// Yield per plant
 	intYield ~ normal(0,1); //Intercept
-	slopeYield ~ normal(1,1); //Slope of calculated yield
-	sigmaYield ~ gamma(2,5); //Sigma for yield
+	slopeYield ~ normal(0,1); //Slope of calculated yield
+	sigmaYield ~ gamma(1,1); //Sigma for yield
 	// Correlated random effects:
-	sigmaYield_field[1] ~ gamma(2,10); //SD of field-level yield intercepts/slopes
-	sigmaYield_field[2] ~ gamma(1.5,25);
-	sigmaYield_plot[1] ~ gamma(6,10); //SD of plot-level yield intercepts/slopes
-	sigmaYield_plot[2] ~ gamma(3,10);
+	sigmaYield_field[1] ~ gamma(1,1); //SD of field-level yield intercepts/slopes
+	sigmaYield_field[2] ~ gamma(1,1);
+	sigmaYield_plot[1] ~ gamma(1,1); //SD of plot-level yield intercepts/slopes
+	sigmaYield_plot[2] ~ gamma(1,1);
 	to_vector(zYield_field) ~ normal(0,1); //Unit normals for correlated random effects
 	to_vector(zYield_plot) ~ normal(0,1);
 	L_field ~ lkj_corr_cholesky(2); //Standard prior for lkj cholesky matrix - higher values make extreme correlations less likely (see p.394 in McElreath 2016)
@@ -135,6 +138,10 @@ model {
 }
 
 generated quantities {
+  
+  real rhoField = multiply_lower_tri_self_transpose(L_field)[1,2]; //Correlation for field intercepts/slopes 
+  real rhoPlot = multiply_lower_tri_self_transpose(L_plot)[1,2]; //Correlation for plot intercepts/slopes
+  
 	// (log) yield per plant
 	real predYield[Nplant];
 	real yield_resid[Nplant];

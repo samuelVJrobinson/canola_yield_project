@@ -19,9 +19,9 @@ prestheme=theme(legend.position='right',
 theme_set(theme_bw()+prestheme) #Sets graph theme to B/Ws + prestheme
 rm(prestheme)
 
-#Commodity field data
-# setwd('~/Projects/UofC/canola_yield_project') #Multivac path
-setwd('~/Documents/canola_yield_project') #Galpern machine path
+# Commodity field data
+setwd('~/Projects/UofC/canola_yield_project') #Multivac path
+# setwd('~/Documents/canola_yield_project') #Galpern machine path
 load("./Commodity field analysis/commodityfieldDataAll.RData") 
 rm(AICc,brix2mgul,deltaAIC,DIC,plotFixedTerms,predFixef,se,varComp,zeroCheck,conversion,visitorsAll,visitors2015)
 fieldsAllComm <- fieldsAll; flowersAllComm <- flowersAll; plantsAllComm <- plantsAll;
@@ -210,6 +210,7 @@ if(any(sapply(datalist,function(x) sum(is.na(x)))>0)){
 
 #Models split into separate stan files (faster)
 modFiles <- dir(pattern = 'commodity.*\\.stan')
+modFiles <- modFiles[!modFiles=='commodity_07flwSurv2.stan'] #Extra pod count model
 modList <- vector(mode = 'list',length = length(modFiles))
 names(modList) <- gsub('(commodity.*[0-9]{2}|\\.stan)','',modFiles)
 
@@ -221,209 +222,73 @@ modList[1] <- stan(file=modFiles[1],data=datalist,iter=2000,chains=4,control=lis
 modList[2] <- stan(file=modFiles[2],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #OK - Visitation
 modList[3] <- stan(file=modFiles[3],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #OK - Pollen
 modList[4] <- stan(file=modFiles[4],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #OK - Flower count
-modList[5] <- stan(file=modFiles[5],data=datalist,iter=1000,chains=4,control=list(adapt_delta=0.8),init=0); beep(1) #Trouble here - segFault when using plDens - Flower survival
+modList[5] <- stan(file=modFiles[5],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0); beep(1) #OK - Pod Count (flw survival)
+# modList[5] <- stan(file='commodity_07flwSurv2.stan',data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0); beep(1) #Count-only version - OK, but not as biologically interesting I think
 modList[6] <- stan(file=modFiles[6],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #OK - Seed Count
 modList[7] <- stan(file=modFiles[7],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #OK - Seed weight
-modList[8] <- stan(file=modFiles[8],data=datalist,iter=1000,chains=4,control=list(adapt_delta=0.8),init=0) #OK - Total yield
+modList[8] <- stan(file=modFiles[8],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #OK - Total yield
 
-# modList[5] <- stan(file='commodity_07flwSurv2.stan',data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0); beep(1) #Count-only version
+#Get model summaries into a list of tables
+load('modSummaries_commodity.Rdata')
+# #Update model summaries if needed
+# temp <- lapply(modList,function(x){
+#   if(is.null(x)) return(NA)
+#   n <- names(x) #Model parameters
+#   n <- n[(!grepl('(\\[[0-9]+,*[0-9]*\\]|lp)',n))|grepl('[sS]igma',n)] #Drops parameter vectors, unless name contains "sigma" (variance term)
+#   return(parTable(x,pars=n))
+# })
+# for(i in 1:length(temp)){
+#   if(class(temp[[i]])=='data.frame'||length(temp[[i]])>1){ #If temp is not empty (model not run)
+#     modSummaries_commodity[[i]] <- temp[[i]] #Overwrite
+#   }
+# }
+# save(modSummaries_commodity,file = 'modSummaries_commodity.Rdata')
 
-i <- 5
-# print(modList[i])
-modFiles[i]
-n <- names(modList[[i]]) #Model parameters
-n <- n[!grepl('(\\[[0-9]+\\]|lp)',n)] #Gets rid of parameter vectors
-print(modList[[i]],pars=n) #Parameters
-# plot(modList[[i]],pars=n) #Pointrange plot
-traceplot(modList[[i]],pars=n,inc_warmup=FALSE) #Traceplots
-
-compareRE(modList[[5]],'intFlwSurv_field') #Random effects plots
-
-PPplots(modList[[5]],datalist$podCount,c('podCount_resid','predPodCount_resid','predPodCount'))
-PPplots(modList[[6]],datalist$avgSeedCount,c('seedCount_resid','predSeedCount_resid','predSeedCount'))
-PPplots(modList[[7]],datalist$avgSeedMass,c('seedWeight_resid','predSeedWeight_resid','predSeedWeight'))
-PPplots(modList[[8]],log(datalist$yield),c('yield_resid','predYield_resid','predYield'))
-
-
-with(extract(modList[[i]]),PPplots(apply(podCount_resid,1,function(x) sum(abs(x))),
-                  apply(predPodCount_resid,1,function(x) sum(abs(x))),
-                  datalist$podCount,apply(predPodCount,2,median),main='Pods per plant'))
-
-# save(modPodcount,file='modPodcount_1.Rdata')
-
-#List of parameters
-parList <- list(
-  plDens = c('intPlDens','slope2015PlDens','slopeIrrigPlDens','slope2015IrrigPlDens',
-             'slopeDistPlDens','slopeGPPlDens','sigmaPlDens','sigmaPlDens_field'), #Planting density
-  plSize = c('intPlSize','slopePlDensPlSize','slopeDistPlSize','slopeGpPlSize', #Plant size
-             'slopeIrrigPlSize','slope2015PlSize',
-             'sigmaPlSize_field','sigmaPlSize_plot','sigmaPlSize'),
-  flDens = c('intFlDens','slopePlSizeFlDens','slopeHbeeDistFlDens','sigmaFlDens','sigmaFlDens_field'), #Flower density
-  
-  hbeeVis = c('intVisit','slopeYearVis','slopeGpVis','slopeYearGpVis','slopeIrrigVis', #Visitation
-    'slopeDistVis','slopeHiveVis','slopeFlDens', #Visitation
-    'sigmaVisField','lambdaVisField','visitHbeePhi'),
-  
-  pollen = c('intPollen','slopeVisitPol','slopeHbeeDistPollen',
-          'sigmaPolField',#'sigmaPolPlot',
-          'pollenPhi'), #Pollen deposition,
-  
-  flwCount = c('intFlwCount','slopePlSizeFlwCount','slopeSurvFlwCount','slope2015FlwCount', #Flower count per plant
-               'phiFlwCount_field','phiFlwCount_plot',
-               'intPhiFlwCount','slopePlSizePhiFlwCount','sigmaPhiFlwCount_field','sigmaPhiFlwCount_plot'),
-  
-  flwSurv = c('intFlwSurv','slopeVisitSurv','slopePolSurv','slopePlSizeSurv', #Flower survival
-              'slopePlDensSurv','slopeIrrigSurv','slope2015Surv','sigmaFlwSurv_field','sigmaFlwSurv_plot',
-              'intPhiFlwSurv','slopePlSizePhiFlwSurv','sigmaPhiFlwSurv_field','sigmaPhiFlwSurv_plot'), 
-  
-  seedCount = c('intSeedCount','slopeVisitSeedCount','slopePolSeedCount','slopePlSizeCount',
-                'slope2015SeedCount',
-                'sigmaSeedCount','lambdaSeedWeight','sigmaSeedCount_plot','sigmaSeedCount_field'), #Seed count
-  
-  seedWeight = c('intSeedWeight','slopeVisitSeedWeight','slopePolSeedWeight',#Seed weight
-                 'slopeSeedCount','slopePlSizeWeight','slopeIrrigSeedWeight',
-                 'slope2015SeedWeight','sigmaSeedWeight',
-                 'sigmaSeedWeight_plot','sigmaSeedWeight_field','lambdaSeedWeight'),
-  
-  yield = c('intYield','slopeYield','sigmaYield', #Total seed weight
-            'sigmaYield_field[1]','sigmaYield_field[2]','sigmaYield_plot[1]','sigmaYield_plot[2]',
-            'L_field','L_plot')
-)
-
-for(i in 1:length(parList)){ #Sub-model summaries
-  n <- parList[[i]] #Parameter names
-  if(any(names(modPodcount) %in% n)) {
-    n <- n[n %in% names(modPodcount)] #Drops unused parameters
-    writeLines(paste0('\nParameters: ',names(parList[i]),' ',paste(rep('-',40),collapse=''),'\n'))
-    print(modPodcount,pars=n) 
+#Traceplots
+for(i in 1:length(modList)){
+  if(!is.null(modList[[i]])){
+    n <- names(modList[[i]]) #Model parameters
+    n <- n[(!grepl('(\\[[0-9]+,*[0-9]*\\]|lp)',n))|grepl('[sS]igma',n)] #Gets rid of parameter vectors, unless it contains "sigma" (variance term)
+    
+    p <- traceplot(modList[[i]],pars=n,inc_warmup=FALSE)+geom_hline(yintercept = 0) #Traceplots
+    print(p)
     a <- readline('Press Return to continue: ')
     if(a!='') break()
   }
 }
 
-for(i in 1:length(parList)){ #Sub-model traceplots
-  n <- parList[[i]] #Parameter names
-  if(any(names(modPodcount) %in% n)){
-    n <- n[n %in% names(modPodcount)] #Drops unused parameters
-    writeLines(paste0('\nParameters: ',names(parList[i]),' ',paste(rep('-',40),collapse=''),'\n'))
-    # stan_hist(modPodcount,pars=parList[[i]])+geom_vline(xintercept=0,linetype='dashed')
-    p <- traceplot(modPodcount,pars=n,inc_warmup=FALSE)+
-      labs(title=names(parList[i]))
-    print(p)
-    a <- readline('Press Return to continue: ')
-    if(a!='') break()
-  } 
-}
+# #Other model checking
+# i <- 2
+# # print(modList[i])
+# modFiles[i]
+# n <- names(modList[[i]]) #Model parameters
+# n <- n[(!grepl('(\\[[0-9]+,*[0-9]*\\]|lp)',n))|grepl('[sS]igma',n)] #Gets rid of parameter vectors, unless it contains "sigma" (variance term)
+# parTable(modList[[i]],pars=n)
+# # plot(modList[[i]],pars=n) #Pointrange plot
+# stan_hist(modList[[i]],pars=n) #Pointrange plot
+# traceplot(modList[[i]],pars=n,inc_warmup=FALSE)+geom_hline(yintercept = 0) #Traceplots
+# compareRE(modList[[1]],'intPlSize_field') #Random effects plots
+# compareRE(modList[[1]],'intPlSize_plot') #Random effects plots
 
-print(modPodcount,pars='intFlwSurv_field') 
-
-# debugonce(compareRE)
-compareRE(modPodcount,'intFlwSurv_field')
-
-  
-
-
-
-
-# launch_shinystan(modPodcount)
-# print(modPodcount,pars=pars) #Takes way too long
-# pairs(modPodcount,pars=pars) #Takes way too long
-
-mod3 <- extract(modPodcount) #Extract values
-#Replace Cholesky matrices with covariance term
-storage <- rep(NA,nrow(mod3$L_field))
-for(i in 1:nrow(mod3$L_field)){
-  storage[i] <- (mod3$L_field[i,,] %*% t(mod3$L_field[i,,]))[1,2]
-}
-mod3$L_field <- storage #Field level term
-for(i in 1:nrow(mod3$L_plot)){
-  storage[i] <- (mod3$L_plot[i,,] %*% t(mod3$L_plot[i,,]))[1,2]
-}
-mod3$L_plot <- storage
+#Posterior predictive checks - OK 
+PPplots(modList[[1]],datalist$plDens_obs,c('predPlDens','plDens_resid','predPlDens_resid'),
+        index = datalist$obsPlDens_ind,main='Plant Density')
+PPplots(modList[[1]],datalist$flDens,c('predFlDens','flDens_resid','predFlDens_resid'),'Flower density')
+PPplots(modList[[1]],datalist$plantSize,c('predPlSize','plSize_resid','predPlSize_resid'),'Plant size')
+PPplots(modList[[2]],datalist$hbeeVis,c('predHbeeVis','hbeeVis_resid','predHbeeVis_resid'),'Honeybee visits',jitterX=0.1) #Not great, tends to overpredict high visitation. Probably 
+PPplots(modList[[3]],datalist$pollenCount,c('predPollenCount','pollen_resid','predPollen_resid'),'Pollen')
+PPplots(modList[[4]],datalist$flwCount,c('predFlwCount','flwCount_resid','predFlwCount_resid'),'Flowers per plant')
+PPplots(modList[[5]],datalist$podCount,c('predPodCount','podCount_resid','predPodCount_resid'),'Pods per plant')
+PPplots(modList[[6]],datalist$avgSeedCount,c('predSeedCount','seedCount_resid','predSeedCount_resid'),'Seeds per pod')
+PPplots(modList[[7]],datalist$avgSeedMass,c('predSeedWeight','seedWeight_resid','predSeedWeight_resid'),'Seed size')
+PPplots(modList[[8]],log(datalist$yield),c('predYield','yield_resid','predYield_resid'),'Seed mass per plant')
 
 
-#Coefficients in table form for LaTeX
-(mod3coefs <- data.frame(par='Plant size',parname=rownames(coefs(mod3[pars])),coefs(mod3[pars]),row.names=NULL))
-library(xtable)
-print(xtable(mod3coefs,digits=c(0,0,0,3,3,3,3,3,3,0,4)),include.rownames=F)
 
 #Faster Pairplots
 pairs(mod3[c(pars,'lp__')],lower.panel=function(x,y){
   par(usr=c(0,1,0,1))
   text(0.5, 0.5, round(cor(x,y),2), cex = 1 * exp(abs(cor(x,y))))})
-
-#Plot of random intercepts
-t(apply(mod3$intSigmaFlwCount_field,2,function(x) quantile(x,c(0.5,0.975,0.025)))) %>%
-  as.data.frame() %>% rename(median='50%',upr='97.5%',lwr='2.5%') %>% arrange(median) %>%
-  mutate(row=1:nrow(.)) %>% 
-  ggplot(aes(row,median))+geom_pointrange(aes(ymax=upr,ymin=lwr))+geom_hline(yintercept=0,col='red')
-  # ggplot(aes(median))+geom_density()
-
-plot(apply(mod3$intFlwCount_field,2,median),apply(mod3$intSigmaFlwCount_field,2,median))
-qqnorm(apply(mod3$intPollen_plot,2,median));qqline(apply(mod3$intPollen_plot,2,median));
-mean(apply(mod3$intVisit_field,2,median))
-
-#Plots of random intercepts/slopes for yield; not sure if the negative correlation actually means much
-par(mfrow=c(2,1))
-plot(apply(mod3$ranEffYield_field[,1,],2,mean),apply(mod3$ranEffYield_field[,2,],2,mean),
-     xlab='Intercept',ylab='Slope',main='Field',pch=19) #Weakly correlated (r=-0.55)
-abline(h=0,lty='dashed');abline(v=0,lty='dashed')
-plot(apply(mod3$ranEffYield_plot[,1,],2,mean),apply(mod3$ranEffYield_plot[,2,],2,mean),
-     xlab='Intercept',ylab='Slope',main='Plot',pch=19) #Highly correlated (r=-0.98)
-abline(h=0,lty='dashed');abline(v=0,lty='dashed')
-par(mfrow=c(1,1))
-
-#Check model fit:
-par(mfrow=c(2,1))
-#planting density - good
-with(mod3,PPplots(apply(plDens_resid,1,function(x) sum(abs(x))),
-                  apply(predPlDens_resid,1,function(x) sum(abs(x))),
-                  apply(plDens,2,mean),apply(predPlDens,2,median),main='Plant density'))
-
-#plant size - good
-with(mod3,PPplots(apply(plSize_resid,1,function(x) sum(abs(x))),
-                  apply(predPlSize_resid,1,function(x) sum(abs(x))),
-                  datalist$plantSize,apply(predPlSize,2,median),main='Plant size'))
-
-#flower density per plot
-with(mod3,PPplots(apply(flDens_resid,1,function(x) sum(abs(x))),
-                  apply(predFlDens_resid,1,function(x) sum(abs(x))),
-                  datalist$flDens,apply(predFlDens,2,median),main='Flower density'))
-
-#hbee visits - good
-with(mod3,PPplots(apply(hbeeVis_resid,1,function(x) sum(abs(x))),
-                  apply(predHbeeVis_resid,1,function(x) sum(abs(x))),
-                  with(datalist,hbeeVis/totalTime),apply(predHbeeVis,2,median),main='Visits per 10mins'))
-
-#pollen - OK, but plot level random effects throw off PP checks
-with(mod3,PPplots(apply(pollen_resid,1,function(x) sum(abs(x))),
-                  apply(predPollen_resid,1,function(x) sum(abs(x))),
-                  datalist$pollenCount,apply(predPollenCount,2,median),main='Pollen per stigma'))
-
-#Flower count - good
-with(mod3,PPplots(apply(flwCount_resid,1,function(x) sum(abs(x))),
-                  apply(predFlwCount_resid,1,function(x) sum(abs(x))),
-                  datalist$flwCount,apply(predFlwCount,2,median),main='Flowers per plant'))
-
-#flower survival (pod count) - good
-with(mod3,PPplots(apply(podCount_resid,1,function(x) sum(abs(x))),
-                  apply(predPodCount_resid,1,function(x) sum(abs(x))),
-                  datalist$podCount,apply(predPodCount,2,median),main='Pods per plant'))
-
-#seeds per pod - bad
-with(mod3,PPplots(apply(seedCount_resid,1,function(x) sum(abs(x))),
-                  apply(predSeedCount_resid,1,function(x) sum(abs(x))),
-                  datalist$seedCount,apply(predSeedCount,2,median),main='Seeds per pod'))
-
-#weight per seed - good
-with(mod3,PPplots(apply(seedMass_resid,1,function(x) sum(abs(x))),
-                  apply(predSeedMass_resid,1,function(x) sum(abs(x))),
-                  datalist$seedMass,apply(mod3$predSeedMass,2,median),main='Weight per seed (TKW)'))
-
-#Yield per plant - good
-with(mod3,PPplots(apply(yield_resid,1,function(x) sum(abs(x))),
-                  apply(predYield_resid,1,function(x) sum(abs(x))),
-                  datalist$yield,exp(apply(mod3$predYield,2,median)),main='Total yield'))
 
 # Partial effects plots for commodity fields -----------------------------
 load('modPodcount.Rdata') #All extracted coefficients in list form (mod3)
@@ -1694,9 +1559,9 @@ mod3 <- extract(modPodcount_seed)
 
 # fastPairs(mod3[pars])
 
-# #Coefficients
-(mod3coefs <- data.frame(par='Weight per seed',parname=rownames(coefs(mod3[pars])),coefs(mod3[pars]),row.names=NULL))
-print(xtable(mod3coefs,digits=c(0,0,0,3,3,3,3,3,3,0,4)),include.rownames=F)
+# # #Coefficients
+# (mod3coefs <- data.frame(par='Weight per seed',parname=rownames(coefs(mod3[pars])),coefs(mod3[pars]),row.names=NULL))
+# print(xtable(mod3coefs,digits=c(0,0,0,3,3,3,3,3,3,0,4)),include.rownames=F)
 
 # #Distribution of random effects intercepts
 # t(apply(mod3$intPlDens_field,2,function(x) quantile(x,c(0.5,0.025,0.975)))) %>% 

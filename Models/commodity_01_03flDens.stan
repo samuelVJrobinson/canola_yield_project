@@ -105,8 +105,8 @@ parameters {
 	real<lower=0> sigmaPlSize_field; //SD of field-level intercept
 	real<lower=0> sigmaPlSize_plot; //SD of plot-level intercept
 	real<lower=0> sigmaPlSize; //Sigma for within-plot (residual)
-	vector[Nfield] intPlSize_field; //Random intercept for field
-	vector[Nplot] intPlSize_plot; //Random intercept for plot - not converging well, but looic is much worse without it
+	vector[Nfield] intPlSize_field; //Random intercept for field - most overlap zero, but not all: probably should keep it
+	vector[Nplot] intPlSize_plot; //Random intercept for plot - not great n_eff or Rhat, but looic is worse without it
 
 	// Flower density per plot
 	real intFlDens; //Global intercept
