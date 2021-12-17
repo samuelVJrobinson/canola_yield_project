@@ -35,8 +35,8 @@ data {
 	int flwCount[Nplant]; //Number of total flower (pods + missing) per plant
 	int<lower=1,upper=Nplot> plantIndex[Nplant]; //Index for all plants - which plot?		
 	vector[Nplant] plantSize; //Centered mass of vegetative tissue (no seeds) (g)
-	vector[Nplant] avgSeedCount; //Average seeds per pod
-	vector[Nplant] avgSeedMass; //Average weight per seed (mg)
+	vector[Nplant] seedCount; //Average seeds per pod
+	vector[Nplant] seedMass; //Average weight per seed (mg)
 	vector[Nplant] yield; //Observed yield per plant (g)	
 }
 
@@ -60,8 +60,8 @@ transformed data {
 	}
 	
 	for(i in 1:Nplot){ //Log transform of honeybee visitation rate (per 10 mins)
-		logHbeeVis[i] = log((hbeeVis[i]/totalTime[i])+0.5); 
-		logFlyVis[i] = log((flyVis[i]/totalTime[i])+0.5);
+		logHbeeVis[i] = log((hbeeVis[i]/totalTime[i])+1); 
+		logFlyVis[i] = log((flyVis[i]/totalTime[i])+1);
 	}
 		
 	for(i in 1:Nplant){
@@ -74,7 +74,7 @@ transformed data {
 		else if(logitFlwSurv[i]>=1)
 			logitFlwSurv[i]=0.99;	
 		//calcYield = log(pod count x seed weight x seed count)
-		calcYield[i] = podCount[i]*avgSeedCount[i]*(avgSeedMass[i]/1000);
+		calcYield[i] = podCount[i]*seedCount[i]*(seedMass[i]/1000);
 		logCalcYield[i] = log(calcYield[i]);
 	}		
 	//Logit transform and center surviving flowers

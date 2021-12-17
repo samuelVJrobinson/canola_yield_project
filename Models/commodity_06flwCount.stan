@@ -35,8 +35,8 @@ data {
 	int flwCount[Nplant]; //Number of total flower (pods + missing) per plant
 	int<lower=1,upper=Nplot> plantIndex[Nplant]; //Index for all plants - which plot?		
 	vector[Nplant] plantSize; //Centered mass of vegetative tissue (no seeds) (g)
-	vector[Nplant] avgSeedCount; //Average seeds per pod
-	vector[Nplant] avgSeedMass; //Average weight per seed (mg)
+	vector[Nplant] seedCount; //Average seeds per pod
+	vector[Nplant] seedMass; //Average weight per seed (mg)
 	vector[Nplant] yield; //Observed yield per plant (g)	
 }
 
@@ -60,8 +60,8 @@ transformed data {
 	}
 	
 	for(i in 1:Nplot){ //Log transform of honeybee visitation rate (per 10 mins)
-		logHbeeVis[i] = log((hbeeVis[i]/totalTime[i])+0.5); 
-		logFlyVis[i] = log((flyVis[i]/totalTime[i])+0.5);
+		logHbeeVis[i] = log((hbeeVis[i]/totalTime[i])+1); 
+		logFlyVis[i] = log((flyVis[i]/totalTime[i])+1);
 	}
 		
 	for(i in 1:Nplant){
@@ -74,7 +74,7 @@ transformed data {
 		else if(logitFlwSurv[i]>=1)
 			logitFlwSurv[i]=0.99;	
 		//calcYield = log(pod count x seed weight x seed count)
-		calcYield[i] = podCount[i]*avgSeedCount[i]*(avgSeedMass[i]/1000);
+		calcYield[i] = podCount[i]*seedCount[i]*(seedMass[i]/1000);
 		logCalcYield[i] = log(calcYield[i]);
 	}		
 	//Logit transform and center surviving flowers
@@ -140,20 +140,20 @@ model {
 	// Priors
 	
   //Flower count (per plant)
-  intFlwCount ~ normal(5,0.2); //Intercept
-  slopePlSizeFlwCount ~ normal(1,0.1); //Slope of plant size
-  slopeSurvFlwCount ~ normal(-0.16,0.05); //Slope of survival rate
-  slope2015FlwCount ~ normal(-0.1,0.05); //Slope of 2015 effect
-  phiFlwCount_field ~ gamma(1.25,3); //SD of field-level random effect
+  intFlwCount ~ normal(0,1); //Intercept
+  slopePlSizeFlwCount ~ normal(0,1); //Slope of plant size
+  slopeSurvFlwCount ~ normal(0,1); //Slope of survival rate
+  slope2015FlwCount ~ normal(0,1); //Slope of 2015 effect
+  phiFlwCount_field ~ gamma(1,1); //SD of field-level random effect
   intFlwCount_field ~ normal(0,phiFlwCount_field); //Field-level random intercept
-  phiFlwCount_plot ~ gamma(1.25,3); //SD of plot-level random effect
+  phiFlwCount_plot ~ gamma(1,1); //SD of plot-level random effect
   intFlwCount_plot ~ normal(0,phiFlwCount_plot); //Plot-level random intercept
   //Variance (sigma) terms
-  intPhiFlwCount ~ normal(3.7,0.5); //Intercept
-  slopePlSizePhiFlwCount ~ normal(0.7,0.2);
-  sigmaPhiFlwCount_field ~ gamma(1.25,3); //Sigma for field-level sigma
+  intPhiFlwCount ~ normal(0,1); //Intercept
+  slopePlSizePhiFlwCount ~ normal(0,1);
+  sigmaPhiFlwCount_field ~ gamma(1,1); //Sigma for field-level sigma
   intPhiFlwCount_field ~ normal(0,sigmaPhiFlwCount_field); //Field-level random intercept
-  // sigmaPhiFlwCount_plot ~ gamma(1.25,3); //Sigma for plot-level sigma - bad traces, high Rhat
+  // sigmaPhiFlwCount_plot ~ gamma(1,1); //Sigma for plot-level sigma - bad traces, high Rhat
   // intPhiFlwCount_plot ~ normal(0, sigmaPhiFlwCount_plot); //Plot-level random intercept - all overlap zero
 }
 

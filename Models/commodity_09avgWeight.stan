@@ -35,8 +35,8 @@ data {
 	int flwCount[Nplant]; //Number of total flower (pods + missing) per plant
 	int<lower=1,upper=Nplot> plantIndex[Nplant]; //Index for all plants - which plot?		
 	vector[Nplant] plantSize; //Centered mass of vegetative tissue (no seeds) (g)
-	vector[Nplant] avgSeedCount; //Average seeds per pod
-	vector[Nplant] avgSeedMass; //Average weight per seed (mg)
+	vector[Nplant] seedCount; //Average seeds per pod
+	vector[Nplant] seedMass; //Average weight per seed (mg)
 	vector[Nplant] yield; //Observed yield per plant (g)	
 }
 
@@ -60,8 +60,8 @@ transformed data {
 	}
 	
 	for(i in 1:Nplot){ //Log transform of honeybee visitation rate (per 10 mins)
-		logHbeeVis[i] = log((hbeeVis[i]/totalTime[i])+0.5); 
-		logFlyVis[i] = log((flyVis[i]/totalTime[i])+0.5);
+		logHbeeVis[i] = log((hbeeVis[i]/totalTime[i])+1); 
+		logFlyVis[i] = log((flyVis[i]/totalTime[i])+1);
 	}
 		
 	for(i in 1:Nplant){
@@ -74,7 +74,7 @@ transformed data {
 		else if(logitFlwSurv[i]>=1)
 			logitFlwSurv[i]=0.99;	
 		//calcYield = log(pod count x seed weight x seed count)
-		calcYield[i] = podCount[i]*avgSeedCount[i]*(avgSeedMass[i]/1000);
+		calcYield[i] = podCount[i]*seedCount[i]*(seedMass[i]/1000);
 		logCalcYield[i] = log(calcYield[i]);
 	}		
 	//Logit transform and center surviving flowers
@@ -147,7 +147,7 @@ transformed parameters {
 		// Weight per seed = plot-level effect +
 		seedWeightMu[i] = seedWeightMuPlot[plantIndex[i]] + //Plot-level seed weight
 			slopePlSizeWeight*plantSize[i] + //Plant size effect
-			slopeSeedCount*avgSeedCount[i]; //Seed count effect (do plants with many seeds/pod have bigger seeds?)
+			slopeSeedCount*seedCount[i]; //Seed count effect (do plants with many seeds/pod have bigger seeds?)
 	}	
 }
 	
@@ -155,17 +155,17 @@ model {
   
 	//Likelihood		
 	pollenCount ~ neg_binomial_2_log(pollenMu,pollenPhi); //Pollination rate	
-	avgSeedMass ~ exp_mod_normal(seedWeightMu,sigmaSeedWeight,lambdaSeedWeight); //Average weight per seed (mg) - exp-normal version, works much better
+	seedMass ~ exp_mod_normal(seedWeightMu,sigmaSeedWeight,lambdaSeedWeight); //Average weight per seed (mg) - exp-normal version, works much better
 
 	// Priors
 	// Pollen deposition - informative priors	
-	intPollen ~ normal(5.5,1); //Intercept	
-	slopeVisitPol ~ normal(0,0.1); //hbee Visitation effect	
-	slopeHbeeDistPollen ~ normal(0,0.1); //hbee distance effect	
-	sigmaPolField ~ gamma(1.25,3); //Sigma for random field	
-	pollenPhi ~ gamma(1.25,3); //Dispersion parameter
+	intPollen ~ normal(0,1); //Intercept	
+	slopeVisitPol ~ normal(0,1); //hbee Visitation effect	
+	slopeHbeeDistPollen ~ normal(0,1); //hbee distance effect	
+	sigmaPolField ~ gamma(1,1); //Sigma for random field	
+	pollenPhi ~ gamma(1,1); //Dispersion parameter
 	intPollen_field ~ normal(0,sigmaPolField); //Random field int
-	// sigmaPolPlot ~ gamma(1.05,1); //Sigma for random plot - bad Rhat, poor traces   
+	// sigmaPolPlot ~ gamma(1,1); //Sigma for random plot - bad Rhat, poor traces   
 	// intPollen_plot ~ normal(0,sigmaPolPlot); //Random plot int - not a lot of info at plot level
 	
   // Average weight per seed - informative priors
@@ -176,12 +176,12 @@ model {
   slopePlSizeWeight ~ normal(0,1); //Slope of plant size
   slopeIrrigSeedWeight ~ normal(0,1); //Slope of irrigation
   slope2015SeedWeight ~ normal(0,1); //Slope of 2015
-  sigmaSeedWeight ~ gamma(1.1,1); //SD of seed weight
-  sigmaSeedWeight_field ~ gamma(1.1,1); //SD of field random effect
-  sigmaSeedWeight_plot ~ gamma(1.1,1); //SD of plot random effect
+  sigmaSeedWeight ~ gamma(1,1); //SD of seed weight
+  sigmaSeedWeight_field ~ gamma(1,1); //SD of field random effect
+  sigmaSeedWeight_plot ~ gamma(1,1); //SD of plot random effect
   intSeedWeight_field ~ normal(0,sigmaSeedWeight_field); //field-level random intercepts
   intSeedWeight_plot ~ normal(0,sigmaSeedWeight_plot); //plot-level random intercepts
-  lambdaSeedWeight ~ gamma(1.1,1); //Lambda for exp-normal distribution
+  lambdaSeedWeight ~ gamma(1,1); //Lambda for exp-normal distribution
 }
 
 generated quantities {
@@ -193,7 +193,7 @@ generated quantities {
 
 	for(i in 1:Nplant){
 		// weight per seed - exp-normal works well
-		seedWeight_resid[i] = avgSeedMass[i] - (seedWeightMu[i]+(1/lambdaSeedWeight));
+		seedWeight_resid[i] = seedMass[i] - (seedWeightMu[i]+(1/lambdaSeedWeight));
 		predSeedWeight[i] = exp_mod_normal_rng(seedWeightMu[i],sigmaSeedWeight,lambdaSeedWeight);
 		predSeedWeight_resid[i] = predSeedWeight[i] - (seedWeightMu[i]+(1/lambdaSeedWeight));
 	}
