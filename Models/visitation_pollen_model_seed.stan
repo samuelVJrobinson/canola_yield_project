@@ -51,11 +51,11 @@ data {
 	vector[Nplot_extra] totalTime_extra; //Time
 	
 	//Missing flower density data
-	int Nplot_extra_flDensObs; //Number of plots where flower density observed
-	int Nplot_extra_flDensMiss; //Number of plots where flower density missing
-	vector[Nplot_extra_flDensObs] flDens_obs_extra; //Observed flower density (flowers/m2)
-	int<lower=1,upper=Nplot_extra> obsflDens_extra_ind[Nplot_extra_flDensObs]; //Index for observed flower density
-	int<lower=1,upper=Nplot_extra> missflDens_extra_ind[Nplot_extra_flDensMiss]; //Index for missing flower density			
+	int Nplot_flDensObs_extra; //Number of plots where flower density observed
+	int Nplot_flDensMiss_extra; //Number of plots where flower density missing
+	vector[Nplot_flDensObs_extra] flDens_obs_extra; //Observed flower density (flowers/m2)
+	int<lower=1,upper=Nplot_extra> obsflDens_ind_extra[Nplot_flDensObs_extra]; //Index for observed flower density
+	int<lower=1,upper=Nplot_extra> missflDens_ind_extra[Nplot_flDensMiss_extra]; //Index for missing flower density			
 	
 	//Flower level (pollen counts)
 	int Nflw; //Number of flowers (stigmas)
@@ -183,7 +183,7 @@ parameters {
 	
 	// Flower density per plot
 	vector[Nplot_flDensMiss] flDens_miss; //Missing from my fields
-	vector[Nplot_extra_flDensMiss] flDens_extra_miss; //Missing from Riley's fields
+	vector[Nplot_flDensMiss_extra] flDens_miss_extra; //Missing from Riley's fields
 	real intFlDens; //Global intercept
 	real slopePlSizeFlDens; //Slope of plant size on flower density
 	real slopeMBayFlDens; //Effect of male bay
@@ -378,10 +378,10 @@ transformed parameters {
 	// Flower density
 	flDens[obsflDens_ind]=flDens_obs; //Observed flower density
 	flDens[missflDens_ind]=flDens_miss;
- 	for(i in 1:Nplot_extra_flDensObs) //For each extra observed plot
-		flDens[obsflDens_extra_ind[i]+Nplot]=flDens_obs_extra[i];	//Add it to index in flDens
-	for(i in 1:Nplot_extra_flDensMiss) //For each extra missing plot
-		flDens[missflDens_extra_ind[i]+Nplot]=flDens_extra_miss[i];	
+ 	for(i in 1:Nplot_flDensObs_extra) //For each extra observed plot
+		flDens[obsflDens_ind_extra[i]+Nplot]=flDens_obs_extra[i];	//Add it to index in flDens
+	for(i in 1:Nplot_flDensMiss_extra) //For each extra missing plot
+		flDens[missflDens_ind_extra[i]+Nplot]=flDens_miss_extra[i];	
 	
 	//Seeds per pod
 	seedCount[obsSeedCount_ind]	= seedCount_obs; //Observed seeds per pod

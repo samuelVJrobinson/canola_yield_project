@@ -31,7 +31,7 @@ data {
 	
 	//Plant density (stems/m2)
 	int Nplot_plDensObs; //Number of plots where plant density was observed
-	int Nplot_plDensMiss; //Number of plots with plant density missing (about 40% - male bays)
+	int Nplot_plDensMiss; //Number of plots with plant density missing
 	vector[Nplot_plDensObs] plDens_obs; //Observed plant density (stems/m2)
 	int obsPlDens_ind[Nplot_plDensObs]; //Index for observed plant density
 	int missPlDens_ind; //Index for missing plant density	(only 1)
@@ -51,11 +51,11 @@ data {
 	vector[Nplot_extra] totalTime_extra; //Time
 	
 	//Missing flower density data
-	int Nplot_extra_flDensObs; //Number of plots where flower density observed
-	int Nplot_extra_flDensMiss; //Number of plots where flower density missing
-	vector[Nplot_extra_flDensObs] flDens_extra_obs; //Observed flower density (flowers/m2)
-	int<lower=1,upper=Nplot_extra> obsflDens_extra_ind[Nplot_extra_flDensObs]; //Index for observed flower density
-	int<lower=1,upper=Nplot_extra> missflDens_extra_ind[Nplot_extra_flDensMiss]; //Index for missing flower density			
+	int Nplot_flDensObs_extra; //Number of plots where flower density observed
+	int Nplot_flDensMiss_extra; //Number of plots where flower density missing
+	vector[Nplot_flDensObs_extra] flDens_obs_extra; //Observed flower density (flowers/m2)
+	int<lower=1,upper=Nplot_extra> obsflDens_ind_extra[Nplot_flDensObs_extra]; //Index for observed flower density
+	int<lower=1,upper=Nplot_extra> missflDens_ind_extra[Nplot_flDensMiss_extra]; //Index for missing flower density			
 	
 	//Flower level (pollen counts)
 	int Nflw; //Number of flowers (stigmas)
@@ -166,37 +166,35 @@ parameters {
   // plSize is measured at the plot level, so as long as there's some kind of plant-level intercept it should be fine
  
 	// Plant density - looks OK
-	vector[Nplot_plDensMiss] plDens_miss; //Imputed plant density for my fields
-	vector[Nplot_extra] plDens_miss_extra; //Imputed plant density for Riley's fields
+	real plDens_miss; //Imputed plant density for my fields (only 1)
 	real intPlDens; //Global intercept
 	real slopeHbeeDistPlDens; //Slope of distance into field	
 	real<lower=1e-10> sigmaPlDens; //Sigma for within-field (residual)
 	real<lower=1e-10> sigmaPlDens_field; //Sigma for field
 	vector[Nfield] intPlDens_field; //Random intercept for field
 	
-	// // Plant size - random effects at plot level are very small, and don't converge well
-	// // Density:distance interaction is basically 0, so leaving it out
-	// // Normal distribution had marginal PPchecks; t-dist is much better
-	// real intPlSize; //Global intercept
-	// real slopePlDensPlSize; //Slope of planting density
-	// real slopeDistPlSize; //Slope of hbee distance (edge of field has small plants)
-	// real<lower=1e-05> sigmaPlSize; //Sigma for within-plot (residual)
-	// real<lower=1e-05> sigmaPlSize_field; //Sigma for field
-	// vector[Nfield] intPlSize_field; //Random intercept for field
-	// real nuPlSize; //exp(nu) for t-distribution
-	// 
-	// // Flower density per plot
-	// vector[Nplot_flDensMiss] flDens_miss; //Missing from my fields
-	// vector[Nplot_extra_flDensMiss] flDens_extra_miss; //Missing from Riley's fields
-	// real intFlDens; //Global intercept
-	// // real slopePlSizeFlDens; //Slope of plant size on flower density
-	// real slopeMBayFlDens; //Effect of male bay
-	// real slope2016FlDens; //Effect of 2016
-	// real slopeDistFlDens;  //Effect of distance from edge
-	// real<lower=1e-10> sigmaFlDens; //Sigma for within-field (residual)
-	// real<lower=1e-10> sigmaFlDens_field; //Sigma for field
-	// vector[Nfield_all] intFlDens_field; //Random intercept for field
-	// real nuFlDens; //exp(nu) for t-distribution
+	// Plant size - random effects at plot level are very small, and don't converge well
+	// Density:distance interaction is basically 0, so leaving it out
+	// Normal distribution had marginal PPchecks; t-dist is much better
+	real intPlSize; //Global intercept
+	real slopePlDensPlSize; //Slope of planting density
+	real slopeDistPlSize; //Slope of hbee distance (edge of field has small plants)
+	real<lower=1e-05> sigmaPlSize; //Sigma for within-plot (residual)
+	real<lower=1e-05> sigmaPlSize_field; //Sigma for field
+	vector[Nfield] intPlSize_field; //Random intercept for field
+	real nuPlSize; //exp(nu) for t-distribution
+
+	// Flower density per plot
+	vector[Nplot_flDensMiss] flDens_miss; //Missing from my fields
+	vector[Nplot_flDensMiss_extra] flDens_miss_extra; //Missing from Riley's fields
+	real intFlDens; //Global intercept
+	real slopeMBayFlDens; //Effect of male bay
+	real slope2016FlDens; //Effect of 2016
+	real slopeDistFlDens;  //Effect of distance from edge
+	real<lower=1e-10> sigmaFlDens; //Sigma for within-field (residual)
+	real<lower=1e-10> sigmaFlDens_field; //Sigma for field
+	vector[Nfield_all] intFlDens_field; //Random intercept for field
+	real nuFlDens; //exp(nu) for t-distribution
 }
 
 transformed parameters {
@@ -204,42 +202,36 @@ transformed parameters {
 	//Expected values
 	//Plot-level
 	vector[Nplot_F] plDensMu; //Expected plant density	
-	// vector[Nplot_F] plSizePlotMu; //Plot-level plant size
-	// vector[Nplant] plSizeMu; //Expected plant size
-	// vector[Nplot_all] flDensMu; //Expected flower density
+	vector[Nplot_F] plSizePlotMu; //Plot-level plant size
+	vector[Nplant] plSizeMu; //Expected plant size
+	vector[Nplot_all] flDensMu; //Expected flower density
 	
 	//Imputed missing data;
-	vector[Nplot_all] plDens; //Plant density
-	// vector[Nplot_all] flDens; //Flower density
+	vector[Nplot_F] plDens; //Plant density
+	vector[Nplot_all] flDens; //Flower density
 	
 	//Combine observed with imputed		
-	// Plant density
-	plDens[obsPlDens_ind]=plDens_obs; //Observed plant density from my fields
-	plDens[missPlDens_ind]=plDens_miss; //Missing plant density (only 1) //Something is wrong here
-	plDens[(Nplot+1):Nplot_all] = plDens_miss_extra; //Riley's fields
-	
-// 	// Flower density
-// 	flDens[obsflDens_ind]=flDens_obs; //Observed flower density
-// 	flDens[missflDens_ind]=flDens_miss;
-//  	for(i in 1:Nplot_extra_flDensObs) //For each extra observed plot
-// 		flDens[obsflDens_extra_ind[i]+Nplot]=flDens_extra_obs[i];	//Add it to index in flDens
-// 	for(i in 1:Nplot_extra_flDensMiss) //For each extra missing plot
-// 		flDens[missflDens_extra_ind[i]+Nplot]=flDens_extra_miss[i];
+	plDens[plotIndex_F[obsPlDens_ind]]=plDens_obs; //Observed plant density from my fields
+	plDens[plotIndex_F[missPlDens_ind]]=plDens_miss; //Missing plant density (only 1) 
+	flDens[obsflDens_ind]=flDens_obs; //Observed flower density
+	flDens[missflDens_ind]=flDens_miss;
+ 	for(i in 1:Nplot_flDensObs_extra) //For each extra observed plot
+		flDens[obsflDens_ind_extra[i]+Nplot]=flDens_obs_extra[i];	//Add it to index in flDens
+	for(i in 1:Nplot_flDensMiss_extra) //For each extra missing plot
+		flDens[missflDens_ind_extra[i]+Nplot]=flDens_miss_extra[i];
 	
 	// Plot-level parameters
 	
-	// for(i in 1:Nplot_all){	//All plots
-	// 	// Flower density = intercept + random field int + plant size effect
-	// 	flDensMu[i] = intFlDens	+
-	// 	  intFlDens_field[plotIndex_all[i]] +
-	// 		slopeMBayFlDens*isMBay_all[i] + //Male bay effect
-	// 		// slopePlSizeFlDens*plSizePlotMu[i] + //Plant size
-	// 		slope2016FlDens*is2016_all[i] + //Year effect
-	// 		slopeDistFlDens*logHbeeDist_all[i]; //Distance from edge effect
-	// 		// slopePlDensFlDens*plDens[i]; //Planting density effect
-	// }
+	for(i in 1:Nplot_all){	//All plots
+		// Flower density = intercept + random field int + plant size effect
+		flDensMu[i] = intFlDens	+
+		  intFlDens_field[plotIndex_all[i]] +
+			slopeMBayFlDens*isMBay_all[i] + //Male bay effect
+			slope2016FlDens*is2016_all[i] + //Year effect
+			slopeDistFlDens*logHbeeDist_all[i]; //Distance from edge effect
+	}
 	
-	for(i in 1:Nplot_F){
+	for(i in 1:Nplot_F){ //F plots only
 	  int plotI = plotIndex_F2[i]; //Matches F plot i to measurements taken at all plots
 	  
 	  // Plant density = intercept + random field int + hbee distance effect
@@ -247,97 +239,96 @@ transformed parameters {
 		  intPlDens_field[plotIndex_all[plotI]] + 
 			slopeHbeeDistPlDens*logHbeeDist_all[plotI]; //Distance effect				
 			
-		// // Plant size (plot-level) = intercept + random field int + random plot int + distance + planting density effect
-		// plSizePlotMu[i] = intPlSize + //Intercept
-		//   intPlSize_field[plotIndex_all[plotI]] +  //Field level intercept
-		//   //intPlSize_plot[i] + //Plot level intercept
-		// 	slopeDistPlSize*logHbeeDist_all[plotI] + //Distance effect (edge of field has smaller plants)
-		// 	slopePlDensPlSize*plDens[i]; //Planting density effect
+		// Plant size (plot-level) = intercept + random field int + random plot int + distance + planting density effect
+		plSizePlotMu[i] = intPlSize + //Intercept
+		  intPlSize_field[plotIndex_all[plotI]] +  //Field level intercept
+		  //intPlSize_plot[i] + //Plot level intercept
+			slopeDistPlSize*logHbeeDist_all[plotI] + //Distance effect (edge of field has smaller plants)
+			slopePlDensPlSize*plDens[i]; //Planting density effect
 	}
 	
-	// for(i in 1:Nplant){
-	//   int plotI = plotIndex_F[plantIndex[i]]; //Matches plant to F plot
-	//   
-	// 	// Predicted plant size (taken from plot level measurements above)
-	// 	plSizeMu[i] = plSizePlotMu[plotI];
-	// }
+	for(i in 1:Nplant){
+	  int plotI = plotIndex_F[plantIndex[i]]; //Matches plant to F plot
+
+		// Predicted plant size (taken from plot level measurements above)
+		plSizeMu[i] = plSizePlotMu[plotI];
+	}
 
 }
 	
 model {
 	plDens ~ normal(plDensMu,sigmaPlDens); //Plant density per plot		
-	// plantSize ~ student_t(exp(nuPlSize),plSizeMu,sigmaPlSize); //Plant size
-	// flDens ~ student_t(exp(nuFlDens),flDensMu,sigmaFlDens); //Flower density
+	plantSize ~ student_t(exp(nuPlSize),plSizeMu,sigmaPlSize); //Plant size - T dist
+	// plantSize ~ skew_normal(plSizeMu,sigmaPlSize,exp(nuPlSize)); //Plant size - skew normal
+	flDens ~ student_t(exp(nuFlDens),flDensMu,sigmaFlDens); //Flower density
 			
 	// Priors
 	// Planting density
 	intPlDens ~ normal(0,1); //Intercept
 	slopeHbeeDistPlDens ~ normal(0,1); //Distance into field	
-	// slopeHbeeDistSqPlDens ~ normal(0,1); //Distance into field squared	- doesn't appear to add anything
 	sigmaPlDens ~ gamma(1,1); //Sigma for within-field (residual)
 	sigmaPlDens_field ~ gamma(1,1); //Sigma for field
 	intPlDens_field ~ normal(0,sigmaPlDens_field); //Random intercept for field	
 	
-	// //Plant size - informative priors
-	// intPlSize ~ normal(0,1); //Intercept
-	// slopePlDensPlSize ~ normal(0,1); //Planting density
-	// slopeDistPlSize ~ normal(0,1); //Distance from edge of field
-	// sigmaPlSize ~ gamma(1,1); //Sigma for residual
-	// sigmaPlSize_field ~ gamma(1,1); //Sigma for field
-	// intPlSize_field	~ normal(0,sigmaPlSize_field); //Random intercept for field
-	// // sigmaPlSize_plot ~ gamma(1,1); //Sigma for plot
-	// // intPlSize_plot ~ normal(0,sigmaPlSize_plot); //Random intercept for plot
-	// nuPlSize ~ normal(0,1); //nu for student's t
-	// 
-	// // Flower density
-	// intFlDens ~ normal(0,1); //Intercept
-	// // slopePlSizeFlDens ~ normal(0,1); //Plant size effect
-	// slope2016FlDens ~ normal(0,1); //Effect of 2016
-	// slopeDistFlDens ~ normal(0,1); //Distance from edge
-	// slopeMBayFlDens ~ normal(0,1); //Effect of male bay
-	// // slopePlDensFlDens ~ normal(0,1); //Plant density
-	// sigmaFlDens ~ gamma(1,1); //Sigma for plot (residual)
-	// sigmaFlDens_field ~ gamma(1,1); ; //Sigma for field
-	// intFlDens_field ~ normal(0,sigmaFlDens_field); //Random intercept for field
-	// nuFlDens ~ normal(0,1); //nu for student's t
+	//Plant size - informative priors
+	intPlSize ~ normal(0,1); //Intercept
+	slopePlDensPlSize ~ normal(0,1); //Planting density
+	slopeDistPlSize ~ normal(0,1); //Distance from edge of field
+	sigmaPlSize ~ gamma(1,1); //Sigma for residual
+	sigmaPlSize_field ~ gamma(1,1); //Sigma for field
+	intPlSize_field	~ normal(0,sigmaPlSize_field); //Random intercept for field
+	// sigmaPlSize_plot ~ gamma(1,1); //Sigma for plot
+	// intPlSize_plot ~ normal(0,sigmaPlSize_plot); //Random intercept for plot
+	nuPlSize ~ normal(0,1); //nu for student's t
+
+	// Flower density
+	intFlDens ~ normal(0,1); //Intercept
+	slope2016FlDens ~ normal(0,1); //Effect of 2016
+	slopeDistFlDens ~ normal(0,1); //Distance from edge
+	slopeMBayFlDens ~ normal(0,1); //Effect of male bay
+	sigmaFlDens ~ gamma(1,1); //Sigma for plot (residual)
+	sigmaFlDens_field ~ gamma(1,1); ; //Sigma for field
+	intFlDens_field ~ normal(0,sigmaFlDens_field); //Random intercept for field
+	nuFlDens ~ normal(0,1); //nu for student's t
 }
 
-// generated quantities {
-// 	// Plot-level quantities
-// 	// plant density
-// 	real predPlDens[Nplot_F]; //Generated
-// 	real plDens_resid[Nplot_F]; //Residual
-// 	real predPlDens_resid[Nplot_F]; //Residual of generated
-// 	// // flower density
-// 	// real predFlDens[Nplot_all]; //Generated
-// 	// real flDens_resid[Nplot_all]; //Residual
-// 	// real predFlDens_resid[Nplot_all]; //Residual of generated
-// 
-// 	//Plant-level
-// 	// plantSize
-// 	real predPlSize[Nplant]; //Generated
-// 	real plSize_resid[Nplant]; //Residual
-// 	real predPlSize_resid[Nplant]; //Residual of generated
-// 
-// 	// for(i in 1:Nplot_all){
-// 	// 	// flower density - t-distribution version is way better than normal
-// 	// 	flDens_resid[i] = flDens[i]-flDensMu[i]; //Residual for actual value
-// 	// 	predFlDens[i] = student_t_rng(exp(nuFlDens),flDensMu[i],sigmaFlDens); //Generated value from t-dist
-// 	// 	predFlDens_resid[i] = predFlDens[i] - flDensMu[i]; //Residual for predicted value
-// 	// }
-// 
-// 	for(i in 1:Nplot_F){
-// 		//plant density
-// 		plDens_resid[i] = plDens[i] - plDensMu[i]; //Residual for actual value
-// 		predPlDens[i]= normal_rng(plDensMu[i],sigmaPlDens); //Generated value from normal
-// 		predPlDens_resid[i] = predPlDens[i] - plDensMu[i]; //Residual for predicted value
-// 	}
-// 
-// 	for(i in 1:Nplant){
-// 		//plant size
-// 		plSize_resid[i]= plantSize[i] - plSizeMu[i]; //Residual (actual-expected)
-// 		predPlSize[i] = normal_rng(plSizeMu[i],sigmaPlSize); //Generates new value from normal dist.
-// 		predPlSize_resid[i] = predPlSize[i] - plSizeMu[i]; //Residual for new value
-// 	}
-// 
-// }
+generated quantities {
+	// Plot-level quantities
+	// plant density
+	real predPlDens[Nplot_F]; //Generated
+	real plDens_resid[Nplot_F]; //Residual
+	real predPlDens_resid[Nplot_F]; //Residual of generated
+	// flower density
+	real predFlDens[Nplot_all]; //Generated
+	real flDens_resid[Nplot_all]; //Residual
+	real predFlDens_resid[Nplot_all]; //Residual of generated
+
+	//Plant-level
+	// plantSize
+	real predPlSize[Nplant]; //Generated
+	real plSize_resid[Nplant]; //Residual
+	real predPlSize_resid[Nplant]; //Residual of generated
+
+	for(i in 1:Nplot_all){
+		// flower density - t-distribution version is way better than normal
+		flDens_resid[i] = flDens[i]-flDensMu[i]; //Residual for actual value
+		predFlDens[i] = student_t_rng(exp(nuFlDens),flDensMu[i],sigmaFlDens); //Generated value from t-dist
+		predFlDens_resid[i] = predFlDens[i] - flDensMu[i]; //Residual for predicted value
+	}
+
+	for(i in 1:Nplot_F){
+		//plant density
+		plDens_resid[i] = plDens[i] - plDensMu[i]; //Residual for actual value
+		predPlDens[i]= normal_rng(plDensMu[i],sigmaPlDens); //Generated value from normal
+		predPlDens_resid[i] = predPlDens[i] - plDensMu[i]; //Residual for predicted value
+	}
+
+	for(i in 1:Nplant){
+		//plant size - student T
+		plSize_resid[i]= plantSize[i] - plSizeMu[i]; //Residual (actual-expected)
+		// predPlSize[i] = normal_rng(plSizeMu[i],sigmaPlSize); //Generates new value from normal dist.
+		predPlSize[i] = student_t_rng(exp(nuPlSize),plSizeMu[i],sigmaPlSize); //Generates new value from T-dist
+		predPlSize_resid[i] = predPlSize[i] - plSizeMu[i]; //Residual for new value
+	}
+
+}

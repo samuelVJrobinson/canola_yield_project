@@ -81,10 +81,16 @@ PPplots <- function(mod,actual=NULL,pars=c('pred','resid','predResid'),main='',i
   if(main=='') main <- deparse(substitute(actual))
   
   pred <- apply(modVals[[which(nam==pars[1])]],2,median) #Median predicted value
+  predUpr <- apply(modVals[[which(nam==pars[1])]],2,function(x) quantile(x,0.9)) #Upper predicted
+  predLwr <- apply(modVals[[which(nam==pars[1])]],2,function(x) quantile(x,0.1)) #Lower predicted
+  
   resid <- apply(modVals[[which(nam==pars[2])]],1,function(x) sum(abs(x))) #Sum of actual residuals
   predResid <- apply(modVals[[which(nam==pars[3])]],1,function(x) sum(abs(x))) #Sum of simulated residuals
   
-  if(length(index)>1 || !is.na(index)) pred <- pred[index] #If some predictions are imputed, show only observed
+  if(length(index)>1 || !is.na(index)){
+    pred <- pred[index] #If some predictions are imputed, show only observed
+    predUpr <- predUpr[index]; predLwr <- predLwr[index]
+  } 
   
   d1 <- data.frame(resid,predResid) #Data frame for p1
   
@@ -100,14 +106,16 @@ PPplots <- function(mod,actual=NULL,pars=c('pred','resid','predResid'),main='',i
          title=paste0(main,' (p = ',round(min(x,1-x),3),')'))+
     xlim(xl)+ylim(yl)
   
-  d2 <- data.frame(actual,pred) #Data for predicted vs actual plot
+  d2 <- data.frame(actual,pred,predUpr,predLwr) #Data for predicted vs actual plot
   
   p2 <- d2 %>% ggplot(aes(x=pred,y=actual))
   
   if(is.na(jitterX)){
-    p2 <- p2 + geom_point()
+    p2 <- p2 + geom_point() + geom_errorbarh(aes(xmax=predUpr,xmin=predLwr),height=0,alpha=0.1)
   } else {
-    p2 <- p2 + geom_point(position=position_jitter(width = jitterX,height=0))
+    p2 <- p2 + geom_point(position=position_jitter(width = jitterX,height=0)) +
+      geom_errorbarh(aes(xmax=predUpr,xmin=predLwr),height=0,alpha=0.1,
+                     position=position_jitter(width = jitterX,height=0))
   }
   
   p2 <- p2 +

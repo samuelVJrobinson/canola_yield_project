@@ -20,8 +20,8 @@ theme_set(theme_bw()+prestheme) #Sets graph theme to B/Ws + prestheme
 rm(prestheme)
 
 # Commodity field data
-# setwd('~/Projects/UofC/canola_yield_project') #Multivac path
-setwd('~/Documents/canola_yield_project') #Galpern machine path
+setwd('~/Projects/UofC/canola_yield_project') #Multivac path
+# setwd('~/Documents/canola_yield_project') #Galpern machine path
 load("./Commodity field analysis/commodityfieldDataAll.RData") 
 rm(AICc,brix2mgul,deltaAIC,DIC,plotFixedTerms,predFixef,se,varComp,zeroCheck,conversion,visitorsAll,visitors2015)
 fieldsAllComm <- fieldsAll; flowersAllComm <- flowersAll; plantsAllComm <- plantsAll;
@@ -29,8 +29,9 @@ seedsAllComm <- seedsAll; surveyAllComm <- surveyAll;
 rm(fieldsAll,flowersAll,plantsAll,seedsAll,surveyAll)
 #Seed field data
 load("./Seed field analysis/seedfieldDataAll.RData")
-fieldsAllSeed <- allFields; plantsAllSeed <- allPlants; pollenAllSeed <- allPollen; seedsAllSeed <- allSeeds;
-surveyAllSeed <- allSurvey; 
+fieldsAllSeed <- data.frame(allFields); plantsAllSeed <- data.frame(allPlants)
+pollenAllSeed <- data.frame(allPollen); seedsAllSeed <- data.frame(allSeeds);
+surveyAllSeed <- data.frame(allSurvey); 
 plantsAllSeed$Field <- gsub('Unrah','Unruh',plantsAllSeed$Field) #Fixes spelling error
 seedsAllSeed$Field <- gsub('Unrah','Unruh',seedsAllSeed$Field)
 seedsAllSeed$EdgeCent <- ifelse(seedsAllSeed$EdgeCent=='Cent','Center',seedsAllSeed$EdgeCent) #Fixes cent/center
@@ -46,7 +47,7 @@ setwd('~/Projects/UofC/canola_yield_project')
 
 source('helperFunctions.R')
 
-#Everything above this line run to start
+#Run everything above this line to start
 
 # Commodity field visitation and pollen deposition (Stan) ---------------------------------
 library(rstan)
@@ -1299,45 +1300,49 @@ datalistPlot <- with(surveyAllSeed,list( #Plot-level measurements
   obsflDens_ind = which(!is.na(FlDens)), #Index for observed
   missflDens_ind = which(is.na(FlDens)), #Index for missing 
   
+  #Female-only plots (plant density)
   Nplot_F=sum(Bay=='F'), #Number of female plots
   plotIndex_F=match(1:length(Distance),which(Bay=='F')), #Index for female-only plots (which female plot j does plot i belong to?)
   plotIndex_F2=match(which(Bay=='F'),1:length(Distance)), #Reverse index (which plot i does female plot j belong to?)
   
   #Plant density
-  Nplot_plDensObs = sum(!is.na(PlDens)), #Number of F plots with observed plDens
-  Nplot_plDensMiss = sum(is.na(PlDens)), #Number of F plots missing plDens
-  plDens_obs=log(PlDens)[!is.na(PlDens)], # (log) Plant density
-  obsPlDens_ind = which(!is.na(PlDens)), #Index for observed
-  missPlDens_ind = which(is.na(PlDens)) #Index for missing
+  Nplot_plDensObs = sum(Bay=='F' & !is.na(PlDens)), #Number of F plots with observed plDens
+  Nplot_plDensMiss = sum(Bay == 'F' & is.na(PlDens)), #Number of F plots missing plDens
+  plDens_obs=log(PlDens)[Bay=='F' & !is.na(PlDens)], # (log) Plant density in F plots
+  obsPlDens_ind = which(Bay=='F' & !is.na(PlDens)), #Index for observed
+  missPlDens_ind = which(Bay=='F' & is.na(PlDens)) #Index for missing
   
 ))
 datalistPlot$plotIndex_F[is.na(datalistPlot$plotIndex_F)] <- 0 #Set male plot indices to zero
 datalistPlot$totalTime[is.na(datalistPlot$totalTime)] <- 0.5 #Fix one missing time point
 
-#Join in extra data from Riley - needs more info for imputation
+
+#Join in extra data from Riley 
 datalistPlot_extra <- with( filter(rileyExtra,!is.na(hdist),!is.na(ldist)), #Filter out NA hdist/ldist plots - hard to impute, and no downstream info
   # rileyExtra,
                            list(
-  Nplot_extra=length(ldist), #Number of extra plots
-  plotIndex_extra=as.numeric(site), #Index for field (which field?)
-  is2016_extra=Year==2016,
-  lbeeStocking_extra=treatment=='Double tent',
-  lbeeStocking2_extra=as.matrix(cbind(as.numeric(treatment=='Double tent'),as.numeric(treatment=='Double tent and bees'))),
-  hbee_dist_extra=hdist,
-  hbeeVis_extra=hbee_vis,
-  lbee_dist_extra=ldist,
-  lbeeVis_extra=lbee_vis,
-  isCent_extra=rep(FALSE,length(ldist)), #Riley's plots were at edge of bay
-  isMBay_extra=Bay=='Male', #Is plot from M bay?
-  totalTime_extra=rep(10,length(ldist))/10, #Riley used 10 mins for everything
+  Nplot=length(ldist), #Number of extra plots
+  plotIndex=as.numeric(site), #Index for field (which field?)
+  is2016=Year==2016,
+  lbeeStocking=treatment=='Double tent',
+  lbeeStocking2=as.matrix(cbind(as.numeric(treatment=='Double tent'),as.numeric(treatment=='Double tent and bees'))),
+  hbee_dist=hdist,
+  hbeeVis=hbee_vis,
+  lbee_dist=ldist,
+  lbeeVis=lbee_vis,
+  isCent=rep(FALSE,length(ldist)), #Riley's plots were at edge of bay
+  isMBay=Bay=='Male', #Is plot from M bay?
+  totalTime=rep(10,length(ldist))/10, #Riley used 10 mins for everything
   
   #(sqrt) Flower density
-  Nplot_extra_flDensObs = sum(!is.na(flDens)), #Number of observed plots
-  Nplot_extra_flDensMiss = sum(is.na(flDens)), #Number of missing plots
-  flDens_extra_obs=sqrt(flDens)[!is.na(flDens)], #Observed 
-  obsflDens_extra_ind = which(!is.na(flDens)), #Index for observed
-  missflDens_extra_ind = which(is.na(flDens)) #Index for missing
+  Nplot_flDensObs = sum(!is.na(flDens)), #Number of observed plots
+  Nplot_flDensMiss = sum(is.na(flDens)), #Number of missing plots
+  flDens_obs=sqrt(flDens)[!is.na(flDens)], #Observed 
+  obsflDens_ind = which(!is.na(flDens)), #Index for observed
+  missflDens_ind = which(is.na(flDens)) #Index for missing
 ))
+
+names(datalistPlot_extra) <- paste0(names(datalistPlot_extra),'_extra') #Append "extra"
 
 datalistPlot <- c(datalistPlot,datalistPlot_extra); rm(datalistPlot_extra)
 
@@ -1412,7 +1417,7 @@ modFiles <- dir(pattern = 'seed_.*\\.stan')
 modList <- vector(mode = 'list',length = length(modFiles))
 names(modList) <- gsub('(seed_.*[0-9]{2}|\\.stan)','',modFiles)
 
-modList[1] <- stan(file=modFiles[1],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #OK - Plant density, Plant size, Flower Density
+modList[1] <- stan(file=modFiles[1],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0.1) #OK - Plant density, Plant size, Flower Density
 # modList[2] <- stan(file=modFiles[2],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #OK - Visitation
 # ...
 
@@ -1421,6 +1426,7 @@ for(i in 1:length(modList)){
   if(!is.null(modList[[i]])){
     n <- names(modList[[i]]) #Model parameters
     n <- n[(!grepl('(\\[[0-9]+,*[0-9]*\\]|lp)',n))|grepl('[sS]igma',n)] #Gets rid of parameter vectors, unless it contains "sigma" (variance term)
+    n <- n[!grepl('_miss',n)] #Gets rid of imputed values
     
     p <- traceplot(modList[[i]],pars=n,inc_warmup=FALSE) #+ geom_hline(yintercept = 0) #Traceplots
     print(p)
@@ -1445,8 +1451,10 @@ for(i in 1:length(modList)){
 #Posterior predictive checks - OK 
 PPplots(modList[[1]],datalist$plDens_obs,c('predPlDens','plDens_resid','predPlDens_resid'),
         index = datalist$obsPlDens_ind,main='Plant Density')
-PPplots(modList[[1]],datalist$flDens,c('predFlDens','flDens_resid','predFlDens_resid'),'Flower density')
+PPplots(modList[[1]],datalist$flDens_obs,c('predFlDens','flDens_resid','predFlDens_resid'),
+        index=datalist$obsflDens_ind,main='Flower density')
 PPplots(modList[[1]],datalist$plantSize,c('predPlSize','plSize_resid','predPlSize_resid'),'Plant size')
+
 PPplots(modList[[2]],datalist$hbeeVis,c('predHbeeVis','hbeeVis_resid','predHbeeVis_resid'),'Honeybee visits',jitterX=0.1) #Not great, tends to overpredict high visitation. Probably 
 PPplots(modList[[3]],datalist$pollenCount,c('predPollenCount','pollen_resid','predPollen_resid'),'Pollen')
 PPplots(modList[[4]],datalist$flwCount,c('predFlwCount','flwCount_resid','predFlwCount_resid'),'Flowers per plant')
