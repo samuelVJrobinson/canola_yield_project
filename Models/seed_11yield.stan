@@ -368,14 +368,18 @@ transformed parameters {
 	vector[Nplant] seedMass; //Seed weight
 	
 	//Combine observed with imputed		
-	plDens[plotIndex_F[obsPlDens_ind]]=plDens_obs; //Observed plant density from my fields
-	plDens[plotIndex_F[missPlDens_ind]]=plDens_miss; //Missing plant density (only 1) 
+	// Plant density
+	plDens[obsPlDens_ind]=plDens_obs; //Observed plant density from my fields
+	plDens[missPlDens_ind]=plDens_miss[1:Nplot_plDensMiss]; //Missing data from my fields
+	// plDens[(Nplot+1):Nplot_all] = plDens_miss_extra; //Riley's fields		
+	
+	// Flower density
 	flDens[obsflDens_ind]=flDens_obs; //Observed flower density
 	flDens[missflDens_ind]=flDens_miss;
  	for(i in 1:Nplot_flDensObs_extra) //For each extra observed plot
 		flDens[obsflDens_ind_extra[i]+Nplot]=flDens_obs_extra[i];	//Add it to index in flDens
 	for(i in 1:Nplot_flDensMiss_extra) //For each extra missing plot
-		flDens[missflDens_ind_extra[i]+Nplot]=flDens_miss_extra[i];
+		flDens[missflDens_ind_extra[i]+Nplot]=flDens_miss_extra[i];	
 	
 	//Seeds per pod
 	seedCount[obsSeedCount_ind]	= seedCount_obs; //Observed seeds per pod
@@ -402,7 +406,7 @@ transformed parameters {
 		// Flower density = intercept + random field int + plant size effect
 		flDensMu[i] = intFlDens	+ intFlDens_field[plotIndex_all[i]] + 
 			slopeMBayFlDens*isMBay_all[i] + //Male bay effect
-			// slopePlSizeFlDens*plSizePlotMu[i] + //Plant size
+			slopePlSizeFlDens*plSizePlotMu[i] + //Plant size
 			slope2016FlDens*is2016_all[i] + //Year effect
 			slopeDistFlDens*logHbeeDist_all[i]; //Distance from edge effect
 			// slopePlDensFlDens*plDens[i]; //Planting density effect
@@ -584,9 +588,11 @@ model {
 	
 	// Flower density	
 	intFlDens ~ normal(0,1); //Intercept
+	slopePlSizeFlDens ~ normal(0,1); //Plant size effect
 	slope2016FlDens ~ normal(0,1); //Effect of 2016
 	slopeDistFlDens ~ normal(0,1); //Distance from edge
 	slopeMBayFlDens ~ normal(0,1); //Effect of male bay
+	// slopePlDensFlDens ~ normal(0,1); //Plant density 
 	sigmaFlDens ~ gamma(1,1); //Sigma for plot (residual)
 	sigmaFlDens_field ~ gamma(1,1); ; //Sigma for field
 	intFlDens_field ~ normal(0,sigmaFlDens_field); //Random intercept for field	

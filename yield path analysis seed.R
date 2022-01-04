@@ -228,8 +228,28 @@ modList <- vector(mode = 'list',length = length(modFiles))
 names(modList) <- gsub('(seed_.*[0-9]{2}|\\.stan)','',modFiles)
 
 modList[1] <- stan(file=modFiles[1],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0.1) #OK - Plant density, Plant size, Flower Density
-# modList[2] <- stan(file=modFiles[2],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #OK - Visitation
+modList[2] <- stan(file=modFiles[2],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #Hbee visitation
+
 # ...
+
+# Get model summaries into a list of tables
+# modSummaries_seed <- vector(mode = 'list',length = length(modList)) #Empty list
+# names(modSummaries_seed) <- names(modList)
+load('modSummaries_seed.Rdata')
+#Update model summaries if needed
+temp <- lapply(modList,function(x){
+  if(is.null(x)) return(NA)
+  n <- names(x) #Model parameters
+  n <- n[(!grepl('(\\[[0-9]+,*[0-9]*\\]|lp)',n))|grepl('[sS]igma',n)] #Drops parameter vectors, unless name contains "sigma" (variance term)
+  n <- n[!grepl('_miss',n)] #Gets rid of imputed values
+  return(parTable(x,pars=n))
+})
+for(i in 1:length(temp)){
+  if(class(temp[[i]])=='data.frame'||length(temp[[i]])>1){ #If temp is not empty (model not run)
+    modSummaries_seed[[i]] <- temp[[i]] #Overwrite
+  }
+}
+save(modSummaries_seed,file = 'modSummaries_seed.Rdata')
 
 #Traceplots
 for(i in 1:length(modList)){
