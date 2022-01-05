@@ -70,13 +70,17 @@ overlap <- function(x) {r <- quantile(x,c(0.025,0.975))>=0; xor(r[1],r[2]);}
 # }
 
 #Posterior predictive check plots
-PPplots <- function(mod,actual=NULL,pars=c('pred','resid','predResid'),main='',index=NA,jitterX=NA){
+PPplots <- function(mod,actual=NULL,pars=c('pred','resid','predResid'),main='',index=NA,jitterX=NA,scale=''){
   require(ggpubr)
   oldtheme <- theme_get() #Get theme
   theme_set(theme_classic())
 
   modVals <- extract(mod)
   nam <- names(modVals)
+  
+  if(any(!pars %in% nam)){
+    stop(paste0('Parameters not found: ',paste(pars[!pars %in% nam],collapse=', ')))
+  }
   
   if(main=='') main <- deparse(substitute(actual))
   
@@ -106,7 +110,13 @@ PPplots <- function(mod,actual=NULL,pars=c('pred','resid','predResid'),main='',i
          title=paste0(main,' (p = ',round(min(x,1-x),3),')'))+
     xlim(xl)+ylim(yl)
   
+  #Actual vs Predicted plot
+  
   d2 <- data.frame(actual,pred,predUpr,predLwr) #Data for predicted vs actual plot
+  
+  if(scale=='log'){
+    d2 <- d2 %>% mutate(across(everything(),~.x+0.1)) #If log-log, add 0.1 to predicted and actual
+  }
   
   p2 <- d2 %>% ggplot(aes(x=pred,y=actual))
   
@@ -122,6 +132,13 @@ PPplots <- function(mod,actual=NULL,pars=c('pred','resid','predResid'),main='',i
     geom_smooth(method='lm',se=FALSE,col='blue',linetype='dashed',formula = y~x)+ #Regression line
     geom_abline(intercept = 0,slope=1,col='blue',linetype='solid')+ #1:1 line
     labs(x=paste('Predicted',main),y=paste('Actual',main)) #Axis labels
+  
+  if(scale=='log'){
+    p2 <- p2 + scale_x_log10()+scale_y_log10()
+  } else if(scale=='sqrt') {
+    p2 <- p2 + scale_x_sqrt()+scale_y_sqrt()
+  }
+  
   p <- ggarrange(p1,p2,ncol=1,nrow=2)
   
   theme_set(oldtheme)
