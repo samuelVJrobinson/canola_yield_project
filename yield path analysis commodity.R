@@ -28,7 +28,6 @@ fieldsAllComm <- fieldsAll; flowersAllComm <- flowersAll; plantsAllComm <- plant
 seedsAllComm <- seedsAll; surveyAllComm <- surveyAll;
 rm(fieldsAll,flowersAll,plantsAll,seedsAll,surveyAll)
 
-rm(allFields,allPlants,allPollen,allSeeds,allSurvey,behav2015,visitors2016,nectar2016,folder)
 #Set 'negative' missing pods (mistake in counting) to NA.
 plantsAllComm <- mutate(plantsAllComm,Missing=ifelse(Missing<0,NA,Missing))
 seedsAllComm <- mutate(seedsAllComm,Missing=ifelse(Missing<0,NA,Missing))

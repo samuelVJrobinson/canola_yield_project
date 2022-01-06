@@ -201,14 +201,6 @@ transformed parameters {
 	
 model {	
   
-  // print("plDensMu: ",plDensMu);
-  // print("sigmaPlDens: ",sigmaPlDens);
-  // print("pollenMu: ",pollenMu);
-  // print("pollenPhi:",pollenPhi);
-  // print("flwSurvTheta:",flwSurvTheta);
-  // print("flwSurvAlpha:",flwSurvAlpha);
-  // print("flwSurvBeta:",flwSurvBeta);
-  
 	//Likelihood		
 	// plDens ~ normal(plDensMu,sigmaPlDens); //Plant density
 	pollenCount ~ neg_binomial_2_log(pollenMu,pollenPhi); //Pollination rate

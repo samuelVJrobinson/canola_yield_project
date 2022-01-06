@@ -71,6 +71,7 @@ overlap <- function(x) {r <- quantile(x,c(0.025,0.975))>=0; xor(r[1],r[2]);}
 
 #Posterior predictive check plots
 PPplots <- function(mod,actual=NULL,pars=c('pred','resid','predResid'),main='',index=NA,jitterX=NA,scale=''){
+  if(is.null(mod)) stop('Model not found')
   require(ggpubr)
   oldtheme <- theme_get() #Get theme
   theme_set(theme_classic())
@@ -139,7 +140,29 @@ PPplots <- function(mod,actual=NULL,pars=c('pred','resid','predResid'),main='',i
     p2 <- p2 + scale_x_sqrt()+scale_y_sqrt()
   }
   
-  p <- ggarrange(p1,p2,ncol=1,nrow=2)
+  # Density plots of predicted datasets
+  
+  xMax <- max(actual) #Upper and lower lims
+  xMin <- min(actual)
+  
+  yDens <- density(actual,from=xMin,to=xMax) #Kernel density of actual data
+  
+  predDens <- t(apply(modVals[[which(nam==pars[1])]],1,function(i) density(i,from=xMin,to=xMax)$y))
+  
+  predDens <- t(apply(predDens,2,function(i) quantile(i,c(0.05,0.25,0.75,0.95))))
+  
+  predDens <- ifelse(predDens<.Machine$double.eps,0,predDens)
+  
+  colnames(predDens) <- c('lwr2','lwr1','upr1','upr2')
+  
+  p3 <- data.frame(x=yDens$x,y=yDens$y,predDens) %>% 
+    ggplot(aes(x=x))+
+    geom_ribbon(aes(ymin=lwr2,ymax=upr2),alpha=0.2)+
+    geom_ribbon(aes(ymin=lwr1,ymax=upr1),alpha=0.2)+
+    geom_line(aes(y=y))+
+    labs(x='Value',y='Density',title='Actual vs Simulated Density')
+  
+  p <- ggarrange(p1,p2,p3,ncol=1,nrow=3)
   
   theme_set(oldtheme)
   

@@ -232,7 +232,10 @@ transformed parameters {
 	}
 	
 	for(i in 1:Nplot_F){ //F plots only
-	  int plotI = plotIndex_F2[i]; //Matches F plot i to measurements taken at all plots
+	  
+	  //Matches F plot i to measurements taken at all plots
+	  // "plotI" used to index measurements from ALL plots, "i" used otherwise
+	  int plotI = plotIndex_F2[i]; 
 	  
 	  // Plant density = intercept + random field int + hbee distance effect
 		plDensMu[i] = intPlDens + 
@@ -242,7 +245,7 @@ transformed parameters {
 		// Plant size (plot-level) = intercept + random field int + random plot int + distance + planting density effect
 		plSizePlotMu[i] = intPlSize + //Intercept
 		  intPlSize_field[plotIndex_all[plotI]] +  //Field level intercept
-		  //intPlSize_plot[i] + //Plot level intercept
+		  //intPlSize_plot[plotI] + //Plot level intercept
 			slopeDistPlSize*logHbeeDist_all[plotI] + //Distance effect (edge of field has smaller plants)
 			slopePlDensPlSize*plDens[i]; //Planting density effect
 	}

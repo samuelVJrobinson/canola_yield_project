@@ -216,10 +216,12 @@ transformed parameters {
 			slopeDistFlDens*logHbeeDist_all[i]; //Distance from edge effect
 			
 		// Expected value for hbee visits = intercept + random int + distance + bay position + bay type + time offset
-		visitMu_hbee[i] = intVisitHbee + logTime_all[i] + intVisitHbee_field[plotIndex_all[i]] + //Intercepts + time offset
-			slopeHbeeDistHbee*logHbeeDist_all[i] +  //hbee distance			
-			slopeLbeeDistHbee*logLbeeDist_all[i] + //lbee distance
-			slopeLbeeHbeeDistHbee*logHbeeDist_all[i]*logLbeeDist_all[i] + //Hbee:lbee distance interaction
+		visitMu_hbee[i] = intVisitHbee + //Intercept
+		  logTime_all[i] + //log-time offset
+		  intVisitHbee_field[plotIndex_all[i]] + //Random intercepts
+			slopeHbeeDistHbee*logHbeeDist_all[i] +  //log hbee distance			
+			slopeLbeeDistHbee*logLbeeDist_all[i] + //log lbee distance
+			slopeLbeeHbeeDistHbee*logHbeeDist_all[i]*logLbeeDist_all[i] + //log Hbee: log lbee distance interaction
 			slopeLbeeVisHbee*logLbeeVis_all[i] + //Direct effect of (log) leafcutter visitation						
 			slopeCentHbee*isCent_all[i] + //bay center effect
 			slopeFlDensHbee*flDens[i] + //Flower density effect

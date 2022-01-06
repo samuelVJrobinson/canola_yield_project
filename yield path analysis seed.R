@@ -232,10 +232,19 @@ names(modList) <- gsub('(seed_.*[0-9]{2}|\\.stan)','',modFiles)
 modList[1] <- stan(file=modFiles[1],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #Plant density, Plant size, Flower Density - OK
 modList[2] <- stan(file=modFiles[2],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #Hbee visitation - OK
 modList[3] <- stan(file=modFiles[3],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #Lbee visitation - OK
-modList[4] <- stan(file=modFiles[4],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #Pollen
-modList[5] <- stan(file=modFiles[5],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #Flower count per plant 
+modList[4] <- stan(file=modFiles[4],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #Pollen - OK
+modList[5] <- stan(file=modFiles[5],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #Flower count per plant - OK
+modList[6] <- stan(file=modFiles[6],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #Pod count (flw survival) per plant
 beepr::beep(1)
-# ...
+
+#Got this working: beta_binomial distribution isn't working, but binomial with beta prior is. Need to transfer upper workings of "original" model into updated model
+
+
+# modList[7] <- stan(file=modFiles[7],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #Seeds per pod
+# modList[8] <- stan(file=modFiles[8],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #Weight per seed
+# modList[9] <- stan(file=modFiles[9],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #Yield
+
+
 
 # Get model summaries into a list of tables
 # modSummaries_seed <- vector(mode = 'list',length = length(modList)) #Create new empty list
@@ -297,29 +306,6 @@ PPplots(modList[[2]],c(datalist$hbeeVis,datalist$hbeeVis_extra),
         c('predHbeeVis_all','hbeeVis_resid','predHbeeVis_resid'),'Honeybee visits') #Not good
 PPplots(modList[[3]],c(datalist$lbeeVis,datalist$lbeeVis_extra),
         c('predLbeeVis_all','lbeeVis_resid','predLbeeVis_resid'),'Leafcutter visits') #Not good
-
-rows <- round(seq(1,nrow(extract(modList[[2]])$predHbeeVis_all),length.out=100))
-
-library(bayesplot)
-pp_check(c(datalist$hbeeVis,datalist$hbeeVis_extra),
-         extract(modList[[2]])$predHbeeVis_all[rows,],
-         ppc_dens_overlay) #Distribution OK
-
-pp_check(c(datalist$hbeeVis,datalist$hbeeVis_extra),
-         extract(modList[[2]])$predHbeeVis_all[rows,],
-         # ppc_intervals)
-         ppc_ribbon)
-
-pp_check(c(datalist$hbeeVis,datalist$hbeeVis_extra),
-         extract(modList[[2]])$predHbeeVis_all,
-         # ppc_error_scatter_avg)
-         x = with(datalist, c(hbee_dist,hbee_dist_extra)), 
-         ppc_error_scatter_avg_vs_x)+
-  geom_hline(yintercept = 0)
-
-
-
-
 
 PPplots(modList[[4]],datalist$pollenCount,c('predPollenCount','pollen_resid','predPollen_resid'),
         'Pollen') #OK
