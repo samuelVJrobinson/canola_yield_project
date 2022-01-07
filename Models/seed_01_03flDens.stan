@@ -110,8 +110,8 @@ transformed data {
 	vector[Nplot_all] logLbeeVis_all; //Log-visitation rate for lbees
 	// vector[Nplant] logFlwCount; //Log-flower count
 	// vector[Nplant] logitFlwSurv; //(logit) proportion flower survival	
-	vector[Nplant] logYield = log(yield); //Log yield (g seed per plant)	
-	
+	vector[Nplant] logYield = log(yield); //Log yield (g seed per plant)
+
 	//Assign values
 	plotIndex_all[1:Nplot] = plotIndex; 
 	plotIndex_all[(Nplot+1):Nplot_all] = plotIndex_extra;
@@ -144,7 +144,7 @@ transformed data {
 		logHbeeVis_all[i] = log(1+(hbeeVis_all[i]/totalTime_all[i])); //Log-transforms observed visitation rates 
 		logLbeeVis_all[i] = log(1+(lbeeVis_all[i]/totalTime_all[i]));			
 	}
-	
+
 	// for(i in 1:Nplant){
 	// 	logFlwCount[i] = log(flwCount[i]); //Log flower count per plant
 	// 	//Necessary for promoting integers to reals. Otherwise does integer division.
@@ -166,7 +166,7 @@ parameters {
   // plSize is measured at the plot level, so as long as there's some kind of plant-level intercept it should be fine
  
 	// Plant density - looks OK
-	real plDens_miss; //Imputed plant density for my fields (only 1)
+	real<lower=2,upper=5> plDens_miss; //Imputed plant density for my fields (only 1)
 	real intPlDens; //Global intercept
 	real slopeHbeeDistPlDens; //Slope of distance into field	
 	real<lower=1e-10> sigmaPlDens; //Sigma for within-field (residual)
@@ -185,8 +185,8 @@ parameters {
 	real nuPlSize; //exp(nu) for t-distribution
 
 	// Flower density per plot
-	vector[Nplot_flDensMiss] flDens_miss; //Missing from my fields
-	vector[Nplot_flDensMiss_extra] flDens_miss_extra; //Missing from Riley's fields
+	vector<lower=4,upper=52>[Nplot_flDensMiss] flDens_miss; //Missing from my fields
+	vector<lower=4,upper=52>[Nplot_flDensMiss_extra] flDens_miss_extra; //Missing from Riley's fields
 	real intFlDens; //Global intercept
 	real slopeMBayFlDens; //Effect of male bay
 	real slope2016FlDens; //Effect of 2016
@@ -267,32 +267,32 @@ model {
 			
 	// Priors
 	// Planting density
-	intPlDens ~ normal(0,1); //Intercept
-	slopeHbeeDistPlDens ~ normal(0,1); //Distance into field	
+	intPlDens ~ normal(3.5,5); //Intercept
+	slopeHbeeDistPlDens ~ normal(0,5); //Distance into field	
 	sigmaPlDens ~ gamma(1,1); //Sigma for within-field (residual)
 	sigmaPlDens_field ~ gamma(1,1); //Sigma for field
 	intPlDens_field ~ normal(0,sigmaPlDens_field); //Random intercept for field	
 	
 	//Plant size - informative priors
-	intPlSize ~ normal(0,1); //Intercept
-	slopePlDensPlSize ~ normal(0,1); //Planting density
-	slopeDistPlSize ~ normal(0,1); //Distance from edge of field
+	intPlSize ~ normal(3.2,5); //Intercept
+	slopePlDensPlSize ~ normal(0,5); //Planting density
+	slopeDistPlSize ~ normal(0,5); //Distance from edge of field
 	sigmaPlSize ~ gamma(1,1); //Sigma for residual
 	sigmaPlSize_field ~ gamma(1,1); //Sigma for field
 	intPlSize_field	~ normal(0,sigmaPlSize_field); //Random intercept for field
 	// sigmaPlSize_plot ~ gamma(1,1); //Sigma for plot
 	// intPlSize_plot ~ normal(0,sigmaPlSize_plot); //Random intercept for plot
-	nuPlSize ~ normal(0,1); //nu for student's t
+	nuPlSize ~ normal(0,5); //nu for student's t
 
 	// Flower density
-	intFlDens ~ normal(0,1); //Intercept
-	slope2016FlDens ~ normal(0,1); //Effect of 2016
-	slopeDistFlDens ~ normal(0,1); //Distance from edge
-	slopeMBayFlDens ~ normal(0,1); //Effect of male bay
+	intFlDens ~ normal(21.4,5); //Intercept
+	slope2016FlDens ~ normal(0,5); //Effect of 2016
+	slopeDistFlDens ~ normal(0,5); //Distance from edge
+	slopeMBayFlDens ~ normal(0,5); //Effect of male bay
 	sigmaFlDens ~ gamma(1,1); //Sigma for plot (residual)
 	sigmaFlDens_field ~ gamma(1,1); ; //Sigma for field
 	intFlDens_field ~ normal(0,sigmaFlDens_field); //Random intercept for field
-	nuFlDens ~ normal(0,1); //nu for student's t
+	nuFlDens ~ normal(0,5); //nu for student's t
 }
 
 generated quantities {

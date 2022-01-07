@@ -171,8 +171,8 @@ parameters {
 	vector[Nplot_F] intFlwCount_plot; //Plot-level random effect
 	real intPhiFlwCount; //Intercept for sigma
 	real slopePlSizePhiFlwCount; //Effect of plant size on sigma
-	real<lower=1e-05> sigmaPhiFlwCount_field; //Sigma for field level sigma
-	vector[Nfield] intPhiFlwCount_field; //Field-level random effect for sigma
+	// real<lower=1e-05> sigmaPhiFlwCount_field; //Sigma for field level sigma
+	// vector[Nfield] intPhiFlwCount_field; //Field-level random effect for sigma
 }
 
 transformed parameters {
@@ -197,8 +197,8 @@ transformed parameters {
 		  slopePlSizeFlwCount*plantSize[i] + //individual plant size effect
 	    slopeFlwSurvFlwCount*logitFlwSurv[i]; //Flower survival
 		// Phi (dispersion) for flower count
-		flwCountPhi[i] = exp(intPhiFlwCount + intPhiFlwCount_field[plotIndex[plotIndex_F[plantIndex[i]]]] +
-		  //intPhiFlwCount_plot[plantIndex[i]] +
+		flwCountPhi[i] = exp(intPhiFlwCount + 
+		  // intPhiFlwCount_field[plotIndex[plotIndex_F[plantIndex[i]]]] +
 		  slopePlSizePhiFlwCount*plantSize[i]); // Plant size
 	}
 }
@@ -210,18 +210,18 @@ model {
 	// Priors
 
 	// Flower count (per plant) - negbin version
-	intFlwCount ~ normal(0,1); //Intercept
-	slopePlSizeFlwCount ~ normal(0,1); //Slope of plant size
-	slopeCentFlwCount ~ normal(0,1); //Bay center effect
-	slopeFlwSurvFlwCount ~ normal(0,1); //Flower survival
+	intFlwCount ~ normal(6.1,5); //Intercept
+	slopePlSizeFlwCount ~ normal(0,5); //Slope of plant size
+	slopeCentFlwCount ~ normal(0,5); //Bay center effect
+	slopeFlwSurvFlwCount ~ normal(0,5); //Flower survival
 	sigmaFlwCount_field ~ gamma(1,1); //SD of field-level random effect
 	intFlwCount_field ~ normal(0,sigmaFlwCount_field); //Field-level random effect
 	sigmaFlwCount_plot ~ gamma(1,1); //SD of plot-level random effect
 	intFlwCount_plot ~ normal(0,sigmaFlwCount_plot); //Plot-level random effects
-	intPhiFlwCount ~ normal(0,1); //Terms for variance
-	slopePlSizePhiFlwCount ~ normal(0,1);
-	sigmaPhiFlwCount_field ~ gamma(1,1); //Sigma for field level sigma
-	intPhiFlwCount_field ~ normal(0,sigmaPhiFlwCount_field); //Field-level random effect for sigma
+	intPhiFlwCount ~ normal(0,5); //Terms for variance
+	slopePlSizePhiFlwCount ~ normal(0,5);
+	// sigmaPhiFlwCount_field ~ gamma(1,1); //Sigma for field level sigma
+	// intPhiFlwCount_field ~ normal(0,sigmaPhiFlwCount_field); //Field-level random effect for sigma
 }
 
 generated quantities {

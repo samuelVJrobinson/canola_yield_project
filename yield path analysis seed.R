@@ -111,7 +111,7 @@ datalistPlot <- with(surveyAllSeed,list( #Plot-level measurements
   # Flower density
   Nplot_flDensObs = sum(!is.na(FlDens)), #Number of plots with observed flDens
   Nplot_flDensMiss = sum(is.na(FlDens)), #Number of plots missing flDens
-  flDens_obs=sqrt(FlDens*4)[!is.na(FlDens)], #(sqrt) Flower density/m2
+  flDens_obs=sqrt(FlDens*4)[!is.na(FlDens)], #(sqrt) Flower density - these were recorded in a 0.25m2 plot
   obsflDens_ind = which(!is.na(FlDens)), #Index for observed
   missflDens_ind = which(is.na(FlDens)), #Index for missing 
   
@@ -149,7 +149,7 @@ datalistPlot_extra <- with(rileyExtra,
                               #(sqrt) Flower density
                               Nplot_flDensObs = sum(!is.na(flDens)), #Number of observed plots
                               Nplot_flDensMiss = sum(is.na(flDens)), #Number of missing plots
-                              flDens_obs=sqrt(flDens)[!is.na(flDens)], #Observed 
+                              flDens_obs=sqrt(flDens)[!is.na(flDens)], #Observed - these were recorded in a 1m2 plot
                               obsflDens_ind = which(!is.na(flDens)), #Index for observed
                               missflDens_ind = which(is.na(flDens)) #Index for missing
                             ))
@@ -235,15 +235,27 @@ modList[3] <- stan(file=modFiles[3],data=datalist,iter=2000,chains=4,control=lis
 modList[4] <- stan(file=modFiles[4],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #Pollen - OK
 modList[5] <- stan(file=modFiles[5],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #Flower count per plant - OK
 modList[6] <- stan(file=modFiles[6],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #Pod count (flw survival) per plant
+modList[7] <- stan(file=modFiles[7],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #Seeds per pod
 beepr::beep(1)
 
-#Got this working: beta_binomial distribution isn't working, but binomial with beta prior is. Need to transfer upper workings of "original" model into updated model
-
-
-# modList[7] <- stan(file=modFiles[7],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #Seeds per pod
 # modList[8] <- stan(file=modFiles[8],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #Weight per seed
 # modList[9] <- stan(file=modFiles[9],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #Yield
 
+#Traceplots
+for(i in 1:length(modList)){
+  if(!is.null(modList[[i]])){
+    n <- names(modList[[i]]) #Model parameters
+    n <- n[(!grepl('(\\[[0-9]+,*[0-9]*\\]|lp)',n))|grepl('[sS]igma',n)] #Gets rid of parameter vectors, unless it contains "sigma" (variance term)
+    n <- n[!grepl('_miss',n)] #Gets rid of imputed values
+    
+    p <- traceplot(modList[[i]],pars=n,inc_warmup=FALSE) #+ geom_hline(yintercept = 0) #Traceplots
+    # p <- stan_plot(modList[[i]],pars=n) #Pointrange plot
+    
+    print(p)
+    a <- readline('Press Return to continue: ')
+    if(a!='') break()
+  }
+}
 
 
 # Get model summaries into a list of tables
@@ -263,45 +275,37 @@ for(i in 1:length(temp)){
     modSummaries_seed[[i]] <- temp[[i]] #Overwrite
   }
 }
-save(modSummaries_seed,file = 'modSummaries_seed.Rdata')
-
-#Traceplots
-for(i in 1:length(modList)){
-  if(!is.null(modList[[i]])){
-    n <- names(modList[[i]]) #Model parameters
-    n <- n[(!grepl('(\\[[0-9]+,*[0-9]*\\]|lp)',n))|grepl('[sS]igma',n)] #Gets rid of parameter vectors, unless it contains "sigma" (variance term)
-    n <- n[!grepl('_miss',n)] #Gets rid of imputed values
-    
-    p <- traceplot(modList[[i]],pars=n,inc_warmup=FALSE) #+ geom_hline(yintercept = 0) #Traceplots
-    # p <- stan_plot(modList[[i]],pars=n) #Pointrange plot
-    
-    print(p)
-    a <- readline('Press Return to continue: ')
-    if(a!='') break()
+parNames <- lapply(modSummaries_seed,function(x) x$param) #Clean up extra parameter names
+for(i in 2:length(modSummaries_seed)){
+  if(!is.null(modSummaries_seed[[i]])){
+    modSummaries_seed[[i]] <- modSummaries_seed[[i]][!parNames[[i]] %in% unlist(parNames[1:(i-1)]),]
   }
 }
+save(modSummaries_seed,file = 'modSummaries_seed.Rdata'); rm(temp)
 
-# #Other model checking
-# i <- 2
-# # print(modList[i])
-# modFiles[i]
-# n <- names(modList[[i]]) #Model parameters
-# n <- n[(!grepl('(\\[[0-9]+,*[0-9]*\\]|lp)',n))|grepl('[sS]igma',n)] #Gets rid of parameter vectors, unless it contains "sigma" (variance term)
-# parTable(modList[[i]],pars=n)
-# # plot(modList[[i]],pars=n) #Pointrange plot
-# stan_hist(modList[[i]],pars=n) #Pointrange plot
-# traceplot(modList[[i]],pars=n,inc_warmup=FALSE)+geom_hline(yintercept = 0) #Traceplots
-# compareRE(modList[[1]],'intPlSize_field') #Random effects plots
-# compareRE(modList[[1]],'intPlSize_plot') #Random effects plots
+# Examine random intercept distributions
+compareRE(modList[[1]],'intPlDens_field') 
+compareRE(modList[[1]],'intPlSize_field')
+compareRE(modList[[1]],'intFlDens_field') #heavy tails
+compareRE(modList[[2]],'intVisitHbee_field') #right skew
+compareRE(modList[[3]],'intVisitLbee_field')
+compareRE(modList[[4]],'intPol_field')
+compareRE(modList[[4]],'intPol_plot')
+compareRE(modList[[5]],'intFlwCount_field')
+compareRE(modList[[5]],'intFlwCount_plot')
+compareRE(modList[[6]],'intFlwSurv_field')
+compareRE(modList[[6]],'intFlwSurv_plot')
+compareRE(modList[[7]],'intSeedCount_field')
+compareRE(modList[[7]],'intSeedCount_plot')
+
 
 #Posterior predictive checks
 PPplots(modList[[1]],datalist$plDens_obs,c('predPlDens','plDens_resid','predPlDens_resid'),
-        index = datalist$obsPlDens_ind,main='Plant Density') #OK
+        index = datalist$obsPlDens_ind,main='Plant Density') #OK, but bimodal dist
 PPplots(modList[[1]],datalist$flDens_obs,c('predFlDens','flDens_resid','predFlDens_resid'),
         index=datalist$obsflDens_ind,main='Flower density') #OK
 PPplots(modList[[1]],datalist$plantSize,c('predPlSize','plSize_resid','predPlSize_resid'),
         'Plant size') #OK
-
 PPplots(modList[[2]],c(datalist$hbeeVis,datalist$hbeeVis_extra),
         c('predHbeeVis_all','hbeeVis_resid','predHbeeVis_resid'),'Honeybee visits') #Not good
 PPplots(modList[[3]],c(datalist$lbeeVis,datalist$lbeeVis_extra),
@@ -311,61 +315,52 @@ PPplots(modList[[4]],datalist$pollenCount,c('predPollenCount','pollen_resid','pr
         'Pollen') #OK
 PPplots(modList[[5]],datalist$flwCount,c('predFlwCount','flwCount_resid','predFlwCount_resid'),
         'Flowers per plant') #OK
-# PPplots(modList[[6]],datalist$podCount,c('predPodCount','podCount_resid','predPodCount_resid'),'Pods per plant')
-# PPplots(modList[[7]],datalist$seedCount,c('predSeedCount','seedCount_resid','predSeedCount_resid'),'Seeds per pod')
+PPplots(modList[[6]],datalist$podCount,c('predPodCount','podCount_resid','predPodCount_resid'),'Pods per plant')
+
+PPplots(modList[[7]],datalist$seedCount,c('predSeedCount','seedCount_resid','predSeedCount_resid'),index=datalist$obsSeedCount_ind,'Seeds per pod')
 # PPplots(modList[[8]],datalist$seedMass,c('predSeedWeight','seedWeight_resid','predSeedWeight_resid'),'Seed size')
 # PPplots(modList[[9]],log(datalist$yield),c('predYield','yield_resid','predYield_resid'),'Seed mass per plant')
 
-#Something going wrong with the visitation sub-model
-temp <- with(datalist,data.frame(
-  totalTime = c(totalTime,totalTime_extra),
-  hbeeDist = c(hbee_dist,hbee_dist_extra),
-  lbeeDist = c(lbee_dist,lbee_dist_extra),
-  dTent = c(lbeeStocking2[,1],lbeeStocking2_extra[,1])==1,
-  dTentBees = c(lbeeStocking2[,2],lbeeStocking2_extra[,2])==1,
-  isCent = c(isCent,isCent_extra),
-  isMBay=c(isMBay,isMBay_extra),
-  is2016 = c(is2016,is2016_extra),
-  flDens=NA,
-  hbeeVis=c(hbeeVis,hbeeVis_extra),
-  lbeeVis=c(lbeeVis,lbeeVis_extra),
-  field = factor(c(plotIndex,plotIndex_extra))
-))
-#Flower density
-temp$flDens[datalist$obsflDens_ind] <- datalist$flDens_obs
-temp$flDens[datalist$obsflDens_ind_extra+datalist$Nplot] <- datalist$flDens_obs_extra
-temp$flDens <- temp$flDens^2
-temp <- na.omit(temp)
-
-library(glmmTMB)
-library(DHARMa)
-
-m1 <- glmmTMB(hbeeVis ~ offset(log(totalTime)) + flDens + log(hbeeDist)*log(lbeeDist)+
-                isMBay + isCent + lbeeVis + 
-                (1|field), 
-              family='nbinom1',ziformula = ~1,
-              data=temp)
-
-data.frame(pred=predict(m1),actual=temp$hbeeVis) %>% 
-  ggplot(aes(pred,actual))+
-  geom_point(position=position_jitter(width=0.1))+
-  geom_abline(intercept = 0, slope = 1)
-
-summary(m1)
-
-m1Sim <- simulateResiduals(m1,n=1000)
-testDispersion(m1Sim)
-plot(m1Sim)
-qqnorm(residuals(m1Sim))
+# #Something going wrong with the visitation sub-model. Trying this with glmmTMB instead
+# temp <- with(datalist,data.frame(
+#   totalTime = c(totalTime,totalTime_extra),
+#   hbeeDist = c(hbee_dist,hbee_dist_extra),
+#   lbeeDist = c(lbee_dist,lbee_dist_extra),
+#   dTent = c(lbeeStocking2[,1],lbeeStocking2_extra[,1])==1,
+#   dTentBees = c(lbeeStocking2[,2],lbeeStocking2_extra[,2])==1,
+#   isCent = c(isCent,isCent_extra),
+#   isMBay=c(isMBay,isMBay_extra),
+#   is2016 = c(is2016,is2016_extra),
+#   flDens=NA,
+#   hbeeVis=c(hbeeVis,hbeeVis_extra),
+#   lbeeVis=c(lbeeVis,lbeeVis_extra),
+#   field = factor(c(plotIndex,plotIndex_extra))
+# ))
+# #Flower density
+# temp$flDens[datalist$obsflDens_ind] <- datalist$flDens_obs
+# temp$flDens[datalist$obsflDens_ind_extra+datalist$Nplot] <- datalist$flDens_obs_extra
+# temp$flDens <- temp$flDens^2
+# temp <- na.omit(temp)
+# 
+# library(glmmTMB)
+# library(DHARMa)
+# 
+# m1 <- glmmTMB(hbeeVis ~ offset(log(totalTime)) + flDens + log(hbeeDist)*log(lbeeDist)+
+#                 isMBay + isCent + lbeeVis + 
+#                 (1|field), 
+#               family='nbinom1',ziformula = ~1,
+#               data=temp)
+# 
+# data.frame(pred=predict(m1),actual=temp$hbeeVis) %>% 
+#   ggplot(aes(pred,actual))+
+#   geom_point(position=position_jitter(width=0.1))+
+#   geom_abline(intercept = 0, slope = 1)
+# summary(m1)
+# m1Sim <- simulateResiduals(m1,n=1000)
+# testDispersion(m1Sim)
+# plot(m1Sim)
+# qqnorm(residuals(m1Sim))
 	
-
-# slopeStockingLbee ~ normal(0,1); //Effect of half-stocking	
-# slope2016Lbee ~ normal(0,1); //Year effect
-# slopeFlDensLbee ~ normal(0,1); //Flower density effect	
-# slopeCentHbeeDistLbee ~ normal(0,1); //Bay center: hbee distance interaction
-# slopeStockingHbeeDistLbee ~ normal(0,1); //Half-stocking: hbee distance interaction				
-# // slopeStockingLbeeDistLbee ~ normal(0,1); //Half-stocking: lbee dist interaction
-
 
 # #Full model
 # modPodcount_seed <- stan(file='visitation_pollen_model_seed.stan',data=datalist,

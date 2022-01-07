@@ -172,14 +172,17 @@ PPplots <- function(mod,actual=NULL,pars=c('pred','resid','predResid'),main='',i
 
 #Plot of random intercepts
 compareRE <- function(mod,parSet){
+  
+  pars <- extract(mod,pars=parSet)[[1]]
+  
   require(ggpubr)
-  p1 <- extract(mod,pars=parSet)[[1]] %>% 
+  p1 <- pars %>% 
     apply(.,2,function(x) quantile(x,c(0.1,0.5,0.9))) %>% 
     t() %>% data.frame() %>% setNames(c('lwr','med','upr')) %>% 
     ggplot(aes(sample=med))+ ##q-q plot
     geom_qq()+
     geom_qq_line()  
-  p2 <- extract(mod,pars=parSet)[[1]] %>% 
+  p2 <- pars %>% 
     apply(.,2,function(x) quantile(x,c(0.1,0.5,0.9))) %>% 
     t() %>% data.frame() %>% setNames(c('lwr','med','upr')) %>% 
     tibble::rownames_to_column() %>%

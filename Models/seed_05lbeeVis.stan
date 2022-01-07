@@ -162,16 +162,8 @@ transformed data {
 parameters {
  
 	// Flower density per plot
-	vector[Nplot_flDensMiss] flDens_miss; //Missing from my fields
-	vector[Nplot_flDensMiss_extra] flDens_miss_extra; //Missing from Riley's fields
-	real intFlDens; //Global intercept
-	real slopeMBayFlDens; //Effect of male bay
-	real slope2016FlDens; //Effect of 2016
-	real slopeDistFlDens;  //Effect of distance from edge
-	real<lower=1e-10> sigmaFlDens; //Sigma for within-field (residual)
-	real<lower=1e-10> sigmaFlDens_field; //Sigma for field
-	vector[Nfield_all] intFlDens_field; //Random intercept for field
-	real nuFlDens; //exp(nu) for t-distribution
+	vector<lower=4,upper=52>[Nplot_flDensMiss] flDens_miss; //Missing from my fields
+	vector<lower=4,upper=52>[Nplot_flDensMiss_extra] flDens_miss_extra; //Missing from Riley's fields
 
 	// lbee Visitation
 	// slopePlDensLbee and slopePlSizeLbee strongly correlated with slopeHbeeDistLbee (r=-0.69,-0.72) and with each other (r=0.75), so removing.
@@ -198,7 +190,6 @@ transformed parameters {
 			
 	//Expected values
 	//Plot-level
-	vector[Nplot_all] flDensMu; //Expected flower density	
 	vector[Nplot_all] visitMu_lbee; //lbee visits - all plots		
 	
 	//Imputed missing data;
@@ -214,15 +205,8 @@ transformed parameters {
 	
 	//Plot-level parameters
 	for(i in 1:Nplot_all){	//Parameters for all fields, all plots
-		// Flower density = intercept + random field int + plant size effect
-		flDensMu[i] = intFlDens	+ intFlDens_field[plotIndex_all[i]] + 
-			slopeMBayFlDens*isMBay_all[i] + //Male bay effect
-			// slopePlSizeFlDens*plSizePlotMu[i] + //Plant size
-			slope2016FlDens*is2016_all[i] + //Year effect
-			slopeDistFlDens*logHbeeDist_all[i]; //Distance from edge effect
-			// slopePlDensFlDens*plDens[i]; //Planting density effect
 	
-		// Expected value for lbee visits 
+	// Expected value for lbee visits 
 		visitMu_lbee[i] = intVisitLbee + intVisitLbee_field[plotIndex_all[i]] + logTime_all[i] + //intercepts + time offset
 			slopeLbeeDistLbee*logLbeeDist_all[i] + //lbee distance
 			slopeHbeeDistLbee*logHbeeDist_all[i] + //hbee distance
@@ -260,32 +244,21 @@ model {
 			target += bernLL_lbee[1]+neg_binomial_2_log_lpmf(lbeeVis_all[i]|visitMu_lbee[i],visitLbeePhi);		
 			
 	}
-	
-	flDens ~ student_t(exp(nuFlDens),flDensMu,sigmaFlDens); 	
-			
+
 	// Priors
-	// Flower density	
-	intFlDens ~ normal(0,1); //Intercept
-	slope2016FlDens ~ normal(0,1); //Effect of 2016
-	slopeDistFlDens ~ normal(0,1); //Distance from edge
-	slopeMBayFlDens ~ normal(0,1); //Effect of male bay
-	sigmaFlDens ~ gamma(1,1); //Sigma for plot (residual)
-	sigmaFlDens_field ~ gamma(1,1); ; //Sigma for field
-	intFlDens_field ~ normal(0,sigmaFlDens_field); //Random intercept for field	
-	nuFlDens ~ normal(0,1); //nu for student's t
-	
+
 	// Lbee Visitation - informative priors
-	intVisitLbee ~ normal(0,1); //Intercept	
-	slopeHbeeDistLbee ~ normal(0,1); //Slope of honeybee distance on lbee visits
-	slopeLbeeDistLbee ~ normal(0,1); //Slope of shelter distance on lbee visits
-	slopeCentLbee ~ normal(0,1); //Effect of center of bay
-	slopeMBayLbee ~ normal(0,1); //Effect of male bay
-	slopeStockingLbee ~ normal(0,1); //Effect of half-stocking	
-	slope2016Lbee ~ normal(0,1); //Year effect
-	slopeFlDensLbee ~ normal(0,1); //Flower density effect	
-	slopeCentHbeeDistLbee ~ normal(0,1); //Bay center: hbee distance interaction
-	slopeStockingHbeeDistLbee ~ normal(0,1); //Half-stocking: hbee distance interaction				
-	// slopeStockingLbeeDistLbee ~ normal(0,1); //Half-stocking: lbee dist interaction
+	intVisitLbee ~ normal(2.5,5); //Intercept	
+	slopeHbeeDistLbee ~ normal(0,5); //Slope of honeybee distance on lbee visits
+	slopeLbeeDistLbee ~ normal(0,5); //Slope of shelter distance on lbee visits
+	slopeCentLbee ~ normal(0,5); //Effect of center of bay
+	slopeMBayLbee ~ normal(0,5); //Effect of male bay
+	slopeStockingLbee ~ normal(0,5); //Effect of half-stocking	
+	slope2016Lbee ~ normal(0,5); //Year effect
+	slopeFlDensLbee ~ normal(0,5); //Flower density effect	
+	slopeCentHbeeDistLbee ~ normal(0,5); //Bay center: hbee distance interaction
+	slopeStockingHbeeDistLbee ~ normal(0,5); //Half-stocking: hbee distance interaction				
+	// slopeStockingLbeeDistLbee ~ normal(0,5); //Half-stocking: lbee dist interaction
 	sigmaLbeeVisField ~ gamma(1,1); //Sigma for random field 
 	visitLbeePhi ~ gamma(1,1); //Dispersion parameter	
 	intVisitLbee_field ~ normal(0,sigmaLbeeVisField); //Random field intercepts		
