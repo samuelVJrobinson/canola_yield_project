@@ -191,9 +191,11 @@ datalistPlant <- plantsAllSeed %>%
     obsSeedMass_ind = which(!is.na(AvgSeedMass)), #Index for observed
     missSeedMass_ind = which(is.na(AvgSeedMass)), #Index for missing
     
-    yield=SeedMass[!is.na(SeedMass)] #Weight of all seeds (g)
+    yield=SeedMass[!is.na(SeedMass)], #Weight of all seeds (g)
+    calcYield = AvPodCount*AvgSeedMass*Pods/1000
     # plantList=paste(Field,Distance,'F',EdgeCent,Plant) #Name of plot (character)
   ))
+datalistPlant$calcYield <- ifelse(is.na(datalistPlant$calcYield),-1,datalistPlant$calcYield) #Replaces NAs with -1s
 
 # datalistPod <- seedsAllSeed %>% ungroup() %>% 
 #   mutate(plantList=paste(Field,Distance,'F',EdgeCent,Plant)) %>% select(-Field,-Distance,-EdgeCent,-Plant) %>% 
@@ -236,11 +238,9 @@ modList[4] <- stan(file=modFiles[4],data=datalist,iter=2000,chains=4,control=lis
 modList[5] <- stan(file=modFiles[5],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #Flower count per plant - OK
 modList[6] <- stan(file=modFiles[6],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #Pod count (flw survival) per plant
 modList[7] <- stan(file=modFiles[7],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #Seeds per pod
+modList[8] <- stan(file=modFiles[8],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #Weight per seed
+modList[9] <- stan(file=modFiles[9],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #Yield
 beepr::beep(1)
-
-# modList[8] <- stan(file=modFiles[8],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #Weight per seed
-# modList[9] <- stan(file=modFiles[9],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #Yield
-
 #Traceplots
 for(i in 1:length(modList)){
   if(!is.null(modList[[i]])){
@@ -256,7 +256,6 @@ for(i in 1:length(modList)){
     if(a!='') break()
   }
 }
-
 
 # Get model summaries into a list of tables
 # modSummaries_seed <- vector(mode = 'list',length = length(modList)) #Create new empty list
@@ -296,7 +295,14 @@ compareRE(modList[[5]],'intFlwCount_plot')
 compareRE(modList[[6]],'intFlwSurv_field')
 compareRE(modList[[6]],'intFlwSurv_plot')
 compareRE(modList[[7]],'intSeedCount_field')
-compareRE(modList[[7]],'intSeedCount_plot')
+compareRE(modList[[7]],'intSeedCount_plot') #
+compareRE(modList[[8]],'intSeedWeight_field')
+compareRE(modList[[8]],'intSeedWeight_plot')
+compareRE(modList[[9]],'ranEffYield_field',1) #Intercepts
+compareRE(modList[[9]],'ranEffYield_field',2) #Slopes
+compareRE(modList[[9]],'ranEffYield_plot',1,0.3) #Intercepts
+compareRE(modList[[9]],'ranEffYield_plot',2,0.3) #Slopes
+debugonce(compareRE)
 
 
 #Posterior predictive checks
@@ -316,10 +322,11 @@ PPplots(modList[[4]],datalist$pollenCount,c('predPollenCount','pollen_resid','pr
 PPplots(modList[[5]],datalist$flwCount,c('predFlwCount','flwCount_resid','predFlwCount_resid'),
         'Flowers per plant') #OK
 PPplots(modList[[6]],datalist$podCount,c('predPodCount','podCount_resid','predPodCount_resid'),'Pods per plant')
-
-PPplots(modList[[7]],datalist$seedCount,c('predSeedCount','seedCount_resid','predSeedCount_resid'),index=datalist$obsSeedCount_ind,'Seeds per pod')
-# PPplots(modList[[8]],datalist$seedMass,c('predSeedWeight','seedWeight_resid','predSeedWeight_resid'),'Seed size')
-# PPplots(modList[[9]],log(datalist$yield),c('predYield','yield_resid','predYield_resid'),'Seed mass per plant')
+PPplots(modList[[7]],datalist$seedCount_obs,c('predSeedCount','seedCount_resid','predSeedCount_resid'),
+        index=datalist$obsSeedCount_ind,'Seeds per pod') #OK, but distribution is strange. Exp-normal is probably the best we can do.
+PPplots(modList[[8]],datalist$seedMass_obs,c('predSeedMass','seedMass_resid','predSeedMass_resid'),
+        index=datalist$obsSeedMass_ind,'Seed Mass')
+PPplots(modList[[9]],log(datalist$yield),c('predYield','yield_resid','predYield_resid'),'Seed mass per plant')
 
 # #Something going wrong with the visitation sub-model. Trying this with glmmTMB instead
 # temp <- with(datalist,data.frame(

@@ -171,24 +171,29 @@ PPplots <- function(mod,actual=NULL,pars=c('pred','resid','predResid'),main='',i
 }
 
 #Plot of random intercepts
-compareRE <- function(mod,parSet){
+compareRE <- function(mod,parSet,colNum=1,alpha=1){
   
   pars <- extract(mod,pars=parSet)[[1]]
+  
+  if(length(dim(pars))>2){
+    pars <- pars[,colNum,]
+    print(paste0('Display column: ',colNum))
+  } 
   
   require(ggpubr)
   p1 <- pars %>% 
     apply(.,2,function(x) quantile(x,c(0.1,0.5,0.9))) %>% 
     t() %>% data.frame() %>% setNames(c('lwr','med','upr')) %>% 
     ggplot(aes(sample=med))+ ##q-q plot
-    geom_qq()+
-    geom_qq_line()  
+    geom_qq(alpha=alpha)+
+    geom_qq_line(alpha=alpha)  
   p2 <- pars %>% 
     apply(.,2,function(x) quantile(x,c(0.1,0.5,0.9))) %>% 
     t() %>% data.frame() %>% setNames(c('lwr','med','upr')) %>% 
     tibble::rownames_to_column() %>%
     mutate(rowname=as.numeric(rowname)) %>% 
     ggplot(aes(x=rowname,y=med))+
-    geom_pointrange(aes(ymax=upr,ymin=lwr))+
+    geom_pointrange(aes(ymax=upr,ymin=lwr),alpha=alpha)+
     geom_hline(yintercept = 0,col='red',linetype='dashed')+
     labs(x='Intercept',y='Posterior Dist.')
   ggarrange(p1,p2,ncol=1,nrow=2)

@@ -192,9 +192,9 @@ parameters {
 	real slopeSurvSeedCount; //Slope of plant-level pod survival on seed count
 	real<lower=1e-10> sigmaSeedCount; //SD at plant level
 	real<lower=1e-10> sigmaSeedCount_field; //SD of field random effect
-	// real<lower=1e-10> sigmaSeedCount_plot; //SD for plot random effect
 	vector[Nfield] intSeedCount_field; //field-level random intercepts
-	// vector[Nplot_F] intSeedCount_plot; //plot-level random intercept (F plots only)
+	real<lower=1e-10> sigmaSeedCount_plot; //SD for plot random effect - bad traces, requires more informative prior
+	vector[Nplot_F] intSeedCount_plot; //plot-level random intercept  - most overlap zero
 	real<lower=1e-10> lambdaSeedCount; //Lambda term for exponential process
 }
 
@@ -242,7 +242,7 @@ transformed parameters {
 			
 		seedCountPlot[i] = intSeedCount + //Intercept
   		intSeedCount_field[plotIndex[plotI]] + //Field random intercept
-  		// intSeedCount_plot[i] + //Plot random intercept
+  		intSeedCount_plot[i] + //Plot random intercept
   		slopePolSeedCount*pollenMu_plot[i] + //Pollen deposition (plot level average)
   		slopeEdgeCentSeedCount*isCent_all[i] + //Bay center effect
 		  slopeHbeeDistSeedCount*logHbeeDist_all[plotI] + //(log) hbee distance
@@ -260,7 +260,6 @@ transformed parameters {
 		// Seed count per pod = intercept + random int field + random int plot + random int plant + hbee visits + pollen deposition
 		seedCountMu[i] = seedCountPlot[plotI] + //Plot-level effects
   		slopePlSizeCount*plantSize[i] + //Plant size
-		  // slopeFlwCountSeedCount*flwCount[i] + //Flower count per plant
 		  slopeSurvSeedCount*logitFlwSurv[i]; //Flower survival per plant
 			
 	}
@@ -293,14 +292,13 @@ model {
 	slopePolSeedCount ~ normal(0,5); //Slope of pollen deposition
 	slopePlSizeCount ~ normal(0,5); //Slope of plant size
 	slopeEdgeCentSeedCount ~ normal(0,5); // Slope of edge effect on seed count
-	slopeHbeeDistSeedCount ~ normal(0,5); //Slope of leafcutter distance on seed count	- correlated with other predictors, and not very strong
+	slopeHbeeDistSeedCount ~ normal(0,5); //Slope of leafcutter distance on seed count
 	slopeFlDensSeedCount ~ normal(0,5); //Slope of flower density on seed count
-	// slopeFlwCountSeedCount ~ normal(0,5); //Slope of flower count on seed count
 	slopeSurvSeedCount ~ normal(0,5); //Slope of survival
 	sigmaSeedCount_field ~ gamma(1,1); //SD of field random effect
-	// sigmaSeedCount_plot ~ gamma(2,1); //SD of plot random effect
 	intSeedCount_field ~ normal(0,sigmaSeedCount_field); //field-level random intercepts
-	// intSeedCount_plot ~ normal(0,sigmaSeedCount_plot); //plot-level random intercepts
+	sigmaSeedCount_plot ~ gamma(2,1); //SD of plot random effect
+	intSeedCount_plot ~ normal(0,sigmaSeedCount_plot); //plot-level random intercepts
 	sigmaSeedCount ~ gamma(1,1); //Dispersion parameter
 	lambdaSeedCount ~ gamma(1,1); //Lambda term for exponential process
 }
