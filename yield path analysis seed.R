@@ -328,6 +328,30 @@ PPplots(modList[[8]],datalist$seedMass_obs,c('predSeedMass','seedMass_resid','pr
         index=datalist$obsSeedMass_ind,'Seed Mass')
 PPplots(modList[[9]],log(datalist$yield),c('predYield','yield_resid','predYield_resid'),'Seed mass per plant')
 
+#Marginal plots
+
+getPreds <- function(mod,parList,q=c(0.025,0.5,0.975)){
+  m <- extract(mod,par=names(parList))
+  m <- do.call(cbind,m)
+  mm <- expand.grid(parList)
+  mmMat <- as.matrix(mm)
+  pred <- mmMat %*% t(m)
+  pred <- data.frame(t(apply(pred,1,function(x) quantile(x,c(0.05,0.5,0.95)))))
+  names(pred) <- c('lwr','med','upr')
+  return(cbind(mm,pred))
+}
+
+#Input parameters get turned into a model matrix, multiplied, compiled
+pl <- list('intPlDens'=1,
+           'slopeHbeeDistPlDens'=with(datalist,seq(min(log(hbee_dist)),max(log(hbee_dist)),length=10)))
+
+getPreds(modList[[1]],pl) %>% 
+  ggplot(aes(x=slopeHbeeDistPlDens,y=med))+
+  geom_ribbon(aes(ymax=upr,ymin=lwr),alpha=0.2)+
+  geom_line()
+
+
+
 # #Something going wrong with the visitation sub-model. Trying this with glmmTMB instead
 # temp <- with(datalist,data.frame(
 #   totalTime = c(totalTime,totalTime_extra),
