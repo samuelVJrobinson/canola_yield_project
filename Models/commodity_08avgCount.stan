@@ -111,7 +111,7 @@ parameters {
   real slopeVisitSeedCount; //Slope of hbee visits - p=0.81
   real slopePolSeedCount; //Slope of pollen deposition - p=0.74
   real slopePlSizeCount; //Slope of plant size - p=0.22
-  real slope2015SeedCount; //Year effect - p=0.0003
+  // real slope2015SeedCount; //Year effect - p=0.0003
   real<lower=0> sigmaSeedCount; //SD of seed count
   real<lower=0> sigmaSeedCount_field; //SD of field random effect - OK
   vector[Nfield] intSeedCount_field; //field-level random intercepts
@@ -162,8 +162,8 @@ transformed parameters {
 		  intSeedCount_field[plotIndex[i]] + //Field-level random intercept
 		  // intSeedCount_plot[i] + //Plot-level random intercept
 			slopeVisitSeedCount*logHbeeVis[i] + //(log) hbee visits
-			slopePolSeedCount*pollenPlot[i] + //pollen deposition - large correlation b/w slopePolSeedCount and intFlwSurv
-			slope2015SeedCount*is2015[plotIndex[i]]; //Year effect
+			slopePolSeedCount*pollenPlot[i]; //pollen deposition - large correlation b/w slopePolSeedCount and intFlwSurv
+			// slope2015SeedCount*is2015[plotIndex[i]]; //Year effect
 
 	}
 		
@@ -213,7 +213,7 @@ model {
   slopeVisitSeedCount ~ normal(0,1); //Slope of hbee visits
   slopePolSeedCount ~ normal(0,1); //Slope of pollen deposition+
   slopePlSizeCount ~ normal(0,1); //Slope of plant size
-  slope2015SeedCount ~ normal(0,1); //Year effect
+  // slope2015SeedCount ~ normal(0,1); //Year effect
   // slopeIrrigSeedCount ~ normal(0,1); //Irrigation
   sigmaSeedCount ~ gamma(1,1); //SD of seed count
   sigmaSeedCount_field ~ gamma(1,1); //SD of field random effect

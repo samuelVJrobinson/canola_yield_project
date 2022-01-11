@@ -175,7 +175,7 @@ parameters {
 	real slopeMBayLbee; //Effect of male bay - p=0.894
 	real slopeCentLbee; //Effect of bay position (center)
 	real slopeStockingLbee[2]; //Effect of half-stocking leafcutter bees
-	real slope2016Lbee; //Year effect
+	// real slope2016Lbee; //Year effect
 	real slopeFlDensLbee; //Flower density effect
 	real slopeCentHbeeDistLbee; //Bay position : honeybee distance interaction term -p=0.142
 	real slopeStockingHbeeDistLbee[2]; //Half-stocking:hbee distance interaction
@@ -222,7 +222,7 @@ transformed parameters {
 			// slopeStockingLbeeDistLbee*lbeeStocking_all[i]*logLbeeDist_all[i] + //lbee dist: half stocking interaction			
 			// slopeStockingLbeeDistLbee[1]*lbeeStocking2_all[i,1]*logLbeeDist_all[i] + //lbee dist: double tent interaction			
 			// slopeStockingLbeeDistLbee[2]*lbeeStocking2_all[i,2]*logLbeeDist_all[i] + //lbee dist: double tent + bees interaction			
-			slope2016Lbee*is2016_all[i] + //Year effect
+			// slope2016Lbee*is2016_all[i] + //Year effect
 			slopeFlDensLbee*flDens[i]; //Flower density effect
 			// slopePlDensLbee*plDens[i] + //Plant density - not used
 			// slopePlSizeLbee*plSizePlotMu[i]; //Plant size - not used			
@@ -254,7 +254,7 @@ model {
 	slopeCentLbee ~ normal(0,5); //Effect of center of bay
 	slopeMBayLbee ~ normal(0,5); //Effect of male bay
 	slopeStockingLbee ~ normal(0,5); //Effect of half-stocking	
-	slope2016Lbee ~ normal(0,5); //Year effect
+	// slope2016Lbee ~ normal(0,5); //Year effect
 	slopeFlDensLbee ~ normal(0,5); //Flower density effect	
 	slopeCentHbeeDistLbee ~ normal(0,5); //Bay center: hbee distance interaction
 	slopeStockingHbeeDistLbee ~ normal(0,5); //Half-stocking: hbee distance interaction				

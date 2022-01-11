@@ -112,8 +112,8 @@ parameters {
 	real intFlwSurv; //Intercept
 	real slopeVisitSurv; //Slope of hbee visits
 	real slopePlSizeSurv; //Slope of plant size
-	real slopeIrrigSurv; //Slope of irrigation - p=0.56
-	real slope2015Surv; //Slope of year - p=0.68
+	// real slopeIrrigSurv; //Slope of irrigation - p=0.56
+	// real slope2015Surv; //Slope of year - p=0.68
 	real slopePolSurv; //Slope of pollen deposition - requires other models
 	// real slopePlDensSurv; //Slope of plant density - requires other models
 	real<lower=0> sigmaFlwSurv_field; //SD of field random intercepts - bad traces, high Rhat
@@ -174,10 +174,10 @@ transformed parameters {
       intFlwSurv_field[plotIndex[i]] + //Field-level random intercept
       // intFlwSurv_plot[i] + //Plot-level random intercept
     	slopeVisitSurv*logHbeeVis[i] + //hbee visits
-    	// slopePolSurv*pollenPlot[i] + //(log) pollen deposition - large correlation b/w slopePolSurv and intFlwSurv
+    	slopePolSurv*pollenPlot[i]; //(log) pollen deposition - large correlation b/w slopePolSurv and intFlwSurv
     	// slopePlDensSurv*plDens[i] + //Plant density
-    	slopeIrrigSurv*isIrrigated[plotIndex[i]] + //Irrigation effect
-    	slope2015Surv*is2015[plotIndex[i]]; //Year effect
+    	// slopeIrrigSurv*isIrrigated[plotIndex[i]] + //Irrigation effect
+    	// slope2015Surv*is2015[plotIndex[i]]; //Year effect
 	}
 		
 	for(i in 1:Nflw){ //For each flower stigma
@@ -235,8 +235,8 @@ model {
   slopePolSurv ~ normal(0,1); //Slope of pollen deposition
   slopePlSizeSurv ~ normal(0,1); //Slope of plant size
   // slopePlDensSurv ~ normal(0,1); //Slope of planting density
-  slopeIrrigSurv ~ normal(0,1); //Slope of irrigation
-  slope2015Surv ~ normal(0,1); //Slope of year
+  // slopeIrrigSurv ~ normal(0,1); //Slope of irrigation
+  // slope2015Surv ~ normal(0,1); //Slope of year
   sigmaFlwSurv_field ~ gamma(1,1); //SD of field-level random intercept
   intFlwSurv_field ~ normal(0,sigmaFlwSurv_field); //field-level random intercepts
   // sigmaFlwSurv_plot ~ gamma(1,1); //SD of plot-level random intercept

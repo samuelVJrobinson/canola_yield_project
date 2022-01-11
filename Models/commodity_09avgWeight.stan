@@ -100,8 +100,8 @@ parameters {
   real slopePolSeedWeight; //Slope of pollen deposition - p=0.50
   real slopeSeedCount; //Slope of seed count - p<0.0001
   real slopePlSizeWeight; //Slope of plant size - p=0.13
-  real slopeIrrigSeedWeight; //Irrigation effect - p=0.04
-  real slope2015SeedWeight; //Slope of 2015 - p=0.28
+  // real slopeIrrigSeedWeight; //Irrigation effect - p=0.04
+  // real slope2015SeedWeight; //Slope of 2015 - p=0.28
   real<lower=0> sigmaSeedWeight; //SD of seed weight
   real<lower=0> sigmaSeedWeight_plot; //SD of plot random effect
   real<lower=0> sigmaSeedWeight_field; //SD of field random effect
@@ -133,9 +133,9 @@ transformed parameters {
 			intSeedWeight_field[plotIndex[i]] + //Field-level random intercept
 			intSeedWeight_plot[i] + //Plot-level random intercept
 			slopeVisitSeedWeight*logHbeeVis[i] + //(log) hbee visits
-			slopePolSeedWeight*pollenPlot[i] + //pollen deposition - large correlation b/w slopePolSeedWeight and intFlwSurv
-			slopeIrrigSeedWeight*isIrrigated[plotIndex[i]] + //Irrigation effect
-			slope2015SeedWeight*is2015[plotIndex[i]]; // Year effect
+			slopePolSeedWeight*pollenPlot[i]; //pollen deposition - large correlation b/w slopePolSeedWeight and intFlwSurv
+			// slopeIrrigSeedWeight*isIrrigated[plotIndex[i]] + //Irrigation effect
+			// slope2015SeedWeight*is2015[plotIndex[i]]; // Year effect
 	}
 		
 	for(i in 1:Nflw){ //For each flower stigma
@@ -174,8 +174,8 @@ model {
   slopePolSeedWeight ~ normal(0,1); //Slope of pollen deposition
   slopeSeedCount ~ normal(0,1); //Slope of (log) seed count
   slopePlSizeWeight ~ normal(0,1); //Slope of plant size
-  slopeIrrigSeedWeight ~ normal(0,1); //Slope of irrigation
-  slope2015SeedWeight ~ normal(0,1); //Slope of 2015
+  // slopeIrrigSeedWeight ~ normal(0,1); //Slope of irrigation
+  // slope2015SeedWeight ~ normal(0,1); //Slope of 2015
   sigmaSeedWeight ~ gamma(1,1); //SD of seed weight
   sigmaSeedWeight_field ~ gamma(1,1); //SD of field random effect
   sigmaSeedWeight_plot ~ gamma(1,1); //SD of plot random effect

@@ -188,7 +188,7 @@ parameters {
 	real slopeSeedCount; //Slope of seed count
 	real slopePlSizeSeedWeight; //Slope of plant size
 	real slopePlDensSeedWeight; //Effect of plant density
-	real slope2016SeedWeight; //Effect of 2016
+	// real slope2016SeedWeight; //Effect of 2016
 	real slopeLbeeDistSeedWeight; //Effect of leafcutter distance
 	real slopeStockingSeedWeight; //Effect of half-stocking
 	// Interactions
@@ -247,7 +247,7 @@ transformed parameters {
   		intSeedWeight_field[plotIndex[plotI]] +
   		intSeedWeight_plot[i] +
 			slopePolSeedWeight*pollenMu_plot[i] + //Pollen deposition
-			slope2016SeedWeight*is2016_all[plotI] + //Year effect
+			// slope2016SeedWeight*is2016_all[plotI] + //Year effect
   		slopeLbeeDistSeedWeight*logLbeeDist_all[plotI] + //Shelter distance effect
   		slopePlDensSeedWeight*plDens[i] + //Planting density
   		slopeStockingSeedWeight*lbeeStocking_all[plotI]; //Half-stocking effect
@@ -296,7 +296,7 @@ model {
 	slopePolSeedWeight ~ normal(0,5); //Slope of pollen deposition
 	slopeSeedCount ~ normal(0,5); //Slope of seed count
 	slopePlSizeSeedWeight ~ normal(0,5); //Slope of plant size
-	slope2016SeedWeight ~ normal(0,5); //Effect of year
+	// slope2016SeedWeight ~ normal(0,5); //Effect of year
 	slopeLbeeDistSeedWeight ~ normal(0,5); //Slope of (log) lbee distance
 	slopePlDensSeedWeight ~ normal(0,5); //Slope of plant density
 	slopeStockingSeedWeight ~ normal(0,5); //Effect of half-stocking

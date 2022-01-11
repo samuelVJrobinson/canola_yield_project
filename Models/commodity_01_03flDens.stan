@@ -86,9 +86,9 @@ parameters {
 	// Plant density	
 	vector[Nplot_densMiss] plDens_miss; 
 	real intPlDens; //Global intercept
-	real slope2015PlDens; //Effect of 2015
-	real slopeIrrigPlDens; //Effect of irrigation
-	real slope2015IrrigPlDens; //Year:irrigation interaction	
+	// real slope2015PlDens; //Effect of 2015
+	// real slopeIrrigPlDens; //Effect of irrigation
+	// real slope2015IrrigPlDens; //Year:irrigation interaction	
 	real slopeGPPlDens; //GP effect on plant density	
 	real slopeDistPlDens; //Slope of distance into field		
 	real<lower=0> sigmaPlDens; //Sigma for within-field (residual)
@@ -99,9 +99,9 @@ parameters {
 	real intPlSize; //Global intercept
 	real slopePlDensPlSize; //Slope of planting density
 	real slopeDistPlSize; //Slope of distance
-	real slopeGpPlSize; //Slope of Grand Prairie effect
-	real slope2015PlSize; //Slope of 2015 effect
-	real slopeIrrigPlSize; //Slope of irrigation
+	// real slopeGpPlSize; //Slope of Grand Prairie effect
+	// real slope2015PlSize; //Slope of 2015 effect
+	// real slopeIrrigPlSize; //Slope of irrigation
 	real<lower=0> sigmaPlSize_field; //SD of field-level intercept
 	real<lower=0> sigmaPlSize_plot; //SD of plot-level intercept
 	real<lower=0> sigmaPlSize; //Sigma for within-plot (residual)
@@ -139,9 +139,9 @@ transformed parameters {
 		// Plant density per plot
 		plDensMu[i] = intPlDens + //Intercept
 		  intPlDens_field[plotIndex[i]] + //Field level random intercept
-			slope2015PlDens*is2015[plotIndex[i]]+ //Year effect
-			slopeIrrigPlDens*isIrrigated[plotIndex[i]]+ //Irrigation effect
-			slope2015IrrigPlDens*isIrrigated[plotIndex[i]]*is2015[plotIndex[i]]+ //Year:irrigation interaction
+			// slope2015PlDens*is2015[plotIndex[i]]+ //Year effect
+			// slopeIrrigPlDens*isIrrigated[plotIndex[i]]+ //Irrigation effect
+			// slope2015IrrigPlDens*isIrrigated[plotIndex[i]]*is2015[plotIndex[i]]+ //Year:irrigation interaction
 			slopeDistPlDens*logHbeeDist[i] + //Distance effect
 			slopeGPPlDens*isGP[plotIndex[i]]; //Location effect
 
@@ -150,10 +150,10 @@ transformed parameters {
 		  intPlSize_field[plotIndex[i]] + //Field-level random effect
 		  intPlSize_plot[i] + //Plot-level random effect
 			slopePlDensPlSize*plDens[i] +  //Plant density
-			slopeDistPlSize*logHbeeDist[i] + //Distance effect (edge of field has smaller plants)
-			slopeGpPlSize*isGP[plotIndex[i]] + // Location effect
-			slope2015PlSize*is2015[plotIndex[i]] + //Year effect
-			slopeIrrigPlSize*isIrrigated[plotIndex[i]]; //Irrigation effect
+			slopeDistPlSize*logHbeeDist[i]; //Distance effect (edge of field has smaller plants)
+			// slopeGpPlSize*isGP[plotIndex[i]] + // Location effect
+			// slope2015PlSize*is2015[plotIndex[i]] + //Year effect
+			// slopeIrrigPlSize*isIrrigated[plotIndex[i]]; //Irrigation effect
 
 		// Flower density
 		flDensMu[i] = intFlDens	+ //Intercept
@@ -179,9 +179,9 @@ model {
 	// Priors
 	//Plant density	- informative priors
 	intPlDens ~ normal(0,1); //Global intercept
-	slope2015PlDens ~ normal(0,1); //Year effect
-	slopeIrrigPlDens ~ normal(0,1); //Irrigation effect
-	slope2015IrrigPlDens ~ normal(0,1); //Year:irrigation interaction
+	// slope2015PlDens ~ normal(0,1); //Year effect
+	// slopeIrrigPlDens ~ normal(0,1); //Irrigation effect
+	// slope2015IrrigPlDens ~ normal(0,1); //Year:irrigation interaction
 	slopeDistPlDens ~ normal(0,1); //Slope of distance into field	
 	slopeGPPlDens ~ normal(0,1); // Grand Prairie effect 
 	sigmaPlDens ~ gamma(1,1); //Sigma for within-field (residual)
@@ -192,11 +192,9 @@ model {
 	intPlSize ~ normal(0,1); //Intercept
 	slopePlDensPlSize ~ normal(0,1); //Plant density
 	slopeDistPlSize ~ normal(0,1); //Distance effect
-	slopeGpPlSize ~ normal(0,1); //Grand Prairie effect
-	slopeIrrigPlSize ~ normal(0,1); //Irrigation effect
-	slope2015PlSize ~ normal(0,1); //2015 effect
-	// slopeStockingPlSize ~ normal(0,0.1); //Stocking effect
-	// slopePlDensStockingPlSize ~ normal(0,0.1); //Density:Stocking interaction
+	// slopeGpPlSize ~ normal(0,1); //Grand Prairie effect
+	// slopeIrrigPlSize ~ normal(0,1); //Irrigation effect
+	// slope2015PlSize ~ normal(0,1); //2015 effect
 	sigmaPlSize_field ~ gamma(1,1); //Sigma for random field
 	sigmaPlSize_plot ~ gamma(1,1); //Sigma for random plot
 	sigmaPlSize ~ gamma(1,1); //Sigma for residual

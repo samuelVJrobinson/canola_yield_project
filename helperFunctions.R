@@ -9,10 +9,16 @@ invLogit <- function(x){
   i[is.nan(i)] <- 1 #If x is large enough, becomes Inf/Inf = NaN, but Lim(invLogit) x->Inf = 1
   return(i)
 }
+
 #Get table of parameters to go into kable
-parTable <- function(mod,pars){
+parTable <- function(x){
   require(dplyr); require(tidyr)
-  summary(mod,pars=pars)$summary %>% 
+  if(is.null(x)) return(NA)
+  n <- names(x) #Model parameters
+  n <- n[(!grepl('(\\[[0-9]+,*[0-9]*\\]|lp)',n))|grepl('[sS]igma',n)] #Drops parameter vectors, unless name contains "sigma" (variance term)
+  n <- n[!grepl('_miss',n)] #Gets rid of imputed values
+  
+  parTable <- summary(x,pars=n)$summary %>% 
     data.frame() %>% 
     transmute(mean,sd,Z=mean/sd,
               median=X50.,lwr=X2.5.,upr=X97.5.,
@@ -22,6 +28,8 @@ parTable <- function(mod,pars){
     mutate(pval=round(pval,4),n_eff=round(n_eff)) %>% 
     tibble::rownames_to_column('param')
 }
+
+
 #Faster pair plot
 fastPairs <- function(l){ #List l
   pairs(l,lower.panel=function(x,y){
@@ -180,16 +188,16 @@ compareRE <- function(mod,parSet,colNum=1,alpha=1){
     print(paste0('Display column: ',colNum))
   } 
   
-  require(ggpubr)
-  p1 <- pars %>% 
+  p <- pars %>% 
     apply(.,2,function(x) quantile(x,c(0.1,0.5,0.9))) %>% 
-    t() %>% data.frame() %>% setNames(c('lwr','med','upr')) %>% 
+    t() %>% data.frame() %>% setNames(c('lwr','med','upr'))
+  
+  require(ggpubr)
+  p1 <- p %>% 
     ggplot(aes(sample=med))+ ##q-q plot
     geom_qq(alpha=alpha)+
     geom_qq_line(alpha=alpha)  
-  p2 <- pars %>% 
-    apply(.,2,function(x) quantile(x,c(0.1,0.5,0.9))) %>% 
-    t() %>% data.frame() %>% setNames(c('lwr','med','upr')) %>% 
+  p2 <- p %>% 
     tibble::rownames_to_column() %>%
     mutate(rowname=as.numeric(rowname)) %>% 
     ggplot(aes(x=rowname,y=med))+
@@ -205,4 +213,64 @@ g2bushels <- function(x){
   # 453.592*50/bushel - using 50 lbs/bushel estimate
   # 44.0920 #bushels per tonne
   # 2204.62 #lbs per tonne
+}
+
+#Extract fits for marginal plots
+# mod = stanfit model or dataframe
+# parList = named list with vectors of parameters to predict at (passed through expand.grid)
+# otherPars = character vector of other parameters to add to the dataframe (e.g. zero-inflation)
+# q = quantiles to predict at
+# nrep = number of replicates of parameters to generate (for data.frame parameters)
+
+getPreds <- function(mod,parList=NULL,otherPars=NULL,q=c(0.5,0.025,0.975),nrep=4000){
+  if(is.null(parList)) stop('Specify parameters')
+  dfNames <- c("param","mean","sd","Z","median",
+               "lwr","upr","pval","n_eff","Rhat")
+  
+  if(class(mod)=='stanfit'){
+    m <- extract(mod,par=names(parList))
+    m <- do.call('cbind',m)
+    
+    if(!is.null(otherPars)){
+      extras <- extract(mod,par=otherPars) %>% sapply(.,median)
+    }
+    
+  } else if(class(mod)=='data.frame' & !any(!names(mod)==dfNames)){ #If using a dataframe
+    if(any(!names(parList) %in% mod$param)){
+      stop(paste0('Parameters not found: ',paste(names(parList)[!names(parList) %in% mod$param],collapse=', ')))
+    } 
+    chooseRows <- mod$param %in% names(parList) 
+    # if(useQuantiles){
+    #   m1 <- mod[chooseRows,c('lwr','upr')] #Upper/lower ranges  
+    #   m2 <- mod[chooseRows,c('median')] #Median
+    # } else {
+    #   m1 <- data.frame(lwr=mod$mean[chooseRows]-1.96*mod$sd[chooseRows],
+    #                    upr=mod$mean[chooseRows]+1.96*mod$sd[chooseRows])
+    #   m2 <- mod$mean[chooseRows] #Mean
+    # }
+    m <- mod[chooseRows,c('mean','sd')] 
+    m <- do.call('cbind',lapply(1:nrow(m),function(i) rnorm(nrep,m$mean[i],m$sd[i])))
+    colnames(m) <- names(parList)
+    
+    if(!is.null(otherPars)){
+      extras <- mod$median[mod$param %in% otherPars] 
+      names(extras) <- otherPars
+    }
+    
+  } else {
+    warning('mod is not stanfit object or dataframe with correct column names')
+    return(NA)
+  }
+  
+  mm <- expand.grid(parList) #Model matrix
+  mmMat <- as.matrix(mm)
+  
+  pred <- mmMat %*% t(m)
+  pred <- data.frame(t(apply(pred,1,function(x) quantile(x,q))))
+  names(pred) <- c('med','lwr','upr')
+  if(!is.null(otherPars)){
+    pred <- cbind(pred,sapply(extras,function(x) rep(x,nrow(pred))))
+  }
+  
+  return(cbind(mm,pred))
 }

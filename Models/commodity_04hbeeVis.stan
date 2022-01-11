@@ -85,13 +85,13 @@ transformed data {
 parameters {
 	// hbee Visitation per plot
 	real intVisit; //Intercept
-	real slopeYearVis; //Effect of 2015
-	real slopeGpVis; //Effect of Grand Prairie
-	real slopeYearGpVis; //Effect of year-GP interaction
+	// real slopeYearVis; //Effect of 2015
+	// real slopeGpVis; //Effect of Grand Prairie
+	// real slopeYearGpVis; //Effect of year-GP interaction
 	real slopeDistVis; //Slope of distance
 	real slopeHiveVis; //Slope of hive number
 	real slopeFlDens; //Slope of flower density
-	real slopeIrrigVis; //Effect of irrigation
+	// real slopeIrrigVis; //Effect of irrigation
 	real<lower=0> sigmaVisField; //SD of field random intercepts
 	real<lower=0> visitHbeePhi; //Dispersion parameter
 	vector[Nfield] intVisit_field; //field-level random intercepts
@@ -109,13 +109,13 @@ transformed parameters {
 		visitHbeeMu[i] = intVisit + //Intercept
 		  intVisit_field[plotIndex[i]] + //Field-level random intercept
 		  logTime[i] + //Time offset
-			slopeYearVis*is2015[plotIndex[i]] + //Year effect
-			slopeGpVis*isGP[plotIndex[i]] + //Grand Prairie effect
-			slopeYearGpVis*is2015[plotIndex[i]]*isGP[plotIndex[i]] + //Year:area interaction
+			// slopeYearVis*is2015[plotIndex[i]] + //Year effect
+			// slopeGpVis*isGP[plotIndex[i]] + //Grand Prairie effect
+			// slopeYearGpVis*is2015[plotIndex[i]]*isGP[plotIndex[i]] + //Year:area interaction
 			slopeDistVis*logHbeeDist[i] + //distance from edge
 			slopeHiveVis*logNumHives[plotIndex[i]] + //(log) Number of hives
-			slopeFlDens*flDens[i] + //Flower density
-			slopeIrrigVis*isIrrigated[plotIndex[i]]; //Irrigation
+			slopeFlDens*flDens[i]; //Flower density
+			// slopeIrrigVis*isIrrigated[plotIndex[i]]; //Irrigation
 	}
 }
 	
@@ -128,9 +128,9 @@ model {
 	intVisit ~ normal(0,1); //Intercept
 	slopeDistVis ~ normal(0,1); //Slope of distance effect on hbee visits
 	slopeHiveVis ~ normal(0,1); //Slope of hive effect on visits
-	slopeYearVis ~ normal(0,1); //2015 effect
-	slopeGpVis ~ normal(0,1); //Effect of Grand Prairie
-	slopeYearGpVis ~ normal(0,1); // GP-year interaction
+	// slopeYearVis ~ normal(0,1); //2015 effect
+	// slopeGpVis ~ normal(0,1); //Effect of Grand Prairie
+	// slopeYearGpVis ~ normal(0,1); // GP-year interaction
 	slopeFlDens ~ normal(0,1); //Flower density
 	sigmaVisField ~ gamma(1.1,1); //Sigma for random field
 	intVisit_field ~ exp_mod_normal(0,sigmaVisField,lambdaVisField); //Skewed random effects - slightly better than standard normal

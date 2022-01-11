@@ -189,7 +189,7 @@ parameters {
 	vector<lower=4,upper=52>[Nplot_flDensMiss_extra] flDens_miss_extra; //Missing from Riley's fields
 	real intFlDens; //Global intercept
 	real slopeMBayFlDens; //Effect of male bay
-	real slope2016FlDens; //Effect of 2016
+	// real slope2016FlDens; //Effect of 2016
 	real slopeDistFlDens;  //Effect of distance from edge
 	real<lower=1e-10> sigmaFlDens; //Sigma for within-field (residual)
 	real<lower=1e-10> sigmaFlDens_field; //Sigma for field
@@ -227,7 +227,7 @@ transformed parameters {
 		flDensMu[i] = intFlDens	+
 		  intFlDens_field[plotIndex_all[i]] +
 			slopeMBayFlDens*isMBay_all[i] + //Male bay effect
-			slope2016FlDens*is2016_all[i] + //Year effect
+			// slope2016FlDens*is2016_all[i] + //Year effect
 			slopeDistFlDens*logHbeeDist_all[i]; //Distance from edge effect
 	}
 	
@@ -286,7 +286,7 @@ model {
 
 	// Flower density
 	intFlDens ~ normal(21.4,5); //Intercept
-	slope2016FlDens ~ normal(0,5); //Effect of 2016
+	// slope2016FlDens ~ normal(0,5); //Effect of 2016
 	slopeDistFlDens ~ normal(0,5); //Distance from edge
 	slopeMBayFlDens ~ normal(0,5); //Effect of male bay
 	sigmaFlDens ~ gamma(1,1); //Sigma for plot (residual)

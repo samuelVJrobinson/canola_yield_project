@@ -19,194 +19,147 @@ prestheme=theme(legend.position='right',
 theme_set(theme_bw()+prestheme) #Sets graph theme to B/Ws + prestheme
 rm(prestheme)
 
-# Commodity field data
 setwd('~/Projects/UofC/canola_yield_project') #Multivac path
 # setwd('~/Documents/canola_yield_project') #Galpern machine path
-load("./Commodity field analysis/commodityfieldDataAll.RData") 
-rm(AICc,brix2mgul,deltaAIC,DIC,plotFixedTerms,predFixef,se,varComp,zeroCheck,conversion,visitorsAll,visitors2015)
-fieldsAllComm <- fieldsAll; flowersAllComm <- flowersAll; plantsAllComm <- plantsAll;
-seedsAllComm <- seedsAll; surveyAllComm <- surveyAll;
-rm(fieldsAll,flowersAll,plantsAll,seedsAll,surveyAll)
-
-#Set 'negative' missing pods (mistake in counting) to NA.
-plantsAllComm <- mutate(plantsAllComm,Missing=ifelse(Missing<0,NA,Missing))
-seedsAllComm <- mutate(seedsAllComm,Missing=ifelse(Missing<0,NA,Missing))
-setwd('~/Projects/UofC/canola_yield_project')
 
 source('helperFunctions.R')
 
-#Run everything above this line to start
+#Load in data ---------------------------------
 
-# Commodity field visitation and pollen deposition (Stan) ---------------------------------
+load('./Models/datalist_commodity.Rdata')
+
+# load("./Commodity field analysis/commodityfieldDataAll.RData") 
+# rm(AICc,brix2mgul,deltaAIC,DIC,plotFixedTerms,predFixef,se,varComp,zeroCheck,conversion,visitorsAll,visitors2015)
+# fieldsAllComm <- fieldsAll; flowersAllComm <- flowersAll; plantsAllComm <- plantsAll;
+# seedsAllComm <- seedsAll; surveyAllComm <- surveyAll;
+# rm(fieldsAll,flowersAll,plantsAll,seedsAll,surveyAll)
+# 
+# #Set 'negative' missing pods (mistake in counting) to NA.
+# plantsAllComm <- mutate(plantsAllComm,Missing=ifelse(Missing<0,NA,Missing))
+# seedsAllComm <- mutate(seedsAllComm,Missing=ifelse(Missing<0,NA,Missing))
+# setwd('~/Projects/UofC/canola_yield_project')
+# 
+# #List structure for Stan
+# datalistField <- with(arrange(fieldsAllComm,as.factor(paste(Year,Field))),list( #Field-level measurements
+#   Nfield=length(Year), #Number of fields
+#   fieldName = paste(Year,Field), #Field name
+#   numHives=NumHives, #Number of hives/field
+#   is2015=Year==2015, #Is year 2015?
+#   isGP=Area!='Lethbridge', #Is area Grand Prairie?
+#   isIrrigated=Irrigated=='Irrigated' #Is field irrigated?
+# ))
+# 
+# datalistPlot <- with(arrange(surveyAllComm,factor(paste(Year,Field,Distance))),list( #Plot-level measurements
+#   Nplot=length(Distance), #Number of plots
+#   plotIndex=match(paste(Year,Field),datalistField$fieldName), #Index for field (which field?)
+#   plotName=paste(Year,Field,Distance), #Name of plot location
+#   dist=Distance, #Distance from edge
+#   hbeeVis=Honeybee, #Visits by honeybees
+#   flyVis=Fly, #Visits by flies
+#   totalTime=TotalTime/10, #Total time (mins/10)
+#   #Planting density
+#   Nplot_densObs=sum(!is.na(PlDens)), #Number of plots with observed flower density
+#   Nplot_densMiss=sum(is.na(PlDens)), #Plots with unobserved flower density
+#   plDens_obs=log(PlDens[!is.na(PlDens)]), #(log) Planting density
+#   obsPlDens_ind=which(!is.na(PlDens)), #Index for observed
+#   missPlDens_ind=which(is.na(PlDens)), #Index for missing
+#   
+#   flDens=sqrt(FlDens) #(sqrt) Flower density
+# ))
+# 
+# datalistFlw <- flowersAllComm %>% 
+#   mutate(flowerIndex=as.numeric(factor(paste(Year,Field,Distance)))) %>% 
+#   arrange(flowerIndex) %>% 
+#   filter(!is.na(Pollen)) %>% 
+#   with(list(Nflw=sum(!is.na(Pollen)), #Number of pollen samples
+#   flowerIndex=flowerIndex, #Index for flower (which plot?)
+#   pollenCount=Pollen
+# ))
+# 
+# datalistPlant <- 
+#   plantsAllComm %>% ungroup() %>% 
+#   filter(!is.na(Distance)) %>%
+#   filter(SeedMass!=0) %>%
+#   filter(!is.na(Pods),!is.na(Missing),!is.na(AvPodCount),!is.na(AvPodMass)) %>%
+#   # filter(!is.na(Pods),!is.na(Missing)) %>%
+#   mutate(plantIndex=match(paste(Year,Field,Distance),datalistPlot$plotName)) %>% #Index for plant (which plot?)
+#   mutate(plantIndex_char=paste(Year,Field,Distance)) %>% #Index for plant (which plot?)
+#   # mutate(plantIndex=match(paste(Year,Field),datalistField$fieldName)) %>% #Index for plant (which field?)
+#   arrange(plantIndex) %>% 
+#   with(list(Nplant=length(VegMass), #Number of plant samples (some missing)
+#             VegMass=VegMass,
+#   # Nplant_obs=sum(!is.na(VegMass)), #Observed plants
+#   # Nplant_miss=sum(is.na(VegMass)), #Missing plants
+#   podCount=Pods, #Successful pods
+#   flwCount=Pods+Missing, #Pods + Missing (total flw production)
+#   plantIndex=plantIndex, #Index for plant (which plot?)
+#   plantIndex_char=plantIndex_char,
+#   plantSize=log(VegMass[!is.na(VegMass)]), #log weight of veg mass (g)
+#   #Averaged seeds per pod and weight per seed
+#   seedCount=AvPodCount,
+#   seedMass=(AvPodMass/AvPodCount)*1000, #Weight per seed (mg)
+#   yield=SeedMass[!is.na(SeedMass)] #observed weight of all seeds (g)
+#   # obsPl_ind=which(!is.na(VegMass)),missPl_ind=which(is.na(VegMass)), #Indices for missing plant size
+#   # obsYield_ind=which(!is.na(SeedMass)), missYield_ind=which(is.na(SeedMass)) #Indices for missing yield
+# )) 
+# 
+# # #Problem: plots exist at the pod level which do not exist at plant level
+# # a <- plantsAllComm %>% ungroup() %>% filter(!is.na(Pods),!is.na(Missing),!is.na(AvPodCount),!is.na(AvPodMass)) %>%  
+# #   filter(SeedMass!=0) %>%  transmute(index=factor(paste(Year,Field,Distance,Plant))) %>% 
+# #   distinct() #Index for plant (which plot?)
+# # b <- seedsAllComm %>% ungroup() %>% filter(!is.na(Plant)&!is.na(PodCount)&PodCount>0&!is.na(PodMass)) %>%
+# #   filter(!is.na(Pods),!is.na(Missing)) %>% #Remove plants from plant level
+# #   transmute(index=factor(paste(Year,Field,Distance,Plant))) %>% distinct()
+# # keep <- which(a$index %in% b$index) #Plants to keep from seeds plants dataset
+# # 
+# # datalistPod <- seedsAllComm %>% ungroup() %>% 
+# #   mutate(podIndex=as.numeric(factor(paste(Year,Field,Distance,Plant)))) %>%   
+# #   arrange(podIndex) %>% 
+# #   filter(podIndex %in% keep) %>%
+# #   filter(!is.na(Plant)&!is.na(PodCount)&PodCount>0&!is.na(PodMass)) %>% 
+# #   filter(!is.na(Pods),!is.na(Missing)) %>% #Remove plants from plant level
+# #   with(list(Npod=length(Distance), #Number of seeds measured
+# #   seedCount=PodCount, #Number of seeds per pod
+# #   seedMass=(PodMass/PodCount)*1000, #Weight per seed (mg)
+# #   podIndex=podIndex) #Index for pod (which plant?)
+# # )
+# #Adds average flower count per plant, and average plant weight (plot-level), used in claim 6, 12, 15
+# datalistPlot <- c(datalistPlot,with(datalistPlant,
+#   list( #Both terms are missing from plots 248-271, so use the same N and indices
+#     Nplot_flwCountObs = length(unique(plantIndex)),
+#     Nplot_flwCountMiss = datalistPlot$Nplot-length(unique(plantIndex)),
+#     flwCountPlot_obs = log(unname(tapply(flwCount,plantIndex,mean))), #Log-transformed average flower count
+#     plSizePlot_obs = unname(tapply(plantSize,plantIndex,mean)), #Plant size
+#     obsFlwCount_ind = unique(plantIndex),
+#     missFlwCount_ind = (1:datalistPlot$Nplot)[!(1:datalistPlot$Nplot %in% unique(plantIndex))]
+#   )
+# ))
+# 
+# # datalistPod$seedMass[datalistPod$seedMass>8] <- with(datalistPod,seedMass[seedMass>8]/10) #Fixes weird outliers
+# datalist <- c(datalistField,datalistPlot,datalistFlw,datalistPlant)
+# rm(datalistField,datalistPlot,datalistFlw,datalistPlant,a,b,keep) #Cleanup
+# str(datalist)
+# 
+# #Check for NAs
+# if(any(sapply(datalist,function(x) sum(is.na(x)))>0)){
+#   beep(1); print("NAs found in datalist")
+# }
+# 
+# save(datalist,file = './Models/datalist_commodity.Rdata')
+
+# Run models ----------------------------
+
 library(rstan)
 setwd('./Models')
 rstan_options(auto_write = TRUE) #Avoids recompilation
 rstan_options(javascript = FALSE)
 options(mc.cores = 6)
-# library(shinystan)
-
-#List structure for Stan
-datalistField <- with(arrange(fieldsAllComm,as.factor(paste(Year,Field))),list( #Field-level measurements
-  Nfield=length(Year), #Number of fields
-  fieldName = paste(Year,Field), #Field name
-  numHives=NumHives, #Number of hives/field
-  is2015=Year==2015, #Is year 2015?
-  isGP=Area!='Lethbridge', #Is area Grand Prairie?
-  isIrrigated=Irrigated=='Irrigated' #Is field irrigated?
-))
-
-datalistPlot <- with(arrange(surveyAllComm,factor(paste(Year,Field,Distance))),list( #Plot-level measurements
-  Nplot=length(Distance), #Number of plots
-  plotIndex=match(paste(Year,Field),datalistField$fieldName), #Index for field (which field?)
-  plotName=paste(Year,Field,Distance), #Name of plot location
-  dist=Distance, #Distance from edge
-  hbeeVis=Honeybee, #Visits by honeybees
-  flyVis=Fly, #Visits by flies
-  totalTime=TotalTime/10, #Total time (mins/10)
-  #Planting density
-  Nplot_densObs=sum(!is.na(PlDens)), #Number of plots with observed flower density
-  Nplot_densMiss=sum(is.na(PlDens)), #Plots with unobserved flower density
-  plDens_obs=log(PlDens[!is.na(PlDens)]), #(log) Planting density
-  obsPlDens_ind=which(!is.na(PlDens)), #Index for observed
-  missPlDens_ind=which(is.na(PlDens)), #Index for missing
-  
-  flDens=sqrt(FlDens) #(sqrt) Flower density
-))
-
-datalistFlw <- flowersAllComm %>% 
-  mutate(flowerIndex=as.numeric(factor(paste(Year,Field,Distance)))) %>% 
-  arrange(flowerIndex) %>% 
-  filter(!is.na(Pollen)) %>% 
-  with(list(Nflw=sum(!is.na(Pollen)), #Number of pollen samples
-  flowerIndex=flowerIndex, #Index for flower (which plot?)
-  pollenCount=Pollen
-))
-
-datalistPlant <- 
-  plantsAllComm %>% ungroup() %>% 
-  filter(!is.na(Distance)) %>%
-  filter(SeedMass!=0) %>%
-  filter(!is.na(Pods),!is.na(Missing),!is.na(AvPodCount),!is.na(AvPodMass)) %>%
-  # filter(!is.na(Pods),!is.na(Missing)) %>%
-  mutate(plantIndex=match(paste(Year,Field,Distance),datalistPlot$plotName)) %>% #Index for plant (which plot?)
-  mutate(plantIndex_char=paste(Year,Field,Distance)) %>% #Index for plant (which plot?)
-  # mutate(plantIndex=match(paste(Year,Field),datalistField$fieldName)) %>% #Index for plant (which field?)
-  arrange(plantIndex) %>% 
-  with(list(Nplant=length(VegMass), #Number of plant samples (some missing)
-            VegMass=VegMass,
-  # Nplant_obs=sum(!is.na(VegMass)), #Observed plants
-  # Nplant_miss=sum(is.na(VegMass)), #Missing plants
-  podCount=Pods, #Successful pods
-  flwCount=Pods+Missing, #Pods + Missing (total flw production)
-  plantIndex=plantIndex, #Index for plant (which plot?)
-  plantIndex_char=plantIndex_char,
-  plantSize=log(VegMass[!is.na(VegMass)]), #log weight of veg mass (g)
-  #Averaged seeds per pod and weight per seed
-  seedCount=AvPodCount,
-  seedMass=(AvPodMass/AvPodCount)*1000, #Weight per seed (mg)
-  yield=SeedMass[!is.na(SeedMass)] #observed weight of all seeds (g)
-  # obsPl_ind=which(!is.na(VegMass)),missPl_ind=which(is.na(VegMass)), #Indices for missing plant size
-  # obsYield_ind=which(!is.na(SeedMass)), missYield_ind=which(is.na(SeedMass)) #Indices for missing yield
-)) 
-
-# #Problem: plots exist at the pod level which do not exist at plant level
-# a <- plantsAllComm %>% ungroup() %>% filter(!is.na(Pods),!is.na(Missing),!is.na(AvPodCount),!is.na(AvPodMass)) %>%  
-#   filter(SeedMass!=0) %>%  transmute(index=factor(paste(Year,Field,Distance,Plant))) %>% 
-#   distinct() #Index for plant (which plot?)
-# b <- seedsAllComm %>% ungroup() %>% filter(!is.na(Plant)&!is.na(PodCount)&PodCount>0&!is.na(PodMass)) %>%
-#   filter(!is.na(Pods),!is.na(Missing)) %>% #Remove plants from plant level
-#   transmute(index=factor(paste(Year,Field,Distance,Plant))) %>% distinct()
-# keep <- which(a$index %in% b$index) #Plants to keep from seeds plants dataset
-# 
-# datalistPod <- seedsAllComm %>% ungroup() %>% 
-#   mutate(podIndex=as.numeric(factor(paste(Year,Field,Distance,Plant)))) %>%   
-#   arrange(podIndex) %>% 
-#   filter(podIndex %in% keep) %>%
-#   filter(!is.na(Plant)&!is.na(PodCount)&PodCount>0&!is.na(PodMass)) %>% 
-#   filter(!is.na(Pods),!is.na(Missing)) %>% #Remove plants from plant level
-#   with(list(Npod=length(Distance), #Number of seeds measured
-#   seedCount=PodCount, #Number of seeds per pod
-#   seedMass=(PodMass/PodCount)*1000, #Weight per seed (mg)
-#   podIndex=podIndex) #Index for pod (which plant?)
-# )
-#Adds average flower count per plant, and average plant weight (plot-level), used in claim 6, 12, 15
-datalistPlot <- c(datalistPlot,with(datalistPlant,
-  list( #Both terms are missing from plots 248-271, so use the same N and indices
-    Nplot_flwCountObs = length(unique(plantIndex)),
-    Nplot_flwCountMiss = datalistPlot$Nplot-length(unique(plantIndex)),
-    flwCountPlot_obs = log(unname(tapply(flwCount,plantIndex,mean))), #Log-transformed average flower count
-    plSizePlot_obs = unname(tapply(plantSize,plantIndex,mean)), #Plant size
-    obsFlwCount_ind = unique(plantIndex),
-    missFlwCount_ind = (1:datalistPlot$Nplot)[!(1:datalistPlot$Nplot %in% unique(plantIndex))]
-  )
-))
-
-# datalistPod$seedMass[datalistPod$seedMass>8] <- with(datalistPod,seedMass[seedMass>8]/10) #Fixes weird outliers
-datalist <- c(datalistField,datalistPlot,datalistFlw,datalistPlant)
-rm(datalistField,datalistPlot,datalistFlw,datalistPlant,a,b,keep) #Cleanup
-str(datalist)
-
-#Check for NAs
-if(any(sapply(datalist,function(x) sum(is.na(x)))>0)){
-  beep(1); print("NAs found in datalist")
-}
- 
-# #Look at distributions of average seedcount/seedmass
-# tempdat <- with(datalist,data.frame(avgSeedCount,avgSeedMass,
-#                          plantIndex=factor(plantIndex)))
-# par(mfrow=c(2,1))
-# lm(avgSeedCount~plantIndex,data=tempdat) %>% plot(.,which=c(1,2)) #Looks normal-ish to me
-# lm(avgSeedMass~plantIndex,data=tempdat) %>% plot(.,which=c(1,2))
-
-# #Feed datalist into stan_rdump for use in CmdStan
-# with(datalist,stan_rdump(names(datalist),'tempDat.data.R'))
-# #Feed inits into stan_rdump
-# temp <- inits()
-# with(temp,stan_rdump(names(temp),'inits.data.R'))
-# 
-# #Claims list
-# claims1 <- stan(file='./Commodity model claims 2/commodity_claims39.stan',
-#                 data=datalist,iter=10,chains=1,control=list(adapt_delta=0.8),init=inits)
-# beep(1)
-# pars <- c('intPollen','slopeVisitPol','slopeHbeeDistPollen',
-#           'sigmaPolField','pollenPhi','sigmaPolPlot')	
-# newpar <- 'slopeStockingPollen'
-
-# stan_trace(claims1,pars=c(pars,newpar))
-# pairs(claims1,pars=c(pars,newpar)) #Takes a long time
-# mod1 <- extract(claims1)
-# coefs(mod1[c(pars,newpar)])
- 
-# #Full model - 1.7 hrs for 1000 iter
-# modPodcount <- stan(file='visitation_pollen_model.stan',data=datalist,iter=1,chains=1,
-#                    control=list(adapt_delta=0.8),init=0)
-
-# #Smaller example - only visitation
-# # datalist <- datalist
-# modPodcount <- stan(file='visitation_pollen_model2.stan',data=datalist,iter=2000,chains=4,
-#                    control=list(adapt_delta=0.8),init=inits)
-# p <- c('intVisit',
-#   'slopeDistVis','slopeHiveVis','slopeFlDens', #Visitation
-#   'sigmaVisField','lambdaVisField','visitHbeePhi')
-# 
-# print(modPodcount,pars=p)
-# traceplot(modPodcount,pars=p)
-#
-#Version without pod-level effects
-# #NOTE: something's going wrong with the plant level flower count/survival. Models before this are OK, but collapse once these are added. Dropping plot-level random intercepts doesn't help.
-# modPodcount <- stan(file='visitation_pollen_model3.stan',data=datalist,iter=2000,chains=6,
-#                     control=list(adapt_delta=0.8),init=0); beep(1)
-# # save(modPodcount,file='modPodcount3.Rdata')
 
 #Models split into separate stan files (faster)
 modFiles <- dir(pattern = 'commodity.*\\.stan')
 modFiles <- modFiles[!modFiles=='commodity_07flwSurv2.stan'] #Extra pod count model
 modList <- vector(mode = 'list',length = length(modFiles))
 names(modList) <- gsub('(commodity.*[0-9]{2}|\\.stan)','',modFiles)
-
-# for(i in 1:length(modFiles)){
-#   modList[i] <- stan(file=modFiles[i],data=datalist,iter=1000,chains=4,control=list(adapt_delta=0.8),init=0)
-# }
 
 modList[1] <- stan(file=modFiles[1],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #OK - Plant density, Plant size, Flower Density
 modList[2] <- stan(file=modFiles[2],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #OK - Visitation
@@ -220,45 +173,34 @@ modList[8] <- stan(file=modFiles[8],data=datalist,iter=2000,chains=4,control=lis
 
 #Get model summaries into a list of tables
 load('modSummaries_commodity.Rdata')
-# #Update model summaries if needed
-# temp <- lapply(modList,function(x){
-#   if(is.null(x)) return(NA)
-#   n <- names(x) #Model parameters
-#   n <- n[(!grepl('(\\[[0-9]+,*[0-9]*\\]|lp)',n))|grepl('[sS]igma',n)] #Drops parameter vectors, unless name contains "sigma" (variance term)
-#   return(parTable(x,pars=n))
-# })
-# for(i in 1:length(temp)){
-#   if(class(temp[[i]])=='data.frame'||length(temp[[i]])>1){ #If temp is not empty (model not run)
-#     modSummaries_commodity[[i]] <- temp[[i]] #Overwrite
-#   }
-# }
-# save(modSummaries_commodity,file = 'modSummaries_commodity.Rdata')
+# modSummaries_commodity <- vector(mode = 'list',length = length(modList)) #Create new empty list
+# names(modSummaries_commodity) <- names(modList)
+#Update model summaries if needed
+temp <- lapply(modList,parTable) #Get parameter summaries
+for(i in 1:length(temp)){
+  if(class(temp[[i]])=='data.frame'||length(temp[[i]])>1){ #If temp is not empty (model not run)
+    modSummaries_commodity[[i]] <- temp[[i]] #Overwrite
+  }
+}
+parNames <- lapply(modSummaries_commodity,function(x) x$param) #Clean up extra parameter names
+for(i in 2:length(modSummaries_commodity)){
+  if(!is.null(modSummaries_commodity[[i]])){
+    modSummaries_commodity[[i]] <- modSummaries_commodity[[i]][!parNames[[i]] %in% unlist(parNames[1:(i-1)]),]
+  }
+}
+save(modSummaries_commodity,file = 'modSummaries_commodity.Rdata')
 
 #Traceplots
 for(i in 1:length(modList)){
   if(!is.null(modList[[i]])){
     n <- names(modList[[i]]) #Model parameters
     n <- n[(!grepl('(\\[[0-9]+,*[0-9]*\\]|lp)',n))|grepl('[sS]igma',n)] #Gets rid of parameter vectors, unless it contains "sigma" (variance term)
-    
-    p <- traceplot(modList[[i]],pars=n,inc_warmup=FALSE)+geom_hline(yintercept = 0) #Traceplots
+    p <- traceplot(modList[[i]],pars=n,inc_warmup=FALSE)#+geom_hline(yintercept = 0) #Traceplots
     print(p)
     a <- readline('Press Return to continue: ')
     if(a!='') break()
   }
 }
-
-# #Other model checking
-# i <- 2
-# # print(modList[i])
-# modFiles[i]
-# n <- names(modList[[i]]) #Model parameters
-# n <- n[(!grepl('(\\[[0-9]+,*[0-9]*\\]|lp)',n))|grepl('[sS]igma',n)] #Gets rid of parameter vectors, unless it contains "sigma" (variance term)
-# parTable(modList[[i]],pars=n)
-# # plot(modList[[i]],pars=n) #Pointrange plot
-# stan_hist(modList[[i]],pars=n) #Pointrange plot
-# traceplot(modList[[i]],pars=n,inc_warmup=FALSE)+geom_hline(yintercept = 0) #Traceplots
-# compareRE(modList[[1]],'intPlSize_field') #Random effects plots
-# compareRE(modList[[1]],'intPlSize_plot') #Random effects plots
 
 #Posterior predictive checks - OK 
 PPplots(modList[[1]],datalist$plDens_obs,c('predPlDens','plDens_resid','predPlDens_resid'),
@@ -273,14 +215,40 @@ PPplots(modList[[6]],datalist$seedCount,c('predSeedCount','seedCount_resid','pre
 PPplots(modList[[7]],datalist$seedMass,c('predSeedWeight','seedWeight_resid','predSeedWeight_resid'),'Seed size')
 PPplots(modList[[8]],log(datalist$yield),c('predYield','yield_resid','predYield_resid'),'Seed mass per plant')
 
-
-
-#Faster Pairplots
-pairs(mod3[c(pars,'lp__')],lower.panel=function(x,y){
-  par(usr=c(0,1,0,1))
-  text(0.5, 0.5, round(cor(x,y),2), cex = 1 * exp(abs(cor(x,y))))})
+# Examine random intercept distributions
+compareRE(modList[[1]],'intPlDens_field') 
+compareRE(modList[[1]],'intPlSize_field')
+compareRE(modList[[1]],'intFlDens_field') 
+compareRE(modList[[2]],'intVisit_field') #skew-normal, but looks OK
+compareRE(modList[[3]],'intPollen_field')
+compareRE(modList[[4]],'intFlwCount_field')
+compareRE(modList[[4]],'intFlwCount_plot')
+compareRE(modList[[5]],'intFlwSurv_field')
+compareRE(modList[[5]],'intFlwSurv_plot')
+compareRE(modList[[6]],'intSeedCount_field')
+compareRE(modList[[6]],'intSeedCount_plot') #
+compareRE(modList[[7]],'intSeedWeight_field')
+compareRE(modList[[7]],'intSeedWeight_plot')
+compareRE(modList[[8]],'ranEffYield_field',1) #Intercepts
+compareRE(modList[[8]],'ranEffYield_field',2) #Slopes
+compareRE(modList[[8]],'ranEffYield_plot',1,0.3) #Intercepts
+compareRE(modList[[8]],'ranEffYield_plot',2,0.3) #Slopes - right skew
 
 # Partial effects plots for commodity fields -----------------------------
+
+
+
+#Plant density
+
+list('intPlDens'=1,
+           'slopeDistPlDens'=with(datalist,seq(min(log(dist)),max(log(dist)),length=10))) %>% 
+  getPreds(modSummaries_commodity[[1]],parList = .,otherPars = c('sigmaPlDens','sigmaPlDens_field'))
+
+list('intPlDens'=1,
+     'slopeDistPlDens'=with(datalist,seq(min(log(dist)),max(log(dist)),length=10))) %>% 
+  getPreds(modList[[1]],parList = .,otherPars = c('sigmaPlDens','sigmaPlDens_field'))
+
+
 load('modPodcount.Rdata') #All extracted coefficients in list form (mod3)
 mod3 <- extract(modPodcount) #Get coefficients from stan model
 rm(modPodcount); gc()
