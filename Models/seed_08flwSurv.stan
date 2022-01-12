@@ -183,7 +183,7 @@ parameters {
 	real intFlwSurv; //Intercept
 	real slopePolSurv; //Slope of pollen deposition
 	real slopePlSizeSurv; //Slope of plant size
-	real slopeEdgeCentSurv; //Slope of edge effect
+	real slopeEdgeCentSurv; //Slope of bay center effect
 	real slopeHbeeDistSurv; //Effect of (log) hbee distance
 	real slopeLbeeDistSurv; //Effect of (log) lbee distance
 	real slopeFlwDensSurv; //Effect of flower density

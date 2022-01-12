@@ -114,8 +114,8 @@ parameters {
 	real slopePlSizeSurv; //Slope of plant size
 	// real slopeIrrigSurv; //Slope of irrigation - p=0.56
 	// real slope2015Surv; //Slope of year - p=0.68
-	real slopePolSurv; //Slope of pollen deposition - requires other models
 	// real slopePlDensSurv; //Slope of plant density - requires other models
+	real slopePolSurv; //Slope of pollen deposition - requires other models
 	real<lower=0> sigmaFlwSurv_field; //SD of field random intercepts - bad traces, high Rhat
 	vector[Nfield] intFlwSurv_field; //field-level random intercepts - all overlap zero
 	// real<lower=0> sigmaFlwSurv_plot; //SD of plot random intercepts - bad traces, high Rhat

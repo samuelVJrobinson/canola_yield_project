@@ -1,5 +1,6 @@
 #R script to look at how basis sets are constructed for conditional independence claims
 library(dagitty)
+source('../helperFunctions.R')
 # Tests -------------------------------------------------------------------
 #Model 1 from Shipley 2009
 g1 <- dagitty("dag{x1 -> x2 -> x3 -> x4 -> x5}")
@@ -74,49 +75,11 @@ summary(shipley.psem)
 # Live  ~  DD  + lat  + Growth - correct
 # Live  ~  Date  + DD  + Growth - correct
 
-# Writing my own d-sep claims list. Appears that dagitty doesn't have this. --------------
-shipley.test <- function(g){ 
-  # From Shipley 2009
-  #1. Express causal relationship as DAG
-  #2. List each of the k pairs of variables that do not have an arrow b/w them
-  claims <- impliedConditionalIndependencies(g) #All variables without arrows between them
-  for(i in 1:length(claims)) claims[[i]]$Z <- list() #Remove conditioning sets
-  claims <- claims[!duplicated(claims)] #Remove duplicate claims
-  #Get exogenous variables
-  exoVars <- names(g)[sapply(names(g),function(x,dag) length(parents(dag,x))==0,dag=g)] #Exogenous variables only
-  isExo <- logical(length(claims)) #Is claim b/w only exogenous variables?
-  for(i in 1:length(claims)) isExo[i] <- claims[[i]]$X %in% exoVars & claims[[i]]$Y %in% exoVars 
-  claims <- claims[!isExo] #Remove claims b/w only exogenous variables
-  for(i in 1:length(claims)) {
-    if(length(ancestors(g,claims[[i]]$X))<length(ancestors(g,claims[[i]]$Y))){ #If x-value has fewer causal ancestors
-      X <- claims[[i]]$Y # Switch position of x and y
-      claims[[i]]$Y <- claims[[i]]$X 
-      claims[[i]]$X <- X
-    }
-  } 
-  rm(X) #Cleanup
-  
-  #3. For each of the k pairs of variables (Xi, Xj), list the set of other
-  #variables, {Z} in the graph that are direct causes of either Xi or Xj. 
-  for(i in 1:length(claims)){
-    var1 <- claims[[i]]$X
-    var2 <- claims[[i]]$Y
-    parents1 <- parents(g,var1)
-    parents2 <- parents(g,var2)
-    claims[[i]]$Z <- unique(c(parents1,parents2))
-  }
-  
-  # Sort by causal rank
-  claims <- claims[order(sapply(sapply(claims,function(x) x$X),function(x,dag) length(ancestors(dag,x)), dag=g),
-                         sapply(claims,function(x) x$X),
-                         sapply(sapply(claims,function(x) x$Y),function(x,dag) length(ancestors(dag,x)), dag=g))]
-  
-  for(i in 1:length(claims)) claims[[i]]$Z <- sort(claims[[i]]$Z)
-  return(claims)
-}
-
 g1 <- dagitty("dag{x1 -> x2 -> x3 -> x4 -> x5}")
+# debugonce(shipley.test)
 shipley.test(g1)
+g2 <- list(x2 ~ x1, x3 ~ x2, x4 ~ x3, x5 ~ x4)
+shipley.test(g2,form=TRUE)
 
 #Stated claims list from Shipley 2009
 # x1 _||_ x3 | x2 
@@ -126,7 +89,8 @@ shipley.test(g1)
 # x2 _||_ x5 | x1, x4
 # x3 _||_ x5 | x2, x4 
 
-#Results from my function. Looks OK.
+#Results from my function. Looks OK. 
+#Reversed dependencies doesn't matter for dSep claims (i.e. x3 _||_ x1 = x1 _||_ x3)
 # x3 _||_ x1 | x2
 # x4 _||_ x1 | x3
 # x4 _||_ x2 | x1, x3
@@ -134,50 +98,66 @@ shipley.test(g1)
 # x5 _||_ x2 | x1, x4
 # x5 _||_ x3 | x2, x4
 
-
 # Dagitty claims list for commodity fields --------------------------------
-commDAG <- dagitty(" dag {
-        plDens <- is2015; plDens <- isIrrig; plDens <- hbeeDist; plDens <- isGP;
-        plSize <- plDens; plSize <- hbeeDist; plSize <- isGP; plSize <- is2015; plSize <- isIrrig;
-        flDens <- plSize; flDens <- hbeeDist;
-        hbeeVis <- is2015; hbeeVis <- isGP; hbeeVis <- hbeeDist; hbeeVis <- numHives; 
-        hbeeVis <- flDens; hbeeVis <- isIrrig;
-        pollen <- hbeeVis; pollen <- hbeeDist;
-        flwSurv <- hbeeVis; flwSurv <- pollen; flwSurv <- plDens; flwSurv <- isIrrig; flwSurv <- is2015;
-        flwSurv <- plSize; 
-        flwCount <- is2015; flwCount <- plSize; flwCount <- flwSurv;
-        seedCount <- hbeeVis; seedCount <- pollen;  seedCount <- is2015; seedCount <- plSize;
-        seedWeight <- hbeeVis; seedWeight <- pollen; seedWeight <- isIrrig; seedWeight <- is2015
-        seedWeight <- plSize; seedWeight <- seedCount
-}")
+# commDAG <- dagitty(" dag {
+#         plDens <- hbeeDist;
+#         plSize <- plDens; plSize <- hbeeDist; 
+#         flDens <- plSize; flDens <- hbeeDist;
+#         hbeeVis <- hbeeDist; hbeeVis <- numHives; hbeeVis <- flDens;
+#         pollen <- hbeeVis; pollen <- hbeeDist;
+#         flwCount <- plSize; flwCount <- flwSurv;
+#         flwSurv <- hbeeVis; flwSurv <- plSize; flwSurv <- pollen;
+#         seedCount <- hbeeVis; seedCount <- pollen;  seedCount <- plSize;
+#         seedWeight <- hbeeVis; seedWeight <- pollen; seedWeight <- plSize; seedWeight <- seedCount
+# }")
+# plot(graphLayout(commDAG))
 
-plot(graphLayout(commDAG))
+commDAG <- list(plDens ~ hbeeDist,
+                plSize ~ plDens + hbeeDist,
+                flDens ~ plSize + hbeeDist,
+                hbeeVis ~ hbeeDist + numHives + flDens,
+                pollen ~ hbeeVis + hbeeDist,
+                flwCount ~ plSize + flwSurv,
+                flwSurv ~ hbeeVis + plSize + pollen,
+                seedCount ~ hbeeVis + pollen + plSize,
+                seedWeight ~ hbeeVis + pollen + plSize + seedCount)
 
-shipley.test(commDAG)
+unlist(shipley.test(commDAG,TRUE))
 
 
 # Dagitty claims list for seed fields -------------------------------------
 
-seedDAG <- dagitty( "dag {
-              plDens <- hbeeDist 
-              plSize <- hbeeDist; plSize <- plDens
-              flDens <- plSize; flDens <- isMbay; flDens <- is2016; flDens <- hbeeDist;
-              hbeeVis <- flDens; hbeeVis <- hbeeDist; hbeeVis <- lbeeDist;
-              hbeeVis <- lbeeVis; hbeeVis <- isMbay; hbeeVis <- isCent
-              lbeeVis <- lbeeDist; lbeeVis <- hbeeDist; lbeeVis <- isMbay
-              lbeeVis <- isCent; lbeeVis <- lbeeStocking; lbeeVis <- is2016; lbeeVis <- flDens;
-              pol <- hbeeVis; pol <- lbeeVis; pol <- isCent; pol <- hbeeDist; pol <- flDens
-              flwCount <- plSize; flwCount <- isCent; flwCount <- surv;
-              surv <- pol; surv <- plSize; surv <- isCent; surv <- hbeeDist; surv <- lbeeDist; surv <- flDens
-              seedCount <- pol; seedCount <- plSize; seedCount <- isCent; seedCount <- hbeeDist;
-              seedCount <- flDens; seedCount <- surv; 
-              seedWeight <- pol; seedWeight <- seedCount; seedWeight <- plSize; seedWeight <- plDens;
-              seedWeight <- is2016; seedWeight <- lbeeDist; seedWeight <- lbeeStocking
-              }"
-)
-plot(graphLayout(seedDAG))
+# seedDAG <- dagitty( "dag {
+#               plDens <- hbeeDist;
+#               plSize <- hbeeDist; plSize <- plDens;
+#               flDens <- isMbay; flDens <- hbeeDist;
+#               hbeeVis <- flDens; hbeeVis <- hbeeDist; hbeeVis <- lbeeDist; 
+#               hbeeVis <- lbeeVis; hbeeVis <- isMbay; hbeeVis <- isCent;
+#               lbeeVis <- lbeeDist; lbeeVis <- hbeeDist; lbeeVis <- isMbay;
+#               lbeeVis <- isCent; lbeeVis <- lbeeStocking; lbeeVis <- flDens;
+#               pol <- hbeeVis; pol <- lbeeVis; pol <- isCent; pol <- hbeeDist; pol <- flDens
+#               flwCount <- plSize; flwCount <- isCent; flwCount <- surv;
+#               surv <- pol; surv <- plSize; surv <- isCent; surv <- hbeeDist; surv <- lbeeDist; surv <- flDens
+#               seedCount <- pol; seedCount <- plSize; seedCount <- isCent; seedCount <- hbeeDist;
+#               seedCount <- flDens; seedCount <- surv; 
+#               seedWeight <- pol; seedWeight <- seedCount; seedWeight <- plSize; seedWeight <- plDens;
+#               seedWeight <- lbeeDist; seedWeight <- lbeeStocking
+#               }")
+# plot(graphLayout(seedDAG))
 
-shipley.test(seedDAG)
+seedDAG <- list(plDens ~ hbeeDist,
+                plSize ~ hbeeDist + plDens,
+                flDens ~ isMbay + hbeeDist,
+                hbeeVis ~ flDens + hbeeDist + lbeeDist + lbeeVis + isMbay + isCent,
+                lbeeVis ~ lbeeDist + hbeeDist + isMbay + isCent + lbeeStocking + flDens,
+                pollen ~ hbeeVis + lbeeVis + isCent + hbeeDist + flDens,
+                flwCount ~ plSize + isCent + surv,
+                flwSurv ~ pollen + plSize + isCent + hbeeDist + lbeeDist + flDens,
+                seedCount ~ pollen + seedCount + plSize + isCent + hbeeDist + flDens + surv,
+                seedWeight ~ pollen + seedCount + plSize + plDens + lbeeDist + lbeeStocking
+              )
+
+unlist(shipley.test(seedDAG,TRUE))
 
 
 

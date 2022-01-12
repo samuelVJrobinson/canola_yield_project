@@ -1,0 +1,82 @@
+Filename,Independ.Claim,      Estimate,   Std.Error,     DF,   Crit.Value,      P.Value,Sig,StanParam,StanPval,StanSig,Notes
+NA,PlDens~Bay+...,0.0040813921,0.866168198,291.03,0.004712009,0.996,,NA,NA,,
+seedModel_claims1,PlDens~EdgeCent+...,-0.3910014938,1.065725763,291.04,-0.366887531,0.714,,slopeEdgeCentPlDens,0.4628105,,
+seedModel_claims3,PlDens~logMinDist+...,-0.0805127032,0.529772979,298.81,-0.151975858,0.879,,slopeMinDistPlDens,0.7205238,,
+seedModel_claims4,PlDens~Stocking+...,-1.6585547355,4.393651549,31.03,-0.37748891,0.708,,slopeLbeeStockingPlDens,0.8053116,,
+,,,,,,,,,,,
+NA,predPlSize~Bay+...,-0.003972449,0.018271545,291,-0.217411774,0.828,,NA,NA,,
+seedModel_claims5,predPlSize~EdgeCent+...,-0.0099008789,0.022418991,291,-0.441629096,0.659,,slopeEdgeCentPlSize,0.965898,,
+seedModel_claims6,predPlSize~logDist+...,0.0607180597,0.009732061,291.88,6.238972069,1.55E-09, ***,slopeDistPlSize,5.51E-08,***,Added to model
+seedModel_claims7,predPlSize~logMinDist+...,-0.0332560468,0.010264355,291.66,-3.239954752,0.00133,  **,slopeMinDistPlSize,0.02003226,**,Added to model.
+seedModel_claims8,predPlSize~Stocking+...,0.0715356231,0.357770646,29.99,0.199948274,0.843,,slopeLbeeStockingPlSize,0.8559503,,
+,,,,,,,,,,,
+seedModel_claims9,sqrtFlDens~Bay+...,0.0019606268,0.09393153,291.91,0.020872936,0.983,,slopeBayFlDens,0.0435822,**,Added to model
+seedModel_claims10,sqrtFlDens~EdgeCent+...,-0.0258093762,0.115262338,291.98,-0.223918555,0.823,,slopeEdgeCentFlDens,0.247827,,
+seedModel_claims12,sqrtFlDens~logDist+...,0.3469375654,0.041573482,295.3,8.345164924,2.8E-15, ***,slopeDistFlDens,0,***,Added to model
+seedModel_claims13,sqrtFlDens~logMinDist+...,-0.0954394742,0.05080849,314.96,-1.878415863,0.0621,,slopeMinDistFlDens,0.06951097,,
+seedModel_claims14,sqrtFlDens~PlDens+...,-0.0006670119,0.005830504,321.32,-0.114400395,0.909,,slopePlDensFlDens,0.0280112,**,Added to model. Correlated with distance
+seedModel_claims15,sqrtFlDens~Stocking+...,0.1869487465,0.231807258,30.13,0.806483577,0.426,,slopeLbeeStockingFlDens,0.8767434,,
+,,,,,,,,,,,
+seedModel_claims17,hbeeVisRate~PlDens+...,0.0057733531,0.008469,97.72,0.681704244,0.505,,slopePlDensHbeeVis,0.5471257,,
+seedModel_claims18,hbeeVisRate~predPlSize+...,-0.0521581508,0.180721504,65.82,-0.28861065,0.775,,slopePlSizeHbeeVis,0.583347,,
+seedModel_claims19,hbeeVisRate~Stocking+...,0.0943671497,0.285957006,31.1,0.330004678,0.744,,slopeLbeeStockingHbeeVis,0.5639782,,
+seedModel_claims20,hbeeVisRate~lbeeVisRate+...,NA,NA,NA,NA,NA,,slopeLbeeVisHbeeVis,0.1632524,,
+,,,,,,,,,,,
+seedModel_claims22,lbeeVisRate~logDist+...,-0.204888273,0.068928126,306.1,-2.972491557,0.00326,  **,slopeDistLbeeVis,1.52E-06,***,Added to model
+seedModel_claims23,lbeeVisRate~PlDens+...,-0.0126870966,0.006114851,154.01,-2.074800469,0.0431,   *,slopePlDensLbeeVis,0.008307765,***,Added to model
+seedModel_claims24,lbeeVisRate~predPlSize+...,0.1048976731,0.125124531,58.83,0.838346187,0.408,,slopePlSizeLbeeVis,0.011681,***,Added to model
+,,,,,,,,,,,
+NA,predPol~Bay+...,0.1055937934,0.064539134,290.04,1.636120405,0.103,,NA,NA,,
+seedModel_claims25,predPol~EdgeCent+...,0.3278437242,0.077504642,290.06,4.229988241,3.14E-05, ***,slopeEdgeCentPol,0.0003816214,***,Added to model
+seedModel_claims27,predPol~logDist+...,-0.2017573716,0.030688365,290.72,-6.574393039,2.27E-10, ***,slopeDistPol,1.89E-06,***,Added to model
+seedModel_claims28,predPol~logMinDist+...,-0.0006944279,0.036330581,298.4,-0.019114142,0.985,,slopeMinDistPol,0.582996,,
+seedModel_claims29,predPol~PlDens+...,-0.0014895757,0.003897632,320.96,-0.382174486,0.704,,slopePlDensPol,0.1376145,,
+seedModel_claims30,predPol~predPlSize+...,-0.2330943179,0.126784431,85.33,-1.838509007,0.0737,,slopePlSizePol,0.122099,,
+seedModel_claims31,predPol~sqrtFlDens+...,-0.1266183902,0.039105119,303.01,-3.237898112,0.00136,  **,slopeFlDensPol,0.004845395,***,Added to model
+seedModel_claims32,predPol~Stocking+...,-0.1871484904,0.308959591,31.03,-0.60573776,0.549,,slopeLbeeStockingPol,0.6670426,,
+,,,,,,,,,,,
+NA,predFlwCount~Bay+...,-0.0451419016,0.020496464,291.07,-2.202423883,0.0284,   *,NA,NA,,
+seedModel_claims33,predFlwCount~EdgeCent+...,-0.1332299423,0.024119913,291.12,-5.523649474,7.37E-08, ***,slopeCentFlwCount,0.004845395,***,Added to model
+seedModel_claims35,predFlwCount~logDist+...,0.0129340007,0.010310928,293.91,1.254397284,0.211,,slopeDistFlwCount,0.1795278,,
+seedModel_claims36,predFlwCount~logMinDist+...,0.0310791938,0.011407892,293.19,2.724359062,0.00684,  **,slopeMinDistFlwCount,0.07431584,*,
+seedModel_claims37,predFlwCount~PlDens+...,-0.0045972377,0.001483526,294.94,-3.098859424,0.00214,  **,slopePlDensFlwCount,0.0758666,*,
+seedModel_claims38,predFlwCount~sqrtFlDens+...,0.0081871639,0.012855816,293.22,0.636845148,0.525,,slopeFlDensFlwCount,0.01096428,***,Added to model
+seedModel_claims39,predFlwCount~Stocking+...,0.0824047505,0.285442465,30.68,0.28869128,0.775,,slopeLbeeStockingFlwCount,0.6754133,,
+seedModel_claims40,predFlwCount~hbeeVisRate+...,NA,NA,NA,NA,NA,,slopeHbeeVisFlwCount,0.6173216,,
+seedModel_claims41,predFlwCount~lbeeVisRate+...,NA,NA,NA,NA,NA,,slopeLbeeVisFlwCount,0.005545288,***,Added to model
+seedModel_claims42,predFlwCount~predPol+...,NA,NA,NA,NA,NA,,slopePolFlwCount,0.0002630441,***,Added to model
+,,,,,,,,,,,
+NA,predPodSuccess~Bay+...,0.1081695082,0.077781542,291.44,1.390683517,0.165,,NA,NA,,
+seedModel_claims43,predPodSuccess~EdgeCent+...,0.3364577468,0.095688658,295.18,3.516171659,0.00051, ***,slopeEdgeCentSurv,0.001141552,***,Added to model
+seedModel_claims45,predPodSuccess~logDist+...,-0.252278805,0.038285396,304.83,-6.589426525,2.05E-10, ***,slopeDistSurv,1.71E-09,***,Added to model
+seedModel_claims46,predPodSuccess~logMinDist+...,-0.0517739309,0.042787735,306.79,-1.210018037,0.228,,slopeMinDistSurv,0.02538386,**,
+seedModel_claims47,predPodSuccess~PlDens+...,-0.0101874853,0.005076741,314.42,-2.006697776,0.0464,   *,slopePlDensSurv,0.2245871,,
+seedModel_claims48,predPodSuccess~predFlwCount+...,-0.8390157552,0.161149375,236.33,-5.206447458,5.62E-07, ***,slopeFlwCountSurv,4.78E-06,***,"Added to model. Should this be the other way around, as in commodity model?"
+seedModel_claims49,predPodSuccess~sqrtFlDens+...,-0.1816496119,0.046518435,318.08,-3.904895132,0.000123, ***,slopeFlwDensSurv,0.0005765796,***,Added to model
+seedModel_claims50,predPodSuccess~Stocking+...,-0.0034150675,0.264368992,29.92,-0.012917807,0.99,,slopeStockingSurv,0.7812378,,
+seedModel_claims51,predPodSuccess~hbeeVisRate+...,NA,NA,NA,NA,NA,,slopeHbeeVisSurv,0.847803,,
+seedModel_claims52,predPodSuccess~lbeeVisRate+...,NA,NA,NA,NA,NA,,slopeLbeeVisSurv,0.8907315,,
+,,,,,,,,,,,
+NA,predSeedCount~Bay+...,0.1652277037,0.07236147,291.31,2.283365775,0.0231,   *,NA,NA,,
+seedModel_claims53,predSeedCount~EdgeCent+...,0.5283904807,0.085942668,294.4,6.148174033,2.58E-09, ***,slopeEdgeCentSeedCount,7.42E-12,***,Added to model
+seedModel_claims55,predSeedCount~logDist+...,-0.1256570472,0.037627561,304.13,-3.339494909,0.000959, ***,slopeDistSeedCount,0.003339474,***,Added to model
+seedModel_claims56,predSeedCount~logMinDist+...,-0.0155766218,0.040163377,304.94,-0.387831474,0.699,,slopeMinDistSeedCount,0.7659361,,
+seedModel_claims57,predSeedCount~PlDens+...,-0.0009101741,0.005030407,313.41,-0.180934477,0.857,,slopePlDensSeedCount,0.3868675,,
+seedModel_claims58,predSeedCount~predFlwCount+...,-0.8967590841,0.155687476,271.93,-5.759994993,2.99E-08, ***,slopeFlwCountSeedCount,0.04100447,**,Added to model
+seedModel_claims59,predSeedCount~predPodSuccess+...,0.500535695,0.044488977,321.99,11.25078014,9.47E-25, ***,slopeSurvSeedCount,0.1554302,Trouble with this one,Added to model
+seedModel_claims60,predSeedCount~sqrtFlDens+...,-0.1290166135,0.044167377,316.43,-2.921083869,0.00387,  **,slopeFlDensSeedCount,5.52E-05,***,Added to model
+seedModel_claims61,predSeedCount~Stocking+...,0.0352636885,0.264839987,29.95,0.133150922,0.895,,slopeStockingSeedCount,0.7879626,,
+seedModel_claims62,predSeedCount~hbeeVisRate+...,NA,NA,NA,NA,NA,,slopeHbeeVisSeedCount,0.6478144,,
+seedModel_claims63,predSeedCount~lbeeVisRate+...,NA,NA,NA,NA,NA,,slopeLbeeVisSeedCount,0.3087066,,
+,,,,,,,,,,,
+NA,predSeedSize~Bay+...,0.0008726266,0.053972343,289.97,0.016168033,0.987,,NA,NA,,
+seedModel_claims64,predSeedSize~EdgeCent+...,-0.0016929467,0.071142447,293.68,-0.023796577,0.981,,slopeEdgeCentSeedWeight,0.752819,,
+seedModel_claims66,predSeedSize~logDist+...,-0.0103157221,0.028925384,298.71,-0.356632159,0.722,,slopeDistSeedWeight,0.9715071,,
+seedModel_claims67,predSeedSize~logMinDist+...,0.0123963504,0.029695388,296.15,0.417450363,0.677,,slopeMinDistSeedWeight,0.001270956,***,Added to model
+seedModel_claims68,predSeedSize~PlDens+...,0.008565905,0.003800144,301.66,2.254100238,0.0251,   *,slopePlDensSeedWeight,0.004524344,***,Added to model
+seedModel_claims69,predSeedSize~predFlwCount+...,-0.4373889308,0.137227324,292.22,-3.187331201,0.00171,  **,slopeFlwCountSeedWeight,0.1719813,,
+seedModel_claims70,predSeedSize~predPodSuccess+...,0.0447082862,0.046456557,304.6,0.96236762,0.338,,slopeSurvSeedWeight,0.9795227,Trouble with this one,Added to model
+seedModel_claims71,predSeedSize~sqrtFlDens+...,0.0207814169,0.033835706,300.96,0.614185996,0.54,,slopeFlDensSeedWeight,0.7784588,,
+seedModel_claims72,predSeedSize~Stocking+...,0.4228838333,0.319544186,30.09,1.32339705,0.196,,slopeStockingSeedWeight,0.0260847,**,Added to model
+seedModel_claims73,predSeedSize~hbeeVisRate+...,NA,NA,NA,NA,NA,,slopeHbeeVisSeedWeight,0.2133066,,
+seedModel_claims74,predSeedSize~lbeeVisRate+...,NA,NA,NA,NA,NA,,slopeLbeeVisSeedWeight,0.069235,*,

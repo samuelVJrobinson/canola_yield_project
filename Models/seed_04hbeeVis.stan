@@ -167,7 +167,7 @@ parameters {
 	// hbee Visitation - random effects at field level weren't converging
 	real intVisitHbee; //Intercept
 	real slopeFlDensHbee; //Slope of flower density
-	real slopeHbeeDistHbee; //Slope of (log) distance
+	real slopeHbeeDistHbee; //Slope of hbee distance
 	real slopeLbeeDistHbee; //Slope of leafcutter distance
 	real slopeLbeeHbeeDistHbee; //Interaction b/w leafcutter & honeybee distance
 	real slopeLbeeVisHbee; //Direct effect of leafcutter visitation

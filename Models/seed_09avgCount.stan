@@ -186,9 +186,8 @@ parameters {
 	real slopePolSeedCount; //Slope of pollen deposition
 	real slopePlSizeCount; //Slope of plant size
 	real slopeEdgeCentSeedCount; // Slope of edge effect on seed count
-	real slopeHbeeDistSeedCount; //Slope of leafcutter distance on seed count
+	real slopeHbeeDistSeedCount; //Slope of honeybee distance on seed count
 	real slopeFlDensSeedCount; //Slope of flower density on seed count
-	// real slopeFlwCountSeedCount; //Slope of flower count on seed count
 	real slopeSurvSeedCount; //Slope of plant-level pod survival on seed count
 	real<lower=1e-10> sigmaSeedCount; //SD at plant level
 	real<lower=1e-10> sigmaSeedCount_field; //SD of field random effect

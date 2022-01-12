@@ -83,70 +83,47 @@ transformed data {
 }
 
 parameters {
-	// hbee Visitation per plot
-	real intVisit; //Intercept
-	// real slopeYearVis; //Effect of 2015
-	// real slopeGpVis; //Effect of Grand Prairie
-	// real slopeYearGpVis; //Effect of year-GP interaction
-	// real slopeIrrigVis; //Effect of irrigation
-	real slopeDistVis; //Slope of distance
-	real slopeHiveVis; //Slope of hive number
-	real slopeFlDens; //Slope of flower density
-	real<lower=0> sigmaVisField; //SD of field random intercepts
-	real<lower=0> visitHbeePhi; //Dispersion parameter
-	vector[Nfield] intVisit_field; //field-level random intercepts
-	real<lower=0> lambdaVisField; //Lambda for skewed random effects
+	// Plant density	
+	real claim_numHives; 
+	vector[Nplot_densMiss] plDens_miss; 
+	real intPlDens; //Global intercept
+	real slopeDistPlDens; //Slope of distance into field		
+	real<lower=0> sigmaPlDens; //Sigma for within-field (residual)
+	real<lower=0> sigmaPlDens_field; //Sigma for field
+	vector[Nfield] intPlDens_field; //Random intercept for field
 }
 
 transformed parameters {		
 	//Expected values
 	
-	//Visitation
-	vector[Nplot] visitHbeeMu; //Expected hbee visits
-	
+	//Plant density
+	vector[Nplot] plDensMu; //Expected plant density
+	vector[Nplot] plDens; //Planting density - imputed
+
+  //Assign imputed data
+	plDens[obsPlDens_ind]=plDens_obs; //Observed data
+	plDens[missPlDens_ind]=plDens_miss;	//Missing data
+
 	for(i in 1:Nplot){ 
-		// Honeybee Visitation
-		visitHbeeMu[i] = intVisit + //Intercept
-		  intVisit_field[plotIndex[i]] + //Field-level random intercept
-		  logTime[i] + //Time offset
-			// slopeYearVis*is2015[plotIndex[i]] + //Year effect
-			// slopeGpVis*isGP[plotIndex[i]] + //Grand Prairie effect
-			// slopeYearGpVis*is2015[plotIndex[i]]*isGP[plotIndex[i]] + //Year:area interaction
-			slopeDistVis*logHbeeDist[i] + //distance from edge
-			slopeHiveVis*logNumHives[plotIndex[i]] + //(log) Number of hives
-			slopeFlDens*flDens[i]; //Flower density
-			// slopeIrrigVis*isIrrigated[plotIndex[i]]; //Irrigation
+		// Plant density per plot
+		plDensMu[i] = intPlDens + //Intercept
+		  intPlDens_field[plotIndex[i]] + //Field level random intercept
+		  
+			slopeDistPlDens*logHbeeDist[i]; //Distance effect
 	}
+	
 }
 	
 model {	
   
-  hbeeVis ~ neg_binomial_2_log(visitHbeeMu,visitHbeePhi); //Honeybee visitation (no ZI-process)
+  //Likelihood		
+	plDens ~ normal(plDensMu,sigmaPlDens); //Plant density
 	
 	// Priors
-	// Visitation - informative priors
-	intVisit ~ normal(0,1); //Intercept
-	slopeDistVis ~ normal(0,1); //Slope of distance effect on hbee visits
-	slopeHiveVis ~ normal(0,1); //Slope of hive effect on visits
-	// slopeYearVis ~ normal(0,1); //2015 effect
-	// slopeGpVis ~ normal(0,1); //Effect of Grand Prairie
-	// slopeYearGpVis ~ normal(0,1); // GP-year interaction
-	slopeFlDens ~ normal(0,1); //Flower density
-	sigmaVisField ~ gamma(1.1,1); //Sigma for random field
-	intVisit_field ~ exp_mod_normal(0,sigmaVisField,lambdaVisField); //Skewed random effects - slightly better than standard normal
-	lambdaVisField ~ gamma(1.1,1); //Lambda for skewed random effects
-	visitHbeePhi ~ gamma(1.1,1); //Dispersion parameter for NegBin
-}
-
-generated quantities {
-	// hbeeVis
-	int predHbeeVis[Nplot];
-	real hbeeVis_resid[Nplot];
-	real predHbeeVis_resid[Nplot];
-	for(i in 1:Nplot){
-		// bee visits (NB version)
-		hbeeVis_resid[i]=hbeeVis[i]-exp(visitHbeeMu[i]); //Residual for actual value
-		predHbeeVis[i] = neg_binomial_2_log_rng(visitHbeeMu[i],visitHbeePhi); //Predicted value drawn from neg.bin
-		predHbeeVis_resid[i]=predHbeeVis[i]-exp(visitHbeeMu[i]); //residual for predicted value
-	}
+	//Plant density	- informative priors
+	intPlDens ~ normal(0,1); //Global intercept
+	slopeDistPlDens ~ normal(0,1); //Slope of distance into field	
+	sigmaPlDens ~ gamma(1,1); //Sigma for within-field (residual)
+	sigmaPlDens_field ~ gamma(1,1); //Sigma for field
+	intPlDens_field ~ normal(0,sigmaPlDens_field); //Random intercept for field
 }

@@ -274,3 +274,61 @@ getPreds <- function(mod,parList=NULL,otherPars=NULL,q=c(0.5,0.025,0.975),nrep=4
   
   return(cbind(mm,pred))
 }
+
+# d-separation claims list from Shipley 2009
+# g = dag object, or list of formulae to be passed to ggdag
+# form = Convert to form from dagitty structure?
+
+shipley.test <- function(g,form=FALSE){ 
+  require(dagitty)
+  if(class(g)=='list'){
+    require(ggdag); g <- do.call(dagify,g)
+  }
+  
+  claim2Form <- function(x){ #Converts claim to formula, if needed
+    dep <- x$X
+    ind <- paste(x$Y,paste(x$Z,collapse=' + '),sep = ' + ')
+    paste0(dep,' ~ ',ind)
+  }
+  
+  # From Shipley 2009
+  #1. Express causal relationship as DAG
+  #2. List each of the k pairs of variables that do not have an arrow b/w them
+  claims <- impliedConditionalIndependencies(g) #All variables without arrows between them
+  for(i in 1:length(claims)) claims[[i]]$Z <- list() #Remove conditioning sets
+  claims <- claims[!duplicated(claims)] #Remove duplicate claims
+  #Get exogenous variables
+  exoVars <- names(g)[sapply(names(g),function(x,dag) length(parents(dag,x))==0,dag=g)] #Exogenous variables only
+  isExo <- logical(length(claims)) #Is claim b/w only exogenous variables?
+  for(i in 1:length(claims)) isExo[i] <- claims[[i]]$X %in% exoVars & claims[[i]]$Y %in% exoVars 
+  claims <- claims[!isExo] #Remove claims b/w only exogenous variables
+  
+  for(i in 1:length(claims)) { #This isn't part of Shipley's test, but makes modeling more "realistic", and doesn't change results (independence claims _should_ be the same in either direction)
+    if(length(ancestors(g,claims[[i]]$X))<length(ancestors(g,claims[[i]]$Y))){ #If x-value has fewer causal ancestors
+      X <- claims[[i]]$Y # Switch position of x and y
+      claims[[i]]$Y <- claims[[i]]$X
+      claims[[i]]$X <- X
+    }
+  }
+  if(exists('X')) rm(X)
+  
+  #3. For each of the k pairs of variables (Xi, Xj), list the set of other
+  #variables, {Z} in the graph that are direct causes of either Xi or Xj. 
+  for(i in 1:length(claims)){
+    var1 <- claims[[i]]$X
+    var2 <- claims[[i]]$Y
+    parents1 <- parents(g,var1)
+    parents2 <- parents(g,var2)
+    claims[[i]]$Z <- unique(c(parents1,parents2))
+  }
+  
+  # Sort by causal rank
+  claims <- claims[order(sapply(sapply(claims,function(x) x$X),function(x,dag) length(ancestors(dag,x)), dag=g),
+                         sapply(claims,function(x) x$X),
+                         sapply(sapply(claims,function(x) x$Y),function(x,dag) length(ancestors(dag,x)), dag=g))]
+  
+  for(i in 1:length(claims)) claims[[i]]$Z <- sort(claims[[i]]$Z)
+  claims <- unname(claims) #Get rid of names
+  if(form) claims <- lapply(claims,claim2Form) #Convert to formula if needed
+  return(claims)
+}

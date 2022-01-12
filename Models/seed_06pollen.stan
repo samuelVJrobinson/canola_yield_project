@@ -172,8 +172,8 @@ parameters {
 	real slopeLbeePol; //Slope of lbee visits
 	real slopeCentPol; //Bay center effect
 	real slopeHbeeDistPol; //(log) hbee distance effect
-	// real slopeStockingHbeeDistPol; //hbee distance:stocking interaction
 	real slopeFlDensPol; //Flower density
+	// real slopeStockingHbeeDistPol; //hbee distance:stocking interaction
 	real<lower=1e-10> sigmaPolField; //Sigma for field-level intercept
 	vector[Nfield] intPol_field; //Field-level random intercept
 	real<lower=1e-10> sigmaPolPlot; //Sigma for plot-level intercept
