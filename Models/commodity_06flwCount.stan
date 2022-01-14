@@ -122,7 +122,7 @@ transformed parameters {
     // Flower count per plant (attempted pods)
     flwCountMu[i] = flwCountPlot[plantIndex[i]] + //Plot level flower count
     	slopePlSizeFlwCount*plantSize[i] + //Plant size effect
-    	slopeSurvFlwCount*logitFlwSurv[i]; //Flower survival effect - do plants with lower flw survival make more flowers?
+    	slopeSurvFlwCount*logitFlwSurv[i]; //Flower survival effect
     // Phi (dispersion) for flower count
     phiFlwCount[i] = exp(intPhiFlwCount + //Intercept
       intPhiFlwCount_field[plotIndex[plantIndex[i]]] + //Field-level random intercept
@@ -140,17 +140,17 @@ model {
 	// Priors
 	
   //Flower count (per plant)
-  intFlwCount ~ normal(0,1); //Intercept
-  slopePlSizeFlwCount ~ normal(0,1); //Slope of plant size
-  slopeSurvFlwCount ~ normal(0,1); //Slope of survival rate
-  // slope2015FlwCount ~ normal(0,1); //Slope of 2015 effect
+  intFlwCount ~ normal(2.6,5); //Intercept
+  slopePlSizeFlwCount ~ normal(0,5); //Slope of plant size
+  slopeSurvFlwCount ~ normal(0,5); //Slope of survival rate
+  // slope2015FlwCount ~ normal(0,5); //Slope of 2015 effect
   phiFlwCount_field ~ gamma(1,1); //SD of field-level random effect
   intFlwCount_field ~ normal(0,phiFlwCount_field); //Field-level random intercept
   phiFlwCount_plot ~ gamma(1,1); //SD of plot-level random effect
   intFlwCount_plot ~ normal(0,phiFlwCount_plot); //Plot-level random intercept
   //Variance (sigma) terms
-  intPhiFlwCount ~ normal(0,1); //Intercept
-  slopePlSizePhiFlwCount ~ normal(0,1);
+  intPhiFlwCount ~ normal(0,5); //Intercept
+  slopePlSizePhiFlwCount ~ normal(0,5);
   sigmaPhiFlwCount_field ~ gamma(1,1); //Sigma for field-level sigma
   intPhiFlwCount_field ~ normal(0,sigmaPhiFlwCount_field); //Field-level random intercept
   // sigmaPhiFlwCount_plot ~ gamma(1,1); //Sigma for plot-level sigma - bad traces, high Rhat

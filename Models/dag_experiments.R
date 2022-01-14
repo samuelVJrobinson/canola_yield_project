@@ -98,66 +98,8 @@ shipley.test(g2,form=TRUE)
 # x5 _||_ x2 | x1, x4
 # x5 _||_ x3 | x2, x4
 
-# Dagitty claims list for commodity fields --------------------------------
-# commDAG <- dagitty(" dag {
-#         plDens <- hbeeDist;
-#         plSize <- plDens; plSize <- hbeeDist; 
-#         flDens <- plSize; flDens <- hbeeDist;
-#         hbeeVis <- hbeeDist; hbeeVis <- numHives; hbeeVis <- flDens;
-#         pollen <- hbeeVis; pollen <- hbeeDist;
-#         flwCount <- plSize; flwCount <- flwSurv;
-#         flwSurv <- hbeeVis; flwSurv <- plSize; flwSurv <- pollen;
-#         seedCount <- hbeeVis; seedCount <- pollen;  seedCount <- plSize;
-#         seedWeight <- hbeeVis; seedWeight <- pollen; seedWeight <- plSize; seedWeight <- seedCount
-# }")
-# plot(graphLayout(commDAG))
-
-commDAG <- list(plDens ~ hbeeDist,
-                plSize ~ plDens + hbeeDist,
-                flDens ~ plSize + hbeeDist,
-                hbeeVis ~ hbeeDist + numHives + flDens,
-                pollen ~ hbeeVis + hbeeDist,
-                flwCount ~ plSize + flwSurv,
-                flwSurv ~ hbeeVis + plSize + pollen,
-                seedCount ~ hbeeVis + pollen + plSize,
-                seedWeight ~ hbeeVis + pollen + plSize + seedCount)
-
-unlist(shipley.test(commDAG,TRUE))
 
 
-# Dagitty claims list for seed fields -------------------------------------
-
-# seedDAG <- dagitty( "dag {
-#               plDens <- hbeeDist;
-#               plSize <- hbeeDist; plSize <- plDens;
-#               flDens <- isMbay; flDens <- hbeeDist;
-#               hbeeVis <- flDens; hbeeVis <- hbeeDist; hbeeVis <- lbeeDist; 
-#               hbeeVis <- lbeeVis; hbeeVis <- isMbay; hbeeVis <- isCent;
-#               lbeeVis <- lbeeDist; lbeeVis <- hbeeDist; lbeeVis <- isMbay;
-#               lbeeVis <- isCent; lbeeVis <- lbeeStocking; lbeeVis <- flDens;
-#               pol <- hbeeVis; pol <- lbeeVis; pol <- isCent; pol <- hbeeDist; pol <- flDens
-#               flwCount <- plSize; flwCount <- isCent; flwCount <- surv;
-#               surv <- pol; surv <- plSize; surv <- isCent; surv <- hbeeDist; surv <- lbeeDist; surv <- flDens
-#               seedCount <- pol; seedCount <- plSize; seedCount <- isCent; seedCount <- hbeeDist;
-#               seedCount <- flDens; seedCount <- surv; 
-#               seedWeight <- pol; seedWeight <- seedCount; seedWeight <- plSize; seedWeight <- plDens;
-#               seedWeight <- lbeeDist; seedWeight <- lbeeStocking
-#               }")
-# plot(graphLayout(seedDAG))
-
-seedDAG <- list(plDens ~ hbeeDist,
-                plSize ~ hbeeDist + plDens,
-                flDens ~ isMbay + hbeeDist,
-                hbeeVis ~ flDens + hbeeDist + lbeeDist + lbeeVis + isMbay + isCent,
-                lbeeVis ~ lbeeDist + hbeeDist + isMbay + isCent + lbeeStocking + flDens,
-                pollen ~ hbeeVis + lbeeVis + isCent + hbeeDist + flDens,
-                flwCount ~ plSize + isCent + surv,
-                flwSurv ~ pollen + plSize + isCent + hbeeDist + lbeeDist + flDens,
-                seedCount ~ pollen + seedCount + plSize + isCent + hbeeDist + flDens + surv,
-                seedWeight ~ pollen + seedCount + plSize + plDens + lbeeDist + lbeeStocking
-              )
-
-unlist(shipley.test(seedDAG,TRUE))
 
 
 

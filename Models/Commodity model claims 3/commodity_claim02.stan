@@ -83,72 +83,74 @@ transformed data {
 }
 
 parameters {
+	// Plant density	
+	vector<lower=1.8,upper=5>[Nplot_densMiss] plDens_miss; 
 	
-	// Pollen deposition
-	// Plot level random effect has bad trace, strongly correlated with lp__
-	real intPollen; //Intercept
-	real slopeVisitPol; //Slope of hbee visits	
-	real slopeHbeeDistPollen; //Effect of distance into field
-	real<lower=0> sigmaPolField; //SD of field random intercepts	
-	real<lower=0> pollenPhi; //Dispersion parameter
-	vector[Nfield] intPollen_field; //field-level random intercepts	
-	// real<lower=0> sigmaPolPlot; //SD of plot random intercepts
-	// vector[Nplot] intPollen_plot; //plot-level random intercepts
+	// Plant size
+	real claim02_slopeNumHivePlSize; //Claim
+	real intPlSize; //Global intercept
+	real slopePlDensPlSize; //Slope of planting density
+	real slopeDistPlSize; //Slope of distance
+	real<lower=0> sigmaPlSize_field; //SD of field-level intercept
+	real<lower=0> sigmaPlSize_plot; //SD of plot-level intercept
+	real<lower=0> sigmaPlSize; //Sigma for within-plot (residual)
+	vector[Nfield] intPlSize_field; //Random intercept for field - most overlap zero, but not all: probably should keep it
+	vector[Nplot] intPlSize_plot; //Random intercept for plot - not great n_eff or Rhat, but looic is worse without it
+
+	
 }
 
 transformed parameters {		
 	//Expected values
 	
-	//Pollen deposition
-	vector[Nplot] pollenPlot; //Plot-level pollen per stigma
-	vector[Nflw] pollenMu; //Expected pollen per stigma		
+	//Plant density
+	vector[Nplot] plDens; //Planting density - imputed
+
+	//Plant size
+	vector[Nplot] plSizePlotMu; //Plot-level plant size
+	vector[Nplant] plSizeMu; //Expected plant size
+
+	//Assign imputed data
+	plDens[obsPlDens_ind]=plDens_obs; //Observed data
+	plDens[missPlDens_ind]=plDens_miss;	//Missing data
 
 	for(i in 1:Nplot){ 
-		
-		// Plot-level pollen deposition
-		pollenPlot[i] = intPollen_field[plotIndex[i]] + //Field-level random intercept
-		  // intPollen_plot[i] + //Plot-level random intercept
-			slopeVisitPol*logHbeeVis[i] + //(log) hbee visits
-			slopeHbeeDistPollen*logHbeeDist[i]; //Distance effect						
-		// Global intercept is within flower-level term in order to center plot-level variable
+		// Plant size (plot-level)
+		plSizePlotMu[i] = intPlSize + //Intercept
+		  intPlSize_field[plotIndex[i]] + //Field-level random effect
+		  intPlSize_plot[i] + //Plot-level random effect
+			slopePlDensPlSize*plDens[i] +  //Plant density
+			claim02_slopeNumHivePlSize*logNumHives[plotIndex[i]] + //Claim
+			slopeDistPlSize*logHbeeDist[i]; //Distance effect (edge of field has smaller plants)
 	}
-		
-	for(i in 1:Nflw){ //For each flower stigma
-		pollenMu[i] = intPollen + //Intercept
-		  pollenPlot[flowerIndex[i]]; //Plot-level pollen 
-	}
+	
+	for(i in 1:Nplant){ //For each plant 	
+		//Plant size = plot-level estimate
+		plSizeMu[i] = plSizePlotMu[plantIndex[i]];
+	}	
+	
 }
 	
 model {	
   
   //Likelihood		
-	pollenCount ~ neg_binomial_2_log(pollenMu,pollenPhi); //Pollination rate	
-		
+	plantSize ~ normal(plSizeMu,sigmaPlSize); //Plant size
+	
 	// Priors
-		
-	// Pollen deposition - informative priors	
-	intPollen ~ normal(5.6,5); //Intercept	
-	slopeVisitPol ~ normal(0,5); //hbee Visitation effect	
-	slopeHbeeDistPollen ~ normal(0,5); //hbee distance effect	
-	sigmaPolField ~ gamma(1,1); //Sigma for random field	
-	pollenPhi ~ gamma(1,1); //Dispersion parameter
-	intPollen_field ~ normal(0,sigmaPolField); //Random field int
-	// sigmaPolPlot ~ gamma(1.05,1); //Sigma for random plot - bad Rhat, poor traces   
-	// intPollen_plot ~ normal(0,sigmaPolPlot); //Random plot int - not a lot of info at plot level
+	claim02_slopeNumHivePlSize ~ normal(0,5); //Claim
+	
+	// Plant size - informative priors
+	intPlSize ~ normal(4.6,5); //Intercept
+	slopePlDensPlSize ~ normal(0,5); //Plant density
+	slopeDistPlSize ~ normal(0,5); //Distance effect
+	// slopeGpPlSize ~ normal(0,5); //Grand Prairie effect
+	// slopeIrrigPlSize ~ normal(0,5); //Irrigation effect
+	// slope2015PlSize ~ normal(0,5); //2015 effect
+	sigmaPlSize_field ~ gamma(1,1); //Sigma for random field
+	sigmaPlSize_plot ~ gamma(1,1); //Sigma for random plot
+	sigmaPlSize ~ gamma(1,1); //Sigma for residual
+	intPlSize_field ~ normal(0,sigmaPlSize_field); //Random field int
+	intPlSize_plot ~ normal(0,sigmaPlSize_plot); //Random int plot
+	
 }
 
-generated quantities {
-
-	// pollen deposition
-	int predPollenCount[Nflw];
-	real pollen_resid[Nflw];
-	real predPollen_resid[Nflw];
-
-	for(i in 1:Nflw){
-		// pollen deposition
-		pollen_resid[i]= pollenCount[i] - exp(pollenMu[i]); //Residual for actual value
-		predPollenCount[i] = neg_binomial_2_log_rng(pollenMu[i],pollenPhi); //Simulate pollen counts
-		predPollen_resid[i] = predPollenCount[i] - exp(pollenMu[i]); //Residual for predicted
-	}
-
-}

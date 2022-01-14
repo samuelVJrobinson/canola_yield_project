@@ -125,17 +125,17 @@ model {
 	
 	// Priors
 	// Visitation - informative priors
-	intVisit ~ normal(0,1); //Intercept
-	slopeDistVis ~ normal(0,1); //Slope of distance effect on hbee visits
-	slopeHiveVis ~ normal(0,1); //Slope of hive effect on visits
-	// slopeYearVis ~ normal(0,1); //2015 effect
-	// slopeGpVis ~ normal(0,1); //Effect of Grand Prairie
-	// slopeYearGpVis ~ normal(0,1); // GP-year interaction
-	slopeFlDens ~ normal(0,1); //Flower density
-	sigmaVisField ~ gamma(1.1,1); //Sigma for random field
+	intVisit ~ normal(-1.4,5); //Intercept
+	slopeDistVis ~ normal(0,5); //Slope of distance effect on hbee visits
+	slopeHiveVis ~ normal(0,5); //Slope of hive effect on visits
+	// slopeYearVis ~ normal(0,5); //2015 effect
+	// slopeGpVis ~ normal(0,5); //Effect of Grand Prairie
+	// slopeYearGpVis ~ normal(0,5); // GP-year interaction
+	slopeFlDens ~ normal(0,5); //Flower density
+	sigmaVisField ~ gamma(1,1); //Sigma for random field
 	intVisit_field ~ exp_mod_normal(0,sigmaVisField,lambdaVisField); //Skewed random effects - slightly better than standard normal
-	lambdaVisField ~ gamma(1.1,1); //Lambda for skewed random effects
-	visitHbeePhi ~ gamma(1.1,1); //Dispersion parameter for NegBin
+	lambdaVisField ~ gamma(1,1); //Lambda for skewed random effects
+	visitHbeePhi ~ gamma(1,1); //Dispersion parameter for NegBin
 }
 
 generated quantities {

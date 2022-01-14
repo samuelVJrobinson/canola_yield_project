@@ -173,7 +173,7 @@ transformed parameters {
 	}
 		
 	for(i in 1:Nplant){ //For each plant 	
-		// Seed count per pod
+		// Average seeds per pod
 		seedCountMu[i] = seedCountMuPlot[plantIndex[i]] + //Plot-level seed count
 			slopePlSizeCount*plantSize[i]; //plant size effect
 	}	
@@ -188,20 +188,20 @@ model {
 		
 	// Priors
 	// //Plant density	- informative priors
-	// intPlDens ~ normal(0,1); //Global intercept
-	// slope2015PlDens ~ normal(0,1); //Year effect
-	// slopeIrrigPlDens ~ normal(0,1); //Irrigation effect
-	// slope2015IrrigPlDens ~ normal(0,1); //Year:irrigation interaction
-	// slopeDistPlDens ~ normal(0,1); //Slope of distance into field	
-	// slopeGPPlDens ~ normal(0,1); // Grand Prairie effect 
+	// intPlDens ~ normal(0,5); //Global intercept
+	// slope2015PlDens ~ normal(0,5); //Year effect
+	// slopeIrrigPlDens ~ normal(0,5); //Irrigation effect
+	// slope2015IrrigPlDens ~ normal(0,5); //Year:irrigation interaction
+	// slopeDistPlDens ~ normal(0,5); //Slope of distance into field	
+	// slopeGPPlDens ~ normal(0,5); // Grand Prairie effect 
 	// sigmaPlDens ~ gamma(1,1); //Sigma for within-field (residual)
 	// sigmaPlDens_field ~ gamma(1,1); //Sigma for field
 	// intPlDens_field ~ normal(0,sigmaPlDens_field); //Random intercept for field
 	// 
 	// Pollen deposition - informative priors	
-	intPollen ~ normal(0,1); //Intercept	
-	slopeVisitPol ~ normal(0,1); //hbee Visitation effect	
-	slopeHbeeDistPollen ~ normal(0,1); //hbee distance effect	
+	intPollen ~ normal(5.6,5); //Intercept	
+	slopeVisitPol ~ normal(0,5); //hbee Visitation effect	
+	slopeHbeeDistPollen ~ normal(0,5); //hbee distance effect	
 	sigmaPolField ~ gamma(1,1); //Sigma for random field	
 	pollenPhi ~ gamma(1,1); //Dispersion parameter
 	intPollen_field ~ normal(0,sigmaPolField); //Random field int
@@ -209,12 +209,12 @@ model {
 	// intPollen_plot ~ normal(0,sigmaPolPlot); //Random plot int - not a lot of info at plot level
 	
   // Average seed count - informative priors
-  intSeedCount ~ normal(0,1); //Intercept
-  slopeVisitSeedCount ~ normal(0,1); //Slope of hbee visits
-  slopePolSeedCount ~ normal(0,1); //Slope of pollen deposition+
-  slopePlSizeCount ~ normal(0,1); //Slope of plant size
-  // slope2015SeedCount ~ normal(0,1); //Year effect
-  // slopeIrrigSeedCount ~ normal(0,1); //Irrigation
+  intSeedCount ~ normal(10.9,5); //Intercept
+  slopeVisitSeedCount ~ normal(0,5); //Slope of hbee visits
+  slopePolSeedCount ~ normal(0,5); //Slope of pollen deposition+
+  slopePlSizeCount ~ normal(0,5); //Slope of plant size
+  // slope2015SeedCount ~ normal(0,5); //Year effect
+  // slopeIrrigSeedCount ~ normal(0,5); //Irrigation
   sigmaSeedCount ~ gamma(1,1); //SD of seed count
   sigmaSeedCount_field ~ gamma(1,1); //SD of field random effect
   intSeedCount_field ~ normal(0,sigmaSeedCount_field); //field-level random intercepts

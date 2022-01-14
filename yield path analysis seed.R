@@ -316,7 +316,23 @@ PPplots(modList[[8]],datalist$seedMass_obs,c('predSeedMass','seedMass_resid','pr
         index=datalist$obsSeedMass_ind,'Seed Mass')
 PPplots(modList[[9]],log(datalist$yield),c('predYield','yield_resid','predYield_resid'),'Seed mass per plant')
 
-#Marginal plots
+# Dagitty claims list for seed fields -------------------------------------
+
+seedDAG <- list(plDens ~ hbeeDist,
+                plSize ~ hbeeDist + plDens,
+                flDens ~ isMbay + hbeeDist,
+                hbeeVis ~ flDens + hbeeDist + lbeeDist + lbeeVis + isMbay + isCent,
+                lbeeVis ~ lbeeDist + hbeeDist + isMbay + isCent + lbeeStocking + flDens,
+                pollen ~ hbeeVis + lbeeVis + isCent + hbeeDist + flDens,
+                flwCount ~ plSize + isCent + surv,
+                flwSurv ~ pollen + plSize + isCent + hbeeDist + lbeeDist + flDens,
+                seedCount ~ pollen + seedCount + plSize + isCent + hbeeDist + flDens + surv,
+                seedWeight ~ pollen + seedCount + plSize + plDens + lbeeDist + lbeeStocking
+)
+
+unlist(shipley.test(seedDAG,TRUE))
+
+#Marginal plots ---------------------
 
 
 #Input parameters get turned into a model matrix, multiplied, compiled

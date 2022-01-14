@@ -31,11 +31,22 @@ parTable <- function(x){
 
 
 #Faster pair plot
-fastPairs <- function(l){ #List l
+fastPairs <- function(l,pars=NULL){ 
+  if(class(l)=='stanfit'){
+    l <- extract(l,pars=pars)
+    if(any(sapply(l,function(x) length(dim(x)))>1)){
+      stop('Parameters have more than 1 dimension: ',paste(pars[sapply(l,function(x) length(dim(x))>1)],collapse=', '))
+    }
+    l <- do.call('cbind',l)
+    if(nrow(l)>1000) l <- l[round(seq(1,nrow(l),length.out=1000)),]
+  }
   pairs(l,lower.panel=function(x,y){
     par(usr=c(0,1,0,1))
-    text(0.5, 0.5, round(cor(x,y),2), cex = 1 * exp(abs(cor(x,y))))})
+    text(0.5, 0.5, round(cor(x,y),2), cex = 1 * exp(abs(cor(x,y))))},
+    panel=function(x,y){ points(x,y,pch=19)}
+    )
 }
+
 #Function to calculate R2 for GLMMs. fixVar, ranVar and resVar are either variable names (vector of var names for random effects), or NA, indicating no effect specified
 r2calc <- function(mod,fixVar,ranVar,resVar){
   fixed <- ifelse(!is.na(fixVar),sd(apply(mod[[fixVar]],2,median)),0) #fixed effect sd

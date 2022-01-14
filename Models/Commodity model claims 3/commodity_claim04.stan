@@ -84,7 +84,7 @@ transformed data {
 
 parameters {
 	// Plant density	
-	vector[Nplot_densMiss] plDens_miss; 
+	vector<lower=1.8,upper=5>[Nplot_densMiss] plDens_miss; 
 	real intPlDens; //Global intercept
 	// real slope2015PlDens; //Effect of 2015
 	// real slopeIrrigPlDens; //Effect of irrigation
@@ -109,6 +109,7 @@ parameters {
 	vector[Nplot] intPlSize_plot; //Random intercept for plot - not great n_eff or Rhat, but looic is worse without it
 
 	// Flower density per plot
+	real claim04_slopePlDensFlDens; //Claim
 	real intFlDens; //Global intercept
 	real slopePlSizeFlDens; //Slope of plant size on flower density
 	real slopeHbeeDistFlDens; //Slope of distance into field
@@ -160,7 +161,8 @@ transformed parameters {
 		flDensMu[i] = intFlDens	+ //Intercept
 		  intFlDens_field[plotIndex[i]] + //Field-level random effect
 			slopePlSizeFlDens*plSizePlotMu[i] + //Plant size effect
-			slopeHbeeDistFlDens*logHbeeDist[i]; //Distance effect
+			slopeHbeeDistFlDens*logHbeeDist[i]+ //Distance effect
+			claim04_slopePlDensFlDens*plDens[i]; //Claim
 	}
 	
 	for(i in 1:Nplant){ //For each plant 	
@@ -179,23 +181,23 @@ model {
 	
 	// Priors
 	//Plant density	- informative priors
-	intPlDens ~ normal(0,1); //Global intercept
-	// slope2015PlDens ~ normal(0,1); //Year effect
-	// slopeIrrigPlDens ~ normal(0,1); //Irrigation effect
-	// slope2015IrrigPlDens ~ normal(0,1); //Year:irrigation interaction
-	// slopeGPPlDens ~ normal(0,1); // Grand Prairie effect 
-	slopeDistPlDens ~ normal(0,1); //Slope of distance into field	
+	intPlDens ~ normal(3.8,5); //Global intercept
+	// slope2015PlDens ~ normal(0,5); //Year effect
+	// slopeIrrigPlDens ~ normal(0,5); //Irrigation effect
+	// slope2015IrrigPlDens ~ normal(0,5); //Year:irrigation interaction
+	// slopeGPPlDens ~ normal(0,5); // Grand Prairie effect 
+	slopeDistPlDens ~ normal(0,5); //Slope of distance into field	
 	sigmaPlDens ~ gamma(1,1); //Sigma for within-field (residual)
 	sigmaPlDens_field ~ gamma(1,1); //Sigma for field
 	intPlDens_field ~ normal(0,sigmaPlDens_field); //Random intercept for field
 	
 	// Plant size - informative priors
-	intPlSize ~ normal(0,1); //Intercept
-	slopePlDensPlSize ~ normal(0,1); //Plant density
-	slopeDistPlSize ~ normal(0,1); //Distance effect
-	// slopeGpPlSize ~ normal(0,1); //Grand Prairie effect
-	// slopeIrrigPlSize ~ normal(0,1); //Irrigation effect
-	// slope2015PlSize ~ normal(0,1); //2015 effect
+	intPlSize ~ normal(4.6,5); //Intercept
+	slopePlDensPlSize ~ normal(0,5); //Plant density
+	slopeDistPlSize ~ normal(0,5); //Distance effect
+	// slopeGpPlSize ~ normal(0,5); //Grand Prairie effect
+	// slopeIrrigPlSize ~ normal(0,5); //Irrigation effect
+	// slope2015PlSize ~ normal(0,5); //2015 effect
 	sigmaPlSize_field ~ gamma(1,1); //Sigma for random field
 	sigmaPlSize_plot ~ gamma(1,1); //Sigma for random plot
 	sigmaPlSize ~ gamma(1,1); //Sigma for residual
@@ -203,48 +205,13 @@ model {
 	intPlSize_plot ~ normal(0,sigmaPlSize_plot); //Random int plot
 
 	// Flower density per plot
-	intFlDens ~ normal(0,1); //Global intercept
-	slopePlSizeFlDens ~ normal(0,1); //plant size effect
-	slopeHbeeDistFlDens ~ normal(0,1); //distance into field
+	claim04_slopePlDensFlDens ~ normal(0,5); //Claim
+	
+	intFlDens ~ normal(4.1,5); //Global intercept
+	slopePlSizeFlDens ~ normal(0,5); //plant size effect
+	slopeHbeeDistFlDens ~ normal(0,5); //distance into field
 	sigmaFlDens ~ gamma(1,1); //Sigma for within-field (residual)
 	sigmaFlDens_field ~ gamma(1,1); //Sigma for field
 	intFlDens_field ~ normal(0,sigmaFlDens_field); //Random intercept for field
 	
-}
-
-generated quantities {
-	//Plot-level quantities
-	// planting density
-	real predPlDens[Nplot]; //Generated
-	real plDens_resid[Nplot]; //Residual
-	real predPlDens_resid[Nplot]; //Residual of generated
-	// flower density
-	real predFlDens[Nplot];
-	real flDens_resid[Nplot];
-	real predFlDens_resid[Nplot];
-	
-	// Plant-level
-	// plantSize
-	real predPlSize[Nplant];
-	real plSize_resid[Nplant];
-	real predPlSize_resid[Nplant];
-	
-	for(i in 1:Nplot){
-		// plant density
-		plDens_resid[i] = plDens[i] - plDensMu[i]; //Residual for actual value
-		predPlDens[i]= normal_rng(plDensMu[i],sigmaPlDens); //Generated value from normal
-		predPlDens_resid[i] = predPlDens[i] - plDensMu[i]; //Residual for predicted value
-
-		// flower density
-		flDens_resid[i] = flDens[i]-flDensMu[i]; //Residual for actual value
-		predFlDens[i] = normal_rng(flDensMu[i],sigmaFlDens); //Generated value from normal
-		predFlDens_resid[i] = predFlDens[i] - flDensMu[i]; //Residual for predicted value
-	}
-
-	for(i in 1:Nplant){
-		//plant size
-		plSize_resid[i]= plantSize[i] - plSizeMu[i]; //Residual for actual
-		predPlSize[i] = normal_rng(plSizeMu[i],sigmaPlSize); //Generates new value from normal dist.
-		predPlSize_resid[i] = predPlSize[i] - plSizeMu[i]; //Residual for new value
-	}
 }

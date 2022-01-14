@@ -1,4 +1,4 @@
-//Commodity canola pollination model used for publication
+//Commodity canola pollination model
 //  Uses plant-level data
 
 data {
@@ -83,49 +83,54 @@ transformed data {
 }
 
 parameters {
-	
+  
+  real claim07_slopeHivePol; //Claim
+  
 	// Pollen deposition
 	// Plot level random effect has bad trace, strongly correlated with lp__
 	real intPollen; //Intercept
 	real slopeVisitPol; //Slope of hbee visits	
-	real slopeHbeeDistPollen; //Effect of distance into field
+	real slopeHbeeDistPollen; //Effect of distance into field - p=0.076 (p=0.17 if stocking and stocking:dist interaction included - see below)
 	real<lower=0> sigmaPolField; //SD of field random intercepts	
 	real<lower=0> pollenPhi; //Dispersion parameter
 	vector[Nfield] intPollen_field; //field-level random intercepts	
-	// real<lower=0> sigmaPolPlot; //SD of plot random intercepts
-	// vector[Nplot] intPollen_plot; //plot-level random intercepts
+	real<lower=0> sigmaPolPlot; //SD of plot random intercepts - Rhat 1.4, small n_eff, strongly correlated with lp__
+	vector[Nplot] intPollen_plot; //plot-level random intercepts
+	// real slopeFlyVisPol; //Slope of fly visits - p=0.577
+	// real slopeStockingPollen; //Hive number effect - p=0.613
+	// real slopeStockingHbeeDistPollen; //Hive number:hbee distance interaction - p=0.949
+
+
 }
 
 transformed parameters {		
-	//Expected values
-	
-	//Pollen deposition
+  //Expected values
 	vector[Nplot] pollenPlot; //Plot-level pollen per stigma
-	vector[Nflw] pollenMu; //Expected pollen per stigma		
+	vector[Nflw] pollenMu; //Flower-level pollen per stigma		
 
 	for(i in 1:Nplot){ 
-		
-		// Plot-level pollen deposition
+	// Plot-level pollen deposition
 		pollenPlot[i] = intPollen_field[plotIndex[i]] + //Field-level random intercept
 		  // intPollen_plot[i] + //Plot-level random intercept
+		  claim07_slopeHivePol*logNumHives[plotIndex[i]] + //(log) Number of hives
 			slopeVisitPol*logHbeeVis[i] + //(log) hbee visits
 			slopeHbeeDistPollen*logHbeeDist[i]; //Distance effect						
-		// Global intercept is within flower-level term in order to center plot-level variable
 	}
 		
-	for(i in 1:Nflw){ //For each flower stigma
+	for(i in 1:Nflw){
+	  //For each flower stigma
 		pollenMu[i] = intPollen + //Intercept
-		  pollenPlot[flowerIndex[i]]; //Plot-level pollen 
-	}
+	    pollenPlot[flowerIndex[i]]; //Plot-level pollen 
+	} 
 }
 	
 model {	
   
-  //Likelihood		
+	//Likelihood		
 	pollenCount ~ neg_binomial_2_log(pollenMu,pollenPhi); //Pollination rate	
-		
-	// Priors
-		
+
+  claim07_slopeHivePol ~ normal(0,5);
+
 	// Pollen deposition - informative priors	
 	intPollen ~ normal(5.6,5); //Intercept	
 	slopeVisitPol ~ normal(0,5); //hbee Visitation effect	
@@ -133,22 +138,5 @@ model {
 	sigmaPolField ~ gamma(1,1); //Sigma for random field	
 	pollenPhi ~ gamma(1,1); //Dispersion parameter
 	intPollen_field ~ normal(0,sigmaPolField); //Random field int
-	// sigmaPolPlot ~ gamma(1.05,1); //Sigma for random plot - bad Rhat, poor traces   
-	// intPollen_plot ~ normal(0,sigmaPolPlot); //Random plot int - not a lot of info at plot level
-}
-
-generated quantities {
-
-	// pollen deposition
-	int predPollenCount[Nflw];
-	real pollen_resid[Nflw];
-	real predPollen_resid[Nflw];
-
-	for(i in 1:Nflw){
-		// pollen deposition
-		pollen_resid[i]= pollenCount[i] - exp(pollenMu[i]); //Residual for actual value
-		predPollenCount[i] = neg_binomial_2_log_rng(pollenMu[i],pollenPhi); //Simulate pollen counts
-		predPollen_resid[i] = predPollenCount[i] - exp(pollenMu[i]); //Residual for predicted
-	}
-
+	
 }

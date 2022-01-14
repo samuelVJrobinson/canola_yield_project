@@ -170,6 +170,7 @@ modList[5] <- stan(file=modFiles[5],data=datalist,iter=2000,chains=4,control=lis
 modList[6] <- stan(file=modFiles[6],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #OK - Seed Count
 modList[7] <- stan(file=modFiles[7],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #OK - Seed weight
 modList[8] <- stan(file=modFiles[8],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #OK - Total yield
+# allMod <- stan(file='visitation_pollen_model.stan',iter=100,chains=1,init=0,data=datalist) #Full model; avoid running
 
 #Get model summaries into a list of tables
 load('modSummaries_commodity.Rdata')
@@ -234,9 +235,63 @@ compareRE(modList[[8]],'ranEffYield_field',2) #Slopes
 compareRE(modList[[8]],'ranEffYield_plot',1,0.3) #Intercepts
 compareRE(modList[[8]],'ranEffYield_plot',2,0.3) #Slopes - right skew
 
+# Run claims models ---------------------
+
+library(rstan)
+setwd('./Models')
+rstan_options(auto_write = TRUE) #Avoids recompilation
+rstan_options(javascript = FALSE)
+options(mc.cores = 6)
+
+# Dagitty claims list for commodity fields 
+
+commDAG <- list(plDens ~ hbeeDist,
+                plSize ~ plDens + hbeeDist,
+                flDens ~ plSize + hbeeDist,
+                hbeeVis ~ hbeeDist + numHives + flDens,
+                pollen ~ hbeeVis + hbeeDist,
+                flwCount ~ plSize + flwSurv,
+                flwSurv ~ hbeeVis + plSize + pollen,
+                seedCount ~ hbeeVis + pollen + plSize,
+                seedWeight ~ hbeeVis + pollen + plSize + seedCount)
+
+print(unlist(shipley.test(commDAG,TRUE)))
+
+#Get model names, and make list
+modFiles <- dir(path='./Commodity model claims 3/',pattern = '*\\.stan',full.names = TRUE)
+
+#Create new list from scratch
+# modList <- vector(mode = 'list',length = 32)
+# names(modList) <- paste0('claim',formatC(1:length(modList),width=2,flag='0'))
+load(file='./Commodity model claims 3/claimSummaries_commodity.Rdata')
+modList[!sapply(modList,is.null)]
+
+runThese <- 4:6 #1:length(modFiles)
+
+for(i in runThese){
+  overwrite <- FALSE
+  if(file.exists(modFiles[i])){
+    if(!is.null(modList[i])|overwrite){
+      mod <- stan(file=modFiles[i],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0)
+      temp <- parTable(mod) #Get parameter summaries
+      modList[[i]] <- temp[grepl('claim',temp$param),]
+      save(modList,file='./Commodity model claims 3/claimSummaries_commodity.Rdata')
+    } else print(paste0('Model ',i,' has already been run'))
+  } else print(paste0('Model ',i,' not found'))
+}
+
+#Traceplots
+n <- names(mod) #Model parameters
+n <- n[(!grepl('(\\[[0-9]+,*[0-9]*\\]|lp)',n))|grepl('[sS]igma',n)] #Gets rid of parameter vectors, unless it contains "sigma" (variance term)
+traceplot(mod,pars=n,inc_warmup=FALSE)#+geom_hline(yintercept = 0) #Traceplots
+
+print(mod,pars=n)
+fastPairs(mod,pars=n)
+
+traceplot(mod,pars='plDens_miss')
+
+
 # Partial effects plots for commodity fields -----------------------------
-
-
 
 #Plant density
 

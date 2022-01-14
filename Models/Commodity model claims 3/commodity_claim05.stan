@@ -47,6 +47,7 @@ transformed data {
 	vector[Nplot] logTime=log(totalTime); //Log-transform time
 	vector[Nplot] logHbeeVis;  //Hbee visitation rate
 	vector[Nplot] logFlyVis; //Fly visitation rate
+	vector[Nplot] centFlDens; //Centered flower density
 	vector[Nplant] logitFlwSurv; //(logit) proportion flower survival	
 	vector[Nplant] logFlwCount; //Log flower count
 	vector[Nplant] logYield = log(yield); //Log yield (g seed per plant)
@@ -54,6 +55,7 @@ transformed data {
 	vector[Nplant] logCalcYield; //Predicted log yield
 	
 	logHbeeDist=logHbeeDist-mean(logHbeeDist); //Centers distance
+	centFlDens = flDens - mean(flDens); //Centers flower density
 	
 	for(i in 1:Nfield){
 		logNumHives[i]=log(numHives[i]+1); //Log transform number of hives		
@@ -83,72 +85,59 @@ transformed data {
 }
 
 parameters {
+  
+  // Plant density	
+	vector<lower=1.8,upper=5>[Nplot_densMiss] plDens_miss; 
+  
+	// hbee Visitation per plot
+	real claim05_slopePlDensHbee;
 	
-	// Pollen deposition
-	// Plot level random effect has bad trace, strongly correlated with lp__
-	real intPollen; //Intercept
-	real slopeVisitPol; //Slope of hbee visits	
-	real slopeHbeeDistPollen; //Effect of distance into field
-	real<lower=0> sigmaPolField; //SD of field random intercepts	
-	real<lower=0> pollenPhi; //Dispersion parameter
-	vector[Nfield] intPollen_field; //field-level random intercepts	
-	// real<lower=0> sigmaPolPlot; //SD of plot random intercepts
-	// vector[Nplot] intPollen_plot; //plot-level random intercepts
+	real intVisit; //Intercept
+	real slopeDistVis; //Slope of distance
+	real slopeHiveVis; //Slope of hive number
+	real slopeFlDens; //Slope of flower density
+	real<lower=0> sigmaVisField; //SD of field random intercepts
+	real<lower=0> visitHbeePhi; //Dispersion parameter
+	vector[Nfield] intVisit_field; //field-level random intercepts
+	real<lower=0> lambdaVisField; //Lambda for skewed random effects
 }
 
 transformed parameters {		
-	//Expected values
+	//Visitation
+	vector[Nplot] visitHbeeMu; //Expected hbee visits
 	
-	//Pollen deposition
-	vector[Nplot] pollenPlot; //Plot-level pollen per stigma
-	vector[Nflw] pollenMu; //Expected pollen per stigma		
-
+	vector[Nplot] plDens; //Planting density - imputed
+	
+	//Assign imputed data
+	plDens[obsPlDens_ind]=plDens_obs; //Observed data
+	plDens[missPlDens_ind]=plDens_miss;	//Missing data
+	
 	for(i in 1:Nplot){ 
-		
-		// Plot-level pollen deposition
-		pollenPlot[i] = intPollen_field[plotIndex[i]] + //Field-level random intercept
-		  // intPollen_plot[i] + //Plot-level random intercept
-			slopeVisitPol*logHbeeVis[i] + //(log) hbee visits
-			slopeHbeeDistPollen*logHbeeDist[i]; //Distance effect						
-		// Global intercept is within flower-level term in order to center plot-level variable
-	}
-		
-	for(i in 1:Nflw){ //For each flower stigma
-		pollenMu[i] = intPollen + //Intercept
-		  pollenPlot[flowerIndex[i]]; //Plot-level pollen 
+		// Honeybee Visitation
+		visitHbeeMu[i] = intVisit + //Intercept
+		  intVisit_field[plotIndex[i]] + //Field-level random intercept
+		  logTime[i] + //Time offset
+			claim05_slopePlDensHbee*plDens[i] + //Claim
+			slopeDistVis*logHbeeDist[i] + //distance from edge
+			slopeHiveVis*logNumHives[plotIndex[i]] + //(log) Number of hives
+			slopeFlDens*flDens[i]; //Flower density
 	}
 }
 	
 model {	
   
-  //Likelihood		
-	pollenCount ~ neg_binomial_2_log(pollenMu,pollenPhi); //Pollination rate	
-		
+  hbeeVis ~ neg_binomial_2_log(visitHbeeMu,visitHbeePhi); //Honeybee visitation (no ZI-process)
+	
 	// Priors
-		
-	// Pollen deposition - informative priors	
-	intPollen ~ normal(5.6,5); //Intercept	
-	slopeVisitPol ~ normal(0,5); //hbee Visitation effect	
-	slopeHbeeDistPollen ~ normal(0,5); //hbee distance effect	
-	sigmaPolField ~ gamma(1,1); //Sigma for random field	
-	pollenPhi ~ gamma(1,1); //Dispersion parameter
-	intPollen_field ~ normal(0,sigmaPolField); //Random field int
-	// sigmaPolPlot ~ gamma(1.05,1); //Sigma for random plot - bad Rhat, poor traces   
-	// intPollen_plot ~ normal(0,sigmaPolPlot); //Random plot int - not a lot of info at plot level
-}
-
-generated quantities {
-
-	// pollen deposition
-	int predPollenCount[Nflw];
-	real pollen_resid[Nflw];
-	real predPollen_resid[Nflw];
-
-	for(i in 1:Nflw){
-		// pollen deposition
-		pollen_resid[i]= pollenCount[i] - exp(pollenMu[i]); //Residual for actual value
-		predPollenCount[i] = neg_binomial_2_log_rng(pollenMu[i],pollenPhi); //Simulate pollen counts
-		predPollen_resid[i] = predPollenCount[i] - exp(pollenMu[i]); //Residual for predicted
-	}
-
+	
+	claim05_slopePlDensHbee ~ normal(0,1); //Claim
+	// Visitation - informative priors
+	intVisit ~ normal(-1.4,1); //Intercept
+	slopeDistVis ~ normal(0,1); //Slope of distance effect on hbee visits
+	slopeHiveVis ~ normal(0,1); //Slope of hive effect on visits
+	slopeFlDens ~ normal(0,1); //Flower density
+	sigmaVisField ~ gamma(1,1); //Sigma for random field
+	intVisit_field ~ exp_mod_normal(0,sigmaVisField,lambdaVisField); //Skewed random effects - slightly better than standard normal
+	lambdaVisField ~ gamma(1,1); //Lambda for skewed random effects
+	visitHbeePhi ~ gamma(1,1); //Dispersion parameter for NegBin
 }

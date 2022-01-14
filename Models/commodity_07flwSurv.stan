@@ -209,20 +209,20 @@ model {
 
 	// Priors
 	// //Plant density	- informative priors
-	// intPlDens ~ normal(0,1); //Global intercept
-	// slope2015PlDens ~ normal(0,1); //Year effect
-	// slopeIrrigPlDens ~ normal(0,1); //Irrigation effect
-	// slope2015IrrigPlDens ~ normal(0,1); //Year:irrigation interaction
-	// slopeDistPlDens ~ normal(0,1); //Slope of distance into field
-	// slopeGPPlDens ~ normal(0,1); // Grand Prairie effect
+	// intPlDens ~ normal(0,5); //Global intercept
+	// slope2015PlDens ~ normal(0,5); //Year effect
+	// slopeIrrigPlDens ~ normal(0,5); //Irrigation effect
+	// slope2015IrrigPlDens ~ normal(0,5); //Year:irrigation interaction
+	// slopeDistPlDens ~ normal(0,5); //Slope of distance into field
+	// slopeGPPlDens ~ normal(0,5); // Grand Prairie effect
 	// sigmaPlDens ~ gamma(1,1); //Sigma for within-field (residual)
 	// sigmaPlDens_field ~ gamma(1,1); //Sigma for field
 	// intPlDens_field ~ normal(0,sigmaPlDens_field); //Random intercept for field
 
 	// // Pollen deposition - informative priors
-	intPollen ~ normal(0,1); //Intercept
-	slopeVisitPol ~ normal(0,1); //hbee Visitation effect
-	slopeHbeeDistPollen ~ normal(0,1); //hbee distance effect
+	intPollen ~ normal(5.6,1); //Intercept
+	slopeVisitPol ~ normal(0,5); //hbee Visitation effect
+	slopeHbeeDistPollen ~ normal(0,5); //hbee distance effect
 	pollenPhi ~ gamma(1,1); //Dispersion parameter
 	sigmaPolField ~ gamma(1,1); //Sigma for random field
 	intPollen_field ~ normal(0,sigmaPolField); //Random field int
@@ -230,20 +230,20 @@ model {
 	// // intPollen_plot ~ normal(0,sigmaPolPlot); //Random plot int - not a lot of info at plot level
 	
   //Flower survival - informative priors
-  intFlwSurv ~ normal(0,1); //Intercept
-  slopeVisitSurv ~ normal(0,1); //Slope of hbee visits
-  slopePolSurv ~ normal(0,1); //Slope of pollen deposition
-  slopePlSizeSurv ~ normal(0,1); //Slope of plant size
-  // slopePlDensSurv ~ normal(0,1); //Slope of planting density
-  // slopeIrrigSurv ~ normal(0,1); //Slope of irrigation
-  // slope2015Surv ~ normal(0,1); //Slope of year
+  intFlwSurv ~ normal(0.7,5); //Intercept
+  slopeVisitSurv ~ normal(0,5); //Slope of hbee visits
+  slopePolSurv ~ normal(0,5); //Slope of pollen deposition
+  slopePlSizeSurv ~ normal(0,5); //Slope of plant size
+  // slopePlDensSurv ~ normal(0,5); //Slope of planting density
+  // slopeIrrigSurv ~ normal(0,5); //Slope of irrigation
+  // slope2015Surv ~ normal(0,5); //Slope of year
   sigmaFlwSurv_field ~ gamma(1,1); //SD of field-level random intercept
   intFlwSurv_field ~ normal(0,sigmaFlwSurv_field); //field-level random intercepts
   // sigmaFlwSurv_plot ~ gamma(1,1); //SD of plot-level random intercept
   // intFlwSurv_plot ~ normal(0,sigmaFlwSurv_plot); //Plot-level random intercepts
   //Variance (sigma) terms
-  intPhiFlwSurv ~ normal(0,1); //Intercept
-  // slopePlSizePhiFlwSurv ~ normal(0,1); //Effect of plant size on phi
+  intPhiFlwSurv ~ normal(0,5); //Intercept
+  // slopePlSizePhiFlwSurv ~ normal(0,5); //Effect of plant size on phi
   // sigmaPhiFlwSurv_field ~ gamma(1,1); //Sigma for field level sigma
   // intPhiFlwSurv_field ~ normal(0,sigmaPhiFlwSurv_field); //Field-level random intercept
   // sigmaPhiFlwSurv_plot ~ gamma(1,1); //Sigma for plot level sigma
