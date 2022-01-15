@@ -298,9 +298,17 @@ shipley.test <- function(g,form=FALSE){
   }
   
   claim2Form <- function(x){ #Converts claim to formula, if needed
-    dep <- x$X
-    ind <- paste(x$Y,paste(x$Z,collapse=' + '),sep = ' + ')
-    paste0(dep,' ~ ',ind)
+    # dep <- x$X
+    # ind <- paste(x$Y,paste(x$Z,collapse=' + '),sep = ' + ')
+    # paste0(dep,' ~ ',ind)
+    dep <- x$X #Dependent variable
+    cl <- x$Y #Claim
+    c1 <- x$Z[!x$Z %in% parents(g,x$X)] #Parent(s) of claim
+    c1 <- paste0(c(cl,c1),collapse=' + ') #Claim + parent of claim
+    c2 <- x$Z[x$Z %in% parents(g,x$X)] #Original parents of X
+    c2 <- paste0('(',paste0(c2,collapse=' + '),')') #Add brackets
+    ind <- paste0(c(c1,c2),collapse=' + ') #Add claim + conditioning set
+    paste0(dep,' ~ ',ind) #Return string
   }
   
   # From Shipley 2009
@@ -334,12 +342,16 @@ shipley.test <- function(g,form=FALSE){
     claims[[i]]$Z <- unique(c(parents1,parents2))
   }
   
-  # Sort by causal rank
-  claims <- claims[order(sapply(sapply(claims,function(x) x$X),function(x,dag) length(ancestors(dag,x)), dag=g),
-                         sapply(claims,function(x) x$X),
-                         sapply(sapply(claims,function(x) x$Y),function(x,dag) length(ancestors(dag,x)), dag=g))]
+  # Sort by causal rank (more ancestors = lower on the list)
   
-  for(i in 1:length(claims)) claims[[i]]$Z <- sort(claims[[i]]$Z)
+  #Names of nodes in order of ancestry length
+  nodeOrder <- names(sort(sapply(names(g),function(v) length(ancestors(g,v))-1))) 
+  
+  depOrder <- match(sapply(claims,function(x) x$X),nodeOrder) #Order of dependent vars
+  claimOrder <- match(sapply(claims,function(x) x$Y),nodeOrder) #Order of claims
+  claims <- claims[order(depOrder,claimOrder)] #Sort by order of dep vars, then order of claims
+  
+  for(i in 1:length(claims)) claims[[i]]$Z <- sort(claims[[i]]$Z) #Sort conditioning set
   claims <- unname(claims) #Get rid of names
   if(form) claims <- lapply(claims,claim2Form) #Convert to formula if needed
   return(claims)

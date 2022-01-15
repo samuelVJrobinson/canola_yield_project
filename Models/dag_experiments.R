@@ -1,6 +1,6 @@
 #R script to look at how basis sets are constructed for conditional independence claims
 library(dagitty)
-source('../helperFunctions.R')
+source('./helperFunctions.R')
 # Tests -------------------------------------------------------------------
 #Model 1 from Shipley 2009
 g1 <- dagitty("dag{x1 -> x2 -> x3 -> x4 -> x5}")
@@ -76,7 +76,7 @@ summary(shipley.psem)
 # Live  ~  Date  + DD  + Growth - correct
 
 g1 <- dagitty("dag{x1 -> x2 -> x3 -> x4 -> x5}")
-# debugonce(shipley.test)
+debugonce(shipley.test)
 shipley.test(g1)
 g2 <- list(x2 ~ x1, x3 ~ x2, x4 ~ x3, x5 ~ x4)
 shipley.test(g2,form=TRUE)
