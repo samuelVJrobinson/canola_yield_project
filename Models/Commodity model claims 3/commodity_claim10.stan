@@ -107,8 +107,8 @@ parameters {
 	real<lower=0> sigmaPolField; //SD of field random intercepts	
 	real<lower=0> pollenPhi; //Dispersion parameter
 	vector[Nfield] intPollen_field; //field-level random intercepts	
-	real<lower=0> sigmaPolPlot; //SD of plot random intercepts - Rhat 1.4, small n_eff, strongly correlated with lp__
-	vector[Nplot] intPollen_plot; //plot-level random intercepts
+	// real<lower=0> sigmaPolPlot; //SD of plot random intercepts - Rhat 1.4, small n_eff, strongly correlated with lp__
+	// vector[Nplot] intPollen_plot; //plot-level random intercepts
 	
 }
 

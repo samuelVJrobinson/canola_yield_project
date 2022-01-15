@@ -99,9 +99,6 @@ parameters {
 	real intPlSize; //Global intercept
 	real slopePlDensPlSize; //Slope of planting density
 	real slopeDistPlSize; //Slope of distance
-	// real slopeGpPlSize; //Slope of Grand Prairie effect
-	// real slope2015PlSize; //Slope of 2015 effect
-	// real slopeIrrigPlSize; //Slope of irrigation
 	real<lower=0> sigmaPlSize_field; //SD of field-level intercept
 	real<lower=0> sigmaPlSize_plot; //SD of plot-level intercept
 	real<lower=0> sigmaPlSize; //Sigma for within-plot (residual)

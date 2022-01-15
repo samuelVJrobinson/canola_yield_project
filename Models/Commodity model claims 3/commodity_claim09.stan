@@ -108,11 +108,6 @@ parameters {
 	real<lower=0> sigmaPolField; //SD of field random intercepts	
 	real<lower=0> pollenPhi; //Dispersion parameter
 	vector[Nfield] intPollen_field; //field-level random intercepts	
-	real<lower=0> sigmaPolPlot; //SD of plot random intercepts - Rhat 1.4, small n_eff, strongly correlated with lp__
-	vector[Nplot] intPollen_plot; //plot-level random intercepts
-	// real slopeFlyVisPol; //Slope of fly visits - p=0.577
-	// real slopeStockingPollen; //Hive number effect - p=0.613
-	// real slopeStockingHbeeDistPollen; //Hive number:hbee distance interaction - p=0.949
 }
 
 transformed parameters {		

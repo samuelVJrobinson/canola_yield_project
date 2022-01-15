@@ -286,9 +286,10 @@ getPreds <- function(mod,parList=NULL,otherPars=NULL,q=c(0.5,0.025,0.975),nrep=4
   return(cbind(mm,pred))
 }
 
-# d-separation claims list from Shipley 2009
+# d-separation claims list from Shipley 2009; shows original terms in brackets with claim & conditioning set outside
 # g = dag object, or list of formulae to be passed to ggdag
-# form = Convert to form from dagitty structure?
+# form = Convert to R-style formulas from dagitty structure?
+# 
 
 shipley.test <- function(g,form=FALSE){ 
   require(dagitty)
