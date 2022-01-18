@@ -87,10 +87,6 @@ parameters {
 	// Plant density	
 	vector<lower=1.8,upper=5>[Nplot_densMiss] plDens_miss;  
 	real intPlDens; //Global intercept
-	// real slope2015PlDens; //Effect of 2015
-	// real slopeIrrigPlDens; //Effect of irrigation
-	// real slope2015IrrigPlDens; //Year:irrigation interaction	
-	// real slopeGPPlDens; //GP effect on plant density	
 	real slopeDistPlDens; //Slope of distance into field		
 	real<lower=0> sigmaPlDens; //Sigma for within-field (residual)
 	real<lower=0> sigmaPlDens_field; //Sigma for field

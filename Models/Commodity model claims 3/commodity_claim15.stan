@@ -97,7 +97,7 @@ parameters {
 
   // Flower survival
   
-  real claim11_slopeHbeeDistFlwSurv;
+  real claim15_slopeSeedCountSurv; //Claim
   
 	real intFlwSurv; //Intercept
 	real slopeVisitSurv; //Slope of hbee visits
@@ -134,7 +134,6 @@ transformed parameters {
 		// Plot-level flower survival
     flwSurvPlot[i] = intFlwSurv + //Intercept
       intFlwSurv_field[plotIndex[i]] + //Field-level random intercept
-      claim11_slopeHbeeDistFlwSurv*logHbeeDist[i] + //Claim
     	slopeVisitSurv*logHbeeVis[i] + //hbee visits
     	slopePolSurv*pollenPlot[i]; //(log) pollen deposition - large correlation b/w slopePolSurv and intFlwSurv
 	}
@@ -146,6 +145,7 @@ transformed parameters {
 	for(i in 1:Nplant){ //For each plant 	
 	// Flower survival per plant
     flwSurv[i] = flwSurvPlot[plantIndex[i]] + //Plot-level plant survival
+      claim15_slopeSeedCountSurv*seedCount[i] + //Claim
     	slopePlSizeSurv*plantSize[i]; //Plant size effect
     //Phi (dispersion) for flower survival
     flwSurvPhi[i] = exp(intPhiFlwSurv); //Intercept
@@ -177,8 +177,7 @@ model {
 	// intPollen_plot ~ normal(0,sigmaPolPlot); //Random plot int - not a lot of info at plot level
 
 	//Flower survival - informative priors
-	
-	claim11_slopeHbeeDistFlwSurv ~ normal(0,5); //Claim
+	claim15_slopeSeedCountSurv ~ normal(0,5); //Claim
 	
   intFlwSurv ~ normal(0.7,5); //Intercept
   slopeVisitSurv ~ normal(0,5); //Slope of hbee visits

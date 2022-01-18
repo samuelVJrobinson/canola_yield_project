@@ -94,10 +94,10 @@ parameters {
 	real<lower=0> sigmaPolField; //SD of field random intercepts	
 	real<lower=0> pollenPhi; //Dispersion parameter
 	vector[Nfield] intPollen_field; //field-level random intercepts	
-
+	
   // Flower survival
   
-  real claim11_slopeHbeeDistFlwSurv;
+  real claim12_slopeHiveFlwSurv;
   
 	real intFlwSurv; //Intercept
 	real slopeVisitSurv; //Slope of hbee visits
@@ -134,7 +134,7 @@ transformed parameters {
 		// Plot-level flower survival
     flwSurvPlot[i] = intFlwSurv + //Intercept
       intFlwSurv_field[plotIndex[i]] + //Field-level random intercept
-      claim11_slopeHbeeDistFlwSurv*logHbeeDist[i] + //Claim
+      claim12_slopeHiveFlwSurv*logNumHives[plotIndex[i]] + //Claim
     	slopeVisitSurv*logHbeeVis[i] + //hbee visits
     	slopePolSurv*pollenPlot[i]; //(log) pollen deposition - large correlation b/w slopePolSurv and intFlwSurv
 	}
@@ -149,9 +149,6 @@ transformed parameters {
     	slopePlSizeSurv*plantSize[i]; //Plant size effect
     //Phi (dispersion) for flower survival
     flwSurvPhi[i] = exp(intPhiFlwSurv); //Intercept
-      // intPhiFlwSurv_field[plotIndex[plantIndex[i]]] + //Field-level random intercept
-      // intPhiFlwSurv_plot[plantIndex[i]] + //Plot-level random intercept
-      // slopePlSizePhiFlwSurv*plantSize[i]; //Plant size
     flwSurvAlpha[i] = inv_logit(flwSurv[i])*flwSurvPhi[i]; //Outside of loop, used dot-multiply for vector multiplication
     flwSurvBeta[i] = (1-inv_logit(flwSurv[i]))*flwSurvPhi[i];
 }	
@@ -173,12 +170,10 @@ model {
 	sigmaPolField ~ gamma(1,1); //Sigma for random field	
 	pollenPhi ~ gamma(1,1); //Dispersion parameter
 	intPollen_field ~ normal(0,sigmaPolField); //Random field int
-	// sigmaPolPlot ~ gamma(1.05,1); //Sigma for random plot - bad Rhat, poor traces   
-	// intPollen_plot ~ normal(0,sigmaPolPlot); //Random plot int - not a lot of info at plot level
-
+	
 	//Flower survival - informative priors
 	
-	claim11_slopeHbeeDistFlwSurv ~ normal(0,5); //Claim
+	claim12_slopeHiveFlwSurv ~ normal(0,5); //Claim
 	
   intFlwSurv ~ normal(0.7,5); //Intercept
   slopeVisitSurv ~ normal(0,5); //Slope of hbee visits

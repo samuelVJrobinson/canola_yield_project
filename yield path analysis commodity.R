@@ -254,12 +254,12 @@ commDAG <- list(plDens ~ hbeeDist,
                 flwSurv ~ hbeeVis + plSize + pollen,
                 seedCount ~ hbeeVis + pollen + plSize,
                 seedWeight ~ hbeeVis + pollen + plSize + seedCount)
-debugonce(shipley.test)
+# debugonce(shipley.test)
 print(unlist(shipley.test(commDAG,TRUE)))
 
 #Get model names, and make list
 modFiles <- dir(path='./Commodity model claims 3/',pattern = '*\\.stan',full.names = TRUE)
-(modFiles <- modFiles[!grepl('visitation_pollen_model',modFiles)])
+(modFiles <- modFiles[!grepl('template',modFiles)])
 
 #Create new list from scratch
 # modList <- vector(mode = 'list',length = 32)
@@ -267,21 +267,21 @@ modFiles <- dir(path='./Commodity model claims 3/',pattern = '*\\.stan',full.nam
 load(file='./Commodity model claims 3/claimSummaries_commodity.Rdata')
 modList[!sapply(modList,is.null)] #Look at non-null entries
 
-runThese <- 8:9 #1:length(modFiles)
+runThese <- 14:15 #1:length(modFiles)
 
 for(i in runThese){
   overwrite <- TRUE
   if(file.exists(modFiles[i])){
     if(is.null(modList[i])|overwrite){
+      print(paste0('Starting model ',modFiles[i]))
       mod <- stan(file=modFiles[i],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0)
       temp <- parTable(mod) #Get parameter summaries
-      modList[[i]] <- temp[grepl('claim',temp$param),]
+      (modList[[i]] <- temp[grepl('claim',temp$param),])
       save(modList,file='./Commodity model claims 3/claimSummaries_commodity.Rdata')
-      print(paste0('Model ',modFiles[i],' completed'))
+      print(paste0('Model ',modFiles[i],' completed\\n'))
     } else print(paste0('Model ',i,' has already been run'))
   } else print(paste0('Model ',i,' not found'))
 }
-
 
 modList[!sapply(modList,is.null)] #Look at non-null entries
 modList[runThese] 
