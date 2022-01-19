@@ -356,3 +356,35 @@ shipley.test <- function(g,form=FALSE){
   if(form) claims <- lapply(claims,claim2Form) #Convert to formula if needed
   return(claims)
 }
+
+#Shipley's d-sep test, using a dataframe d with a column of p-values p and a column of labels lab
+
+shipley.dSep <- function(d,p,lab){
+  require(ggplot2); require(dplyr)
+  
+  pvals <- d %>% pull({{p}}) #p-values
+  
+  kval <- 2*length(pvals) #k-val (df)
+  if(any(pvals==0)){
+    warning('Zero p-value: C-stat will be infinity')
+    ret <- c(Inf,kval,0)
+  } else {
+    cstat <- -2*sum(log(pvals)) #C-statistic
+    p <- 1-pchisq(cstat,kval) 
+    ret <- c(cstat,kval,p)
+  }
+  
+  tCol <- rev(ifelse(pvals<0.05,'red','black'))
+  ttl <- paste0('C-stat: ',Inf,', k: ',64,', p: ',0)
+  
+  d %>% mutate(param=factor({{lab}},levels=rev({{lab}}))) %>% 
+    mutate(tooLow={{p}}<=0.05) %>% 
+    ggplot(aes(x={{p}},y={{lab}},col=tooLow))+
+    geom_point(show.legend = FALSE)+
+    labs(x='p-value',y=NULL,title=ttl) +
+    scale_x_log10(breaks=c(0.001,0.01,0.05,0.5))+
+    scale_colour_manual(values=c('black','red'))+
+    theme(axis.text.y = element_text(colour=tCol,size=10),
+          axis.text.x = element_text(size=10),
+          title = element_text(size=15))
+}

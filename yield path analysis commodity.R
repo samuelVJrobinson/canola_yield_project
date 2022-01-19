@@ -297,6 +297,10 @@ fastPairs(mod,pars=n)
 
 traceplot(mod,pars='plDens_miss')
 
+#Calculate C-stat
+modList <- do.call('rbind',modList)
+shipley.dSep(modList,pval,param)
+debugonce(shipley.dSep)
 
 # Partial effects plots for commodity fields -----------------------------
 
