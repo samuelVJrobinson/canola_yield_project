@@ -38,7 +38,7 @@ fastPairs <- function(l,pars=NULL){
       stop('Parameters have more than 1 dimension: ',paste(pars[sapply(l,function(x) length(dim(x))>1)],collapse=', '))
     }
     l <- do.call('cbind',l)
-    if(nrow(l)>1000) l <- l[round(seq(1,nrow(l),length.out=1000)),]
+    if(nrow(l)>500) l <- l[round(seq(1,nrow(l),length.out=500)),]
   }
   pairs(l,lower.panel=function(x,y){
     par(usr=c(0,1,0,1))

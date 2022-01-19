@@ -267,7 +267,7 @@ modFiles <- dir(path='./Commodity model claims 3/',pattern = '*\\.stan',full.nam
 load(file='./Commodity model claims 3/claimSummaries_commodity.Rdata')
 modList[!sapply(modList,is.null)] #Look at non-null entries
 
-runThese <- 14:15 #1:length(modFiles)
+runThese <- 32 #1:length(modFiles)
 
 for(i in runThese){
   overwrite <- TRUE
@@ -278,7 +278,7 @@ for(i in runThese){
       temp <- parTable(mod) #Get parameter summaries
       (modList[[i]] <- temp[grepl('claim',temp$param),])
       save(modList,file='./Commodity model claims 3/claimSummaries_commodity.Rdata')
-      print(paste0('Model ',modFiles[i],' completed\\n'))
+      print(paste0('Model ',modFiles[i],' completed'))
     } else print(paste0('Model ',i,' has already been run'))
   } else print(paste0('Model ',i,' not found'))
 }
@@ -287,11 +287,11 @@ modList[!sapply(modList,is.null)] #Look at non-null entries
 modList[runThese] 
 modList[i] #Last entry
 
-#Traceplots
+#Other diagnostic plots
 n <- names(mod) #Model parameters
 n <- n[(!grepl('(\\[[0-9]+,*[0-9]*\\]|lp)',n))|grepl('[sS]igma',n)] #Gets rid of parameter vectors, unless it contains "sigma" (variance term)
+n <- n[!n %in% c('intPollen','slopeVisitPol','slopeHbeeDistPollen','sigmaPolField','pollenPhi')] #Removes pollen terms
 traceplot(mod,pars=n,inc_warmup=FALSE)#+geom_hline(yintercept = 0) #Traceplots
-
 print(mod,pars=n)
 fastPairs(mod,pars=n)
 
