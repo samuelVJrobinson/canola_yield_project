@@ -19,8 +19,8 @@ prestheme=theme(legend.position='right',
 theme_set(theme_bw()+prestheme) #Sets graph theme to B/Ws + prestheme
 rm(prestheme)
 
-setwd('~/Projects/UofC/canola_yield_project') #Multivac path
-# setwd('~/Documents/canola_yield_project') #Galpern machine path
+# setwd('~/Projects/UofC/canola_yield_project') #Multivac path
+setwd('~/Documents/canola_yield_project') #Galpern machine path
 
 source('helperFunctions.R')
 
