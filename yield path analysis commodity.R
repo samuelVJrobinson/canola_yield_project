@@ -24,11 +24,11 @@ setwd('~/Documents/canola_yield_project') #Galpern machine path
 
 source('helperFunctions.R')
 
-#Load in data ---------------------------------
+# Load in data ---------------------------------
 
 load('./Models/datalist_commodity.Rdata')
 
-# load("./Commodity field analysis/commodityfieldDataAll.RData") 
+# load("./Commodity field analysis/commodityfieldDataAll.RData")
 # rm(AICc,brix2mgul,deltaAIC,DIC,plotFixedTerms,predFixef,se,varComp,zeroCheck,conversion,visitorsAll,visitors2015)
 # fieldsAllComm <- fieldsAll; flowersAllComm <- flowersAll; plantsAllComm <- plantsAll;
 # seedsAllComm <- seedsAll; surveyAllComm <- surveyAll;
@@ -63,21 +63,21 @@ load('./Models/datalist_commodity.Rdata')
 #   plDens_obs=log(PlDens[!is.na(PlDens)]), #(log) Planting density
 #   obsPlDens_ind=which(!is.na(PlDens)), #Index for observed
 #   missPlDens_ind=which(is.na(PlDens)), #Index for missing
-#   
+# 
 #   flDens=sqrt(FlDens) #(sqrt) Flower density
 # ))
 # 
-# datalistFlw <- flowersAllComm %>% 
-#   mutate(flowerIndex=as.numeric(factor(paste(Year,Field,Distance)))) %>% 
-#   arrange(flowerIndex) %>% 
-#   filter(!is.na(Pollen)) %>% 
+# datalistFlw <- flowersAllComm %>%
+#   mutate(flowerIndex=as.numeric(factor(paste(Year,Field,Distance)))) %>%
+#   arrange(flowerIndex) %>%
+#   filter(!is.na(Pollen)) %>%
 #   with(list(Nflw=sum(!is.na(Pollen)), #Number of pollen samples
 #   flowerIndex=flowerIndex, #Index for flower (which plot?)
 #   pollenCount=Pollen
 # ))
 # 
-# datalistPlant <- 
-#   plantsAllComm %>% ungroup() %>% 
+# datalistPlant <-
+#   plantsAllComm %>% ungroup() %>%
 #   filter(!is.na(Distance)) %>%
 #   filter(SeedMass!=0) %>%
 #   filter(!is.na(Pods),!is.na(Missing),!is.na(AvPodCount),!is.na(AvPodMass)) %>%
@@ -85,7 +85,7 @@ load('./Models/datalist_commodity.Rdata')
 #   mutate(plantIndex=match(paste(Year,Field,Distance),datalistPlot$plotName)) %>% #Index for plant (which plot?)
 #   mutate(plantIndex_char=paste(Year,Field,Distance)) %>% #Index for plant (which plot?)
 #   # mutate(plantIndex=match(paste(Year,Field),datalistField$fieldName)) %>% #Index for plant (which field?)
-#   arrange(plantIndex) %>% 
+#   arrange(plantIndex) %>%
 #   with(list(Nplant=length(VegMass), #Number of plant samples (some missing)
 #             VegMass=VegMass,
 #   # Nplant_obs=sum(!is.na(VegMass)), #Observed plants
@@ -101,22 +101,22 @@ load('./Models/datalist_commodity.Rdata')
 #   yield=SeedMass[!is.na(SeedMass)] #observed weight of all seeds (g)
 #   # obsPl_ind=which(!is.na(VegMass)),missPl_ind=which(is.na(VegMass)), #Indices for missing plant size
 #   # obsYield_ind=which(!is.na(SeedMass)), missYield_ind=which(is.na(SeedMass)) #Indices for missing yield
-# )) 
+# ))
 # 
 # # #Problem: plots exist at the pod level which do not exist at plant level
-# # a <- plantsAllComm %>% ungroup() %>% filter(!is.na(Pods),!is.na(Missing),!is.na(AvPodCount),!is.na(AvPodMass)) %>%  
-# #   filter(SeedMass!=0) %>%  transmute(index=factor(paste(Year,Field,Distance,Plant))) %>% 
+# # a <- plantsAllComm %>% ungroup() %>% filter(!is.na(Pods),!is.na(Missing),!is.na(AvPodCount),!is.na(AvPodMass)) %>%
+# #   filter(SeedMass!=0) %>%  transmute(index=factor(paste(Year,Field,Distance,Plant))) %>%
 # #   distinct() #Index for plant (which plot?)
 # # b <- seedsAllComm %>% ungroup() %>% filter(!is.na(Plant)&!is.na(PodCount)&PodCount>0&!is.na(PodMass)) %>%
 # #   filter(!is.na(Pods),!is.na(Missing)) %>% #Remove plants from plant level
 # #   transmute(index=factor(paste(Year,Field,Distance,Plant))) %>% distinct()
 # # keep <- which(a$index %in% b$index) #Plants to keep from seeds plants dataset
-# # 
-# # datalistPod <- seedsAllComm %>% ungroup() %>% 
-# #   mutate(podIndex=as.numeric(factor(paste(Year,Field,Distance,Plant)))) %>%   
-# #   arrange(podIndex) %>% 
+# #
+# # datalistPod <- seedsAllComm %>% ungroup() %>%
+# #   mutate(podIndex=as.numeric(factor(paste(Year,Field,Distance,Plant)))) %>%
+# #   arrange(podIndex) %>%
 # #   filter(podIndex %in% keep) %>%
-# #   filter(!is.na(Plant)&!is.na(PodCount)&PodCount>0&!is.na(PodMass)) %>% 
+# #   filter(!is.na(Plant)&!is.na(PodCount)&PodCount>0&!is.na(PodMass)) %>%
 # #   filter(!is.na(Pods),!is.na(Missing)) %>% #Remove plants from plant level
 # #   with(list(Npod=length(Distance), #Number of seeds measured
 # #   seedCount=PodCount, #Number of seeds per pod
@@ -258,46 +258,57 @@ commDAG <- list(plDens ~ hbeeDist,
 print(unlist(shipley.test(commDAG,TRUE)))
 
 #Get model names, and make list
-modFiles <- dir(path='./Commodity model claims 3/',pattern = '*\\.stan',full.names = TRUE)
+modFiles <- dir(path='./Commodity model claims 3',pattern = '*\\.stan',full.names = TRUE)
 (modFiles <- modFiles[!grepl('template',modFiles)])
 
-#Create new list from scratch
-# modList <- vector(mode = 'list',length = 32)
+# #Create storage list
+# modList <- vector(mode = 'list',length = length(modFiles))
 # names(modList) <- paste0('claim',formatC(1:length(modList),width=2,flag='0'))
-load(file='./Commodity model claims 3/claimSummaries_commodity.Rdata')
-modList[!sapply(modList,is.null)] #Look at non-null entries
 
-runThese <- 32 #1:length(modFiles)
+runThese <- 26:32 #1:length(modFiles)
 
 for(i in runThese){
   overwrite <- TRUE
   if(file.exists(modFiles[i])){
-    if(is.null(modList[i])|overwrite){
-      print(paste0('Starting model ',modFiles[i]))
-      mod <- stan(file=modFiles[i],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0)
-      temp <- parTable(mod) #Get parameter summaries
-      (modList[[i]] <- temp[grepl('claim',temp$param),])
-      save(modList,file='./Commodity model claims 3/claimSummaries_commodity.Rdata')
-      print(paste0('Model ',modFiles[i],' completed'))
-    } else print(paste0('Model ',i,' has already been run'))
+    print(paste0('Starting model ',modFiles[i]))
+    mod <- stan(file=modFiles[i],data=datalist,iter=3000,chains=4,control=list(adapt_delta=0.8),init=0)
+    temp <- parTable(mod) #Get parameter summaries
+    
+    #Save information to csv file
+    modList <- read.csv('./Commodity model claims 3/claimsList_updated.csv',sep=',',strip.white = TRUE)
+    modList[i,3:ncol(modList)] <- temp[grepl('claim',temp$param),]
+    write.csv(modList,'./Commodity model claims 3/claimsList_updated.csv',row.names = FALSE)
+    
+    #Diagnostic plots
+    n <- names(mod) #Model parameters
+    n <- n[(!grepl('(\\[[0-9]+,*[0-9]*\\]|lp)',n))|grepl('[sS]igma',n)] #Gets rid of parameter vectors, unless it contains "sigma" (variance term)
+    n <- n[!n %in% c('intPollen','slopeVisitPol','slopeHbeeDistPollen','sigmaPolField','pollenPhi')] #Removes pollen terms
+    print(traceplot(mod,pars=n,inc_warmup=FALSE)+labs(title=gsub('.*/','',modFiles[i])))
+    print(mod,pars=n)
+    fastPairs(mod,pars=n)
+    
+    print(paste0('Model ',modFiles[i],' completed'))
   } else print(paste0('Model ',i,' not found'))
+  rm(mod,modList); gc() #Cleanup
 }
+
+#Calculate C-stat
 
 modList[!sapply(modList,is.null)] #Look at non-null entries
 modList[runThese] 
 modList[i] #Last entry
 
-#Other diagnostic plots
-n <- names(mod) #Model parameters
-n <- n[(!grepl('(\\[[0-9]+,*[0-9]*\\]|lp)',n))|grepl('[sS]igma',n)] #Gets rid of parameter vectors, unless it contains "sigma" (variance term)
-n <- n[!n %in% c('intPollen','slopeVisitPol','slopeHbeeDistPollen','sigmaPolField','pollenPhi')] #Removes pollen terms
-traceplot(mod,pars=n,inc_warmup=FALSE)#+geom_hline(yintercept = 0) #Traceplots
-print(mod,pars=n)
-fastPairs(mod,pars=n)
 
-traceplot(mod,pars='plDens_miss')
+# load(file='./Commodity model claims 3/claimSummaries_commodity.Rdata')
+# modList2 <- modList
+# modList2[!sapply(modList2,is.null)] #Look at non-null entries
+# modList <- read.csv('./Commodity model claims 3/claimsList_updated.csv')
+# 
+# write.csv(cbind(modList[,c('Filename','Independ.Claim')],do.call('rbind',modList2)),
+#           './Commodity model claims 3/claimsList_updated2.csv',row.names=FALSE)
 
-#Calculate C-stat
+modList <- read.csv('./Commodity model claims 3/claimsList_updated.csv')
+
 modList <- do.call('rbind',modList)
 shipley.dSep(modList,pval,param)
 debugonce(shipley.dSep)
