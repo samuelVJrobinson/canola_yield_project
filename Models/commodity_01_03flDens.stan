@@ -112,6 +112,7 @@ parameters {
 	real intFlDens; //Global intercept
 	real slopePlSizeFlDens; //Slope of plant size on flower density
 	real slopeHbeeDistFlDens; //Slope of distance into field
+	real slopePlDensFlDens; //Slope of plant density on flower density
 	real<lower=0> sigmaFlDens; //Sigma for within-field (residual)
 	real<lower=0> sigmaFlDens_field; //Sigma for field
 	vector[Nfield] intFlDens_field; //Random intercept for field
@@ -160,6 +161,7 @@ transformed parameters {
 		flDensMu[i] = intFlDens	+ //Intercept
 		  intFlDens_field[plotIndex[i]] + //Field-level random effect
 			slopePlSizeFlDens*plSizePlotMu[i] + //Plant size effect
+			slopePlDensFlDens*plDens[i] + //Plant density effect
 			slopeHbeeDistFlDens*logHbeeDist[i]; //Distance effect
 	}
 	
@@ -205,6 +207,7 @@ model {
 	// Flower density per plot
 	intFlDens ~ normal(4.1,5); //Global intercept
 	slopePlSizeFlDens ~ normal(0,5); //plant size effect
+	slopePlDensFlDens ~ normal(0,5); //plant density
 	slopeHbeeDistFlDens ~ normal(0,5); //distance into field
 	sigmaFlDens ~ gamma(1,1); //Sigma for within-field (residual)
 	sigmaFlDens_field ~ gamma(1,1); //Sigma for field

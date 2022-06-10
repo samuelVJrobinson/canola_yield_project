@@ -370,12 +370,12 @@ shipley.dSep <- function(d,p,lab){
     ret <- c(Inf,kval,0)
   } else {
     cstat <- -2*sum(log(pvals)) #C-statistic
-    p <- 1-pchisq(cstat,kval) 
-    ret <- c(cstat,kval,p)
+    cp <- 1-pchisq(cstat,kval) 
+    ret <- c(cstat,kval,cp)
   }
   
   tCol <- rev(ifelse(pvals<0.05,'red','black'))
-  ttl <- paste0('C-stat: ',Inf,', k: ',64,', p: ',0)
+  ttl <- paste0('C-stat: ',formatC(ret[1],3),', k: ',ret[2],', p: ',formatC(ret[3],format='e'))
   
   d %>% mutate(param=factor({{lab}},levels=rev({{lab}}))) %>% 
     mutate(tooLow={{p}}<=0.05) %>% 

@@ -83,6 +83,9 @@ transformed data {
 }
 
 parameters {
+  // Plant density	
+	vector<lower=1.8,upper=5>[Nplot_densMiss] plDens_miss; 
+  
 	// Pollen deposition
 	// Plot level random effect has bad trace, strongly correlated with lp__
 	real intPollen; //Intercept
@@ -100,9 +103,11 @@ parameters {
   real slopePolSeedWeight; //Slope of pollen deposition - p=0.50
   real slopeSeedCount; //Slope of seed count - p<0.0001
   real slopePlSizeWeight; //Slope of plant size - p=0.13
-  // real slopeIrrigSeedWeight; //Irrigation effect - p=0.04
-  // real slope2015SeedWeight; //Slope of 2015 - p=0.28
-  real<lower=0> sigmaSeedWeight; //SD of seed weight
+  real slopePlDensSeedWeight; //Plant density
+	real slopeHbeeDistSeedWeight; //Distance from edge
+  real slopeFlwSurvSeedWeight; //Slope of flower survival
+  real slopeFlwCountSeedWeight; //Slope of flower count
+   real<lower=0> sigmaSeedWeight; //SD of seed weight
   real<lower=0> sigmaSeedWeight_plot; //SD of plot random effect
   real<lower=0> sigmaSeedWeight_field; //SD of field random effect
   vector[Nplot] intSeedWeight_plot; //plot-level random intercepts
@@ -114,11 +119,16 @@ transformed parameters {
 	//Expected values
 	//Pollen deposition
 	vector[Nplot] pollenPlot; //Plot-level pollen per stigma
-	vector[Nflw] pollenMu; //Expected pollen per stigma		
-
-  //Average seed weight
+	vector[Nflw] pollenMu; //Expected pollen per stigma
+	
+	//Average seed weight
   vector[Nplot] seedWeightMuPlot; //Plot-level weight per seed
   vector[Nplant] seedWeightMu; //Plant-level weight per seed
+  
+  // Imputed missing data;
+	vector[Nplot] plDens; //Planting density	
+  plDens[obsPlDens_ind]=plDens_obs;
+	plDens[missPlDens_ind]=plDens_miss;	
 
 	for(i in 1:Nplot){ 
 		// Plot-level pollen deposition
@@ -132,10 +142,10 @@ transformed parameters {
 		seedWeightMuPlot[i] = intSeedWeight + //Intercept
 			intSeedWeight_field[plotIndex[i]] + //Field-level random intercept
 			intSeedWeight_plot[i] + //Plot-level random intercept
+			slopePlDensSeedWeight*plDens[i] + //Plant density
+			slopeHbeeDistSeedWeight*logHbeeDist[i] + //Distance from edge
 			slopeVisitSeedWeight*logHbeeVis[i] + //(log) hbee visits
 			slopePolSeedWeight*pollenPlot[i]; //pollen deposition - large correlation b/w slopePolSeedWeight and intFlwSurv
-			// slopeIrrigSeedWeight*isIrrigated[plotIndex[i]] + //Irrigation effect
-			// slope2015SeedWeight*is2015[plotIndex[i]]; // Year effect
 	}
 		
 	for(i in 1:Nflw){ //For each flower stigma
@@ -147,6 +157,8 @@ transformed parameters {
 		// Weight per seed = plot-level effect +
 		seedWeightMu[i] = seedWeightMuPlot[plantIndex[i]] + //Plot-level seed weight
 			slopePlSizeWeight*plantSize[i] + //Plant size effect
+			slopeFlwSurvSeedWeight*logitFlwSurv[i] + //flower survival 
+		  slopeFlwCountSeedWeight*logFlwCount[i] + //flower count
 			slopeSeedCount*seedCount[i]; //Seed count effect (do plants with many seeds/pod have bigger seeds?)
 	}	
 }
@@ -174,8 +186,10 @@ model {
   slopePolSeedWeight ~ normal(0,5); //Slope of pollen deposition
   slopeSeedCount ~ normal(0,5); //Slope of (log) seed count
   slopePlSizeWeight ~ normal(0,5); //Slope of plant size
-  // slopeIrrigSeedWeight ~ normal(0,5); //Slope of irrigation
-  // slope2015SeedWeight ~ normal(0,5); //Slope of 2015
+  slopePlDensSeedWeight ~ normal(0,5); //Plant density
+	slopeHbeeDistSeedWeight ~ normal(0,5); //Distance from edge
+	slopeFlwSurvSeedWeight ~ normal(0,5); //Slope of flower survival
+  slopeFlwCountSeedWeight ~ normal(0,5); //Slope of flower survival
   sigmaSeedWeight ~ gamma(1,1); //SD of seed weight
   sigmaSeedWeight_field ~ gamma(1,1); //SD of field random effect
   sigmaSeedWeight_plot ~ gamma(1,1); //SD of plot random effect

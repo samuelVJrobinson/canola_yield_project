@@ -4,6 +4,7 @@
 library(ggplot2)
 library(dplyr)
 library(tidyr)
+library(tibble)
 library(beepr)
 library(xtable)
 
@@ -19,8 +20,8 @@ prestheme=theme(legend.position='right',
 theme_set(theme_bw()+prestheme) #Sets graph theme to B/Ws + prestheme
 rm(prestheme)
 
-# setwd('~/Projects/UofC/canola_yield_project') #Multivac path
-setwd('~/Documents/canola_yield_project') #Galpern machine path
+setwd('~/Projects/UofC/canola_yield_project') #Multivac path
+# setwd('~/Documents/canola_yield_project') #Galpern machine path
 
 source('helperFunctions.R')
 
@@ -245,17 +246,38 @@ options(mc.cores = 6)
 
 # Dagitty claims list for commodity fields 
 
-commDAG <- list(plDens ~ hbeeDist,
-                plSize ~ plDens + hbeeDist,
-                flDens ~ plSize + hbeeDist,
-                hbeeVis ~ hbeeDist + numHives + flDens,
-                pollen ~ hbeeVis + hbeeDist,
-                flwCount ~ plSize + flwSurv,
-                flwSurv ~ hbeeVis + plSize + pollen,
-                seedCount ~ hbeeVis + pollen + plSize,
-                seedWeight ~ hbeeVis + pollen + plSize + seedCount)
+{
+  library(ggdag)
+  nodeCoords <- data.frame(name=c('numHives','hbeeDist','hbeeVis','pollen',
+                                  'plSize','plDens','flDens',
+                                  'flwCount','flwSurv','seedCount','seedWeight'),
+           x=c(0,1,0.5,0.5,
+               1,2,3,
+               3,4,4,4),
+           y=c(5,5,4,3,
+               2,1,2,
+               4.5,4,3.5,3))
+  
+  commDAG <- dagify(plDens ~ hbeeDist,
+                  plSize ~ plDens + hbeeDist,
+                  flDens ~ plSize + hbeeDist + plDens,
+                  hbeeVis ~ hbeeDist + numHives + flDens,
+                  pollen ~ hbeeVis + hbeeDist,
+                  flwCount ~ plSize + flwSurv,
+                  flwSurv ~ hbeeVis + plSize + pollen,
+                  seedCount ~ hbeeVis + pollen + plSize + flwSurv + flwCount,
+                  seedWeight ~ hbeeVis + pollen + plSize + seedCount + plDens + hbeeDist + flwSurv + flwCount,
+                  coords= list(x = setNames(nodeCoords$x,nodeCoords$name),
+                               y = setNames(nodeCoords$y,nodeCoords$name))
+        )
+
+  commDAG %>% 
+    tidy_dagitty() %>% 
+    ggdag_classic()+
+    theme_dag_blank(base_size = 1)
+}
 # debugonce(shipley.test)
-print(unlist(shipley.test(commDAG,TRUE)))
+print(unlist(shipley.test(commDAG,TRUE))) #d-separation claims list
 
 #Get model names, and make list
 modFiles <- dir(path='./Commodity model claims 3',pattern = '*\\.stan',full.names = TRUE)
@@ -294,9 +316,9 @@ for(i in runThese){
 
 #Calculate C-stat
 
-modList[!sapply(modList,is.null)] #Look at non-null entries
-modList[runThese] 
-modList[i] #Last entry
+# modList[!sapply(modList,is.null)] #Look at non-null entries
+# modList[runThese] 
+# modList[i] #Last entry
 
 
 # load(file='./Commodity model claims 3/claimSummaries_commodity.Rdata')
@@ -307,10 +329,13 @@ modList[i] #Last entry
 # write.csv(cbind(modList[,c('Filename','Independ.Claim')],do.call('rbind',modList2)),
 #           './Commodity model claims 3/claimsList_updated2.csv',row.names=FALSE)
 
-modList <- read.csv('./Commodity model claims 3/claimsList_updated.csv')
+modList <- read.csv('./Commodity model claims 3/claimsList_updated.csv',)
+# modList <- do.call('rbind',modList)
 
-modList <- do.call('rbind',modList)
-shipley.dSep(modList,pval,param)
+modList %>% 
+  mutate(pval=pnorm(-abs(Z))*2) %>% 
+  shipley.dSep(.,pval,param)
+
 debugonce(shipley.dSep)
 
 # Partial effects plots for commodity fields -----------------------------
