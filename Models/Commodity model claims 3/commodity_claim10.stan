@@ -100,6 +100,7 @@ parameters {
 	
 	real claim10_slopeFlDensPol; //Claim
 	real slopePlSizePol; //Other claim
+	real slopePlDensPol; //Other claim
 	
 	real intPollen; //Intercept
 	real slopeVisitPol; //Slope of hbee visits	
@@ -136,6 +137,7 @@ transformed parameters {
 		pollenPlot[i] = intPollen_field[plotIndex[i]] + //Field-level random intercept
 		  claim10_slopeFlDensPol*flDens[i] + //Claim
 	    slopePlSizePol*plSizePlotMu[i] + //Other claim
+	    slopePlDensPol*plDens[i] + //Other claim
 		  slopeVisitPol*logHbeeVis[i] + //(log) hbee visits
 			slopeHbeeDistPollen*logHbeeDist[i]; //Distance effect						
 	}
@@ -164,9 +166,6 @@ model {
 	intPlSize ~ normal(4.6,5); //Intercept
 	slopePlDensPlSize ~ normal(0,5); //Plant density
 	slopeDistPlSize ~ normal(0,5); //Distance effect
-	// slopeGpPlSize ~ normal(0,5); //Grand Prairie effect
-	// slopeIrrigPlSize ~ normal(0,5); //Irrigation effect
-	// slope2015PlSize ~ normal(0,5); //2015 effect
 	sigmaPlSize_field ~ gamma(1,1); //Sigma for random field
 	sigmaPlSize_plot ~ gamma(1,1); //Sigma for random plot
 	sigmaPlSize ~ gamma(1,1); //Sigma for residual
@@ -177,6 +176,7 @@ model {
 	
   claim10_slopeFlDensPol ~ normal(0,1); //Claim
 	slopePlSizePol ~ normal(0,1); //Other claim
+	slopePlDensPol ~ normal(0,1); //Plant density
 	
 	intPollen ~ normal(5.6,5); //Intercept	
 	slopeVisitPol ~ normal(0,5); //hbee Visitation effect	
@@ -184,6 +184,4 @@ model {
 	sigmaPolField ~ gamma(1,1); //Sigma for random field	
 	pollenPhi ~ gamma(1,1); //Dispersion parameter
 	intPollen_field ~ normal(0,sigmaPolField); //Random field int
-	// sigmaPolPlot ~ gamma(1.05,1); //Sigma for random plot - bad Rhat, poor traces   
-	// intPollen_plot ~ normal(0,sigmaPolPlot); //Random plot int - not a lot of info at plot level
 }

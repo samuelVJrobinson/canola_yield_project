@@ -87,7 +87,7 @@ parameters {
 	// Pollen deposition
 	// Plot level random effect has bad trace, strongly correlated with lp__
 	real intPollen; //Intercept
-	real slopeVisitPol; //Slope of hbee visits	
+	real slopeHbeeVisPollen; //Slope of hbee visits	
 	real slopeHbeeDistPollen; //Effect of distance into field
 	real<lower=0> sigmaPolField; //SD of field random intercepts	
 	real<lower=0> pollenPhi; //Dispersion parameter
@@ -108,7 +108,7 @@ transformed parameters {
 		// Plot-level pollen deposition
 		pollenPlot[i] = intPollen_field[plotIndex[i]] + //Field-level random intercept
 		  // intPollen_plot[i] + //Plot-level random intercept
-			slopeVisitPol*logHbeeVis[i] + //(log) hbee visits
+			slopeHbeeVisPollen*logHbeeVis[i] + //(log) hbee visits
 			slopeHbeeDistPollen*logHbeeDist[i]; //Distance effect						
 		// Global intercept is within flower-level term in order to center plot-level variable
 	}
@@ -128,7 +128,7 @@ model {
 		
 	// Pollen deposition - informative priors	
 	intPollen ~ normal(5.6,5); //Intercept	
-	slopeVisitPol ~ normal(0,5); //hbee Visitation effect	
+	slopeHbeeVisPollen ~ normal(0,5); //hbee Visitation effect	
 	slopeHbeeDistPollen ~ normal(0,5); //hbee distance effect	
 	sigmaPolField ~ gamma(1,1); //Sigma for random field	
 	pollenPhi ~ gamma(1,1); //Dispersion parameter

@@ -100,6 +100,7 @@ parameters {
   
   real claim14_slopeFlDensSurv; //Other claim
   real slopeHbeeDistSurv; //Other claim
+  real slopePlDensSurv; //Other claim
   
 	real intFlwSurv; //Intercept
 	real slopeVisitSurv; //Slope of hbee visits
@@ -138,6 +139,7 @@ transformed parameters {
       intFlwSurv_field[plotIndex[i]] + //Field-level random intercept
       claim14_slopeFlDensSurv*flDens[i] + //Claim
       slopeHbeeDistSurv*logHbeeDist[i] + //Other claim
+      slopePlDensSurv*plDens[i] + //Other claim
     	slopeVisitSurv*logHbeeVis[i] + //hbee visits
     	slopePolSurv*pollenPlot[i]; //(log) pollen deposition - large correlation b/w slopePolSurv and intFlwSurv
 	}
@@ -182,6 +184,7 @@ model {
 	//Flower survival - informative priors
 	claim14_slopeFlDensSurv ~ normal(0,5); //Claim
 	slopeHbeeDistSurv ~ normal(0,5); //Other claim
+	slopePlDensSurv ~ normal(0,5); //Other claim
 	
   intFlwSurv ~ normal(0.7,5); //Intercept
   slopeVisitSurv ~ normal(0,5); //Slope of hbee visits

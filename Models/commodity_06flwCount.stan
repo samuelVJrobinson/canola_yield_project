@@ -87,7 +87,7 @@ parameters {
 	// Flower count (per plant)
 	real intFlwCount; //Intercept
 	real slopePlSizeFlwCount; //Slope of plant size
-	real slopeSurvFlwCount; //Slope of flower survival rate
+	real slopeFlwSurvFlwCount; //Slope of flower survival rate
 	// real slope2015FlwCount; //Slope of 2015 effect
 	real<lower=0> phiFlwCount_field; //SD of field-level random effect
 	vector[Nfield] intFlwCount_field; //Field-level random effect
@@ -122,7 +122,7 @@ transformed parameters {
     // Flower count per plant (attempted pods)
     flwCountMu[i] = flwCountPlot[plantIndex[i]] + //Plot level flower count
     	slopePlSizeFlwCount*plantSize[i] + //Plant size effect
-    	slopeSurvFlwCount*logitFlwSurv[i]; //Flower survival effect
+    	slopeFlwSurvFlwCount*logitFlwSurv[i]; //Flower survival effect
     // Phi (dispersion) for flower count
     phiFlwCount[i] = exp(intPhiFlwCount + //Intercept
       intPhiFlwCount_field[plotIndex[plantIndex[i]]] + //Field-level random intercept
@@ -142,7 +142,7 @@ model {
   //Flower count (per plant)
   intFlwCount ~ normal(2.6,5); //Intercept
   slopePlSizeFlwCount ~ normal(0,5); //Slope of plant size
-  slopeSurvFlwCount ~ normal(0,5); //Slope of survival rate
+  slopeFlwSurvFlwCount ~ normal(0,5); //Slope of survival rate
   // slope2015FlwCount ~ normal(0,5); //Slope of 2015 effect
   phiFlwCount_field ~ gamma(1,1); //SD of field-level random effect
   intFlwCount_field ~ normal(0,phiFlwCount_field); //Field-level random intercept

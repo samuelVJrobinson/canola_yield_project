@@ -99,10 +99,10 @@ parameters {
 	
   // Weight per seed
   real intSeedWeight; //Intercept
-  real slopeVisitSeedWeight; //Slope of hbee visits - p=0.24
-  real slopePolSeedWeight; //Slope of pollen deposition - p=0.50
-  real slopeSeedCount; //Slope of seed count - p<0.0001
-  real slopePlSizeWeight; //Slope of plant size - p=0.13
+  real slopeHbeeVisSeedWeight; //Slope of hbee visits - p=0.24
+  real slopePollenSeedWeight; //Slope of pollen deposition - p=0.50
+  real slopeSeedCountSeedWeight; //Slope of seed count - p<0.0001
+  real slopePlSizeSeedWeight; //Slope of plant size - p=0.13
   real slopePlDensSeedWeight; //Plant density
 	real slopeHbeeDistSeedWeight; //Distance from edge
   real slopeFlwSurvSeedWeight; //Slope of flower survival
@@ -144,8 +144,8 @@ transformed parameters {
 			intSeedWeight_plot[i] + //Plot-level random intercept
 			slopePlDensSeedWeight*plDens[i] + //Plant density
 			slopeHbeeDistSeedWeight*logHbeeDist[i] + //Distance from edge
-			slopeVisitSeedWeight*logHbeeVis[i] + //(log) hbee visits
-			slopePolSeedWeight*pollenPlot[i]; //pollen deposition - large correlation b/w slopePolSeedWeight and intFlwSurv
+			slopeHbeeVisSeedWeight*logHbeeVis[i] + //(log) hbee visits
+			slopePollenSeedWeight*pollenPlot[i]; //pollen deposition - large correlation b/w slopePollenSeedWeight and intFlwSurv
 	}
 		
 	for(i in 1:Nflw){ //For each flower stigma
@@ -156,10 +156,10 @@ transformed parameters {
 	for(i in 1:Nplant){ //For each plant 	
 		// Weight per seed = plot-level effect +
 		seedWeightMu[i] = seedWeightMuPlot[plantIndex[i]] + //Plot-level seed weight
-			slopePlSizeWeight*plantSize[i] + //Plant size effect
+			slopePlSizeSeedWeight*plantSize[i] + //Plant size effect
 			slopeFlwSurvSeedWeight*logitFlwSurv[i] + //flower survival 
 		  slopeFlwCountSeedWeight*logFlwCount[i] + //flower count
-			slopeSeedCount*seedCount[i]; //Seed count effect (do plants with many seeds/pod have bigger seeds?)
+			slopeSeedCountSeedWeight*seedCount[i]; //Seed count effect (do plants with many seeds/pod have bigger seeds?)
 	}	
 }
 	
@@ -182,10 +182,10 @@ model {
 	
   // Average weight per seed - informative priors
   intSeedWeight ~ normal(2.0,5); //Intercept
-  slopeVisitSeedWeight ~ normal(0,5); //Slope of hbee visits
-  slopePolSeedWeight ~ normal(0,5); //Slope of pollen deposition
-  slopeSeedCount ~ normal(0,5); //Slope of (log) seed count
-  slopePlSizeWeight ~ normal(0,5); //Slope of plant size
+  slopeHbeeVisSeedWeight ~ normal(0,5); //Slope of hbee visits
+  slopePollenSeedWeight ~ normal(0,5); //Slope of pollen deposition
+  slopeSeedCountSeedWeight ~ normal(0,5); //Slope of (log) seed count
+  slopePlSizeSeedWeight ~ normal(0,5); //Slope of plant size
   slopePlDensSeedWeight ~ normal(0,5); //Plant density
 	slopeHbeeDistSeedWeight ~ normal(0,5); //Distance from edge
 	slopeFlwSurvSeedWeight ~ normal(0,5); //Slope of flower survival

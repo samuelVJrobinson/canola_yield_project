@@ -167,7 +167,7 @@ modList[2] <- stan(file=modFiles[2],data=datalist,iter=2000,chains=4,control=lis
 modList[3] <- stan(file=modFiles[3],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #OK - Pollen
 modList[4] <- stan(file=modFiles[4],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #OK - Flower count
 modList[5] <- stan(file=modFiles[5],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0); beep(1) #OK - Pod Count (flw survival)
-# modList[5] <- stan(file='commodity_07flwSurv2.stan',data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0); beep(1) #Count-only version - OK, but not as biologically interesting I think
+# modList[5] <- stan(file='commodity_07flwSurv2.stan',data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0); beep(1) #Pod count-only version - OK, but not as biologically interesting I think
 modList[6] <- stan(file=modFiles[6],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #OK - Seed Count
 modList[7] <- stan(file=modFiles[7],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #OK - Seed weight
 modList[8] <- stan(file=modFiles[8],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #OK - Total yield
@@ -253,10 +253,20 @@ options(mc.cores = 6)
                                   'flwCount','flwSurv','seedCount','seedWeight'),
            x=c(0,1,0.5,0.5,
                1,2,3,
-               3,4,4,4),
+               3,4,5,4),
            y=c(5,5,4,3,
                2,1,2,
-               4.5,4,3.5,3))
+               4.5,4,3.5,2.5))
+  
+  capFirst <- function(x,decap=FALSE){ #Capitalize/decapitalize first letter of a string
+    if(!is.character(x)) stop('Not a character or character vector')
+    if(decap){
+      substr(x, 1, 1) <- tolower(substr(x, 1, 1))
+    } else {
+      substr(x, 1, 1) <- toupper(substr(x, 1, 1))
+    }
+    return(x)
+  }
   
   commDAG <- dagify(plDens ~ hbeeDist,
                   plSize ~ plDens + hbeeDist,
@@ -270,11 +280,48 @@ options(mc.cores = 6)
                   coords= list(x = setNames(nodeCoords$x,nodeCoords$name),
                                y = setNames(nodeCoords$y,nodeCoords$name))
         )
+  
+  #Get path coefficients (Z-scores) and match to edges
+  
+  load('modSummaries_commodity.Rdata')
+  
+  pathCoefs <- modSummaries_commodity %>% #Get path coefficients
+    bind_rows(.id='to') %>% 
+    transmute(to,name=param,Z,pval) %>% 
+    filter(to!='yield',!grepl('(int|sigma|lambda|Phi|phi|rho)',name)) %>% 
+    mutate(to=case_when(
+      to=='flDens' & grepl('PlDens$',name) ~ 'plDens',
+      to=='flDens' & grepl('PlSize$',name) ~ 'plSize',
+      TRUE ~ gsub('avg','seed',to)
+    )) %>% 
+    mutate(name=gsub('slope','',name)) %>% 
+    filter(mapply(grepl,capFirst(to),name)) %>% 
+    mutate(name=mapply(gsub,capFirst(to),'',name)) %>% 
+    mutate(name=capFirst(name,TRUE)) 
 
-  commDAG %>% 
-    tidy_dagitty() %>% 
-    ggdag_classic()+
-    theme_dag_blank(base_size = 1)
+  commDAG <- commDAG %>% #Create tidy dagitty set
+    tidy_dagitty() 
+  
+  
+  ggplot(commDAG,aes(x = x, y = y, xend = xend, yend = yend))+
+    geom_dag_edges() +
+    geom_dag_text(col='black') +
+    theme_dag_blank()
+    
+  commDAG$data <- commDAG$data %>% #Match coefs to dagitty set
+    rename(xstart=x,ystart=y) %>% 
+    left_join(x=pathCoefs,y=.,by=c('to','name')) %>% 
+    mutate(isNeg=Z<0,isSig=pval<0.05)
+  
+  ggplot(commDAG$data,aes(x = xstart, y = ystart, xend = xend, yend = yend))+
+    # geom_dag_point() +
+    geom_dag_edges() +
+    geom_dag_text(col='black') +
+    # geom_dag_text(aes(label=name))+
+    # geom_dag_edges()+
+    # # ggdag(node_size=20,text_size = 3)+
+    # # geom_dag_node()+
+    theme_dag_blank()
 }
 # debugonce(shipley.test)
 print(unlist(shipley.test(commDAG,TRUE))) #d-separation claims list

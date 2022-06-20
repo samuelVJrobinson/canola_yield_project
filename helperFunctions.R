@@ -31,14 +31,14 @@ parTable <- function(x){
 
 
 #Faster pair plot
-fastPairs <- function(l,pars=NULL){ 
+fastPairs <- function(l,pars=NULL,N=500){ 
   if(class(l)=='stanfit'){
     l <- extract(l,pars=pars)
     if(any(sapply(l,function(x) length(dim(x)))>1)){
       stop('Parameters have more than 1 dimension: ',paste(pars[sapply(l,function(x) length(dim(x))>1)],collapse=', '))
     }
     l <- do.call('cbind',l)
-    if(nrow(l)>500) l <- l[round(seq(1,nrow(l),length.out=500)),]
+    if(nrow(l)>N) l <- l[round(seq(1,nrow(l),length.out=N)),]
   }
   pairs(l,lower.panel=function(x,y){
     par(usr=c(0,1,0,1))

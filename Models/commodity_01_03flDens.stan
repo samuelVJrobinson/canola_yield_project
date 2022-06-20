@@ -90,7 +90,7 @@ parameters {
 	// real slopeIrrigPlDens; //Effect of irrigation
 	// real slope2015IrrigPlDens; //Year:irrigation interaction	
 	// real slopeGPPlDens; //GP effect on plant density	
-	real slopeDistPlDens; //Slope of distance into field		
+	real slopeHbeeDistPlDens; //Slope of distance into field		
 	real<lower=0> sigmaPlDens; //Sigma for within-field (residual)
 	real<lower=0> sigmaPlDens_field; //Sigma for field
 	vector[Nfield] intPlDens_field; //Random intercept for field
@@ -98,7 +98,7 @@ parameters {
 	// Plant size
 	real intPlSize; //Global intercept
 	real slopePlDensPlSize; //Slope of planting density
-	real slopeDistPlSize; //Slope of distance
+	real slopeHbeeDistPlSize; //Slope of distance
 	// real slopeGpPlSize; //Slope of Grand Prairie effect
 	// real slope2015PlSize; //Slope of 2015 effect
 	// real slopeIrrigPlSize; //Slope of irrigation
@@ -144,7 +144,7 @@ transformed parameters {
 			// slopeIrrigPlDens*isIrrigated[plotIndex[i]]+ //Irrigation effect
 			// slope2015IrrigPlDens*isIrrigated[plotIndex[i]]*is2015[plotIndex[i]]+ //Year:irrigation interaction
 			// slopeGPPlDens*isGP[plotIndex[i]]; //Location effect
-			slopeDistPlDens*logHbeeDist[i]; //Distance effect
+			slopeHbeeDistPlDens*logHbeeDist[i]; //Distance effect
 			
 
 		// Plant size (plot-level)
@@ -152,7 +152,7 @@ transformed parameters {
 		  intPlSize_field[plotIndex[i]] + //Field-level random effect
 		  intPlSize_plot[i] + //Plot-level random effect
 			slopePlDensPlSize*plDens[i] +  //Plant density
-			slopeDistPlSize*logHbeeDist[i]; //Distance effect (edge of field has smaller plants)
+			slopeHbeeDistPlSize*logHbeeDist[i]; //Distance effect (edge of field has smaller plants)
 			// slopeGpPlSize*isGP[plotIndex[i]] + // Location effect
 			// slope2015PlSize*is2015[plotIndex[i]] + //Year effect
 			// slopeIrrigPlSize*isIrrigated[plotIndex[i]]; //Irrigation effect
@@ -186,7 +186,7 @@ model {
 	// slopeIrrigPlDens ~ normal(0,5); //Irrigation effect
 	// slope2015IrrigPlDens ~ normal(0,5); //Year:irrigation interaction
 	// slopeGPPlDens ~ normal(0,5); // Grand Prairie effect 
-	slopeDistPlDens ~ normal(0,5); //Slope of distance into field	
+	slopeHbeeDistPlDens ~ normal(0,5); //Slope of distance into field	
 	sigmaPlDens ~ gamma(1,1); //Sigma for within-field (residual)
 	sigmaPlDens_field ~ gamma(1,1); //Sigma for field
 	intPlDens_field ~ normal(0,sigmaPlDens_field); //Random intercept for field
@@ -194,7 +194,7 @@ model {
 	// Plant size - informative priors
 	intPlSize ~ normal(4.6,5); //Intercept
 	slopePlDensPlSize ~ normal(0,5); //Plant density
-	slopeDistPlSize ~ normal(0,5); //Distance effect
+	slopeHbeeDistPlSize ~ normal(0,5); //Distance effect
 	// slopeGpPlSize ~ normal(0,5); //Grand Prairie effect
 	// slopeIrrigPlSize ~ normal(0,5); //Irrigation effect
 	// slope2015PlSize ~ normal(0,5); //2015 effect

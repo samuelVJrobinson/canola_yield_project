@@ -98,7 +98,7 @@ parameters {
 	// Pollen deposition
 	// Plot level random effect has bad trace, strongly correlated with lp__
 	real intPollen; //Intercept
-	real slopeVisitPol; //Slope of hbee visits	
+	real slopeHbeeVisPollen; //Slope of hbee visits	
 	real slopeHbeeDistPollen; //Effect of distance into field - p=0.076 (p=0.17 if stocking and stocking:dist interaction included - see below)
 	real<lower=0> sigmaPolField; //SD of field random intercepts	
 	real<lower=0> pollenPhi; //Dispersion parameter
@@ -108,8 +108,8 @@ parameters {
 
 	// Seed count
   real intSeedCount; //Intercept
-  real slopeVisitSeedCount; //Slope of hbee visits - p=0.81
-  real slopePolSeedCount; //Slope of pollen deposition - p=0.74
+  real slopeHbeeVisSeedCount; //Slope of hbee visits - p=0.81
+  real slopePollenSeedCount; //Slope of pollen deposition - p=0.74
   real slopePlSizeSeedCount; //Slope of plant size - p=0.22
   real slopeFlwSurvSeedCount; //Slope of flower survival
   real slopeFlwCountSeedCount; //Slope of flower count
@@ -155,7 +155,7 @@ transformed parameters {
 		// Plot-level pollen deposition
 		pollenPlot[i] = intPollen_field[plotIndex[i]] + //Field-level random intercept
 		  // intPollen_plot[i] + //Plot-level random intercept
-			slopeVisitPol*logHbeeVis[i] + //(log) hbee visits
+			slopeHbeeVisPollen*logHbeeVis[i] + //(log) hbee visits
 			slopeHbeeDistPollen*logHbeeDist[i]; //Distance effect						
 		// Global intercept is within flower-level term in order to center plot-level variable
 	
@@ -163,8 +163,8 @@ transformed parameters {
 		seedCountMuPlot[i] = intSeedCount + //Intercept
 		  intSeedCount_field[plotIndex[i]] + //Field-level random intercept
 		  // intSeedCount_plot[i] + //Plot-level random intercept
-			slopeVisitSeedCount*logHbeeVis[i] + //(log) hbee visits
-			slopePolSeedCount*pollenPlot[i]; //pollen deposition - large correlation b/w slopePolSeedCount and intFlwSurv
+			slopeHbeeVisSeedCount*logHbeeVis[i] + //(log) hbee visits
+			slopePollenSeedCount*pollenPlot[i]; //pollen deposition - large correlation b/w slopePollenSeedCount and intFlwSurv
 			// slope2015SeedCount*is2015[plotIndex[i]]; //Year effect
 
 	}
@@ -204,7 +204,7 @@ model {
 	// 
 	// Pollen deposition - informative priors	
 	intPollen ~ normal(5.6,5); //Intercept	
-	slopeVisitPol ~ normal(0,5); //hbee Visitation effect	
+	slopeHbeeVisPollen ~ normal(0,5); //hbee Visitation effect	
 	slopeHbeeDistPollen ~ normal(0,5); //hbee distance effect	
 	sigmaPolField ~ gamma(1,1); //Sigma for random field	
 	pollenPhi ~ gamma(1,1); //Dispersion parameter
@@ -214,8 +214,8 @@ model {
 	
   // Average seed count - informative priors
   intSeedCount ~ normal(10.9,5); //Intercept
-  slopeVisitSeedCount ~ normal(0,5); //Slope of hbee visits
-  slopePolSeedCount ~ normal(0,5); //Slope of pollen deposition+
+  slopeHbeeVisSeedCount ~ normal(0,5); //Slope of hbee visits
+  slopePollenSeedCount ~ normal(0,5); //Slope of pollen deposition+
   slopePlSizeSeedCount ~ normal(0,5); //Slope of plant size
   slopeFlwSurvSeedCount ~ normal(0,5); //Slope of flower survival
   slopeFlwCountSeedCount ~ normal(0,5); //Slope of flower survival

@@ -84,18 +84,18 @@ transformed data {
 
 parameters {
 	// hbee Visitation per plot
-	real intVisit; //Intercept
+	real intHbeeVis; //Intercept
 	// real slopeYearVis; //Effect of 2015
 	// real slopeGpVis; //Effect of Grand Prairie
 	// real slopeYearGpVis; //Effect of year-GP interaction
 	// real slopeIrrigVis; //Effect of irrigation
-	real slopeDistVis; //Slope of distance
-	real slopeHiveVis; //Slope of hive number
-	real slopeFlDens; //Slope of flower density
-	real<lower=0> sigmaVisField; //SD of field random intercepts
-	real<lower=0> visitHbeePhi; //Dispersion parameter
-	vector[Nfield] intVisit_field; //field-level random intercepts
-	real<lower=0> lambdaVisField; //Lambda for skewed random effects
+	real slopeHbeeDistHbeeVis; //Slope of distance
+	real slopeNumHivesHbeeVis; //Slope of hive number
+	real slopeFlDensHbeeVis; //Slope of flower density
+	real<lower=0> sigmaHbeeVis_Field; //SD of field random intercepts
+	real<lower=0> phiHbeeVis; //Dispersion parameter
+	vector[Nfield] intHbeeVis_field; //field-level random intercepts
+	real<lower=0> lambdaHbeeVis_field; //Lambda for skewed random effects
 }
 
 transformed parameters {		
@@ -106,36 +106,36 @@ transformed parameters {
 	
 	for(i in 1:Nplot){ 
 		// Honeybee Visitation
-		visitHbeeMu[i] = intVisit + //Intercept
-		  intVisit_field[plotIndex[i]] + //Field-level random intercept
+		visitHbeeMu[i] = intHbeeVis + //Intercept
+		  intHbeeVis_field[plotIndex[i]] + //Field-level random intercept
 		  logTime[i] + //Time offset
 			// slopeYearVis*is2015[plotIndex[i]] + //Year effect
 			// slopeGpVis*isGP[plotIndex[i]] + //Grand Prairie effect
 			// slopeYearGpVis*is2015[plotIndex[i]]*isGP[plotIndex[i]] + //Year:area interaction
-			slopeDistVis*logHbeeDist[i] + //distance from edge
-			slopeHiveVis*logNumHives[plotIndex[i]] + //(log) Number of hives
-			slopeFlDens*flDens[i]; //Flower density
+			slopeHbeeDistHbeeVis*logHbeeDist[i] + //distance from edge
+			slopeNumHivesHbeeVis*logNumHives[plotIndex[i]] + //(log) Number of hives
+			slopeFlDensHbeeVis*flDens[i]; //Flower density
 			// slopeIrrigVis*isIrrigated[plotIndex[i]]; //Irrigation
 	}
 }
 	
 model {	
   
-  hbeeVis ~ neg_binomial_2_log(visitHbeeMu,visitHbeePhi); //Honeybee visitation (no ZI-process)
+  hbeeVis ~ neg_binomial_2_log(visitHbeeMu,phiHbeeVis); //Honeybee visitation (no ZI-process)
 	
 	// Priors
 	// Visitation - informative priors
-	intVisit ~ normal(-1.4,5); //Intercept
-	slopeDistVis ~ normal(0,5); //Slope of distance effect on hbee visits
-	slopeHiveVis ~ normal(0,5); //Slope of hive effect on visits
+	intHbeeVis ~ normal(-1.4,5); //Intercept
+	slopeHbeeDistHbeeVis ~ normal(0,5); //Slope of distance effect on hbee visits
+	slopeNumHivesHbeeVis ~ normal(0,5); //Slope of hive effect on visits
 	// slopeYearVis ~ normal(0,5); //2015 effect
 	// slopeGpVis ~ normal(0,5); //Effect of Grand Prairie
 	// slopeYearGpVis ~ normal(0,5); // GP-year interaction
-	slopeFlDens ~ normal(0,5); //Flower density
-	sigmaVisField ~ gamma(1,1); //Sigma for random field
-	intVisit_field ~ exp_mod_normal(0,sigmaVisField,lambdaVisField); //Skewed random effects - slightly better than standard normal
-	lambdaVisField ~ gamma(1,1); //Lambda for skewed random effects
-	visitHbeePhi ~ gamma(1,1); //Dispersion parameter for NegBin
+	slopeFlDensHbeeVis ~ normal(0,5); //Flower density
+	sigmaHbeeVis_Field ~ gamma(1,1); //Sigma for random field
+	intHbeeVis_field ~ exp_mod_normal(0,sigmaHbeeVis_Field,lambdaHbeeVis_field); //Skewed random effects - slightly better than standard normal
+	lambdaHbeeVis_field ~ gamma(1,1); //Lambda for skewed random effects
+	phiHbeeVis ~ gamma(1,1); //Dispersion parameter for NegBin
 }
 
 generated quantities {
@@ -146,7 +146,7 @@ generated quantities {
 	for(i in 1:Nplot){
 		// bee visits (NB version)
 		hbeeVis_resid[i]=hbeeVis[i]-exp(visitHbeeMu[i]); //Residual for actual value
-		predHbeeVis[i] = neg_binomial_2_log_rng(visitHbeeMu[i],visitHbeePhi); //Predicted value drawn from neg.bin
+		predHbeeVis[i] = neg_binomial_2_log_rng(visitHbeeMu[i],phiHbeeVis); //Predicted value drawn from neg.bin
 		predHbeeVis_resid[i]=predHbeeVis[i]-exp(visitHbeeMu[i]); //residual for predicted value
 	}
 }

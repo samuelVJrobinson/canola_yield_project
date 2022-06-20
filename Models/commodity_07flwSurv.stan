@@ -98,7 +98,7 @@ parameters {
 	// Pollen deposition
 	// Plot level random effect has bad trace, strongly correlated with lp__
 	real intPollen; //Intercept
-	real slopeVisitPol; //Slope of hbee visits
+	real slopeHbeeVisPollen; //Slope of hbee visits
 	real slopeHbeeDistPollen; //Effect of distance into field - p=0.076 (p=0.17 if stocking and stocking:dist interaction included - see below)
 	real<lower=0> sigmaPolField; //SD of field random intercepts
 	vector[Nfield] intPollen_field; //field-level random intercepts
@@ -108,14 +108,14 @@ parameters {
 	
 	
   // Flower survival
-	// slopeFlwCountSurv and slopePlSizeSurv are correlated (-0.77), and basically represent the same thing, so using only plant size
+	// slopeFlwCountSurv and slopePlSizeFlwSurv are correlated (-0.77), and basically represent the same thing, so using only plant size
 	real intFlwSurv; //Intercept
-	real slopeVisitSurv; //Slope of hbee visits
-	real slopePlSizeSurv; //Slope of plant size
+	real slopeHbeeVisFlwSurv; //Slope of hbee visits
+	real slopePlSizeFlwSurv; //Slope of plant size
 	// real slopeIrrigSurv; //Slope of irrigation - p=0.56
 	// real slope2015Surv; //Slope of year - p=0.68
 	// real slopePlDensSurv; //Slope of plant density - requires other models
-	real slopePolSurv; //Slope of pollen deposition - requires other models
+	real slopePollenFlwSurv; //Slope of pollen deposition - requires other models
 	real<lower=0> sigmaFlwSurv_field; //SD of field random intercepts - bad traces, high Rhat
 	vector[Nfield] intFlwSurv_field; //field-level random intercepts - all overlap zero
 	// real<lower=0> sigmaFlwSurv_plot; //SD of plot random intercepts - bad traces, high Rhat
@@ -127,7 +127,7 @@ parameters {
 	// vector[Nfield] intPhiFlwSurv_field; //Field-level random intercept - all overlap zero
 	// real<lower=0> sigmaPhiFlwSurv_plot; //Sigma for plot level - bad traces, high Rhat
 	// vector[Nplot] intPhiFlwSurv_plot; //Plot-level random intercept - all overlap zero
-	vector<lower=0, upper=1>[Nplant] flwSurvTheta;
+	vector<lower=0, upper=1>[Nplant] thetaFlwSurv;
 }
 
 transformed parameters {		
@@ -165,7 +165,7 @@ transformed parameters {
 		// Plot-level pollen deposition
 		pollenPlot[i] = intPollen_field[plotIndex[i]] + //Field-level random intercept
 		  // intPollen_plot[i] + //Plot-level random intercept
-			slopeVisitPol*logHbeeVis[i] + //(log) hbee visits
+			slopeHbeeVisPollen*logHbeeVis[i] + //(log) hbee visits
 			slopeHbeeDistPollen*logHbeeDist[i]; //Distance effect
 		// Global intercept is within flower-level term in order to center plot-level variable
 		
@@ -173,8 +173,8 @@ transformed parameters {
     flwSurvPlot[i] = intFlwSurv + //Intercept
       intFlwSurv_field[plotIndex[i]] + //Field-level random intercept
       // intFlwSurv_plot[i] + //Plot-level random intercept
-    	slopeVisitSurv*logHbeeVis[i] + //hbee visits
-    	slopePolSurv*pollenPlot[i]; //(log) pollen deposition - large correlation b/w slopePolSurv and intFlwSurv
+    	slopeHbeeVisFlwSurv*logHbeeVis[i] + //hbee visits
+    	slopePollenFlwSurv*pollenPlot[i]; //(log) pollen deposition - large correlation b/w slopePollenFlwSurv and intFlwSurv
     	// slopePlDensSurv*plDens[i] + //Plant density
     	// slopeIrrigSurv*isIrrigated[plotIndex[i]] + //Irrigation effect
     	// slope2015Surv*is2015[plotIndex[i]]; //Year effect
@@ -188,7 +188,7 @@ transformed parameters {
 	for(i in 1:Nplant){ //For each plant
     // Flower survival per plant
     flwSurv[i] = flwSurvPlot[plantIndex[i]] + //Plot-level plant survival
-    	slopePlSizeSurv*plantSize[i]; //Plant size effect
+    	slopePlSizeFlwSurv*plantSize[i]; //Plant size effect
     //Phi (dispersion) for flower survival
     flwSurvPhi[i] = exp(intPhiFlwSurv); //Intercept
       // intPhiFlwSurv_field[plotIndex[plantIndex[i]]] + //Field-level random intercept
@@ -204,8 +204,8 @@ model {
 	//Likelihood		
 	// plDens ~ normal(plDensMu,sigmaPlDens); //Plant density
 	pollenCount ~ neg_binomial_2_log(pollenMu,pollenPhi); //Pollination rate
-	podCount ~ binomial(flwCount,flwSurvTheta); //Flower survival (surviving pods)
-	flwSurvTheta ~ beta(flwSurvAlpha,flwSurvBeta); //For beta-binomial distribution
+	podCount ~ binomial(flwCount,thetaFlwSurv); //Flower survival (surviving pods)
+	thetaFlwSurv ~ beta(flwSurvAlpha,flwSurvBeta); //For beta-binomial distribution
 
 	// Priors
 	// //Plant density	- informative priors
@@ -221,7 +221,7 @@ model {
 
 	// // Pollen deposition - informative priors
 	intPollen ~ normal(5.6,1); //Intercept
-	slopeVisitPol ~ normal(0,5); //hbee Visitation effect
+	slopeHbeeVisPollen ~ normal(0,5); //hbee Visitation effect
 	slopeHbeeDistPollen ~ normal(0,5); //hbee distance effect
 	pollenPhi ~ gamma(1,1); //Dispersion parameter
 	sigmaPolField ~ gamma(1,1); //Sigma for random field
@@ -231,9 +231,9 @@ model {
 	
   //Flower survival - informative priors
   intFlwSurv ~ normal(0.7,5); //Intercept
-  slopeVisitSurv ~ normal(0,5); //Slope of hbee visits
-  slopePolSurv ~ normal(0,5); //Slope of pollen deposition
-  slopePlSizeSurv ~ normal(0,5); //Slope of plant size
+  slopeHbeeVisFlwSurv ~ normal(0,5); //Slope of hbee visits
+  slopePollenFlwSurv ~ normal(0,5); //Slope of pollen deposition
+  slopePlSizeFlwSurv ~ normal(0,5); //Slope of plant size
   // slopePlDensSurv ~ normal(0,5); //Slope of planting density
   // slopeIrrigSurv ~ normal(0,5); //Slope of irrigation
   // slope2015Surv ~ normal(0,5); //Slope of year
