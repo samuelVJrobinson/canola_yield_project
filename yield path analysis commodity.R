@@ -148,7 +148,7 @@ load('./Models/datalist_commodity.Rdata')
 # 
 # save(datalist,file = './Models/datalist_commodity.Rdata')
 
-# Run models ----------------------------
+# Run main models ----------------------------
 
 library(rstan)
 setwd('./Models')
@@ -236,6 +236,95 @@ compareRE(modList[[8]],'ranEffYield_field',2) #Slopes
 compareRE(modList[[8]],'ranEffYield_plot',1,0.3) #Intercepts
 compareRE(modList[[8]],'ranEffYield_plot',2,0.3) #Slopes - right skew
 
+
+# Path diagram ------------------------------------------------------------
+
+library(ggdag)
+nodeCoords <- data.frame(name=c('numHives','hbeeDist','hbeeVis','pollen',
+                                'plSize','plDens','flDens',
+                                'flwCount','flwSurv','seedCount','seedWeight'),
+                         labs=c('Number\nof Hives','Distance','Honey bee\nVisitation','Pollen\nCount',
+                                'Plant\nSize','Plant\nDensity','Flower\nDensity',
+                                'Flowers\nper Plant','Pods\nper Plant','Seeds\nper Pod','Seed\nSize'),
+                         x=c(0,1,0.5,0.5,
+                             2.5,0,1,
+                             3.5,4,2.5,3.5),
+                         y=c(4,4,3,2,
+                             0,1,1,
+                             0,1,3,2))
+
+
+#Specify model
+commDAG <- dagify(plDens ~ hbeeDist,
+                  plSize ~ plDens + hbeeDist,
+                  flDens ~ plSize + hbeeDist + plDens,
+                  hbeeVis ~ hbeeDist + numHives + flDens,
+                  pollen ~ hbeeVis + hbeeDist,
+                  flwCount ~ plSize + flwSurv,
+                  flwSurv ~ hbeeVis + plSize + pollen,
+                  seedCount ~ hbeeVis + pollen + plSize + flwSurv + flwCount,
+                  seedWeight ~ hbeeVis + pollen + plSize + seedCount + plDens + hbeeDist + flwSurv + flwCount + flDens,
+                  coords= list(x = setNames(nodeCoords$x,nodeCoords$name),
+                               y = setNames(nodeCoords$y,nodeCoords$name)),
+                  labels=setNames(nodeCoords$labs,nodeCoords$name)
+)
+
+# plot(commDAG)
+
+#Get path coefficients (Z-scores) and match to edges
+
+load('modSummaries_commodity.Rdata')
+
+pathCoefs <- modSummaries_commodity %>% #Get path coefficients
+  bind_rows(.id='to') %>% 
+  transmute(to,name=param,Z,pval) %>% 
+  filter(to!='yield',!grepl('(int|sigma|lambda|Phi|phi|rho)',name)) %>% 
+  mutate(to=case_when(
+    to=='flDens' & grepl('PlDens$',name) ~ 'plDens',
+    to=='flDens' & grepl('PlSize$',name) ~ 'plSize',
+    TRUE ~ gsub('avg','seed',to)
+  )) %>% 
+  mutate(name=gsub('slope','',name)) %>% 
+  filter(mapply(grepl,capFirst(to),name)) %>% 
+  mutate(name=mapply(gsub,capFirst(to),'',name)) %>% 
+  mutate(name=capFirst(name,TRUE)) 
+
+commDAG <- commDAG %>% #Create tidy dagitty set
+  tidy_dagitty() 
+
+# ggplot(commDAG,aes(x = x, y = y, xend = xend, yend = yend))+
+#   geom_dag_edges() +
+#   geom_dag_text(col='black') +
+#   theme_dag_blank()
+
+commDAG$data <- commDAG$data %>% #Match coefs to dagitty set
+  rename(xstart=x,ystart=y) %>% 
+  full_join(x=pathCoefs,y=.,by=c('to','name')) %>% 
+  mutate(isNeg=Z<0,isSig=pval<0.05) %>% 
+  mutate(L=sqrt(abs(Z)),1) %>% 
+  mutate(edgeLab=ifelse(isSig,as.character(sign(Z)*round(L,1)),'')) %>% 
+  mutate(C=ifelse(isNeg,'red','black')) %>% 
+  mutate(A=ifelse(isSig,1,0.1))
+
+ggplot(commDAG$data,aes(x = xstart, y = ystart, xend = xend, yend = yend))+
+  # geom_dag_point(size=20,colour='black',shape='square')+
+  # geom_dag_text(aes(label=label),col='white') +
+  annotate('text',x=0.5,y=4.5+0.1,label='Plot Level',size=5)+
+  annotate('rect',xmin=-0.5,ymin=0.5,xmax=1.5,ymax=4.5,fill=NA,col='black',
+           linetype='dashed',linejoin='round',size=1)+
+  
+  annotate('text',x=3.5,y=3.5+0.1,label='Plant Level',size=5)+
+  annotate('rect',xmin=2,ymin=-0.5,xmax=4.5,ymax=3.5,fill=NA,col='black',
+           linetype='dashed',linejoin='round',size=1)+
+  
+  geom_dag_edges(aes(edge_width=L,edge_colour=C,edge_alpha=A),
+                 arrow_directed=arrow(angle=20,type='open')) +
+  geom_dag_edges(aes(label=edgeLab),label_pos=0.45,edge_alpha=0,label_size=6,fontface='bold',label_colour ='black') +
+  geom_dag_edges(aes(label=edgeLab),label_pos=0.45,edge_alpha=0,label_size=6,fontface='plain',label_colour='white') +
+  geom_dag_label_repel(aes(label=label),col='black',force=0) +
+  theme_dag_blank()
+
+
 # Run claims models ---------------------
 
 library(rstan)
@@ -246,29 +335,9 @@ options(mc.cores = 6)
 
 # Dagitty claims list for commodity fields 
 
-{
-  library(ggdag)
-  nodeCoords <- data.frame(name=c('numHives','hbeeDist','hbeeVis','pollen',
-                                  'plSize','plDens','flDens',
-                                  'flwCount','flwSurv','seedCount','seedWeight'),
-           x=c(0,1,0.5,0.5,
-               1,2,3,
-               3,4,5,4),
-           y=c(5,5,4,3,
-               2,1,2,
-               4.5,4,3.5,2.5))
-  
-  capFirst <- function(x,decap=FALSE){ #Capitalize/decapitalize first letter of a string
-    if(!is.character(x)) stop('Not a character or character vector')
-    if(decap){
-      substr(x, 1, 1) <- tolower(substr(x, 1, 1))
-    } else {
-      substr(x, 1, 1) <- toupper(substr(x, 1, 1))
-    }
-    return(x)
-  }
-  
-  commDAG <- dagify(plDens ~ hbeeDist,
+#Specify model
+library(ggdag)
+commDAG <- dagify(plDens ~ hbeeDist,
                   plSize ~ plDens + hbeeDist,
                   flDens ~ plSize + hbeeDist + plDens,
                   hbeeVis ~ hbeeDist + numHives + flDens,
@@ -276,108 +345,61 @@ options(mc.cores = 6)
                   flwCount ~ plSize + flwSurv,
                   flwSurv ~ hbeeVis + plSize + pollen,
                   seedCount ~ hbeeVis + pollen + plSize + flwSurv + flwCount,
-                  seedWeight ~ hbeeVis + pollen + plSize + seedCount + plDens + hbeeDist + flwSurv + flwCount,
-                  coords= list(x = setNames(nodeCoords$x,nodeCoords$name),
-                               y = setNames(nodeCoords$y,nodeCoords$name))
-        )
-  
-  #Get path coefficients (Z-scores) and match to edges
-  
-  load('modSummaries_commodity.Rdata')
-  
-  pathCoefs <- modSummaries_commodity %>% #Get path coefficients
-    bind_rows(.id='to') %>% 
-    transmute(to,name=param,Z,pval) %>% 
-    filter(to!='yield',!grepl('(int|sigma|lambda|Phi|phi|rho)',name)) %>% 
-    mutate(to=case_when(
-      to=='flDens' & grepl('PlDens$',name) ~ 'plDens',
-      to=='flDens' & grepl('PlSize$',name) ~ 'plSize',
-      TRUE ~ gsub('avg','seed',to)
-    )) %>% 
-    mutate(name=gsub('slope','',name)) %>% 
-    filter(mapply(grepl,capFirst(to),name)) %>% 
-    mutate(name=mapply(gsub,capFirst(to),'',name)) %>% 
-    mutate(name=capFirst(name,TRUE)) 
+                  seedWeight ~ hbeeVis + pollen + plSize + seedCount + plDens + hbeeDist + flwSurv + flwCount
+)
 
-  commDAG <- commDAG %>% #Create tidy dagitty set
-    tidy_dagitty() 
-  
-  
-  ggplot(commDAG,aes(x = x, y = y, xend = xend, yend = yend))+
-    geom_dag_edges() +
-    geom_dag_text(col='black') +
-    theme_dag_blank()
-    
-  commDAG$data <- commDAG$data %>% #Match coefs to dagitty set
-    rename(xstart=x,ystart=y) %>% 
-    left_join(x=pathCoefs,y=.,by=c('to','name')) %>% 
-    mutate(isNeg=Z<0,isSig=pval<0.05)
-  
-  ggplot(commDAG$data,aes(x = xstart, y = ystart, xend = xend, yend = yend))+
-    # geom_dag_point() +
-    geom_dag_edges() +
-    geom_dag_text(col='black') +
-    # geom_dag_text(aes(label=name))+
-    # geom_dag_edges()+
-    # # ggdag(node_size=20,text_size = 3)+
-    # # geom_dag_node()+
-    theme_dag_blank()
-}
-# debugonce(shipley.test)
 print(unlist(shipley.test(commDAG,TRUE))) #d-separation claims list
 
 #Get model names, and make list
 modFiles <- dir(path='./Commodity model claims 3',pattern = '*\\.stan',full.names = TRUE)
-(modFiles <- modFiles[!grepl('template',modFiles)])
+modFiles <- modFiles[!grepl('template',modFiles)]
+modFiles <- modFiles[sapply(read.csv('./Commodity model claims 3/claimsList_updated2.csv')$Filename,function(x) grep(x,modFiles))]
 
 # #Create storage list
 # modList <- vector(mode = 'list',length = length(modFiles))
 # names(modList) <- paste0('claim',formatC(1:length(modList),width=2,flag='0'))
 
-runThese <- 26:32 #1:length(modFiles)
+# runThese <- 8:24 #1:length(modFiles)
 
-for(i in runThese){
+# for(i in runThese){
+{
+  i <- 8
   overwrite <- TRUE
   if(file.exists(modFiles[i])){
     print(paste0('Starting model ',modFiles[i]))
     mod <- stan(file=modFiles[i],data=datalist,iter=3000,chains=4,control=list(adapt_delta=0.8),init=0)
+    
     temp <- parTable(mod) #Get parameter summaries
-    
     #Save information to csv file
-    modList <- read.csv('./Commodity model claims 3/claimsList_updated.csv',sep=',',strip.white = TRUE)
-    modList[i,3:ncol(modList)] <- temp[grepl('claim',temp$param),]
-    write.csv(modList,'./Commodity model claims 3/claimsList_updated.csv',row.names = FALSE)
+    modList <- read.csv('./Commodity model claims 3/claimsList_updated2.csv',sep=',',strip.white = TRUE)
+    modList[i,match(names(temp),names(modList))] <- temp[grepl('claim',temp$param),]
+    write.csv(modList,'./Commodity model claims 3/claimsList_updated2.csv',row.names = FALSE)
+
+    #Check model
+    parNam <- names(mod) #Model parameters
     
-    #Diagnostic plots
-    n <- names(mod) #Model parameters
-    n <- n[(!grepl('(\\[[0-9]+,*[0-9]*\\]|lp)',n))|grepl('[sS]igma',n)] #Gets rid of parameter vectors, unless it contains "sigma" (variance term)
-    n <- n[!n %in% c('intPollen','slopeVisitPol','slopeHbeeDistPollen','sigmaPolField','pollenPhi')] #Removes pollen terms
-    print(traceplot(mod,pars=n,inc_warmup=FALSE)+labs(title=gsub('.*/','',modFiles[i])))
-    print(mod,pars=n)
-    fastPairs(mod,pars=n)
+    #Gets rid of parameter vectors, unless it contains "sigma" (variance term)
+    useThese <- (!(grepl('(\\[[0-9]+,*[0-9]*\\]$|^lp)',parNam)) |
+                   grepl('[sS]igma',parNam) 
+                   )
+    parNam <- parNam[useThese] 
     
+    #Removes pollen terms
+    parNam <- parNam[!parNam %in% c('intPollen','slopeVisitPol','slopeHbeeDistPollen','sigmaPolField','pollenPhi')] 
+    
+    print(traceplot(mod,pars=parNam,inc_warmup=FALSE)+labs(title=gsub('.*/','',modFiles[i])))
+    print(mod,pars=parNam)
+    # fastPairs(mod,pars=parNam)
+
     print(paste0('Model ',modFiles[i],' completed'))
+    
   } else print(paste0('Model ',i,' not found'))
-  rm(mod,modList); gc() #Cleanup
+  rm(mod); gc() #Cleanup
 }
 
-#Calculate C-stat
+#Calculate C-statistic
 
-# modList[!sapply(modList,is.null)] #Look at non-null entries
-# modList[runThese] 
-# modList[i] #Last entry
-
-
-# load(file='./Commodity model claims 3/claimSummaries_commodity.Rdata')
-# modList2 <- modList
-# modList2[!sapply(modList2,is.null)] #Look at non-null entries
-# modList <- read.csv('./Commodity model claims 3/claimsList_updated.csv')
-# 
-# write.csv(cbind(modList[,c('Filename','Independ.Claim')],do.call('rbind',modList2)),
-#           './Commodity model claims 3/claimsList_updated2.csv',row.names=FALSE)
-
-modList <- read.csv('./Commodity model claims 3/claimsList_updated.csv',)
-# modList <- do.call('rbind',modList)
+modList <- read.csv('./Commodity model claims 3/claimsList_updated2.csv',sep=',',strip.white = TRUE)
 
 modList %>% 
   mutate(pval=pnorm(-abs(Z))*2) %>% 

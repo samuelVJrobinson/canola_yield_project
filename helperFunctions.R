@@ -32,19 +32,28 @@ parTable <- function(x){
 
 #Faster pair plot
 fastPairs <- function(l,pars=NULL,N=500){ 
+  library(rstan)
   if(class(l)=='stanfit'){
-    l <- extract(l,pars=pars)
+    l <- rstan::extract(l,pars=pars)
     if(any(sapply(l,function(x) length(dim(x)))>1)){
       stop('Parameters have more than 1 dimension: ',paste(pars[sapply(l,function(x) length(dim(x))>1)],collapse=', '))
     }
     l <- do.call('cbind',l)
-    if(nrow(l)>N) l <- l[round(seq(1,nrow(l),length.out=N)),]
+    if(nrow(l)>N) l <- l[round(seq(1,nrow(l),length.out=N)),,drop=FALSE]
   }
-  pairs(l,lower.panel=function(x,y){
-    par(usr=c(0,1,0,1))
-    text(0.5, 0.5, round(cor(x,y),2), cex = 1 * exp(abs(cor(x,y))))},
-    panel=function(x,y){ points(x,y,pch=19)}
+  if(ncol(l)==1){
+    warning('Only 1 parameter found. Displaying histogram instead of biplot')
+    hist(l,main='',xlab=pars)
+  } else {
+    if(length(ncol(l))>10) warning('More than 10 parameters. Pairplot may take some time.')
+    pairs(l,lower.panel=function(x,y){
+      par(usr=c(0,1,0,1))
+      text(0.5, 0.5, round(cor(x,y),2), cex = 1 * exp(abs(cor(x,y))))},
+      panel=function(x,y){ points(x,y,pch=19)}
     )
+  }
+  
+  
 }
 
 #Function to calculate R2 for GLMMs. fixVar, ranVar and resVar are either variable names (vector of var names for random effects), or NA, indicating no effect specified
@@ -375,7 +384,7 @@ shipley.dSep <- function(d,p,lab){
   }
   
   tCol <- rev(ifelse(pvals<0.05,'red','black'))
-  ttl <- paste0('C-stat: ',formatC(ret[1],3),', k: ',ret[2],', p: ',formatC(ret[3],format='e'))
+  ttl <- paste0('C-stat: ',formatC(ret[1],3),', k: ',ret[2],', p: ',formatC(ret[3],digits=3))
   
   d %>% mutate(param=factor({{lab}},levels=rev({{lab}}))) %>% 
     mutate(tooLow={{p}}<=0.05) %>% 
@@ -387,4 +396,14 @@ shipley.dSep <- function(d,p,lab){
     theme(axis.text.y = element_text(colour=tCol,size=10),
           axis.text.x = element_text(size=10),
           title = element_text(size=15))
+}
+
+capFirst <- function(x,decap=FALSE){ #Capitalize/decapitalize first letter of a string
+  if(!is.character(x)) stop('Not a character or character vector')
+  if(decap){
+    substr(x, 1, 1) <- tolower(substr(x, 1, 1))
+  } else {
+    substr(x, 1, 1) <- toupper(substr(x, 1, 1))
+  }
+  return(x)
 }

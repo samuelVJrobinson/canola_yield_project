@@ -89,6 +89,7 @@ parameters {
 	// Flower count (per plant)
 	real claim23_flDensFlwCount; //Claim
 	real slopeHbeeDistFlwCount; //Other claim
+	real slopePlDensFlwCount; //Claim
 	
 	real intFlwCount; //Intercept
 	real slopePlSizeFlwCount; //Slope of plant size
@@ -120,6 +121,7 @@ transformed parameters {
     flwCountPlot[i] = intFlwCount + //Intercept
       claim23_flDensFlwCount*flDens[i] + //Claim
       slopeHbeeDistFlwCount*logHbeeDist[i] + //Other claim
+      slopePlDensFlwCount*plDens[i] + //Claim
       intFlwCount_field[plotIndex[i]] + //Field-level random intercept
       intFlwCount_plot[i]; //Plot-level random intercept
 	}
@@ -145,6 +147,7 @@ model {
 	//Flower count (per plant)
 	claim23_flDensFlwCount ~ normal(0,5); //Claim
 	slopeHbeeDistFlwCount ~ normal(0,5); //Other claim
+	slopePlDensFlwCount ~ normal(0,5); //Other claim
 	
   intFlwCount ~ normal(2.6,5); //Intercept
   slopePlSizeFlwCount ~ normal(0,5); //Slope of plant size

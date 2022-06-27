@@ -103,6 +103,11 @@ parameters {
   real slopePolSeedWeight; //Slope of pollen deposition - p=0.50
   real slopeSeedCount; //Slope of seed count - p<0.0001
   real slopePlSizeWeight; //Slope of plant size - p=0.13
+  real slopePlDensSeedWeight; //Plant density
+	real slopeHbeeDistSeedWeight; //Distance from edge
+  real slopeFlwSurvSeedWeight; //Slope of flower survival
+  real slopeFlwCountSeedWeight; //Slope of flower count
+  
   real<lower=0> sigmaSeedWeight; //SD of seed weight
   real<lower=0> sigmaSeedWeight_plot; //SD of plot random effect
   real<lower=0> sigmaSeedWeight_field; //SD of field random effect
@@ -134,6 +139,8 @@ transformed parameters {
 			intSeedWeight_field[plotIndex[i]] + //Field-level random intercept
 			intSeedWeight_plot[i] + //Plot-level random intercept
 			claim29_slopeNumHivesSeedWeight*logNumHives[plotIndex[i]] + //Claim
+			slopePlDensSeedWeight*plDens[i] + //Plant density
+			slopeHbeeDistSeedWeight*logHbeeDist[i] + //Distance from edge
 			slopeVisitSeedWeight*logHbeeVis[i] + //(log) hbee visits
 			slopePolSeedWeight*pollenPlot[i]; //pollen deposition
 	}
@@ -145,6 +152,8 @@ transformed parameters {
 	for(i in 1:Nplant){ //For each plant 	
 		// Average weight per seed
 		seedWeightMu[i] = seedWeightMuPlot[plantIndex[i]] + //Plot-level seed weight
+			slopeFlwSurvSeedWeight*logitFlwSurv[i] + //flower survival 
+		  slopeFlwCountSeedWeight*logFlwCount[i] + //flower count
 			slopePlSizeWeight*plantSize[i] + //Plant size effect
 			slopeSeedCount*seedCount[i]; //Seed count effect (do plants with many seeds/pod have bigger seeds?)
 	}	
@@ -175,6 +184,10 @@ model {
   slopePolSeedWeight ~ normal(0,5); //Slope of pollen deposition
   slopeSeedCount ~ normal(0,5); //Slope of (log) seed count
   slopePlSizeWeight ~ normal(0,5); //Slope of plant size
+  slopePlDensSeedWeight ~ normal(0,5); //Plant density
+	slopeHbeeDistSeedWeight ~ normal(0,5); //Distance from edge
+	slopeFlwSurvSeedWeight ~ normal(0,5); //Slope of flower survival
+  slopeFlwCountSeedWeight ~ normal(0,5); //Slope of flower survival
   sigmaSeedWeight ~ gamma(1,1); //SD of seed weight
   sigmaSeedWeight_field ~ gamma(1,1); //SD of field random effect
   sigmaSeedWeight_plot ~ gamma(1,1); //SD of plot random effect

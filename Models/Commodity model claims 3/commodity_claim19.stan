@@ -98,11 +98,15 @@ parameters {
 	// Seed count
 	
 	real claim19_flDensSeedCount; //Claim
+	real slopeHbeeDistSeedCount; //Other claim
+	real slopePlDensSeedCount; //Other claim
 	
   real intSeedCount; //Intercept
   real slopeVisitSeedCount; //Slope of hbee visits - p=0.81
   real slopePolSeedCount; //Slope of pollen deposition - p=0.74
   real slopePlSizeCount; //Slope of plant size - p=0.22
+  real slopeFlwSurvSeedCount; //Slope of flower survival
+  real slopeFlwCountSeedCount; //Slope of flower count
   real<lower=0> sigmaSeedCount; //SD of seed count
   real<lower=0> sigmaSeedCount_field; //SD of field random effect - OK
   vector[Nfield] intSeedCount_field; //field-level random intercepts
@@ -131,6 +135,8 @@ transformed parameters {
 		seedCountMuPlot[i] = intSeedCount + //Intercept
 		  intSeedCount_field[plotIndex[i]] + //Field-level random intercept
 		  claim19_flDensSeedCount*flDens[i] + //Claim
+		  slopeHbeeDistSeedCount*logHbeeDist[i] + //Other claim
+		  slopePlDensSeedCount*plDens[i] + //Other claim
 			slopeVisitSeedCount*logHbeeVis[i] + //(log) hbee visits
 			slopePolSeedCount*pollenPlot[i]; //pollen deposition 
 	}
@@ -142,6 +148,8 @@ transformed parameters {
 	for(i in 1:Nplant){ //For each plant 	
 	// Average seeds per pod
 		seedCountMu[i] = seedCountMuPlot[plantIndex[i]] + //Plot-level seed count
+		  slopeFlwSurvSeedCount*logitFlwSurv[i] + //flower survival 
+		  slopeFlwCountSeedCount*logFlwCount[i] + //flower count
 			slopePlSizeCount*plantSize[i]; //plant size effect
 	}	
 
@@ -163,13 +171,16 @@ model {
 	intPollen_field ~ normal(0,sigmaPolField); //Random field int
 	
 	// Average seed count - informative priors
-	
 	claim19_flDensSeedCount ~ normal(0,5); //Claim
+	slopeHbeeDistSeedCount ~ normal(0,5); //Other claim
+	slopePlDensSeedCount ~ normal(0,5); //Other claim
 	
   intSeedCount ~ normal(10.9,5); //Intercept
   slopeVisitSeedCount ~ normal(0,5); //Slope of hbee visits
   slopePolSeedCount ~ normal(0,5); //Slope of pollen deposition+
   slopePlSizeCount ~ normal(0,5); //Slope of plant size
+  slopeFlwSurvSeedCount ~ normal(0,5); //Slope of flower survival
+  slopeFlwCountSeedCount ~ normal(0,5); //Slope of flower survival
   sigmaSeedCount ~ gamma(1,1); //SD of seed count
   sigmaSeedCount_field ~ gamma(1,1); //SD of field random effect
   intSeedCount_field ~ normal(0,sigmaSeedCount_field); //field-level random intercepts

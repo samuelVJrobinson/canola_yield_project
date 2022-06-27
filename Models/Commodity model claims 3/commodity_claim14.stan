@@ -105,7 +105,7 @@ parameters {
 	real intFlwSurv; //Intercept
 	real slopeVisitSurv; //Slope of hbee visits
 	real slopePlSizeSurv; //Slope of plant size
-		real slopePolSurv; //Slope of pollen deposition - requires other models
+	real slopePolSurv; //Slope of pollen deposition - requires other models
 	real<lower=0> sigmaFlwSurv_field; //SD of field random intercepts - bad traces, high Rhat
 	vector[Nfield] intFlwSurv_field; //field-level random intercepts - all overlap zero
 	real intPhiFlwSurv; //Intercept for sigma

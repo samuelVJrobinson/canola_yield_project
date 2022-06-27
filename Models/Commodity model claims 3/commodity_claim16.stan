@@ -100,6 +100,8 @@ parameters {
 	real claim16_hbeeDistSeedCount; //Claim
 	
   real intSeedCount; //Intercept
+  real slopeFlwSurvSeedCount; //Slope of flower survival
+  real slopeFlwCountSeedCount; //Slope of flower count
   real slopeVisitSeedCount; //Slope of hbee visits - p=0.81
   real slopePolSeedCount; //Slope of pollen deposition - p=0.74
   real slopePlSizeCount; //Slope of plant size - p=0.22
@@ -142,6 +144,8 @@ transformed parameters {
 	for(i in 1:Nplant){ //For each plant 	
 	// Average seeds per pod
 		seedCountMu[i] = seedCountMuPlot[plantIndex[i]] + //Plot-level seed count
+		  slopeFlwSurvSeedCount*logitFlwSurv[i] + //flower survival 
+		  slopeFlwCountSeedCount*logFlwCount[i] + //flower count
 			slopePlSizeCount*plantSize[i]; //plant size effect
 	}	
 
@@ -170,6 +174,8 @@ model {
   slopeVisitSeedCount ~ normal(0,5); //Slope of hbee visits
   slopePolSeedCount ~ normal(0,5); //Slope of pollen deposition+
   slopePlSizeCount ~ normal(0,5); //Slope of plant size
+  slopeFlwSurvSeedCount ~ normal(0,5); //Slope of flower survival
+  slopeFlwCountSeedCount ~ normal(0,5); //Slope of flower survival
   sigmaSeedCount ~ gamma(1,1); //SD of seed count
   sigmaSeedCount_field ~ gamma(1,1); //SD of field random effect
   intSeedCount_field ~ normal(0,sigmaSeedCount_field); //field-level random intercepts

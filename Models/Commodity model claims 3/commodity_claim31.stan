@@ -97,13 +97,18 @@ parameters {
 
 	// Weight per seed
 	real claim31_slopeFlDensSeedWeight; //Claim
-	real slopeHbeeDistSeedWeight; //Other claim
 	
   real intSeedWeight; //Intercept
   real slopeVisitSeedWeight; //Slope of hbee visits - p=0.24
   real slopePolSeedWeight; //Slope of pollen deposition - p=0.50
   real slopeSeedCount; //Slope of seed count - p<0.0001
   real slopePlSizeWeight; //Slope of plant size - p=0.13
+  
+  real slopePlDensSeedWeight; //Plant density
+	real slopeHbeeDistSeedWeight; //Distance from edge
+  real slopeFlwSurvSeedWeight; //Slope of flower survival
+  real slopeFlwCountSeedWeight; //Slope of flower count
+  
   real<lower=0> sigmaSeedWeight; //SD of seed weight
   real<lower=0> sigmaSeedWeight_plot; //SD of plot random effect
   real<lower=0> sigmaSeedWeight_field; //SD of field random effect
@@ -136,6 +141,8 @@ transformed parameters {
 			intSeedWeight_plot[i] + //Plot-level random intercept
 			claim31_slopeFlDensSeedWeight*flDens[i] + //Claim
 			slopeHbeeDistSeedWeight*logHbeeDist[i] + //Other claim
+			slopePlDensSeedWeight*plDens[i] + //Plant density
+			slopeHbeeDistSeedWeight*logHbeeDist[i] + //Distance from edge
 			slopeVisitSeedWeight*logHbeeVis[i] + //(log) hbee visits
 			slopePolSeedWeight*pollenPlot[i]; //pollen deposition
 	}
@@ -148,6 +155,8 @@ transformed parameters {
 		// Average weight per seed
 		seedWeightMu[i] = seedWeightMuPlot[plantIndex[i]] + //Plot-level seed weight
 			slopePlSizeWeight*plantSize[i] + //Plant size effect
+			slopeFlwSurvSeedWeight*logitFlwSurv[i] + //flower survival 
+		  slopeFlwCountSeedWeight*logFlwCount[i] + //flower count
 			slopeSeedCount*seedCount[i]; //Seed count effect (do plants with many seeds/pod have bigger seeds?)
 	}	
 
@@ -171,13 +180,16 @@ model {
 	// Average weight per seed - informative priors
 	
 	claim31_slopeFlDensSeedWeight ~ normal(0,5); //Claim
-	slopeHbeeDistSeedWeight ~ normal(0,5); //Other claim
 	
   intSeedWeight ~ normal(2.0,5); //Intercept
   slopeVisitSeedWeight ~ normal(0,5); //Slope of hbee visits
   slopePolSeedWeight ~ normal(0,5); //Slope of pollen deposition
   slopeSeedCount ~ normal(0,5); //Slope of (log) seed count
   slopePlSizeWeight ~ normal(0,5); //Slope of plant size
+  slopePlDensSeedWeight ~ normal(0,5); //Plant density
+	slopeHbeeDistSeedWeight ~ normal(0,5); //Distance from edge
+	slopeFlwSurvSeedWeight ~ normal(0,5); //Slope of flower survival
+  slopeFlwCountSeedWeight ~ normal(0,5); //Slope of flower survival
   sigmaSeedWeight ~ gamma(1,1); //SD of seed weight
   sigmaSeedWeight_field ~ gamma(1,1); //SD of field random effect
   sigmaSeedWeight_plot ~ gamma(1,1); //SD of plot random effect

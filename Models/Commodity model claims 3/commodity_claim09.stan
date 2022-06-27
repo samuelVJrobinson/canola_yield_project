@@ -103,7 +103,7 @@ parameters {
 	
 	// Plot level random effect has bad trace, strongly correlated with lp__
 	real intPollen; //Intercept
-	real slopeVisitPol; //Slope of hbee visits	
+	real slopeHbeeVisPol; //Slope of hbee visits	
 	real slopeHbeeDistPollen; //Effect of distance into field - p=0.076 (p=0.17 if stocking and stocking:dist interaction included - see below)
 	real<lower=0> sigmaPolField; //SD of field random intercepts	
 	real<lower=0> pollenPhi; //Dispersion parameter
@@ -136,7 +136,7 @@ transformed parameters {
 		pollenPlot[i] = intPollen_field[plotIndex[i]] + //Field-level random intercept
 		  claim09_slopePlSizePol*plSizePlotMu[i] + //Claim
 		  slopePlDensPol*plDens[i] + //Other claim
-			slopeVisitPol*logHbeeVis[i] + //(log) hbee visits
+			slopeHbeeVisPol*logHbeeVis[i] + //(log) hbee visits
 			slopeHbeeDistPollen*logHbeeDist[i]; //Distance effect						
 		
 	}
@@ -176,7 +176,7 @@ model {
 	slopePlDensPol ~ normal(0,1); //Other claim
 	
 	intPollen ~ normal(5.6,5); //Intercept	
-	slopeVisitPol ~ normal(0,5); //hbee Visitation effect	
+	slopeHbeeVisPol ~ normal(0,5); //hbee Visitation effect	
 	slopeHbeeDistPollen ~ normal(0,5); //hbee distance effect	
 	sigmaPolField ~ gamma(1,1); //Sigma for random field	
 	pollenPhi ~ gamma(1,1); //Dispersion parameter

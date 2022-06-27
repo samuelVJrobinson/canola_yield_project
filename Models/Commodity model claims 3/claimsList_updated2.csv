@@ -1,27 +1,26 @@
-OldClaim,Done,Filename,Independ.Claim,param,mean,sd,Z,median,lwr,upr,pval,n_eff,Rhat,Notes
-,TRUE,commodity_claim01,plDens ~ numHives + (hbeeDist),,,,,,,,,,,
-,TRUE,commodity_claim02,plSize ~ numHives + (hbeeDist + plDens),,,,,,,,,,,
-flDens ~ numHives + (hbeeDist + plSize),TRUE,commodity_claim03,flDens ~ numHives + (hbeeDist + plDens + plSize),,,,,,,,,,,
-,TRUE,commodity_claim05,hbeeVis ~ plDens + (flDens + hbeeDist + numHives),,,,,,,,,,,
-,TRUE,commodity_claim06,hbeeVis ~ plSize + plDens + (flDens + hbeeDist + numHives),,,,,,,,,,,
-,TRUE,commodity_claim07,pollen ~ numHives + (hbeeDist + hbeeVis),,,,,,,,,,,
-,TRUE,commodity_claim08,pollen ~ plDens + (hbeeDist + hbeeVis),,,,,,,,,,,
-,TRUE,commodity_claim09,pollen ~ plSize + plDens + (hbeeDist + hbeeVis),,,,,,,,,,,
-pollen ~ flDens + plSize + (hbeeDist + hbeeVis),TRUE,commodity_claim10,pollen ~ flDens + plDens + plSize + (hbeeDist + hbeeVis),,,,,,,,,,,
-,TRUE,commodity_claim11,flwSurv ~ hbeeDist + (hbeeVis + plSize + pollen),,,,,,,,,,,
-,TRUE,commodity_claim12,flwSurv ~ numHives + (hbeeVis + plSize + pollen),,,,,,,,,,,
-,TRUE,commodity_claim13,flwSurv ~ plDens + hbeeDist + (hbeeVis + plSize + pollen),,,,,,,,,,,
-flwSurv ~ flDens + hbeeDist + (hbeeVis + plSize + pollen),TRUE,commodity_claim14,flwSurv ~ flDens + hbeeDist + plDens + (hbeeVis + plSize + pollen),,,,,,,,,,,
-seedCount ~ hbeeDist + (hbeeVis + plSize + pollen),FALSE,commodity_claim16,seedCount ~ hbeeDist + (flwCount + flwSurv + hbeeVis + plSize + pollen),,,,,,,,,,,
-seedCount ~ numHives + (hbeeVis + plSize + pollen),FALSE,commodity_claim17,seedCount ~ numHives + (flwCount + flwSurv + hbeeVis + plSize + pollen),,,,,,,,,,,
-seedCount ~ plDens + hbeeDist + (hbeeVis + plSize + pollen),FALSE,commodity_claim18,seedCount ~ plDens + hbeeDist + (flwCount + flwSurv + hbeeVis + plSize + pollen),,,,,,,,,,,
-seedCount ~ flDens + hbeeDist + (hbeeVis + plSize + pollen),FALSE,commodity_claim19,seedCount ~ flDens + hbeeDist + plDens + (flwCount + flwSurv + hbeeVis + plSize + pollen),,,,,,,,,,,
-flwCount ~ hbeeDist + (flwSurv + plSize),FALSE,commodity_claim20,flwCount ~ hbeeDist + (flwSurv + plSize),,,,,,,,,,,
-flwCount ~ numHives + (flwSurv + plSize),FALSE,commodity_claim21,flwCount ~ numHives + (flwSurv + plSize),,,,,,,,,,,
-flwCount ~ plDens + hbeeDist + (flwSurv + plSize),FALSE,commodity_claim22,flwCount ~ plDens + hbeeDist + (flwSurv + plSize),,,,,,,,,,,
-flwCount ~ flDens + hbeeDist + (flwSurv + plSize),FALSE,commodity_claim23,flwCount ~ flDens + hbeeDist + plDens + (flwSurv + plSize),,,,,,,,,,,
-flwCount ~ hbeeVis + flDens + hbeeDist + numHives + (flwSurv + plSize),FALSE,commodity_claim24,flwCount ~ hbeeVis + flDens + hbeeDist + numHives + (flwSurv + plSize),,,,,,,,,,,
-flwCount ~ pollen + hbeeDist + hbeeVis + (flwSurv + plSize),FALSE,commodity_claim25,flwCount ~ pollen + hbeeDist + hbeeVis + (flwSurv + plSize),,,,,,,,,,,
-seedWeight ~ numHives + (hbeeVis + plSize + pollen + seedCount),FALSE,commodity_claim29,seedWeight ~ numHives + (flwCount + flwSurv + hbeeDist + hbeeVis + plDens + plSize + pollen + seedCount),,,,,,,,,,,
-seedWeight ~ flDens + hbeeDist + (hbeeVis + plSize + pollen + seedCount),FALSE,commodity_claim31,seedWeight ~ flDens + (flwCount + flwSurv + hbeeDist + hbeeVis + plDens + plSize + pollen + seedCount),,,,,,,,,,,
-seedWeight ~ flwSurv + (hbeeVis + plSize + pollen + seedCount),FALSE,commodity_claim32,seedWeight ~ flwSurv + (hbeeVis + plSize + pollen + seedCount),,,,,,,,,,,
+"Filename","Independ.Claim","param","mean","sd","Z","median","lwr","upr","pval","n_eff","Rhat","Notes"
+"commodity_claim01","plDens ~ numHives + (hbeeDist)","claim01_slopeNumHivePlDens",-0.037,0.03,-1.222,-0.036,-0.095,0.02,0.2215,908,1.001,NA
+"commodity_claim02","plSize ~ numHives + (hbeeDist + plDens)","claim02_slopeNumHivePlSize",0.027,0.021,1.298,0.027,-0.013,0.068,0.1943,3139,1,NA
+"commodity_claim03","flDens ~ numHives + (hbeeDist + plDens + plSize)","claim03_slopeNumHiveFlDens",-0.358,0.314,-1.141,-0.358,-0.97,0.269,0.254,1762,1.002,NA
+"commodity_claim05","hbeeVis ~ plDens + (flDens + hbeeDist + numHives)","claim05_slopePlDensHbee",-0.185,0.3,-0.617,-0.181,-0.778,0.387,0.5373,3242,1.001,NA
+"commodity_claim06","hbeeVis ~ plSize + plDens + (flDens + hbeeDist + numHives)","claim06_slopePlSizeHbee",0.202,0.787,0.257,0.21,-1.393,1.711,0.7971,1282,1.004,NA
+"commodity_claim07","pollen ~ numHives + (hbeeDist + hbeeVis)","claim07_slopeHivePol",0.013,0.042,0.304,0.013,-0.071,0.096,0.7614,1668,1.002,NA
+"commodity_claim08","pollen ~ plDens + (hbeeDist + hbeeVis)","claim08_slopePlDensPol",-0.128,0.107,-1.196,-0.129,-0.338,0.084,0.2317,2343,1.003,NA
+"commodity_claim09","pollen ~ plSize + plDens + (hbeeDist + hbeeVis)","claim09_slopePlSizePol",0.207,0.301,0.689,0.21,-0.377,0.783,0.4911,780,1.004,NA
+"commodity_claim10","pollen ~ flDens + plDens + plSize + (hbeeDist + hbeeVis)","claim10_slopeFlDensPol",0.004,0.01,0.371,0.003,-0.014,0.022,0.711,4414,1,NA
+"commodity_claim11","flwSurv ~ hbeeDist + (hbeeVis + plSize + pollen)","claim11_slopeHbeeDistFlwSurv",0.015,0.011,1.44,0.015,-0.005,0.037,0.15,3394,1.002,NA
+"commodity_claim12","flwSurv ~ numHives + (hbeeVis + plSize + pollen)","claim12_slopeHiveFlwSurv",-0.006,0.026,-0.227,-0.006,-0.056,0.043,0.8205,1058,1.004,NA
+"commodity_claim13","flwSurv ~ plDens + hbeeDist + (hbeeVis + plSize + pollen)","claim13_slopePlDensSurv",0.015,0.057,0.262,0.015,-0.096,0.128,0.793,4781,1,NA
+"commodity_claim14","flwSurv ~ flDens + hbeeDist + plDens + (hbeeVis + plSize + pollen)","claim14_slopeFlDensSurv",-0.002,0.005,-0.399,-0.002,-0.011,0.007,0.6898,5914,1,NA
+"commodity_claim20","flwCount ~ hbeeDist + (flwSurv + plSize)","claim20_hbeeDistFlwCount",0.005,0.004,1.435,0.005,-0.002,0.013,0.1512,6947,1,NA
+"commodity_claim21","flwCount ~ numHives + (flwSurv + plSize)","claim21_numHiveFlwCount",-0.01,0.012,-0.816,-0.01,-0.035,0.014,0.4147,1360,1.003,NA
+"commodity_claim22","flwCount ~ plDens + hbeeDist + (flwSurv + plSize)","claim22_plDensFlwCount",-0.036,0.023,-1.592,-0.036,-0.082,0.008,0.1114,2549,1.003,NA
+"commodity_claim23","flwCount ~ flDens + hbeeDist + plDens + (flwSurv + plSize)","claim23_flDensFlwCount",0.003,0.002,1.308,0.003,-0.001,0.007,0.1908,2246,1.002,NA
+"commodity_claim24","flwCount ~ hbeeVis + flDens + hbeeDist + numHives + (flwSurv + plSize)","claim24_hbeeVisFlwCount",-0.015,0.012,-1.278,-0.015,-0.038,0.008,0.2011,3753,1,NA
+"commodity_claim25","flwCount ~ pollen + hbeeDist + hbeeVis + (flwSurv + plSize)","claim25_polFlwCount",-0.009,0.056,-0.158,-0.009,-0.117,0.102,0.8748,1063,1.006,NA
+"commodity_claim16","seedCount ~ hbeeDist + (flwCount + flwSurv + hbeeVis + plSize + pollen)","claim16_hbeeDistSeedCount",-0.176,0.089,-1.986,-0.175,-0.349,0.001,0.0471,6505,1,NA
+"commodity_claim17","seedCount ~ numHives + (flwCount + flwSurv + hbeeVis + plSize + pollen)","claim17a_numHiveSeedCount",0.34,0.182,1.863,0.336,-0.019,0.702,0.0625,2769,1.001,NA
+"commodity_claim18","seedCount ~ plDens + hbeeDist + (flwCount + flwSurv + hbeeVis + plSize + pollen)","claim18_plDensSeedCount",-0.062,0.434,-0.142,-0.058,-0.908,0.792,0.887,3500,1,NA
+"commodity_claim19","seedCount ~ flDens + hbeeDist + plDens + (flwCount + flwSurv + hbeeVis + plSize + pollen)","claim19_flDensSeedCount",0.006,0.04,0.14,0.005,-0.072,0.085,0.8889,3237,1.001,NA
+"commodity_claim29","seedWeight ~ numHives + (flwCount + flwSurv + hbeeDist + hbeeVis + plDens + plSize + pollen + seedCount)","claim29_slopeNumHivesSeedWeight",0.056,0.04,1.406,0.056,-0.021,0.134,0.1596,3329,1,NA
+"commodity_claim31","seedWeight ~ flDens + (flwCount + flwSurv + hbeeDist + hbeeVis + plDens + plSize + pollen + seedCount)","claim31_slopeFlDensSeedWeight",-0.03,0.008,-3.639,-0.03,-0.046,-0.014,3e-04,3859,1,NA

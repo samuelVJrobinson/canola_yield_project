@@ -259,10 +259,9 @@ Growers were also asked for canola variety information, but there was not enough
 
 %Maps + climate graphs needed for publication
 During 2015 and 2016, we also surveyed 35 hybrid seed canola fields (15 in 2015, 20 in 2016) near Lethbridge, Alberta, from June through August of each year, all of which had central-pivot irrigation
-Seed fields were all stocked with honey bee hives at a rate of 3.6 hives/ha, with apiaries stationed in the corners of fields, and were also stocked with leafcutter bees in shelters throughout the field.
-% Shelters used either ``standard" or ``double"  leafcutter bee stocking ($\approx$50,000 vs. 100,000 cocoons/ha), and shelters were placed at either ``standard" or ``double" densities (1.3 vs. 2.6 shelters/ha) in each field.
-% Double stocking rates were only used in fields with double shelter density, creating three combinations of leafcutter bee stocking: ``standard", ``double shelter", and ``double shelter and double stocking".
-All seed fields .
+Seed fields were stocked with honey bee hives at a rate of 3.6 hives/ha, with apiaries stationed in the corners of fields, and were also stocked with LCBs in shelters throughout the field (1.3 or 2.6 shelters/ha).
+% Shelters used either ``standard" or ``double"  LCB stocking ($\approx$50,000 vs. 100,000 cocoons/ha), and shelters were placed at either ``standard" or ``double" densities (1.3 vs. 2.6 shelters/ha) in each field.
+% Double stocking rates were only used in fields with double shelter density, creating three combinations of LCB stocking: ``standard", ``double shelter", and ``double shelter and double stocking".
 %Woudick 5,6 = 64 shelters (single), Woudick 2 = 113 shelters (double + bees), Woudick 3 = 128 shelters Graham 1 = 135 shelters
 
 % We recorded air temperature and wind speed before beginning observations (Table \ref{tab:weather}).
@@ -279,12 +278,13 @@ All seed fields .
 %     \caption{Nectar volume ($\mu$L), concentration (\%), air temperature (C) and wind speed (km/hr), averaged across all observations for each year and area. Nectar standing crop in seed canola was negligible in 2015 and 2016.}
 %     \label{tab:weather}
 % \end{table}
- 
-In commodity fields, we established 1 m$^2$ plots at 5, 20, 100, and 500m along a transect into the field, starting at the field margin closest to the set of honey bee hives (271 total plots). %used a Garmin\texttrademark eTrex20 GPS, 
-In unstocked fields, we began the transect at a field edge close to potential sources of natural pollinating insects, such as forests or grasslands, but observed very few wild pollinators (Table \ref{tab:propVisitors}).
-In seed canola fields, bays of ``male" and ``female" plants are typically planted in 1- and 6-m wide bays, respectively, and leafcutter bee shelters were located in the female bays (Figure \ref{fig:seedfieldPhoto}, \ref{fig:seedfieldPlots}).
+
+In both fields, we established set of plots at varying distance from the sources of pollinators. 
+In commodity fields, we established 1 m$^2$ plots at 5, 20, 100, and 500m, starting at the field margin closest to the set of honey bee hives %(271 total plots), 
+and established plots starting at potential sources of natural pollinating insects in unstocked fields (forests, shrublands, or grasslands), but observed very few wild pollinators (Table \ref{tab:propVisitors}).
+In seed canola fields, bays of hermaphroditic (herafter ``male") and female plants are typically planted in 1- and 6-m wide bays, respectively, and LCB shelters were located in the female bays (Figure \ref{fig:seedfieldPhoto}, \ref{fig:seedfieldPlots}).
 We established plots at 5, 20, 100 (250 in 2016), and 400m into the field along a transect from the nearest set of honey bee hives, using pairs of plots at the edge of adjacent male and female bays at each distance (Figure \ref{fig:seedfieldPlots}).
-Bee visitation can vary within female bays (Alfonso Parra, pers. comm.), so at the 5m and 400m plot in each field, we established another plot in the centre of the female bay to examine the effect of distance away from the male bay.
+We established another plot in the centre of the female bay at the 5m and 400m plot in each field to examine how visitation varied within the female bay.
 We used a Nikon\texttrademark Laser 800S Rangefinder to measure the distance from each plot to the nearest shelter.
 All surveys occurred on fair-weather days (median air temperature: 24.5$^\circ$C., range: 17--33) with no rain and as minimal wind as possible (less than 30km/hr).
 Mean air temperature was similar between years in Grande Prairie ($\approx$ 22$^\circ$C), but Lethbridge was warmer in 2015 (23 vs. 28$^\circ$C).
@@ -309,10 +309,10 @@ The direction of the path could plausibly be reversed (implying that large flowe
 The underlying models of each pSEM were specified as generalized linear mixed-effects models (GLMMs, see Equation sets S1 and S2 for model specifications).
 We used GLMMs to model processes that occur at different levels; for example, seed size-number trade-offs were modelled at the pod level, whereas pollen deposition was modeled at the flower level.
 Random intercepts were used to model variance between fields, within-field (pollen, flower survival, seed count \& size), and within-plot (seed count \& size).
-Continuous responses were modeled using log-normal (plant density, plant size), square-root normal (flower density), and exponential-normal distributions (weight per seed), while counts were modeled as a negative-binomial (honey bee visits, pollen grains per stigma, flowers per plant, seeds per pod) or zero-inflated negative-binomial distribution (leafcutter bee visits) with a log-link function.
+Continuous responses were modeled using log-normal (plant density, plant size), square-root normal (flower density), and exponential-normal distributions (weight per seed), while counts were modeled as a negative-binomial (honey bee visits, pollen grains per stigma, flowers per plant, seeds per pod) or zero-inflated negative-binomial distribution (LCB visits) with a log-link function.
 Visitation models used $log$(time) as an ``offset" variable to account for differences in observation times.
 Pod set (fraction of flowers that matured into pods) was modeled using a beta-binomial distribution with a logit-link function.
-Interactions between predictors were evident in honey bee visitation rate (Year:Locality interaction) and plant density (Irrigation:Year) in commodity canola, and for leafcutter bee visitation (Tent Stocking:Distance from edge) in seed canola, and were included in each model (represented as Y-shaped path in Figures \ref{fig:commoditySEM} and \ref{fig:seedSEM}). 
+Interactions between predictors were evident in honey bee visitation rate (Year:Locality interaction) and plant density (Irrigation:Year) in commodity canola, and for LCB visitation (Tent Stocking:Distance from edge) in seed canola, and were included in each model (represented as Y-shaped path in Figures \ref{fig:commoditySEM} and \ref{fig:seedSEM}). 
 
 Structural equation models do not have paths between all variables, which may bias the model results if this independence assumption is incorrect; this requires testing a ``basis set" of independence claims using Shipley's d-separation criteria \citep{shipley2000, shipley2009}.
 The initial commodity canola pSEM was misspecfied, as several missing paths were identified for the initial commodity model (Fisher's C = 167.5, df = 64, p$<<$0.001), but the updated pSEM that included missing paths was adequate (C = 81.6, df = 86, p = 0.62).
@@ -389,12 +389,12 @@ In commodity fields, honey bee visitation decreased with distance from the apiar
 % Visitation rates were higher in both years in Lethbridge (2014: 9.3 visits/hr, 2015: 7.1), but were higher in 2015 than 2014 at Grande Prairie (Z=2.3, p$=$0.02), rising from 5 visits/hr at the field edge in 2014 to 17 visits/hr in 2015. % (at a stocking level of 20 hives). 
 Greater stocking rates increased the honey bee visitation (Z=5.3, p$<$0.0001), with visitation at the edge of the field increasing from 14.5 visits/hr with an apiary of 20 hives to 22.7 visits/hr with an apiary of 40 hives, while unstocked field edges had an average of 1.8 visits/hr.
 In seed canola fields, honey bee visitation also decreased with distance from the apiary (Z=-2.5, p$=$0.01), but the rate of decline was weaker (126 visits/hr at edge of field vs. 78 visits/hr at 100 m). 
-Honey bee visitation was lower near leafcutter shelters (Z=3.9, p$=$0.001), dropping from 60 visits/hr at 10 m to 34 visits/hr at 2 m, likely due to competition with leafcutter bees (Figure \ref{fig:hbeeDist_both}, \ref{fig:lbeeDist_both}).
+Honey bee visitation was lower near leafcutter shelters (Z=3.9, p$=$0.001), dropping from 60 visits/hr at 10 m to 34 visits/hr at 2 m, likely due to competition with LCBs (Figure \ref{fig:hbeeDist_both}, \ref{fig:lbeeDist_both}).
 
-Leafcutter bee visitation declined rapidly with distance from their shelters (Z=-11.4, p$=$0.0001, 75\% reduction in 10 m), and unexpectedly, was higher at the edge of the field than the centre (Z=-4.4, p$=$0.0001, 114 visits/hr vs 28 visits/hr). %350 visit/hr at 2 m to 83 visit/hr at 10 m
+LCB visitation declined rapidly with distance from their shelters (Z=-11.4, p$=$0.0001, 75\% reduction in 10 m), and unexpectedly, was higher at the edge of the field than the centre (Z=-4.4, p$=$0.0001, 114 visits/hr vs 28 visits/hr). %350 visit/hr at 2 m to 83 visit/hr at 10 m
 However, there was no difference in visitation rates between the edge and the centre when leafcutter cocoon stocking was lower (Z=2.2, p$=$0.028), indicating that leafcutters at high stocking densities likely aggregate in shelters close to the edge of the field (Figure \ref{fig:hbeeDist_both}).
-There was no difference in visitation rates between the male bay and the edge of the female bays (leafcutter bee: p$=$0.72, honey bee: p$=$0.32). 
-However, leafcutter bee visitation was lower in the centre of the female bay (p$=$0.04, 51 vs. 29 visits/hr), and honey bee visitation was higher at the centre of the bay (p$=$0.008, 71 vs. 117 visits/hr, Figure \ref{fig:edgeCentVis_both}).
+There was no difference in visitation rates between the male bay and the edge of the female bays (LCB: p$=$0.72, honey bee: p$=$0.32). 
+However, LCB visitation was lower in the centre of the female bay (p$=$0.04, 51 vs. 29 visits/hr), and honey bee visitation was higher at the centre of the bay (p$=$0.008, 71 vs. 117 visits/hr, Figure \ref{fig:edgeCentVis_both}).
 %Therefore, visitation by both species strongly decreases with distance from the edge of the field, decreases with distance from the leafcutter shelters in seed canola fields, and is done by different bees at the centre of the female bay.
 
 %Visits/hr: In GP, 3.1 in 2014, 10.6 in 2015; in LB 5.9 in 2014, 4.5 in 2015
@@ -430,11 +430,11 @@ However, leafcutter bee visitation was lower in the centre of the female bay (p$
 
 \subsection{Pollen Deposition}
 
-Leafcutter bee visitation increased pollen deposition in seed canola fields, but honey bees did not increase pollen deposition in either commodity or seed canola fields.
+LCB visitation increased pollen deposition in seed canola fields, but honey bees did not increase pollen deposition in either commodity or seed canola fields.
 Pollen deposition on stigmas was high in commodity canola (mean: 293 grains per stigma, SD: 385, range: 0--3981), but honey bee visitation did not effect deposition (p$=$0.77, Figure \ref{fig:hbeeVisPol}).
 Pollen deposition slighly declined with distance from the edge of the field, but this relationship was weak (p$=$0.07) and only amounted to a 6\% average decrease (290 grains per stigma at the edge, 240 at field centre).
-Flies were also common visitors in commodity fields (Table \ref{tab:propVisitors}), but had no effect on pollen deposition (p$=$0.577), so only honey bees and leafcutter bees were considered as potential pollinators (other flower visitors were rare).
-In seed canola, pollen deposition was much lower overall (mean: 22 grains per stigma, SD: 43, range: 0--578), leafcutter bee visitation had a strong positive effect (Z=3.2, p$=$0.002, Figure \ref{fig:visPol_both}, 12 grains/stigma at 6 visits/hr vs. 16 pollen grains at 60 visits/hr), and was lower at the centre of the field (Z=-4.4, p$=$0.0001, Figure \ref{fig:distCentPol}, 23 vs. 11 grains/stigma).
+Flies were also common visitors in commodity fields (Table \ref{tab:propVisitors}), but had no effect on pollen deposition (p$=$0.577), so only honey bees and LCBs were considered as potential pollinators (other flower visitors were rare).
+In seed canola, pollen deposition was much lower overall (mean: 22 grains per stigma, SD: 43, range: 0--578), LCB visitation had a strong positive effect (Z=3.2, p$=$0.002, Figure \ref{fig:visPol_both}, 12 grains/stigma at 6 visits/hr vs. 16 pollen grains at 60 visits/hr), and was lower at the centre of the field (Z=-4.4, p$=$0.0001, Figure \ref{fig:distCentPol}, 23 vs. 11 grains/stigma).
 Pollen deposition was also lower at the centre of the female bay (Z=-4.5, p$=$0.0001, 23 vs. 13 grains/stigma) independent of visitation rate, suggesting that pollen may be lost from bees crossing from male bays, who likely visit flowers at the edge of the bay first \citep{pinnisch1990}. 
 Finally, there was no effect of honey bees on pollen deposition in seed canola fields (Z=0.98, p$=$0.33), implying that most of the pollen deposition is the result of leafcutter visitation. 
 
@@ -525,22 +525,22 @@ Seeds per pod decreased in the centre of the female bay (Z=-4.6, p$<$0.0001), an
 %LH: DISCUSSION TOO NARROWLY FOCUSED. WHAT ARE THE BROADER IMPLICATIONS? CONTAINS A LOT OF SPECULATION WITHOUT ANY EVIDENCE/REFERENCES
 %SH: RELATE RESULTS TO HYPOTHESES, AND START WITH BIG PICTURE IN ORDER TO DISCUSS
 This study examined the relative strength of the path between visitation, pollination, and yield, in two types of canola crops, and showed a strong path between visitation and yield in seed canola, but not in commodity canola.
-First, honey bee and leafcutter bee visitation decreased with distance from their hive or shelter, but unexpectedly, leafcutter bees visited more frequently at the edge of the field.
-Secondly, honey bees had little (direct) influence on pollen deposition in either crop type, leafcutter bees had a positive effect on pollen deposition in seed canola.
+First, honey bee and LCB visitation decreased with distance from their hive or shelter, but unexpectedly, LCBs visited more frequently at the edge of the field.
+Secondly, honey bees had little (direct) influence on pollen deposition in either crop type, LCBs had a positive effect on pollen deposition in seed canola.
 Finally, the model revealed that commodity canola production is largely limited by plant size, while seed canola production is limited by both pollen and plant size.
 
 \subsubsection{Bee visitation} 
 Honey bee visitation in both field types declined with distance into the field, but overall visitation was much higher than commodity fields, due to the higher honey bee stocking rate used in seed fields (3.6 vs. mean 0.6 hives/ha).
-Since honey bees travel from their hive outside the edge of the field, this decline was not surprising, but we did not expect the similar decrease observed in leafcutter bee visitation with distance into the field, as their shelters are located \textit{within} the field.
-This decrease with distance into the field may have been caused by leafcutter bees migrating from shelters at the centre of the field to the edge \citep{goerzen1995}.
-Like honey bees, female leafcutter bees are central-place foragers, and tend to not forage far from their nests \citep{peterson2005,pitts2011, brunet2019}.
-However, leafcutter bees are not as constrained to their nest site as honey bees, and can drift between shelters in a given field \citep{goerzen1995, pittsSinger2013}.
-Leafcutter bees must also forage for leaf materials to create cocoons, but they prefer to build cocoons out of thinner, non-canola leaf types, mainly plants in the families Fabaceae and Rosaceae \citep{sinu2018}.
-Seed canola fields have very few weeds within the area of the crop, meaning that leafcutter bees at the centre of the field may have few choices of leaf material, or alternative pollen and nectar sources.
-Therefore, leafcutter bees likely move from the shelters at which they were released in the centre of the field to the shelters at the edge of the field, so as to gain access to better leaf material \citep{horne1995}, which is more available off-field, or to better forage for off-field pollen or nectar \citep{horne1995b}.
+Since honey bees travel from their hive outside the edge of the field, this decline was not surprising, but we did not expect the similar decrease observed in LCB visitation with distance into the field, as their shelters are located \textit{within} the field.
+This decrease with distance into the field may have been caused by LCBs migrating from shelters at the centre of the field to the edge \citep{goerzen1995}.
+Like honey bees, female LCBs are central-place foragers, and tend to not forage far from their nests \citep{peterson2005,pitts2011, brunet2019}.
+However, LCBs are not as constrained to their nest site as honey bees, and can drift between shelters in a given field \citep{goerzen1995, pittsSinger2013}.
+LCBs must also forage for leaf materials to create cocoons, but they prefer to build cocoons out of thinner, non-canola leaf types, mainly plants in the families Fabaceae and Rosaceae \citep{sinu2018}.
+Seed canola fields have very few weeds within the area of the crop, meaning that LCBs at the centre of the field may have few choices of leaf material, or alternative pollen and nectar sources.
+Therefore, LCBs likely move from the shelters at which they were released in the centre of the field to the shelters at the edge of the field, so as to gain access to better leaf material \citep{horne1995}, which is more available off-field, or to better forage for off-field pollen or nectar \citep{horne1995b}.
 This would explain why greater visitation occurred at the edge of the field, and may also explain why this pattern was not seen in fields with half-stocked shelters.
-To test this, a mark-recapture study of female leafcutter bees could be done to see if bees migrate to shelters at the edge of the field, or if visitation is higher due to other reasons (\textit{e.g.} feral populations migrating to edge of field, long-distance foraging from centre of field as in \citealp{peterson2005}).  %SH: FINE FOR THESIS, BUT CAN BE REMOVED FOR MANUSCRIPT
-It would be interesting to see if there is a critical threshold of leafcutter bee density per-shelter that causes them to move to shelters at the edge of the field (similar to \citealp{pittsSinger2013}).
+To test this, a mark-recapture study of female LCBs could be done to see if bees migrate to shelters at the edge of the field, or if visitation is higher due to other reasons (\textit{e.g.} feral populations migrating to edge of field, long-distance foraging from centre of field as in \citealp{peterson2005}).  %SH: FINE FOR THESIS, BUT CAN BE REMOVED FOR MANUSCRIPT
+It would be interesting to see if there is a critical threshold of LCB density per-shelter that causes them to move to shelters at the edge of the field (similar to \citealp{pittsSinger2013}).
 %Honey bees visited flowers at the edge of the field more frequently than those in the middle of the field, as predicted for central-place foragers with nesting aggregations outside the field (\citealp{olsson2014}, see Chapter 2).
 %Similarly, the high concentration of canola nectar (\citealp{mohr1990}, 58.3\% brix from Chapter 2) may cause leafcutter bees to choose more diluted nectar under hot and dry conditions, similar to honey bees \citep{ohguchi1983}. % canola pollen is valuable to bees \citep{mohr1988,huang2004},
 % Potential future studies should investigate how leafcutter bees shift among shelters after emergence, how cocoon production in seed fields varies with distance, and should investigate inter-cropping leaf material plants (e.g. \emph{Polygonum}, \emph{Pisum}, or other large, thin-leaved plants) to encourage leafcutter bees to stay within the field.
@@ -548,14 +548,14 @@ It would be interesting to see if there is a critical threshold of leafcutter be
 %Leafcutter-honeybee interactions
 Honey bee visitation in hybrid seed fields was lower at areas near to leafcutter shelters. 
 This may have been driven by avoidance of nectar and pollen competition near shelters, as areas close to leafcutter shelters may become depleted in nectar and pollen, deterring honey bee visitation (similar to \citealp{currie1997}).
-Honey bees also suffer from direct interference by leafcutter bees near to their shelters.
+Honey bees also suffer from direct interference by LCBs near to their shelters.
 Several times during the study, \textit{M. rotundata} females and males directly harassed honey bees during the plot-level observations, tackling honey bees both on the flowers and in the air (also seen by \citealp{batra1978} and \citealp{waytesMsc}). 
-Honey bees were never the aggressor in these interactions, so interference between leafcutter bees and honey bees may be unidirectional, at least in areas near leafcutter bee shelters. 
+Honey bees were never the aggressor in these interactions, so interference between LCBs and honey bees may be unidirectional, at least in areas near LCB shelters. 
 For this reason, we treated high leafcutter visitation as causing lower honey bee visitation in our SEM (Figure \ref{fig:seedSEM}, arrow from leafcutter visit rate to honey bee visit rate).
 
 Honey bee visitation and foraging behaviour varied strongly between the male and female bays of seed fields, as well as within the female bays.
-Visitation rates of honey bee foragers were almost twice as high in the centre of the female bay, and conversely, leafcutter bee visitation was almost twice as low.
-This could be due to leafcutter bees avoiding competition for nectar with honey bees, but more likely reflects a stronger need for pollen among leafcutter bees than honey bees \citep{cane2011}.
+Visitation rates of honey bee foragers were almost twice as high in the centre of the female bay, and conversely, LCB visitation was almost twice as low.
+This could be due to LCBs avoiding competition for nectar with honey bees, but more likely reflects a stronger need for pollen among LCBs than honey bees \citep{cane2011}.
 Only 1.4\% of the honey bees in the female bay were pollen foragers (Table \ref{tab:sideWorking}), meaning that foragers who have (recently) come into contact with pollen rare.
 Both \citet{waytesMsc} and \citet{gaffney2019} showed that honey bees exhibit floral fidelity during foraging trips, with minimal crossing between male and female bays ($\sim$5\% of observations, \citealp{waytesMsc}), limiting pollen transfer between the male and female flowers.
 Side-working was a very common behaviour among honey bees in commodity fields (65\% of the total visits from honey bees during 2015 were side-working), as well as the male bays of seed fields (36\%), but not in the female bays (3\%, Table \ref{tab:sideWorking}).
@@ -587,27 +587,27 @@ These results suggest that stigmas are largely saturated with self-pollen, swamp
 
 %REVIEW THIS
 Honey bee behaviour in seed fields made pollen transfer between male and female plants unlikely, and this was also reflected in the measurements of stigma deposition. 
-Deposition was not affected by honey bee visitation, but was strongly increased by leafcutter bee visitation.
-Leafcutter bees tend to switch between male and female flowers more frequently than honey bees do \citep{waytesMsc}, transport more viable pollen between flowers \citep{parker2015}, and tend not to side-work canola flowers (\citealp{soroka2001}, personal observation), which may explain their increased pollination efficacy.
-We also found that pollen deposition also decreased with distance from the edge of the field, was lower in the centre of the female bays, and that this was not solely explained by leafcutter bee abundance (Figure \ref{fig:seedSEM}).
-During foraging bouts, leafcutter bees may travel further between flowers than honey bees do; \citet{brunet2019} found that leafcutter bees foraging in alfalfa (\emph{Medicago sativa} L.) travelled an average of 21 cm between flowers, while honey bees only travelled 16 cm.
+Deposition was not affected by honey bee visitation, but was strongly increased by LCB visitation.
+LCBs tend to switch between male and female flowers more frequently than honey bees do \citep{waytesMsc}, transport more viable pollen between flowers \citep{parker2015}, and tend not to side-work canola flowers (\citealp{soroka2001}, personal observation), which may explain their increased pollination efficacy.
+We also found that pollen deposition also decreased with distance from the edge of the field, was lower in the centre of the female bays, and that this was not solely explained by LCB abundance (Figure \ref{fig:seedSEM}).
+During foraging bouts, LCBs may travel further between flowers than honey bees do; \citet{brunet2019} found that LCBs foraging in alfalfa (\emph{Medicago sativa} L.) travelled an average of 21 cm between flowers, while honey bees only travelled 16 cm.
 However, pollen carryover \citep{thomson1986} to the middle of the bay female is likely reduced, as leafcutters likely visit the edge of the female bay before venturing into the centre.
 The decrease of pollen deposition with distance into the field (independent of visitation rates) also suggests that the same visitation rate of pollinators in the centre of the field results in less pollen deposition.
 This may be due to lower levels of competition at the centre of the field, leading to a higher nectar (or pollen) standing crop. %LH: more likely that bees at centre of F bays carry less pollen
 Foraging \textit{Bombus} take smaller trips between flowers and will forage in smaller areas under nectar-rich conditions (area-restricted search, \citealp{pyke1978b, heinrich1979}), so leafcutter foraging may follow a similar pattern, causing lower pollen deposition at the centre of the field where competition is lower.
-%Leafcutter bees are extremely fast fliers, and are difficult to follow after they leave an inflorescence, meaning that tracking their movements during an entire foraging bout would be almost impossible.
+%LCBs are extremely fast fliers, and are difficult to follow after they leave an inflorescence, meaning that tracking their movements during an entire foraging bout would be almost impossible.
 % Visits by honey bee foragers were almost twice as high in the centre of the female bay, but pollen deposition was about 40\% lower (  Figure \ref{fig:distCentPol}), which correspondingly is 
 % Honey bees in seed fields tended to visit more in the centre of the female bay, even close to the edge of the field, yet pollen deposition was still about 40\% lower (Figure \ref{fig:distCentPol}).
-% While we found that leafcutter bees also tend to avoid the centre of the female bays, and decrease with distance into the field, this extra dependence could have been caused by the fact that the visitation data represents a short ``snapshot'' of the pollen deposition process.
+% While we found that LCBs also tend to avoid the centre of the female bays, and decrease with distance into the field, this extra dependence could have been caused by the fact that the visitation data represents a short ``snapshot'' of the pollen deposition process.
 % For example, canola flowers are receptive for 1-2 days before the petals dehisce, while the surveys only recorded 5 or 10 minutes of visitation, meaning we may have not captured the deposition process on the time scale that it occurs, and the extra variance is being accounted for by distance from field edge and the centre of the female bay.
 % Leafcutter visitation can be extremely sporadic, so the distance and bay position measurements capture differences in the average visitation process better than 10 minute measurements.
 % Pollen deposition also likely changes over the course of the season, as flower availability decreases.
 
-Honey bees may have an indirect positive effect on pollen deposition, as they may cause leafcutter bees to travel farther by lowering overall nectar and pollen standing crop, or release airborne pollen from male-fertile flowers.
+Honey bees may have an indirect positive effect on pollen deposition, as they may cause LCBs to travel farther by lowering overall nectar and pollen standing crop, or release airborne pollen from male-fertile flowers.
 \citet{pierre2010} showed that honey bees can increase the amount of airborne pollen by foraging on male-fertile flowers and releasing pollen from the anthers, causing increased yields in nearby male-sterile flowers; therefore, honey bees may indirectly contribute to a higher rate of wind pollination.
-Honey bees may also cause leafcutter bees to forage at further distances away from their shelters.
+Honey bees may also cause LCBs to forage at further distances away from their shelters.
 Bumble bees move further between flowers when foraging in \textit{Trifolium} fields that have been depleted by honey bees \citet{heinrich1979}, so a similar process could occur in canola seed fields. 
-Leafcutter bees do not appear to use area-restricted search \citep{brunet2019}, but we expect that the foraging range of leafcutter bees around their shelters would sitill decrease, because if honey bees lower pollen and nectar levels at the edge of the field, then leafcutter bees should travel shorter distances to gather the same reward (according to the predictions of Chapter 2).
+LCBs do not appear to use area-restricted search \citep{brunet2019}, but we expect that the foraging range of leafcutter bees around their shelters would sitill decrease, because if honey bees lower pollen and nectar levels at the edge of the field, then leafcutter bees should travel shorter distances to gather the same reward (according to the predictions of Chapter 2).
 %RC: MAY HAVE TO CHOP FOR THE MANUSCRIPT, BECAUSE IT DOESN'T HAVE OTHER AREA-RESTRICTED SEARCH LIT
 We also expect that foraging leafcutter bees would make shorter trips between flowers (similar to \citealp{heinrich1979}), and possibly may switch between bays less frequently \citep{waytesMsc,gaffney2019}, due to a greater floral fidelity on higher-rewarding flowers in the male bay \citep{mesquida1978}.
 If this is true, this would result in a lower rate of (overall) pollen deposition by leafcutter bees during the same period.

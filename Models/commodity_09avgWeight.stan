@@ -107,7 +107,8 @@ parameters {
 	real slopeHbeeDistSeedWeight; //Distance from edge
   real slopeFlwSurvSeedWeight; //Slope of flower survival
   real slopeFlwCountSeedWeight; //Slope of flower count
-   real<lower=0> sigmaSeedWeight; //SD of seed weight
+  real slopeFlDensSeedWeight; //Slope of flower density
+  real<lower=0> sigmaSeedWeight; //SD of seed weight
   real<lower=0> sigmaSeedWeight_plot; //SD of plot random effect
   real<lower=0> sigmaSeedWeight_field; //SD of field random effect
   vector[Nplot] intSeedWeight_plot; //plot-level random intercepts
@@ -136,6 +137,7 @@ transformed parameters {
 		  // intPollen_plot[i] + //Plot-level random intercept
 			slopeVisitPol*logHbeeVis[i] + //(log) hbee visits
 			slopeHbeeDistPollen*logHbeeDist[i]; //Distance effect						
+			
 		// Global intercept is within flower-level term in order to center plot-level variable
 		
 		// Plot-level seed weight
@@ -145,7 +147,8 @@ transformed parameters {
 			slopePlDensSeedWeight*plDens[i] + //Plant density
 			slopeHbeeDistSeedWeight*logHbeeDist[i] + //Distance from edge
 			slopeHbeeVisSeedWeight*logHbeeVis[i] + //(log) hbee visits
-			slopePollenSeedWeight*pollenPlot[i]; //pollen deposition - large correlation b/w slopePollenSeedWeight and intFlwSurv
+			slopePollenSeedWeight*pollenPlot[i] + //pollen deposition - large correlation b/w slopePollenSeedWeight and intFlwSurv
+			slopeFlDensSeedWeight*flDens[i]; //Flower density
 	}
 		
 	for(i in 1:Nflw){ //For each flower stigma
@@ -188,8 +191,10 @@ model {
   slopePlSizeSeedWeight ~ normal(0,5); //Slope of plant size
   slopePlDensSeedWeight ~ normal(0,5); //Plant density
 	slopeHbeeDistSeedWeight ~ normal(0,5); //Distance from edge
-	slopeFlwSurvSeedWeight ~ normal(0,5); //Slope of flower survival
+	slopeFlwSurvSeedWeight ~ normal(0,5); //Slope of flower count
   slopeFlwCountSeedWeight ~ normal(0,5); //Slope of flower survival
+  slopeFlDensSeedWeight ~ normal(0,5); //Slope of flower density
+  
   sigmaSeedWeight ~ gamma(1,1); //SD of seed weight
   sigmaSeedWeight_field ~ gamma(1,1); //SD of field random effect
   sigmaSeedWeight_plot ~ gamma(1,1); //SD of plot random effect
