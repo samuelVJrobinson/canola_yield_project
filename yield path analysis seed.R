@@ -237,6 +237,7 @@ modList[7] <- stan(file=modFiles[7],data=datalist,iter=2000,chains=4,control=lis
 modList[8] <- stan(file=modFiles[8],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #Weight per seed
 modList[9] <- stan(file=modFiles[9],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #Yield
 beepr::beep(1)
+
 #Traceplots
 for(i in 1:length(modList)){
   if(!is.null(modList[[i]])){

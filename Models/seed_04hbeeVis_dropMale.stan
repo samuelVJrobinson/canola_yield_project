@@ -171,7 +171,7 @@ parameters {
 	real<lower=-5,upper=5> slopeLbeeDistHbee; //Slope of leafcutter distance
 	real<lower=-5,upper=5> slopeLbeeHbeeDistHbee; //Interaction b/w leafcutter & honeybee distance
 	real<lower=-5,upper=5> slopeLbeeVisHbee; //Direct effect of leafcutter visitation
-	real<lower=-5,upper=5> slopeMBayHbee; //Effect of male bay
+	// real<lower=-5,upper=5> slopeMBayHbee; //Effect of male bay
 	real<lower=-5,upper=5> slopeCentHbee; //Effect of bay position (center)
 	real<lower=1e-5,upper=3> visitHbeePhi; //Dispersion parameter
 	real<lower=0,upper=1> zeroVisHbeeTheta; //Zero-inflation parameter - chance that zero is not from neg.bin.
@@ -209,8 +209,8 @@ transformed parameters {
 			slopeLbeeHbeeDistHbee*logHbeeDist_all[i]*logLbeeDist_all[i] + //log Hbee: log lbee distance interaction
 			slopeLbeeVisHbee*logLbeeVis_all[i] + //Direct effect of (log) leafcutter visitation						
 			slopeCentHbee*isCent_all[i] + //bay center effect
-			slopeFlDensHbee*flDens[i] + //Flower density effect
-			slopeMBayHbee*isMBay_all[i]; //M bay effect 	
+			slopeFlDensHbee*flDens[i]; //Flower density effect
+			// slopeMBayHbee*isMBay_all[i]; //M bay effect 	
 	}	
 	
 }
@@ -239,7 +239,7 @@ model {
 	slopeLbeeHbeeDistHbee ~ normal(0,5); //Hbee-lbee distance interaction	
 	slopeLbeeVisHbee ~ normal(0,5); //Direct effect of (log) leafcutter visitation
 	slopeCentHbee ~ normal(0,5); //Effect of center of bay
-	slopeMBayHbee ~ normal(0,5); //Effect of male bay
+	// slopeMBayHbee ~ normal(0,5); //Effect of male bay
 	slopeFlDensHbee ~ normal(0,5); //Flower density effect	
 	visitHbeePhi ~ gamma(1,1); //Dispersion parameter		
 	zeroVisHbeeTheta ~ beta(2,2); // Zero-inflation parameter

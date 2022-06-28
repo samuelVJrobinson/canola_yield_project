@@ -160,31 +160,37 @@ transformed data {
 }
 
 parameters {
+ 
 	// Flower density per plot
 	vector<lower=4,upper=52>[Nplot_flDensMiss] flDens_miss; //Missing from my fields
 	vector<lower=4,upper=52>[Nplot_flDensMiss_extra] flDens_miss_extra; //Missing from Riley's fields
- 
-	// hbee Visitation - random effects at field level weren't converging
-	real<lower=-5,upper=5> intVisitHbee; //Intercept
-	real<lower=-5,upper=5> slopeFlDensHbee; //Slope of flower density
-	real<lower=-5,upper=5> slopeHbeeDistHbee; //Slope of hbee distance
-	real<lower=-5,upper=5> slopeLbeeDistHbee; //Slope of leafcutter distance
-	real<lower=-5,upper=5> slopeLbeeHbeeDistHbee; //Interaction b/w leafcutter & honeybee distance
-	real<lower=-5,upper=5> slopeLbeeVisHbee; //Direct effect of leafcutter visitation
-	real<lower=-5,upper=5> slopeMBayHbee; //Effect of male bay
-	real<lower=-5,upper=5> slopeCentHbee; //Effect of bay position (center)
-	real<lower=1e-5,upper=3> visitHbeePhi; //Dispersion parameter
-	real<lower=0,upper=1> zeroVisHbeeTheta; //Zero-inflation parameter - chance that zero is not from neg.bin.
-	real<lower=1e-5,upper=3> sigmaHbeeVis_field; //Sigma for field
-	vector[Nfield_all] intVisitHbee_field; //Sigma for field
 
+	// lbee Visitation
+	// slopePlDensLbee and slopePlSizeLbee strongly correlated with slopeHbeeDistLbee (r=-0.69,-0.72) and with each other (r=0.75), so removing.
+	// Tried using double-tent and double-tent + bees as a covariate, but the answer is the same: double-tent bees have more even spread across fields
+	// slopeStockingHbeeDistLbee (both versions) largely overlap zero
+	real intVisitLbee; //Intercept
+	real slopeLbeeDistLbee; //Slope of leafcutter distance (shelter)
+	real slopeHbeeDistLbee; //Slope of honeybee distance (field edge)
+	// real slopeMBayLbee; //Effect of male bay - p=0.894
+	real slopeCentLbee; //Effect of bay position (center)
+	real slopeStockingLbee[2]; //Effect of half-stocking leafcutter bees
+	// real slope2016Lbee; //Year effect
+	real slopeFlDensLbee; //Flower density effect
+	real slopeCentHbeeDistLbee; //Bay position : honeybee distance interaction term -p=0.142
+	real slopeStockingHbeeDistLbee[2]; //Half-stocking:hbee distance interaction
+	// real slopeStockingLbeeDistLbee[2]; //Half-stocking:lbee distance interaction
+	real<lower=1e-10> sigmaLbeeVisField; //SD of field random intercepts
+	real<lower=1e-10> visitLbeePhi; //Dispersion parameter
+	real<lower=0,upper=1> zeroVisLbeeTheta; //Zero-inflation parameter
+	vector[Nfield_all] intVisitLbee_field; //field-level random intercepts
 }
 
 transformed parameters {
 			
 	//Expected values
 	//Plot-level
-	vector[Nplot_all] visitMu_hbee; //hbee visits - all plot
+	vector[Nplot_all] visitMu_lbee; //lbee visits - all plots		
 	
 	//Imputed missing data;
 	vector[Nplot_all] flDens; //Flower density
@@ -199,67 +205,79 @@ transformed parameters {
 	
 	//Plot-level parameters
 	for(i in 1:Nplot_all){	//Parameters for all fields, all plots
-			
-		// Expected value for hbee visits = intercept + random int + distance + bay position + bay type + time offset
-		visitMu_hbee[i] = intVisitHbee + //Intercept
-		  logTime_all[i] + //log-time offset
-		  intVisitHbee_field[plotIndex_all[i]] + //Random intercepts
-			slopeHbeeDistHbee*logHbeeDist_all[i] +  //log hbee distance			
-			slopeLbeeDistHbee*logLbeeDist_all[i] + //log lbee distance
-			slopeLbeeHbeeDistHbee*logHbeeDist_all[i]*logLbeeDist_all[i] + //log Hbee: log lbee distance interaction
-			slopeLbeeVisHbee*logLbeeVis_all[i] + //Direct effect of (log) leafcutter visitation						
-			slopeCentHbee*isCent_all[i] + //bay center effect
-			slopeFlDensHbee*flDens[i] + //Flower density effect
-			slopeMBayHbee*isMBay_all[i]; //M bay effect 	
-	}	
 	
+	// Expected value for lbee visits 
+		visitMu_lbee[i] = intVisitLbee + intVisitLbee_field[plotIndex_all[i]] + logTime_all[i] + //intercepts + time offset
+			slopeLbeeDistLbee*logLbeeDist_all[i] + //lbee distance
+			slopeHbeeDistLbee*logHbeeDist_all[i] + //hbee distance
+			slopeCentLbee*isCent_all[i] + //bay center
+			// slopeStockingLbee*lbeeStocking_all[i] +	//half-stocking			
+			slopeStockingLbee[1]*lbeeStocking2_all[i,1] + //double tent
+			slopeStockingLbee[2]*lbeeStocking2_all[i,2] + //double tent + bees			
+			// slopeMBayLbee*isMBay_all[i] + //M bay
+			slopeCentHbeeDistLbee*isCent_all[i]*logHbeeDist_all[i] + //hbee dist: bay center interaction			
+			// slopeStockingHbeeDistLbee*lbeeStocking_all[i]*logHbeeDist_all[i] +  //hbee dist: half stocking interaction
+			slopeStockingHbeeDistLbee[1]*lbeeStocking2_all[i,1]*logHbeeDist_all[i] +  //hbee dist: double tent interaction
+			slopeStockingHbeeDistLbee[2]*lbeeStocking2_all[i,2]*logHbeeDist_all[i] +  //hbee dist: double tent + bees interaction			
+			// slopeStockingLbeeDistLbee*lbeeStocking_all[i]*logLbeeDist_all[i] + //lbee dist: half stocking interaction			
+			// slopeStockingLbeeDistLbee[1]*lbeeStocking2_all[i,1]*logLbeeDist_all[i] + //lbee dist: double tent interaction			
+			// slopeStockingLbeeDistLbee[2]*lbeeStocking2_all[i,2]*logLbeeDist_all[i] + //lbee dist: double tent + bees interaction			
+			// slope2016Lbee*is2016_all[i] + //Year effect
+			slopeFlDensLbee*flDens[i]; //Flower density effect
+			// slopePlDensLbee*plDens[i] + //Plant density - not used
+			// slopePlSizeLbee*plSizePlotMu[i]; //Plant size - not used			
+	}	
 }
 	
 model {
-	vector[2] bernLL_hbee; //pre-calculate LL for zero inflation process
+	vector[2] bernLL_lbee; //pre-calculate LL for zero inflation process
 	
-	//Hbee LL
-	bernLL_hbee[1]=bernoulli_lpmf(0|zeroVisHbeeTheta); //LL of no extra zero
-	bernLL_hbee[2]=bernoulli_lpmf(1|zeroVisHbeeTheta); //LL of extra zero
+	//Lbee LL
+	bernLL_lbee[1]=bernoulli_lpmf(0|zeroVisLbeeTheta); //LL of no extra zero
+	bernLL_lbee[2]=bernoulli_lpmf(1|zeroVisLbeeTheta); //LL of extra zero
 	
 	// Likelihood for hbee and lbee visits
 	for(i in 1:Nplot_all){ 
-		if(hbeeVis_all[i]==0) //Zero-inflated negbin for hbee visitation frequency
-			target += log_sum_exp(bernLL_hbee[2],bernLL_hbee[1]+neg_binomial_2_log_lpmf(0|visitMu_hbee[i],visitHbeePhi));
+		if(lbeeVis_all[i]==0) //Zero-inflated negbin for lbee visitation frequency
+			target += log_sum_exp(bernLL_lbee[2],bernLL_lbee[1]+neg_binomial_2_log_lpmf(0|visitMu_lbee[i],visitLbeePhi));
 		else
-			target += bernLL_hbee[1]+neg_binomial_2_log_lpmf(hbeeVis_all[i]|visitMu_hbee[i],visitHbeePhi);
+			target += bernLL_lbee[1]+neg_binomial_2_log_lpmf(lbeeVis_all[i]|visitMu_lbee[i],visitLbeePhi);		
+			
 	}
-		
+
 	// Priors
-	
-	// Hbee Visitation - informative priors
-	intVisitHbee ~ normal(0,5); //Intercept	
-	slopeHbeeDistHbee ~ normal(0,5); //Slope of distance effect on hbee visits	
-	slopeLbeeDistHbee ~ normal(0,5); //Effect of leafcutter shelter distance	
-	slopeLbeeHbeeDistHbee ~ normal(0,5); //Hbee-lbee distance interaction	
-	slopeLbeeVisHbee ~ normal(0,5); //Direct effect of (log) leafcutter visitation
-	slopeCentHbee ~ normal(0,5); //Effect of center of bay
-	slopeMBayHbee ~ normal(0,5); //Effect of male bay
-	slopeFlDensHbee ~ normal(0,5); //Flower density effect	
-	visitHbeePhi ~ gamma(1,1); //Dispersion parameter		
-	zeroVisHbeeTheta ~ beta(2,2); // Zero-inflation parameter
-	sigmaHbeeVis_field ~ gamma(1,1); //Sigma for field
-	intVisitHbee_field ~ normal(0,sigmaHbeeVis_field); //Random intercept for field
+
+	// Lbee Visitation - informative priors
+	intVisitLbee ~ normal(2.5,5); //Intercept	
+	slopeHbeeDistLbee ~ normal(0,5); //Slope of honeybee distance on lbee visits
+	slopeLbeeDistLbee ~ normal(0,5); //Slope of shelter distance on lbee visits
+	slopeCentLbee ~ normal(0,5); //Effect of center of bay
+	// slopeMBayLbee ~ normal(0,5); //Effect of male bay
+	slopeStockingLbee ~ normal(0,5); //Effect of half-stocking	
+	// slope2016Lbee ~ normal(0,5); //Year effect
+	slopeFlDensLbee ~ normal(0,5); //Flower density effect	
+	slopeCentHbeeDistLbee ~ normal(0,5); //Bay center: hbee distance interaction
+	slopeStockingHbeeDistLbee ~ normal(0,5); //Half-stocking: hbee distance interaction				
+	// slopeStockingLbeeDistLbee ~ normal(0,5); //Half-stocking: lbee dist interaction
+	sigmaLbeeVisField ~ gamma(1,1); //Sigma for random field 
+	visitLbeePhi ~ gamma(1,1); //Dispersion parameter	
+	intVisitLbee_field ~ normal(0,sigmaLbeeVisField); //Random field intercepts		
+	zeroVisLbeeTheta ~ beta(2,2); //Zero-inflation
 }
 
 generated quantities {
-	// hbeeVis
-	int predHbeeVis_all[Nplot_all]; //Generated
-	real hbeeVis_resid[Nplot_all]; //Residual 
-	real predHbeeVis_resid[Nplot_all]; //Residual of generated 
+	// lbee visits
+	int predLbeeVis_all[Nplot_all]; //Generated 
+	real lbeeVis_resid[Nplot_all]; //Residual
+	real predLbeeVis_resid[Nplot_all]; //Residual of generated		
+	
 	for(i in 1:Nplot_all){
-		//hbee visits - ZI neg bin
-		hbeeVis_resid[i]=hbeeVis_all[i]-(exp(visitMu_hbee[i])*(1-zeroVisHbeeTheta)); //Residual for actual value x offset
-		if(bernoulli_rng(zeroVisHbeeTheta)==1) //If zeroVisHbeeTheta generates an extra zero
-			predHbeeVis_all[i] = 0; //Predicted value is automatically zero
+		//lbee visits - ZI neg bin
+		lbeeVis_resid[i]=lbeeVis_all[i]-(exp(visitMu_lbee[i])*(1-zeroVisLbeeTheta)); //Residual for actual value x offset
+		if(bernoulli_rng(zeroVisLbeeTheta)==1) //If zeroVisHbeeTheta generates an extra zero
+			predLbeeVis_all[i] = 0; //Predicted value is automatically zero
 		else //Otherwise
-			predHbeeVis_all[i] = neg_binomial_2_log_rng(visitMu_hbee[i],visitHbeePhi); //Predicted value drawn from neg.bin		
-		predHbeeVis_resid[i]=predHbeeVis_all[i]-(exp(visitMu_hbee[i])*(1-zeroVisHbeeTheta)); //Residual for predicted value
+			predLbeeVis_all[i] = neg_binomial_2_log_rng(visitMu_lbee[i],visitLbeePhi); //Predicted value drawn from neg.bin		
+		predLbeeVis_resid[i]=predLbeeVis_all[i]-(exp(visitMu_lbee[i])*(1-zeroVisLbeeTheta)); //Residual for predicted value
 	}
-
 }

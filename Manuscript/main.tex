@@ -311,6 +311,7 @@ We used GLMMs to model processes that occur at different levels; for example, se
 Random intercepts were used to model variance between fields, within-field (pollen, flower survival, seed count \& size), and within-plot (seed count \& size).
 Continuous responses were modeled using log-normal (plant density, plant size), square-root normal (flower density), and exponential-normal distributions (weight per seed), while counts were modeled as a negative-binomial (honey bee visits, pollen grains per stigma, flowers per plant, seeds per pod) or zero-inflated negative-binomial distribution (LCB visits) with a log-link function.
 Visitation models used $log$(time) as an ``offset" variable to account for differences in observation times.
+Plants and pollen samples were not collected from male bays, and there were no large differences in visitation rates for honey bees or LCBs (p = 0.32, 0.72, respectively) once other terms were included, so bay identity was excluded from further analysis.
 Pod set (fraction of flowers that matured into pods) was modeled using a beta-binomial distribution with a logit-link function.
 Interactions between predictors were evident in honey bee visitation rate (Year:Locality interaction) and plant density (Irrigation:Year) in commodity canola, and for LCB visitation (Tent Stocking:Distance from edge) in seed canola, and were included in each model (represented as Y-shaped path in Figures \ref{fig:commoditySEM} and \ref{fig:seedSEM}). 
 

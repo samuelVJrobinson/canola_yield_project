@@ -29,5 +29,5 @@ commodity_claim27,flwCount ~ seedWeight + hbeeVis + pollen + seedCount + (flwSur
 commodity_claim28,seedWeight ~ hbeeDist + (hbeeVis + plSize + pollen + seedCount),claim28_slopeHbeeDistSeedWeight,0.007,0.018,0.384,0.007,-0.03,0.042,0.7009,4378,1.001,
 commodity_claim29,seedWeight ~ numHives + (hbeeVis + plSize + pollen + seedCount),claim29_slopeNumHivesSeedWeight,0.045,0.039,1.15,0.045,-0.031,0.124,0.2502,3127,1.001,
 commodity_claim30,seedWeight ~ plDens + hbeeDist + (hbeeVis + plSize + pollen + seedCount),claim30_slopePlDensSeedWeight,0.256,0.093,2.745,0.257,0.078,0.439,0.0061,2516,1,Added to seedWeight model
-commodity_claim31,seedWeight ~ flDens + hbeeDist + (hbeeVis + plSize + pollen + seedCount),claim31_slopeFlDensSeedWeight,-0.027,0.008,-3.243,-0.027,-0.043,-0.011,0.0012,2117,1.002,
+commodity_claim31,seedWeight ~ flDens + hbeeDist + (hbeeVis + plSize + pollen + seedCount),claim31_slopeFlDensSeedWeight,-0.027,0.008,-3.243,-0.027,-0.043,-0.011,0.0012,2117,1.002,Added to seedWeight model
 commodity_claim32,seedWeight ~ flwSurv + (hbeeVis + plSize + pollen + seedCount),claim32_slopeFlwSurvSeedWeight,0.105,0.04,2.61,0.106,0.025,0.184,0.0091,8978,1,Added to seedWeight model
