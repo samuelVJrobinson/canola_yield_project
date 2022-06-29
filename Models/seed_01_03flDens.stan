@@ -111,6 +111,7 @@ transformed data {
 	// vector[Nplant] logFlwCount; //Log-flower count
 	// vector[Nplant] logitFlwSurv; //(logit) proportion flower survival	
 	vector[Nplant] logYield = log(yield); //Log yield (g seed per plant)
+	real minFlDens = min(flDens_obs); //Minimum flower density
 
 	//Assign values
 	plotIndex_all[1:Nplot] = plotIndex; 
@@ -166,35 +167,35 @@ parameters {
   // plSize is measured at the plot level, so as long as there's some kind of plant-level intercept it should be fine
  
 	// Plant density - looks OK
-	real<lower=2,upper=5> plDens_miss; //Imputed plant density for my fields (only 1)
-	real intPlDens; //Global intercept
-	real slopeHbeeDistPlDens; //Slope of distance into field	
-	real<lower=1e-10> sigmaPlDens; //Sigma for within-field (residual)
-	real<lower=1e-10> sigmaPlDens_field; //Sigma for field
+	real<lower=2.4,upper=4.5> plDens_miss; //Imputed plant density for my fields (only 1)
+	real<lower=-10,upper=10> intPlDens; //Global intercept
+	real<lower=-10,upper=10> slopeHbeeDistPlDens; //Slope of distance into field	
+	real<lower=1e-10,upper=10> sigmaPlDens; //Sigma for within-field (residual)
+	real<lower=1e-10,upper=10> sigmaPlDens_field; //Sigma for field
 	vector[Nfield] intPlDens_field; //Random intercept for field
 	
 	// Plant size - random effects at plot level are very small, and don't converge well
 	// Density:distance interaction is basically 0, so leaving it out
 	// Normal distribution had marginal PPchecks; t-dist is much better
-	real intPlSize; //Global intercept
-	real slopePlDensPlSize; //Slope of planting density
-	real slopeDistPlSize; //Slope of hbee distance (edge of field has small plants)
-	real<lower=1e-05> sigmaPlSize; //Sigma for within-plot (residual)
-	real<lower=1e-05> sigmaPlSize_field; //Sigma for field
-	vector[Nfield] intPlSize_field; //Random intercept for field
+	real<lower=-10,upper=10> intPlSize; //Global intercept
+	real<lower=-10,upper=10> slopePlDensPlSize; //Slope of planting density
+	real<lower=-10,upper=10> slopeHbeeDistPlSize; //Slope of hbee distance (edge of field has small plants)
+	real<lower=1e-05,upper=10> sigmaPlSize; //Sigma for within-plot (residual)
+	real<lower=1e-05,upper=10> sigmaPlSize_field; //Sigma for field
+	vector<lower=-10,upper=10>[Nfield] intPlSize_field; //Random intercept for field
 	real nuPlSize; //exp(nu) for t-distribution
 
 	// Flower density per plot
-	vector<lower=4,upper=52>[Nplot_flDensMiss] flDens_miss; //Missing from my fields
-	vector<lower=4,upper=52>[Nplot_flDensMiss_extra] flDens_miss_extra; //Missing from Riley's fields
-	real intFlDens; //Global intercept
-	real slopeMBayFlDens; //Effect of male bay
+	vector<lower=5,upper=51>[Nplot_flDensMiss] flDens_miss; //Missing from my fields
+	vector<lower=5,upper=51>[Nplot_flDensMiss_extra] flDens_miss_extra; //Missing from Riley's fields
+	real<lower=-100,upper=100> intFlDens; //Global intercept
+	// real slopeMBayFlDens; //Effect of male bay
 	// real slope2016FlDens; //Effect of 2016
-	real slopeDistFlDens;  //Effect of distance from edge
-	real<lower=1e-10> sigmaFlDens; //Sigma for within-field (residual)
-	real<lower=1e-10> sigmaFlDens_field; //Sigma for field
+	real<lower=-10,upper=10> slopeHbeeDistFlDens;  //Effect of distance from edge
+	real<lower=1e-10,upper=10> sigmaFlDens; //Sigma for within-field (residual)
+	real<lower=1e-10,upper=10> sigmaFlDens_field; //Sigma for field
 	vector[Nfield_all] intFlDens_field; //Random intercept for field
-	real nuFlDens; //exp(nu) for t-distribution
+	real<lower=-10,upper=10> nuFlDens; //exp(nu) for t-distribution
 }
 
 transformed parameters {
@@ -226,9 +227,9 @@ transformed parameters {
 		// Flower density = intercept + random field int + plant size effect
 		flDensMu[i] = intFlDens	+
 		  intFlDens_field[plotIndex_all[i]] +
-			slopeMBayFlDens*isMBay_all[i] + //Male bay effect
+			// slopeMBayFlDens*isMBay_all[i] + //Male bay effect
 			// slope2016FlDens*is2016_all[i] + //Year effect
-			slopeDistFlDens*logHbeeDist_all[i]; //Distance from edge effect
+			slopeHbeeDistFlDens*logHbeeDist_all[i]; //Distance from edge effect
 	}
 	
 	for(i in 1:Nplot_F){ //F plots only
@@ -246,7 +247,7 @@ transformed parameters {
 		plSizePlotMu[i] = intPlSize + //Intercept
 		  intPlSize_field[plotIndex_all[plotI]] +  //Field level intercept
 		  //intPlSize_plot[plotI] + //Plot level intercept
-			slopeDistPlSize*logHbeeDist_all[plotI] + //Distance effect (edge of field has smaller plants)
+			slopeHbeeDistPlSize*logHbeeDist_all[plotI] + //Distance effect (edge of field has smaller plants)
 			slopePlDensPlSize*plDens[i]; //Planting density effect
 	}
 	
@@ -276,7 +277,7 @@ model {
 	//Plant size - informative priors
 	intPlSize ~ normal(3.2,5); //Intercept
 	slopePlDensPlSize ~ normal(0,5); //Planting density
-	slopeDistPlSize ~ normal(0,5); //Distance from edge of field
+	slopeHbeeDistPlSize ~ normal(0,5); //Distance from edge of field
 	sigmaPlSize ~ gamma(1,1); //Sigma for residual
 	sigmaPlSize_field ~ gamma(1,1); //Sigma for field
 	intPlSize_field	~ normal(0,sigmaPlSize_field); //Random intercept for field
@@ -286,9 +287,9 @@ model {
 
 	// Flower density
 	intFlDens ~ normal(21.4,5); //Intercept
+	slopeHbeeDistFlDens ~ normal(0,5); //Distance from edge
 	// slope2016FlDens ~ normal(0,5); //Effect of 2016
-	slopeDistFlDens ~ normal(0,5); //Distance from edge
-	slopeMBayFlDens ~ normal(0,5); //Effect of male bay
+	// slopeMBayFlDens ~ normal(0,5); //Effect of male bay
 	sigmaFlDens ~ gamma(1,1); //Sigma for plot (residual)
 	sigmaFlDens_field ~ gamma(1,1); ; //Sigma for field
 	intFlDens_field ~ normal(0,sigmaFlDens_field); //Random intercept for field

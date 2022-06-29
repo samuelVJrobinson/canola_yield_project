@@ -7,6 +7,11 @@ library(tidyr)
 library(beepr)
 library(xtable)
 
+library(rstan)
+setwd('./Models')
+rstan_options(auto_write = TRUE)
+options(mc.cores = 6)
+
 #Big-text theme, no grid lines (used for Bayer 2016 presentation)
 prestheme=theme(legend.position='right',
                 legend.text=element_text(size=15),
@@ -19,14 +24,14 @@ prestheme=theme(legend.position='right',
 theme_set(theme_bw()+prestheme) #Sets graph theme to B/Ws + prestheme
 rm(prestheme)
 
-setwd('~/Projects/UofC/canola_yield_project') #Multivac path
+# setwd('~/Projects/UofC/canola_yield_project') #Multivac path
 # setwd('~/Documents/canola_yield_project') #Galpern machine path
 
-source('helperFunctions.R')
+source('../helperFunctions.R')
 
 # Load in data ----------------------
 
-load('./Models/datalist_seed.Rdata')
+load('./datalist_seed.Rdata')
 
 # #Seed field data
 # load("./Seed field analysis/seedfieldDataAll.RData")
@@ -215,12 +220,7 @@ load('./Models/datalist_seed.Rdata')
 
 # Run models ----------------------------
 
-library(rstan)
-setwd('./Models')
-rstan_options(auto_write = TRUE)
-options(mc.cores = 6)
 # library(shinystan)
-
 
 #Models split into separate stan files (faster)
 modFiles <- dir(pattern = 'seed_.*\\.stan')
@@ -242,7 +242,7 @@ beepr::beep(1)
 for(i in 1:length(modList)){
   if(!is.null(modList[[i]])){
     n <- names(modList[[i]]) #Model parameters
-    n <- n[(!grepl('(\\[[0-9]+,*[0-9]*\\]|lp)',n))|grepl('[sS]igma',n)] #Gets rid of parameter vectors, unless it contains "sigma" (variance term)
+    n <- n[(!grepl('(\\[[0-9]+,*[0-9]*\\]|lp)',n))|grepl('([sS]igma|slope)',n)] #Gets rid of parameter vectors, unless it contains "sigma" (variance term) or "slope"
     n <- n[!grepl('_miss',n)] #Gets rid of imputed values
     
     p <- traceplot(modList[[i]],pars=n,inc_warmup=FALSE) #+ geom_hline(yintercept = 0) #Traceplots
@@ -277,10 +277,10 @@ save(modSummaries_seed,file = 'modSummaries_seed.Rdata'); rm(temp)
 compareRE(modList[[1]],'intPlDens_field') 
 compareRE(modList[[1]],'intPlSize_field')
 compareRE(modList[[1]],'intFlDens_field') #heavy tails
-compareRE(modList[[2]],'intVisitHbee_field') #right skew
-compareRE(modList[[3]],'intVisitLbee_field')
-compareRE(modList[[4]],'intPol_field')
-compareRE(modList[[4]],'intPol_plot')
+compareRE(modList[[2]],'intHbeeVis_field') #right skew
+compareRE(modList[[3]],'intLbeeVis_field')
+compareRE(modList[[4]],'intPollen_field')
+compareRE(modList[[4]],'intPollen_plot')
 compareRE(modList[[5]],'intFlwCount_field')
 compareRE(modList[[5]],'intFlwCount_plot')
 compareRE(modList[[6]],'intFlwSurv_field')
@@ -296,26 +296,60 @@ compareRE(modList[[9]],'ranEffYield_plot',2,0.3) #Slopes
 
 #Posterior predictive checks
 PPplots(modList[[1]],datalist$plDens_obs,c('predPlDens','plDens_resid','predPlDens_resid'),
-        index = datalist$obsPlDens_ind,main='Plant Density') #OK, but bimodal dist
+        index = datalist$obsPlDens_ind,main='Plant Density') #OK, but bimodal peaks
 PPplots(modList[[1]],datalist$flDens_obs,c('predFlDens','flDens_resid','predFlDens_resid'),
-        index=datalist$obsflDens_ind,main='Flower density') #OK
+        index=datalist$obsflDens_ind,main='Flower density') #OK, but skewed distribution. Not improved by MBay or Year terms
 PPplots(modList[[1]],datalist$plantSize,c('predPlSize','plSize_resid','predPlSize_resid'),
         'Plant size') #OK
 PPplots(modList[[2]],c(datalist$hbeeVis,datalist$hbeeVis_extra),
         c('predHbeeVis_all','hbeeVis_resid','predHbeeVis_resid'),'Honeybee visits') #Not good
 PPplots(modList[[3]],c(datalist$lbeeVis,datalist$lbeeVis_extra),
-        c('predLbeeVis_all','lbeeVis_resid','predLbeeVis_resid'),'Leafcutter visits') #Not good
+        c('predLbeeVis_all','lbeeVis_resid','predLbeeVis_resid'),'Leafcutter visits') #OK, but overpredicts at low values
 
 PPplots(modList[[4]],datalist$pollenCount,c('predPollenCount','pollen_resid','predPollen_resid'),
         'Pollen') #OK
 PPplots(modList[[5]],datalist$flwCount,c('predFlwCount','flwCount_resid','predFlwCount_resid'),
         'Flowers per plant') #OK
-PPplots(modList[[6]],datalist$podCount,c('predPodCount','podCount_resid','predPodCount_resid'),'Pods per plant')
+PPplots(modList[[6]],datalist$podCount,c('predPodCount','podCount_resid','predPodCount_resid'),'Pods per plant') #OK
 PPplots(modList[[7]],datalist$seedCount_obs,c('predSeedCount','seedCount_resid','predSeedCount_resid'),
-        index=datalist$obsSeedCount_ind,'Seeds per pod') #OK, but distribution is strange. Exp-normal is probably the best we can do.
+        index=datalist$obsSeedCount_ind,'Seeds per pod') #OK, but distribution is weird, even with exp-normal. 
 PPplots(modList[[8]],datalist$seedMass_obs,c('predSeedMass','seedMass_resid','predSeedMass_resid'),
         index=datalist$obsSeedMass_ind,'Seed Mass')
 PPplots(modList[[9]],log(datalist$yield),c('predYield','yield_resid','predYield_resid'),'Seed mass per plant')
+
+# Path diagram ------------------------------------------------------------
+
+library(ggdag)
+nodeCoords <- data.frame(name=c('numHives','hbeeDist','hbeeVis','pollen',
+                                'plSize','plDens','flDens',
+                                'flwCount','flwSurv','seedCount','seedWeight'),
+                         labs=c('Number\nof Hives','Distance','Honey bee\nVisitation','Pollen\nCount',
+                                'Plant\nSize','Plant\nDensity','Flower\nDensity',
+                                'Flowers\nper Plant','Pods\nper Plant','Seeds\nper Pod','Seed\nSize'),
+                         x=c(0,1,0.5,0.5,
+                             2.5,0,1,
+                             3.5,4,2.5,3.5),
+                         y=c(4,4,3,2,
+                             0,1,1,
+                             0,1,3,2))
+
+
+#Specify model
+seedDAG <- dagify(plDens ~ hbeeDist,
+                  plSize ~ plDens + hbeeDist,
+                  flDens ~ hbeeDist,
+                  hbeeVis ~ flDens + hbeeDist + lbeeDist + cent,
+                  lbeeVis ~ flDens + hbeeDist + lbeeDist + cent,
+                  pollen ~ hbeeVis  + lbeeVis + cent + hbeeDist + flDens,
+                  flwCount ~ plSize + cent + flwSurv,
+                  flwSurv ~ pollen + plSize + cent + hbeeDist + lbeeDist + flDens,
+                  seedCount ~ pollen + plSize + cent + hbeeDist + flDens + flSurv,
+                  seedWeight ~ pollen + seedCount + plSize + plDens + lbeeDist,
+                  coords= list(x = setNames(nodeCoords$x,nodeCoords$name),
+                               y = setNames(nodeCoords$y,nodeCoords$name)),
+                  labels=setNames(nodeCoords$labs,nodeCoords$name)
+)
+
 
 # Dagitty claims list for seed fields -------------------------------------
 

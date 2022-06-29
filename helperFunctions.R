@@ -15,7 +15,7 @@ parTable <- function(x){
   require(dplyr); require(tidyr)
   if(is.null(x)) return(NA)
   n <- names(x) #Model parameters
-  n <- n[(!grepl('(\\[[0-9]+,*[0-9]*\\]|lp)',n))|grepl('[sS]igma',n)] #Drops parameter vectors, unless name contains "sigma" (variance term)
+  n <- n[(!grepl('(\\[[0-9]+,*[0-9]*\\]|lp)',n))|grepl('([sS]igma|slope)',n)] #Drops parameter vectors, unless name contains "sigma" (variance term) or "slope"
   n <- n[!grepl('_miss',n)] #Gets rid of imputed values
   
   parTable <- summary(x,pars=n)$summary %>% 
@@ -200,7 +200,7 @@ PPplots <- function(mod,actual=NULL,pars=c('pred','resid','predResid'),main='',i
 
 #Plot of random intercepts
 compareRE <- function(mod,parSet,colNum=1,alpha=1){
-  
+  if(is.null(mod)) stop('Model not found')
   pars <- extract(mod,pars=parSet)[[1]]
   
   if(length(dim(pars))>2){

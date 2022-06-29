@@ -161,16 +161,16 @@ transformed data {
 
 parameters {
 	// Flower count (per plant) - random effects at plot level weren't converging
-	real intFlwCount; //Intercept
-	real slopePlSizeFlwCount; //Slope of plant size
-	real slopeCentFlwCount; //Effect of bay center
-	real slopeFlwSurvFlwCount; //Effect of flower survival on flower count
-	real<lower=1e-10> sigmaFlwCount_field; //SD of field-level random effect
-	real<lower=1e-10> sigmaFlwCount_plot; //SD of plot-level random effect
-	vector[Nfield] intFlwCount_field; //Field-level random effect
-	vector[Nplot_F] intFlwCount_plot; //Plot-level random effect
-	real intPhiFlwCount; //Intercept for sigma
-	real slopePlSizePhiFlwCount; //Effect of plant size on sigma
+	real<lower=-10,upper=10>  intFlwCount; //Intercept
+	real<lower=-10,upper=10>  slopePlSizeFlwCount; //Slope of plant size
+	real<lower=-10,upper=10>  slopeCentFlwCount; //Effect of bay center
+	real<lower=-10,upper=10>  slopeFlwSurvFlwCount; //Effect of flower survival on flower count
+	real<lower=1e-10,upper=10> sigmaFlwCount_field; //SD of field-level random effect
+	real<lower=1e-10,upper=10> sigmaFlwCount_plot; //SD of plot-level random effect
+	vector<lower=-10,upper=10>[Nfield] intFlwCount_field; //Field-level random effect
+	vector<lower=-10,upper=10>[Nplot_F] intFlwCount_plot; //Plot-level random effect
+	real<lower=-10,upper=10> intPhiFlwCount; //Intercept for sigma
+	real<lower=-10,upper=10>  slopePlSizePhiFlwCount; //Effect of plant size on sigma
 	// real<lower=1e-05> sigmaPhiFlwCount_field; //Sigma for field level sigma
 	// vector[Nfield] intPhiFlwCount_field; //Field-level random effect for sigma
 }

@@ -162,23 +162,23 @@ transformed data {
 parameters {
  
 	// Flower density per plot
-	vector<lower=4,upper=52>[Nplot_flDensMiss] flDens_miss; //Missing from my fields
-	vector<lower=4,upper=52>[Nplot_flDensMiss_extra] flDens_miss_extra; //Missing from Riley's fields
+	vector<lower=5,upper=51>[Nplot_flDensMiss] flDens_miss; //Missing from my fields
+	vector<lower=5,upper=51>[Nplot_flDensMiss_extra] flDens_miss_extra; //Missing from Riley's fields
 
 	// Pollen deposition
 	// sigmaPolPlot correlated with lp__ (r=0.85), and most intercepts overlap zero
-	real intPol; //Intercept
-	real slopeHbeePol; //Slope of hbee visits
-	real slopeLbeePol; //Slope of lbee visits
-	real slopeCentPol; //Bay center effect
-	real slopeHbeeDistPol; //(log) hbee distance effect
-	real slopeFlDensPol; //Flower density
-	// real slopeStockingHbeeDistPol; //hbee distance:stocking interaction
-	real<lower=1e-10> sigmaPolField; //Sigma for field-level intercept
-	vector[Nfield] intPol_field; //Field-level random intercept
-	real<lower=1e-10> sigmaPolPlot; //Sigma for plot-level intercept
-	vector[Nplot_F] intPol_plot; //Plot-level random intercept
-	real<lower=1e-05> pollenPhi; //Dispersion parameter
+	real<lower=-10,upper=10> intPollen; //Intercept
+	real<lower=-10,upper=10> slopeHbeeVisPollen; //Slope of hbee visits
+	real<lower=-10,upper=10> slopeLbeeVisPollen; //Slope of lbee visits
+	real<lower=-10,upper=10> slopeCentPollen; //Bay center effect
+	real<lower=-10,upper=10> slopeHbeeDistPollen; //(log) hbee distance effect
+	real<lower=-10,upper=10> slopeFlDensPollen; //Flower density
+	// real slopeStockingHbeeDistPollen; //hbee distance:stocking interaction
+	real<lower=1e-10,upper=10> sigmaPollen_field; //Sigma for field-level intercept
+	vector<lower=-10,upper=10>[Nfield] intPollen_field; //Field-level random intercept
+	real<lower=1e-10,upper=10> sigmaPollen_plot; //Sigma for plot-level intercept
+	vector<lower=-10,upper=10>[Nplot_F] intPollen_plot; //Plot-level random intercept
+	real<lower=1e-05,upper=10> phiPollen; //Dispersion parameter
 	
 }
 
@@ -203,38 +203,38 @@ transformed parameters {
 	for(i in 1:Nplot_F){ //Parameters for F plots only
 	  // Pollen per plot = intercept + random field int + random plot int + leafcutter effect + honeybee effect + bay center effect + hbee dist effect
   	// Moved intPol to Nflw loop to center plot level data
-	  pollenMu_plot[i] = intPol_field[plotIndex[plotIndex_F2[i]]] + intPol_plot[i] + //Intercept + field/plot level random effects
-   	  slopeLbeePol*logLbeeVis_all[plotIndex_F2[i]] +  //Effect of (log) leafcutter visits
-    	slopeHbeePol*logHbeeVis_all[plotIndex_F2[i]] +  //Effect of (log) honeybee visits
-    	slopeCentPol*isCent_all[plotIndex_F2[i]] + //Bay center effect
-    	slopeHbeeDistPol*logHbeeDist_all[plotIndex_F2[i]] + //(log) hbee distance effect
-   	  slopeFlDensPol*flDens[plotIndex_F2[i]]; //Flower density
+	  pollenMu_plot[i] = intPollen_field[plotIndex[plotIndex_F2[i]]] + intPollen_plot[i] + //Intercept + field/plot level random effects
+   	  slopeLbeeVisPollen*logLbeeVis_all[plotIndex_F2[i]] +  //Effect of (log) leafcutter visits
+    	slopeHbeeVisPollen*logHbeeVis_all[plotIndex_F2[i]] +  //Effect of (log) honeybee visits
+    	slopeCentPollen*isCent_all[plotIndex_F2[i]] + //Bay center effect
+    	slopeHbeeDistPollen*logHbeeDist_all[plotIndex_F2[i]] + //(log) hbee distance effect
+   	  slopeFlDensPollen*flDens[plotIndex_F2[i]]; //Flower density
 	}
 				
 	for(i in 1:Nflw)
-	  pollenMu[i] = intPol + pollenMu_plot[plotIndex_F[flowerIndex[i]]]; //Assigns plot level pollen mu to Nflw long vector
+	  pollenMu[i] = intPollen + pollenMu_plot[plotIndex_F[flowerIndex[i]]]; //Assigns plot level pollen mu to Nflw long vector
 	
 }
 	
 model {
 
-	pollenCount ~ neg_binomial_2_log(pollenMu,pollenPhi); //Pollination rate
+	pollenCount ~ neg_binomial_2_log(pollenMu,phiPollen); //Pollination rate
 			
 	// Priors
 	
 	// Pollen deposition - informative priors
-	intPol ~ normal(3.1,5); //Intercept
-	slopeHbeePol ~ normal(0,5); //hbee Visitation effect
-	slopeLbeePol ~ normal(0,5); //lbee Visitation effect
-	slopeCentPol~ normal(0,5); //Bay center effect
-	slopeHbeeDistPol ~ normal(0,5); //(log) hbee distance effect
-	// slopeStockingHbeeDistPol ~ normal(0,5); //Stocking:hbee distance interaction
-	slopeFlDensPol ~ normal(0,5); //Flower density
-	sigmaPolField ~ gamma(1,1); //Sigma for random field
-	sigmaPolPlot ~ gamma(1,1); //Sigma for random plot
-	pollenPhi ~ gamma(1,1); //Dispersion parameter
-	intPol_field ~ normal(0,sigmaPolField); //Random field int
-	intPol_plot ~ normal(0,sigmaPolPlot); //Random plot int
+	intPollen ~ normal(3.1,5); //Intercept
+	slopeHbeeVisPollen ~ normal(0,5); //hbee Visitation effect
+	slopeLbeeVisPollen ~ normal(0,5); //lbee Visitation effect
+	slopeCentPollen~ normal(0,5); //Bay center effect
+	slopeHbeeDistPollen ~ normal(0,5); //(log) hbee distance effect
+	// slopeStockingHbeeDistPollen ~ normal(0,5); //Stocking:hbee distance interaction
+	slopeFlDensPollen ~ normal(0,5); //Flower density
+	sigmaPollen_field ~ gamma(1,1); //Sigma for random field
+	sigmaPollen_plot ~ gamma(1,1); //Sigma for random plot
+	phiPollen ~ gamma(1,1); //Dispersion parameter
+	intPollen_field ~ normal(0,sigmaPollen_field); //Random field int
+	intPollen_plot ~ normal(0,sigmaPollen_plot); //Random plot int
 }
 
 generated quantities {
@@ -247,7 +247,7 @@ generated quantities {
 	for(i in 1:Nflw){
   	//pollen deposition
   	pollen_resid[i]= exp(pollenMu[i]) - pollenCount[i]; //Residual for actual value
-  	predPollenCount[i] = neg_binomial_2_log_rng(pollenMu[i],pollenPhi); //Simulate pollen counts
+  	predPollenCount[i] = neg_binomial_2_log_rng(pollenMu[i],phiPollen); //Simulate pollen counts
   	predPollen_resid[i] = exp(pollenMu[i]) - predPollenCount[i]; //Residual for predicted
 	}
 }

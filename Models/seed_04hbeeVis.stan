@@ -161,22 +161,22 @@ transformed data {
 
 parameters {
 	// Flower density per plot
-	vector<lower=4,upper=52>[Nplot_flDensMiss] flDens_miss; //Missing from my fields
-	vector<lower=4,upper=52>[Nplot_flDensMiss_extra] flDens_miss_extra; //Missing from Riley's fields
+	vector<lower=5,upper=51>[Nplot_flDensMiss] flDens_miss; //Missing from my fields
+	vector<lower=5,upper=51>[Nplot_flDensMiss_extra] flDens_miss_extra; //Missing from Riley's fields
  
 	// hbee Visitation - random effects at field level weren't converging
-	real<lower=-5,upper=5> intVisitHbee; //Intercept
-	real<lower=-5,upper=5> slopeFlDensHbee; //Slope of flower density
-	real<lower=-5,upper=5> slopeHbeeDistHbee; //Slope of hbee distance
-	real<lower=-5,upper=5> slopeLbeeDistHbee; //Slope of leafcutter distance
-	real<lower=-5,upper=5> slopeLbeeHbeeDistHbee; //Interaction b/w leafcutter & honeybee distance
-	real<lower=-5,upper=5> slopeLbeeVisHbee; //Direct effect of leafcutter visitation
-	real<lower=-5,upper=5> slopeMBayHbee; //Effect of male bay
-	real<lower=-5,upper=5> slopeCentHbee; //Effect of bay position (center)
-	real<lower=1e-5,upper=3> visitHbeePhi; //Dispersion parameter
-	real<lower=0,upper=1> zeroVisHbeeTheta; //Zero-inflation parameter - chance that zero is not from neg.bin.
-	real<lower=1e-5,upper=3> sigmaHbeeVis_field; //Sigma for field
-	vector[Nfield_all] intVisitHbee_field; //Sigma for field
+	real<lower=-10,upper=10> intHbeeVis; //Intercept
+	real<lower=-10,upper=10> slopeFlDensHbeeVis; //Slope of flower density
+	real<lower=-10,upper=10> slopeHbeeDistHbeeVis; //Slope of hbee distance
+	real<lower=-10,upper=10> slopeLbeeDistHbeeVis; //Slope of leafcutter distance
+	// real<lower=-10,upper=10> slopeLbeeHbeeDistHbee; //Interaction b/w leafcutter & honeybee distance
+	// real<lower=-10,upper=10> slopeLbeeVisHbeeVis; //Direct effect of leafcutter visitation
+	// real<lower=-10,upper=10> slopeMBayHbee; //Effect of male bay
+	real<lower=-10,upper=10> slopeCentHbeeVis; //Effect of bay position (center)
+	real<lower=1e-5,upper=10> phiHbeeVis; //Dispersion parameter
+	real<lower=0,upper=1> thetaHbeeVis; //Zero-inflation parameter - chance that zero is not from neg.bin.
+	real<lower=1e-5,upper=10> sigmaHbeeVis_field; //Sigma for field
+	vector<lower=-10,upper=10>[Nfield_all] intHbeeVis_field; //Random intercept for field
 
 }
 
@@ -201,16 +201,16 @@ transformed parameters {
 	for(i in 1:Nplot_all){	//Parameters for all fields, all plots
 			
 		// Expected value for hbee visits = intercept + random int + distance + bay position + bay type + time offset
-		visitMu_hbee[i] = intVisitHbee + //Intercept
+		visitMu_hbee[i] = intHbeeVis + //Intercept
 		  logTime_all[i] + //log-time offset
-		  intVisitHbee_field[plotIndex_all[i]] + //Random intercepts
-			slopeHbeeDistHbee*logHbeeDist_all[i] +  //log hbee distance			
-			slopeLbeeDistHbee*logLbeeDist_all[i] + //log lbee distance
-			slopeLbeeHbeeDistHbee*logHbeeDist_all[i]*logLbeeDist_all[i] + //log Hbee: log lbee distance interaction
-			slopeLbeeVisHbee*logLbeeVis_all[i] + //Direct effect of (log) leafcutter visitation						
-			slopeCentHbee*isCent_all[i] + //bay center effect
-			slopeFlDensHbee*flDens[i] + //Flower density effect
-			slopeMBayHbee*isMBay_all[i]; //M bay effect 	
+		  intHbeeVis_field[plotIndex_all[i]] + //Random intercepts
+			slopeHbeeDistHbeeVis*logHbeeDist_all[i] +  //log hbee distance			
+			slopeLbeeDistHbeeVis*logLbeeDist_all[i] + //log lbee distance
+			// slopeLbeeHbeeDistHbee*logHbeeDist_all[i]*logLbeeDist_all[i] + //log Hbee: log lbee distance interaction
+			// slopeLbeeVisHbeeVis*logLbeeVis_all[i] + //Direct effect of (log) leafcutter visitation						
+			slopeCentHbeeVis*isCent_all[i] + //bay center effect
+			slopeFlDensHbeeVis*flDens[i]; //Flower density effect
+			// slopeMBayHbee*isMBay_all[i]; //M bay effect 	
 	}	
 	
 }
@@ -219,32 +219,32 @@ model {
 	vector[2] bernLL_hbee; //pre-calculate LL for zero inflation process
 	
 	//Hbee LL
-	bernLL_hbee[1]=bernoulli_lpmf(0|zeroVisHbeeTheta); //LL of no extra zero
-	bernLL_hbee[2]=bernoulli_lpmf(1|zeroVisHbeeTheta); //LL of extra zero
+	bernLL_hbee[1]=bernoulli_lpmf(0|thetaHbeeVis); //LL of no extra zero
+	bernLL_hbee[2]=bernoulli_lpmf(1|thetaHbeeVis); //LL of extra zero
 	
 	// Likelihood for hbee and lbee visits
 	for(i in 1:Nplot_all){ 
 		if(hbeeVis_all[i]==0) //Zero-inflated negbin for hbee visitation frequency
-			target += log_sum_exp(bernLL_hbee[2],bernLL_hbee[1]+neg_binomial_2_log_lpmf(0|visitMu_hbee[i],visitHbeePhi));
+			target += log_sum_exp(bernLL_hbee[2],bernLL_hbee[1]+neg_binomial_2_log_lpmf(0|visitMu_hbee[i],phiHbeeVis));
 		else
-			target += bernLL_hbee[1]+neg_binomial_2_log_lpmf(hbeeVis_all[i]|visitMu_hbee[i],visitHbeePhi);
+			target += bernLL_hbee[1]+neg_binomial_2_log_lpmf(hbeeVis_all[i]|visitMu_hbee[i],phiHbeeVis);
 	}
 		
 	// Priors
 	
 	// Hbee Visitation - informative priors
-	intVisitHbee ~ normal(0,5); //Intercept	
-	slopeHbeeDistHbee ~ normal(0,5); //Slope of distance effect on hbee visits	
-	slopeLbeeDistHbee ~ normal(0,5); //Effect of leafcutter shelter distance	
-	slopeLbeeHbeeDistHbee ~ normal(0,5); //Hbee-lbee distance interaction	
-	slopeLbeeVisHbee ~ normal(0,5); //Direct effect of (log) leafcutter visitation
-	slopeCentHbee ~ normal(0,5); //Effect of center of bay
-	slopeMBayHbee ~ normal(0,5); //Effect of male bay
-	slopeFlDensHbee ~ normal(0,5); //Flower density effect	
-	visitHbeePhi ~ gamma(1,1); //Dispersion parameter		
-	zeroVisHbeeTheta ~ beta(2,2); // Zero-inflation parameter
+	intHbeeVis ~ normal(0,5); //Intercept	
+	slopeHbeeDistHbeeVis ~ normal(0,5); //Slope of distance effect on hbee visits	
+	slopeLbeeDistHbeeVis ~ normal(0,5); //Effect of leafcutter shelter distance	
+	// slopeLbeeHbeeDistHbee ~ normal(0,5); //Hbee-lbee distance interaction	
+	// slopeLbeeVisHbeeVis ~ normal(0,5); //Direct effect of (log) leafcutter visitation
+	slopeCentHbeeVis ~ normal(0,5); //Effect of center of bay
+	// slopeMBayHbee ~ normal(0,5); //Effect of male bay
+	slopeFlDensHbeeVis ~ normal(0,5); //Flower density effect	
+	phiHbeeVis ~ gamma(1,1); //Dispersion parameter		
+	thetaHbeeVis ~ beta(2,2); // Zero-inflation parameter
 	sigmaHbeeVis_field ~ gamma(1,1); //Sigma for field
-	intVisitHbee_field ~ normal(0,sigmaHbeeVis_field); //Random intercept for field
+	intHbeeVis_field ~ normal(0,sigmaHbeeVis_field); //Random intercept for field
 }
 
 generated quantities {
@@ -254,12 +254,12 @@ generated quantities {
 	real predHbeeVis_resid[Nplot_all]; //Residual of generated 
 	for(i in 1:Nplot_all){
 		//hbee visits - ZI neg bin
-		hbeeVis_resid[i]=hbeeVis_all[i]-(exp(visitMu_hbee[i])*(1-zeroVisHbeeTheta)); //Residual for actual value x offset
-		if(bernoulli_rng(zeroVisHbeeTheta)==1) //If zeroVisHbeeTheta generates an extra zero
+		hbeeVis_resid[i]=hbeeVis_all[i]-(exp(visitMu_hbee[i])*(1-thetaHbeeVis)); //Residual for actual value x offset
+		if(bernoulli_rng(thetaHbeeVis)==1) //If thetaHbeeVis generates an extra zero
 			predHbeeVis_all[i] = 0; //Predicted value is automatically zero
 		else //Otherwise
-			predHbeeVis_all[i] = neg_binomial_2_log_rng(visitMu_hbee[i],visitHbeePhi); //Predicted value drawn from neg.bin		
-		predHbeeVis_resid[i]=predHbeeVis_all[i]-(exp(visitMu_hbee[i])*(1-zeroVisHbeeTheta)); //Residual for predicted value
+			predHbeeVis_all[i] = neg_binomial_2_log_rng(visitMu_hbee[i],phiHbeeVis); //Predicted value drawn from neg.bin		
+		predHbeeVis_resid[i]=predHbeeVis_all[i]-(exp(visitMu_hbee[i])*(1-thetaHbeeVis)); //Residual for predicted value
 	}
 
 }
