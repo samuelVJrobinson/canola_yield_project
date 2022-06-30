@@ -1,63 +1,40 @@
-Filename,Independ.Claim,      Estimate,   Std.Error,     DF,   Crit.Value,      P.Value,Sig,StanParam,StanPval,StanSig,Notes
-,,,,,,,,,,,
-,plDens ~ isCent | hbeeDist,,,,,,,,,,
-,plDens ~ isMbay | hbeeDist,,,,,,,,,,
-,plDens ~ lbeeDist | hbeeDist,,,,,,,,,,
-,plDens ~ lbeeStocking | hbeeDist,,,,,,,,,,
-,,,,,,,,,,,
-,"flDens ~ isCent | hbeeDist, isMbay",,,,,,,,,,
-,"flDens ~ lbeeDist | hbeeDist, isMbay",,,,,,,,,,
-,"flDens ~ lbeeStocking | hbeeDist, isMbay",,,,,,,,,,
-,"flDens ~ plDens | hbeeDist, isMbay",,,,,,,,,,
-,"flDens ~ plSize | hbeeDist, isMbay, plDens",,,,,,,,,,
-,,,,,,,,,,,
-,"plSize ~ isCent | hbeeDist, plDens",,,,,,,,,,
-,"plSize ~ isMbay | hbeeDist, plDens",,,,,,,,,,
-,"plSize ~ lbeeDist | hbeeDist, plDens",,,,,,,,,,
-,"plSize ~ lbeeStocking | hbeeDist, plDens",,,,,,,,,,
-,,,,,,,,,,,
-,"lbeeVis ~ plDens | flDens, hbeeDist, isCent, isMbay, lbeeDist, lbeeStocking",,,,,,,,,,
-,"lbeeVis ~ plSize | flDens, hbeeDist, isCent, isMbay, lbeeDist, lbeeStocking, plDens",,,,,,,,,,
-,,,,,,,,,,,
-,"hbeeVis ~ lbeeStocking | flDens, hbeeDist, isCent, isMbay, lbeeDist, lbeeVis",,,,,,,,,,
-,"hbeeVis ~ plDens | flDens, hbeeDist, isCent, isMbay, lbeeDist, lbeeVis",,,,,,,,,,
-,"hbeeVis ~ plSize | flDens, hbeeDist, isCent, isMbay, lbeeDist, lbeeVis, plDens",,,,,,,,,,
-,,,,,,,,,,,
-,"pollen ~ isMbay | flDens, hbeeDist, hbeeVis, isCent, lbeeVis",,,,,,,,,,
-,"pollen ~ lbeeDist | flDens, hbeeDist, hbeeVis, isCent, lbeeVis",,,,,,,,,,
-,"pollen ~ lbeeStocking | flDens, hbeeDist, hbeeVis, isCent, lbeeVis",,,,,,,,,,
-,"pollen ~ plDens | flDens, hbeeDist, hbeeVis, isCent, lbeeVis",,,,,,,,,,
-,"pollen ~ plSize | flDens, hbeeDist, hbeeVis, isCent, lbeeVis, plDens",,,,,,,,,,
-,,,,,,,,,,,
-,"flwSurv ~ isMbay | flDens, hbeeDist, isCent, lbeeDist, plSize, pollen",,,,,,,,,,
-,"flwSurv ~ lbeeStocking | flDens, hbeeDist, isCent, lbeeDist, plSize, pollen",,,,,,,,,,
-,"flwSurv ~ plDens | flDens, hbeeDist, isCent, lbeeDist, plSize, pollen",,,,,,,,,,
-,"flwSurv ~ lbeeVis | flDens, hbeeDist, isCent, isMbay, lbeeDist, lbeeStocking, plSize, pollen",,,,,,,,,,
-,"flwSurv ~ hbeeVis | flDens, hbeeDist, isCent, isMbay, lbeeDist, lbeeVis, plSize, pollen",,,,,,,,,,
-,,,,,,,,,,,
-,"flwCount ~ hbeeDist | isCent, plSize, flwSurv",,,,,,,,,,
-,"flwCount ~ isMbay | isCent, plSize, flwSurv",,,,,,,,,,
-,"flwCount ~ lbeeDist | isCent, plSize, flwSurv",,,,,,,,,,
-,"flwCount ~ lbeeStocking | isCent, plSize, flwSurv",,,,,,,,,,
-,"flwCount ~ plDens | hbeeDist, isCent, plSize, flwSurv",,,,,,,,,,
-,"flwCount ~ flDens | hbeeDist, isCent, isMbay, plSize, flwSurv",,,,,,,,,,
-,"flwCount ~ lbeeVis | flDens, hbeeDist, isCent, isMbay, lbeeDist, lbeeStocking, plSize, flwSurv",,,,,,,,,,
-,"flwCount ~ hbeeVis | flDens, hbeeDist, isCent, isMbay, lbeeDist, lbeeVis, plSize, flwSurv",,,,,,,,,,
-,"flwCount ~ pollen | flDens, hbeeDist, hbeeVis, isCent, lbeeVis, plSize, flwSurv",,,,,,,,,,
-,"flwCount ~ seedCount | flDens, hbeeDist, isCent, plSize, pollen, flwSurv",,,,,,,,,,
-,,,,,,,,,,,
-,"seedCount ~ isMbay | flDens, hbeeDist, isCent, plSize, pollen, flwSurv",,,,,,,,,,
-,"seedCount ~ lbeeDist | flDens, hbeeDist, isCent, plSize, pollen, flwSurv",,,,,,,,,,
-,"seedCount ~ lbeeStocking | flDens, hbeeDist, isCent, plSize, pollen, flwSurv",,,,,,,,,,
-,"seedCount ~ plDens | flDens, hbeeDist, isCent, plSize, pollen, flwSurv",,,,,,,,,,
-,"seedCount ~ lbeeVis | flDens, hbeeDist, isCent, isMbay, lbeeDist, lbeeStocking, plSize, pollen, flwSurv",,,,,,,,,,
-,"seedCount ~ hbeeVis | flDens, hbeeDist, isCent, isMbay, lbeeDist, lbeeVis, plSize, pollen, flwSurv",,,,,,,,,,
-,,,,,,,,,,,
-,"seedWeight ~ hbeeDist | lbeeDist, lbeeStocking, plDens, plSize, pollen, seedCount",,,,,,,,,,
-,"seedWeight ~ isCent | lbeeDist, lbeeStocking, plDens, plSize, pollen, seedCount",,,,,,,,,,
-,"seedWeight ~ isMbay | lbeeDist, lbeeStocking, plDens, plSize, pollen, seedCount",,,,,,,,,,
-,"seedWeight ~ flDens | hbeeDist, isMbay, lbeeDist, lbeeStocking, plDens, plSize, pollen, seedCount",,,,,,,,,,
-,"seedWeight ~ lbeeVis | flDens, hbeeDist, isCent, isMbay, lbeeDist, lbeeStocking, plDens, plSize, pollen, seedCount",,,,,,,,,,
-,"seedWeight ~ hbeeVis | flDens, hbeeDist, isCent, isMbay, lbeeDist, lbeeStocking, lbeeVis, plDens, plSize, pollen, seedCount",,,,,,,,,,
-,"seedWeight ~ flwSurv | flDens, hbeeDist, isCent, lbeeDist, lbeeStocking, plDens, plSize, pollen, seedCount",,,,,,,,,,
-,"seedWeight ~ flwCount | isCent, lbeeDist, lbeeStocking, plDens, plSize, pollen, seedCount, flwSurv",,,,,,,,,,
+Filename,Independ.Claim,param,mean,sd,Z,median,lwr,upr,pval,n_eff,Rhat,Notes
+seed_claim01,flDens ~ cent + (hbeeDist),claim01_slopeCentFlDens,0.292,0.514,0.567,0.283,-0.707,1.278,0.5708,11923,0.999,NA
+seed_claim02,flDens ~ lbeeDist + (hbeeDist),claim02_slopeLbeeDistFlDens,0.026,0.24,0.108,0.026,-0.437,0.492,0.9137,8422,1,NA
+seed_claim03,flDens ~ plDens + (hbeeDist),claim03_slopePlDensFlDens,-0.284,0.603,-0.471,-0.281,-1.462,0.87,0.6378,2358,1.001,NA
+seed_claim04,flDens ~ plSize + (hbeeDist),claim04_slopePlSizeFlDens,0.392,0.747,0.525,0.381,-1.056,1.86,0.5999,1775,1,NA
+seed_claim05,plDens ~ cent + (hbeeDist),claim05_slopeCentPlDens,-0.025,0.039,-0.636,-0.025,-0.102,0.051,0.5248,9628,1,NA
+seed_claim06,plDens ~ lbeeDist + (hbeeDist),claim06_slopeLbeeDistPlDens,-0.02,0.045,-0.43,-0.02,-0.107,0.071,0.667,7300,1,NA
+seed_claim07,plSize ~ cent + (hbeeDist + plDens),claim07_slopeCentPlSize,0.033,0.051,0.657,0.034,-0.066,0.132,0.511,11053,1,NA
+seed_claim08,plSize ~ lbeeDist + (hbeeDist + plDens),claim08_slopeLbeeDistPlSize,-0.05,0.052,-0.953,-0.05,-0.154,0.053,0.3406,7328,1,NA
+seed_claim09,hbeeVis ~ plDens + (cent + flDens + hbeeDist + lbeeDist),claim09_slopePlDensHbeeVis,0.236,0.292,0.808,0.232,-0.337,0.803,0.419,3334,1,NA
+seed_claim10,hbeeVis ~ plSize + plDens + (cent + flDens + hbeeDist + lbeeDist),claim10_slopePlSizeHbeeVis,-2.117,1.524,-1.389,-2.06,-5.286,0.798,0.1648,310,1.023,Bad traces of field-level sigma
+seed_claim11,hbeeVis ~ lbeeVis + (cent + flDens + hbeeDist + lbeeDist),claim11_slopeLbeeVisHbeeVis,-0.02,0.059,-0.344,-0.021,-0.136,0.096,0.7308,3845,1,NA
+seed_claim12,lbeeVis ~ plDens + (cent + flDens + hbeeDist + lbeeDist),claim12_slopePlDensLbeeVis,-0.129,0.4,-0.321,-0.131,-0.941,0.661,0.7482,3268,1.001,NA
+seed_claim13,lbeeVis ~ plSize + plDens + (cent + flDens + hbeeDist + lbeeDist),claim13_slopePlSizeLbeeVis,-2.195,2.357,-0.931,-2.208,-6.849,2.391,0.3517,1079,1.005,NA
+seed_claim14,pollen ~ lbeeDist + (cent + flDens + hbeeDist + hbeeVis + lbeeVis),NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+seed_claim15,pollen ~ plDens + (cent + flDens + hbeeDist + hbeeVis + lbeeVis),NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+seed_claim16,pollen ~ plSize + plDens + (cent + flDens + hbeeDist + hbeeVis + lbeeVis),NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+seed_claim17,flwSurv ~ plDens + (cent + flDens + hbeeDist + lbeeDist + plSize + pollen),NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+seed_claim18,flwSurv ~ hbeeVis + (cent + flDens + hbeeDist + lbeeDist + plSize + pollen),NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+seed_claim19,flwSurv ~ lbeeVis + (cent + flDens + hbeeDist + lbeeDist + plSize + pollen),NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+seed_claim20,flwCount ~ hbeeDist + (cent + flwSurv + plSize),NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+seed_claim21,flwCount ~ lbeeDist + (cent + flwSurv + plSize),NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+seed_claim22,flwCount ~ flDens + hbeeDist + (cent + flwSurv + plSize),NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+seed_claim23,flwCount ~ plDens + hbeeDist + (cent + flwSurv + plSize),NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+seed_claim24,flwCount ~ hbeeVis + flDens + hbeeDist + lbeeDist + (cent + flwSurv + plSize),NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+seed_claim25,flwCount ~ lbeeVis + flDens + hbeeDist + lbeeDist + (cent + flwSurv + plSize),NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+seed_claim26,flwCount ~ pollen + flDens + hbeeDist + hbeeVis + lbeeVis + (cent + flwSurv + plSize),NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+seed_claim27,flwCount ~ seedCount + flDens + hbeeDist + pollen + (cent + flwSurv + plSize),NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+seed_claim28,seedCount ~ lbeeDist + (cent + flDens + flwSurv + hbeeDist + plSize + pollen),NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+seed_claim29,seedCount ~ plDens + (cent + flDens + flwSurv + hbeeDist + plSize + pollen),NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+seed_claim30,seedCount ~ hbeeVis + lbeeDist + (cent + flDens + flwSurv + hbeeDist + plSize + pollen),NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+seed_claim31,seedCount ~ lbeeVis + lbeeDist + (cent + flDens + flwSurv + hbeeDist + plSize + pollen),NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+seed_claim32,seedWeight ~ cent + (lbeeDist + plDens + plSize + pollen + seedCount),NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+seed_claim33,seedWeight ~ hbeeDist + (lbeeDist + plDens + plSize + pollen + seedCount),NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+seed_claim34,seedWeight ~ lbeeDist + (lbeeDist + plDens + plSize + pollen + seedCount),NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+seed_claim35,seedWeight ~ flDens + hbeeDist + (lbeeDist + plDens + plSize + pollen + seedCount),NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+seed_claim36,seedWeight ~ hbeeVis + cent + flDens + hbeeDist + (lbeeDist + plDens + plSize + pollen + seedCount),NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+seed_claim37,seedWeight ~ lbeeVis + cent + flDens + hbeeDist + (lbeeDist + plDens + plSize + pollen + seedCount),NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+seed_claim38,seedWeight ~ flwSurv + cent + flDens + hbeeDist + (lbeeDist + plDens + plSize + pollen + seedCount),NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+seed_claim39,seedWeight ~ flwCount + cent + flwSurv + (lbeeDist + plDens + plSize + pollen + seedCount),NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA

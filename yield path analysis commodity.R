@@ -243,7 +243,7 @@ library(ggdag)
 nodeCoords <- data.frame(name=c('numHives','hbeeDist','hbeeVis','pollen',
                                 'plSize','plDens','flDens',
                                 'flwCount','flwSurv','seedCount','seedWeight'),
-                         labs=c('Number\nof Hives','Distance','Honey bee\nVisitation','Pollen\nCount',
+                         labs=c('Number\nof Hives','Distance','Honey bee\nVisits','Pollen\nCount',
                                 'Plant\nSize','Plant\nDensity','Flower\nDensity',
                                 'Flowers\nper Plant','Pods\nper Plant','Seeds\nper Pod','Seed\nSize'),
                          x=c(0,1,0.5,0.5,

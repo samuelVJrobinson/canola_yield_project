@@ -1,6 +1,6 @@
 #CODE USED IN ANALYSIS OF INSECT VISITATION, NECTAR, AND POLLEN DEPOSITION IN SEED CANOLA FIELDS (2014+2015)
 
-# Libraries and ggplot theme ---------------------------------------------------------
+# Libraries, functions, and seed DAG  ---------------------------------------------------------
 library(ggplot2)
 library(dplyr)
 library(tidyr)
@@ -28,6 +28,38 @@ rm(prestheme)
 # setwd('~/Documents/canola_yield_project') #Galpern machine path
 
 source('../helperFunctions.R')
+
+library(ggdag)
+nodeCoords <- data.frame(name=c('numHives','hbeeDist','lbeeDist','hbeeVis','lbeeVis','pollen',
+                                'plSize','plDens','flDens','cent',
+                                'flwCount','flwSurv','seedCount','seedWeight'),
+                         labs=c('Number\nof Hives','Honey bee\nDistance','Leafcutter\nDistance',
+                                'Honey bee\nVisits','Leafcutter\nVisits','Pollen\nCount',
+                                'Plant\nSize','Plant\nDensity','Flower\nDensity','Bay Centre',
+                                'Flowers\nper Plant','Pods\nper Plant','Seeds\nper Pod','Seed\nSize'),
+                         x=c(0,0,1,0,1,0.5,
+                             2.5,0,1,0.5,
+                             3.5,4,2.5,3.5),
+                         y=c(4,4,4,3,3,2,
+                             0,1,1,0.5,
+                             0,1,3,2))
+
+
+#Specify model
+seedDAG <- dagify(plDens ~ hbeeDist,
+                  plSize ~ plDens + hbeeDist,
+                  flDens ~ hbeeDist,
+                  hbeeVis ~ flDens + hbeeDist + lbeeDist + cent,
+                  lbeeVis ~ flDens + hbeeDist + lbeeDist + cent,
+                  pollen ~ hbeeVis  + lbeeVis + cent + hbeeDist + flDens,
+                  flwCount ~ plSize + cent + flwSurv,
+                  flwSurv ~ pollen + plSize + cent + hbeeDist + lbeeDist + flDens,
+                  seedCount ~ pollen + plSize + cent + hbeeDist + flDens + flwSurv,
+                  seedWeight ~ pollen + seedCount + plSize + plDens + lbeeDist,
+                  coords= list(x = setNames(nodeCoords$x,nodeCoords$name),
+                               y = setNames(nodeCoords$y,nodeCoords$name)),
+                  labels=setNames(nodeCoords$labs,nodeCoords$name)
+)
 
 # Load in data ----------------------
 
@@ -235,7 +267,7 @@ modList[5] <- stan(file=modFiles[5],data=datalist,iter=2000,chains=4,control=lis
 modList[6] <- stan(file=modFiles[6],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #Pod count (flw survival) per plant
 modList[7] <- stan(file=modFiles[7],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #Seeds per pod
 modList[8] <- stan(file=modFiles[8],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #Weight per seed
-modList[9] <- stan(file=modFiles[9],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #Yield
+modList[9] <- stan(file=modFiles[9],data=datalist,iter=3000,chains=4,control=list(adapt_delta=0.8),init=0) #Yield
 beepr::beep(1)
 
 #Traceplots
@@ -319,53 +351,113 @@ PPplots(modList[[9]],log(datalist$yield),c('predYield','yield_resid','predYield_
 
 # Path diagram ------------------------------------------------------------
 
-library(ggdag)
-nodeCoords <- data.frame(name=c('numHives','hbeeDist','hbeeVis','pollen',
-                                'plSize','plDens','flDens',
-                                'flwCount','flwSurv','seedCount','seedWeight'),
-                         labs=c('Number\nof Hives','Distance','Honey bee\nVisitation','Pollen\nCount',
-                                'Plant\nSize','Plant\nDensity','Flower\nDensity',
-                                'Flowers\nper Plant','Pods\nper Plant','Seeds\nper Pod','Seed\nSize'),
-                         x=c(0,1,0.5,0.5,
-                             2.5,0,1,
-                             3.5,4,2.5,3.5),
-                         y=c(4,4,3,2,
-                             0,1,1,
-                             0,1,3,2))
+load('modSummaries_seed.Rdata')
 
+pathCoefs <- modSummaries_seed %>% #Get path coefficients
+  bind_rows(.id='to') %>% 
+  transmute(to,name=param,Z,pval) %>% 
+  filter(to!='yield',!grepl('(int|sigma|lambda|Phi|phi|rho|nu|theta)',name)) %>% 
+  mutate(to=case_when(
+    to=='flDens' & grepl('PlDens$',name) ~ 'plDens',
+    to=='flDens' & grepl('PlSize$',name) ~ 'plSize',
+    TRUE ~ gsub('avg','seed',to)
+  )) %>% 
+  mutate(name=gsub('slope','',name)) %>% 
+  filter(mapply(grepl,capFirst(to),name)) %>% 
+  mutate(name=mapply(gsub,capFirst(to),'',name)) %>% 
+  mutate(name=capFirst(name,TRUE)) 
 
-#Specify model
-seedDAG <- dagify(plDens ~ hbeeDist,
-                  plSize ~ plDens + hbeeDist,
-                  flDens ~ hbeeDist,
-                  hbeeVis ~ flDens + hbeeDist + lbeeDist + cent,
-                  lbeeVis ~ flDens + hbeeDist + lbeeDist + cent,
-                  pollen ~ hbeeVis  + lbeeVis + cent + hbeeDist + flDens,
-                  flwCount ~ plSize + cent + flwSurv,
-                  flwSurv ~ pollen + plSize + cent + hbeeDist + lbeeDist + flDens,
-                  seedCount ~ pollen + plSize + cent + hbeeDist + flDens + flSurv,
-                  seedWeight ~ pollen + seedCount + plSize + plDens + lbeeDist,
-                  coords= list(x = setNames(nodeCoords$x,nodeCoords$name),
-                               y = setNames(nodeCoords$y,nodeCoords$name)),
-                  labels=setNames(nodeCoords$labs,nodeCoords$name)
-)
+tidySeedDAG <- seedDAG %>% #Create tidy dagitty set
+  tidy_dagitty() 
+
+# ggplot(tidySeedDAG,aes(x = x, y = y, xend = xend, yend = yend))+
+#   geom_dag_edges() +
+#   geom_dag_text(col='black') +
+#   theme_dag_blank()
+
+tidySeedDAG$data <- tidySeedDAG$data %>% #Match coefs to dagitty set
+  rename(xstart=x,ystart=y) %>% 
+  full_join(x=pathCoefs,y=.,by=c('to','name')) %>% 
+  mutate(isNeg=Z<0,isSig=pval<0.05) %>% 
+  mutate(L=sqrt(abs(Z)),1) %>% 
+  mutate(edgeLab=ifelse(isSig,as.character(sign(Z)*round(L,1)),'')) %>% 
+  mutate(C=ifelse(isNeg,'red','black')) %>% 
+  mutate(A=ifelse(isSig,1,0.1))
+
+ggplot(tidySeedDAG$data,aes(x = xstart, y = ystart, xend = xend, yend = yend))+
+  annotate('text',x=0.5,y=4.5+0.1,label='Plot Level',size=5)+
+  annotate('rect',xmin=-0.5,ymin=0,xmax=1.5,ymax=4.5,fill=NA,col='black',
+           linetype='dashed',linejoin='round',size=1)+
+  
+  annotate('text',x=3.5,y=3.5+0.1,label='Plant Level',size=5)+
+  annotate('rect',xmin=2,ymin=-0.5,xmax=4.5,ymax=3.5,fill=NA,col='black',
+           linetype='dashed',linejoin='round',size=1)+
+  
+  geom_dag_edges(aes(edge_width=L,edge_colour=C,edge_alpha=A),
+                 arrow_directed=arrow(angle=20,type='open')) +
+  geom_dag_edges(aes(label=edgeLab),label_pos=0.45,edge_alpha=0,label_size=6,fontface='bold',label_colour ='black') +
+  geom_dag_edges(aes(label=edgeLab),label_pos=0.45,edge_alpha=0,label_size=6,fontface='plain',label_colour='white') +
+  geom_dag_label_repel(aes(label=label),col='black',force=0) +
+  theme_dag_blank()
 
 
 # Dagitty claims list for seed fields -------------------------------------
 
-seedDAG <- list(plDens ~ hbeeDist,
-                plSize ~ hbeeDist + plDens,
-                flDens ~ isMbay + hbeeDist,
-                hbeeVis ~ flDens + hbeeDist + lbeeDist + lbeeVis + isMbay + isCent,
-                lbeeVis ~ lbeeDist + hbeeDist + isMbay + isCent + lbeeStocking + flDens,
-                pollen ~ hbeeVis + lbeeVis + isCent + hbeeDist + flDens,
-                flwCount ~ plSize + isCent + surv,
-                flwSurv ~ pollen + plSize + isCent + hbeeDist + lbeeDist + flDens,
-                seedCount ~ pollen + seedCount + plSize + isCent + hbeeDist + flDens + surv,
-                seedWeight ~ pollen + seedCount + plSize + plDens + lbeeDist + lbeeStocking
-)
-
 unlist(shipley.test(seedDAG,TRUE))
+
+
+# test <- stan(file = "C:\\Users\\Samuel\\Documents\\Projects\\UofC\\canola_yield_project\\Models\\Seed model claims 3\\seed_claim04.stan",
+#              data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0)
+# n <- names(test) #Model parameters
+# n <- n[(!grepl('(\\[[0-9]+,*[0-9]*\\]|lp)',n))|grepl('([sS]igma|slope)',n)] #Gets rid of parameter vectors, unless it contains "sigma" (variance term) or "slope"
+# n <- n[!grepl('_miss',n)] #Gets rid of imputed values
+# traceplot(test,pars=n,inc_warmup=FALSE) #+ geom_hline(yintercept = 0) #Traceplots
+
+
+#Get model names, and make list
+modFiles <- dir(path='./Seed model claims 3',pattern = '*\\.stan',full.names = TRUE)
+modFiles <- modFiles[!grepl('template',modFiles)]
+modFiles <- modFiles[sapply(read.csv('./Seed model claims 3/claimsList_updated.csv')$Filename,function(x){
+    l <- grep(x,modFiles)
+    if(length(l)==0) 0 else l
+  })]
+
+
+for(i in 13){
+  overwrite <- TRUE
+  if(file.exists(modFiles[i])){
+    print(paste0('Starting model ',modFiles[i]))
+    #Run model
+    mod <- stan(file=modFiles[i],data=datalist,iter=3000,chains=4,control=list(adapt_delta=0.8),init=0)
+    # mod <- stan(file=modFiles[i],data=datalist,iter=500,chains=1,control=list(adapt_delta=0.8),init=0)
+    temp <- parTable(mod) #Get parameter summaries
+    #Save information to csv file
+    modList <- read.csv('./Seed model claims 3/claimsList_updated.csv',sep=',',strip.white = TRUE)
+    modList[i,match(names(temp),names(modList))] <- temp[grepl('claim',temp$param),]
+    write.csv(modList,'./Seed model claims 3/claimsList_updated.csv',row.names = FALSE)
+    
+    #Check model
+    parNam <- names(mod) #Model parameters
+    
+    #Gets rid of parameter vectors, unless it contains "sigma" (variance term)
+    useThese <- (!(grepl('(\\[[0-9]+,*[0-9]*\\]$|^lp|\\_miss)',parNam)) |
+                   grepl('[sS]igma',parNam) 
+    )
+    parNam <- parNam[useThese] 
+    
+    #Removes pollen terms
+    parNam <- parNam[!parNam %in% c('intPollen','slopeVisitPol','slopeHbeeDistPollen','sigmaPolField','pollenPhi')] 
+    
+    print(traceplot(mod,pars=parNam,inc_warmup=FALSE)+labs(title=gsub('.*/','',modFiles[i])))
+    print(mod,pars=parNam)
+    print(modList[i,match(names(temp),names(modList))])
+    # fastPairs(mod,pars=parNam)
+    print(paste0('Model ',modFiles[i],' completed'))
+    
+  } else print(paste0('Model ',i,' not found'))
+}
+
+
 
 #Marginal plots ---------------------
 

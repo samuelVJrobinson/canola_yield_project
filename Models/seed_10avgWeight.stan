@@ -192,7 +192,7 @@ parameters {
 	real<lower=-10,upper=10> slopePlSizeSeedWeight; //Slope of plant size
 	real<lower=-10,upper=10> slopePlDensSeedWeight; //Effect of plant density
 	// real slope2016SeedWeight; //Effect of 2016
-	real<lower=-10,upper=10> slopeLbeeDistSeedWeight; //Effect of leafcutter distance
+	// real<lower=-10,upper=10> slopeLbeeDistSeedWeight; //Effect of leafcutter distance
 	// real<lower=-10,upper=10> slopeStockingSeedWeight; //Effect of half-stocking
 	// // Interactions- These aren't usually used in SEMs
 	// real<lower=-10,upper=10> slopePlDensPlSizeSeedWeight; //Plant size:plant density (p=0.)
@@ -255,7 +255,7 @@ transformed parameters {
   		intSeedWeight_plot[i] +
 			slopePollenSeedWeight*pollenMu_plot[i] + //Pollen deposition
 			// slope2016SeedWeight*is2016_all[plotI] + //Year effect
-  		slopeLbeeDistSeedWeight*logLbeeDist_all[plotI] + //Shelter distance effect
+  		// slopeLbeeDistSeedWeight*logLbeeDist_all[plotI] + //Shelter distance effect
   		slopePlDensSeedWeight*plDens[i]; //Planting density
   		// slopeStockingSeedWeight*lbeeStocking_all[plotI]; //Half-stocking effect
 	
@@ -271,8 +271,9 @@ transformed parameters {
 		// Weight per seed = intercept + random int field + random int plot + random int plant
 		seedWeightMu[i] = seedWeightPlot[plotI] +
   		slopePlSizeSeedWeight*plantSize[i] + //Plant size
-  		slopePlDensPlSizeSeedWeight*plDens[plotI]*plantSize[i] + //Plant density:plant size
   		slopeSeedCountSeedWeight*seedCount[i]; //Seed count
+  		// //Interactions
+  		// slopePlDensPlSizeSeedWeight*plDens[plotI]*plantSize[i] + //Plant density:plant size
   		
 	}
 	
@@ -321,11 +322,11 @@ model {
 	slopeSeedCountSeedWeight ~ normal(0,5); //Slope of seed count
 	slopePlSizeSeedWeight ~ normal(0,5); //Slope of plant size
 	// slope2016SeedWeight ~ normal(0,5); //Effect of year
-	slopeLbeeDistSeedWeight ~ normal(0,5); //Slope of (log) lbee distance
+	// slopeLbeeDistSeedWeight ~ normal(0,5); //Slope of (log) lbee distance
 	slopePlDensSeedWeight ~ normal(0,5); //Slope of plant density
 	// slopeStockingSeedWeight ~ normal(0,5); //Effect of half-stocking
-	//Interactions
-	slopePlDensPlSizeSeedWeight ~ normal(0,5); //Plant density:plant size
+	// //Interactions
+	// slopePlDensPlSizeSeedWeight ~ normal(0,5); //Plant density:plant size
 	//Dispersion terms
 	sigmaSeedWeight ~ gamma(1,1); //SD of seed weight
 	sigmaSeedWeight_field ~ gamma(1,1); //SD of field random effect
