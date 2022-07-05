@@ -160,17 +160,15 @@ transformed data {
 }
 
 parameters {
-  
-  real<lower=2.4,upper=4.5> plDens_miss; //Imputed plant density for my fields (only 1)
  
+	// Plant density
+	real<lower=2.4,upper=4.5> plDens_miss; //Imputed plant density for my fields (only 1)
+	
 	// Flower density per plot
 	vector<lower=5,upper=51>[Nplot_flDensMiss] flDens_miss; //Missing from my fields
-	// vector<lower=5,upper=51>[Nplot_flDensMiss_extra] flDens_miss_extra; //Missing from Riley's fields
-
+	vector<lower=5,upper=51>[Nplot_flDensMiss_extra] flDens_miss_extra; //Missing from Riley's fields
+	
 	// Pollen deposition
-	
-	real claim15_slopePlDensPollen; //Claim
-	
 	real<lower=-10,upper=10> intPollen; //Intercept
 	real<lower=-10,upper=10> slopeHbeeVisPollen; //Slope of hbee visits
 	real<lower=-10,upper=10> slopeLbeeVisPollen; //Slope of lbee visits
@@ -183,6 +181,28 @@ parameters {
 	vector<lower=-10,upper=10>[Nplot_F] intPollen_plot; //Plot-level random intercept
 	real<lower=1e-05,upper=10> phiPollen; //Dispersion parameter
 	
+	//Seeds per pod
+	vector<lower=2,upper=31>[Nplant_seedCountMiss] seedCount_miss; //Missing seeds per pod
+	
+	// Weight per seed
+	real claim37_slopeFlwSurvSeedWeight; //Claim
+	real slopeCentSeedWeight; //Other claim
+	real slopeFlDensSeedWeight; //Other claim
+	real slopeHbeeDistSeedWeight; //Other claim
+	
+	vector<lower=1,upper=5.5>[Nplant_seedMassMiss] seedMass_miss; //Missing seed weights
+	real<lower=-10,upper=10> intSeedWeight; //Intercept
+	real<lower=-10,upper=10> slopePollenSeedWeight; //Slope of pollen deposition
+	real<lower=-10,upper=10> slopeSeedCountSeedWeight; //Slope of seed count
+	real<lower=-10,upper=10> slopePlSizeSeedWeight; //Slope of plant size
+	real<lower=-10,upper=10> slopePlDensSeedWeight; //Effect of plant density
+	//Dispersion terms
+	real<lower=1e-10,upper=10> sigmaSeedWeight; //SD of seed weight
+	real<lower=1e-10,upper=10> sigmaSeedWeight_field; //SD of field random effect
+	vector<lower=-10,upper=10>[Nfield] intSeedWeight_field; //field-level random intercepts
+	real<lower=1e-10,upper=10> sigmaSeedWeight_plot; //SD of plot random effect
+	vector<lower=-10,upper=10>[Nplot_F] intSeedWeight_plot; //plot-level random intercepts
+	real<lower=1e-10,upper=10> lambdaSeedWeight; //Lambda term for exponential process
 }
 
 transformed parameters {
@@ -191,57 +211,101 @@ transformed parameters {
 	//Plot-level
 	vector[Nplot_F] pollenMu_plot; //Plot level pollen
 	vector[Nflw] pollenMu; //Expected pollen - flower level
-
+	
+	vector[Nplot_F] seedWeightPlot; //Weight per seed - plot level
+	vector[Nplant] seedWeightMu; //Weight per seed
+	
 	//Imputed missing data;
 	vector[Nplot_F] plDens; //Plant density
 	vector[Nplot] flDens; //Flower density
+	vector[Nplant] seedMass; //Seed weight
+	vector[Nplant] seedCount; //Seeds per pod
 	
-	//Combine observed with imputed	
+	//Combine observed with imputed		
 	plDens[plotIndex_F[obsPlDens_ind]]=plDens_obs; //Observed plant density from my fields
-	plDens[plotIndex_F[missPlDens_ind]]=plDens_miss; //Missing plant density (only 1) 
+	plDens[plotIndex_F[missPlDens_ind]]=plDens_miss; //Missing plant density (only 1)
 	flDens[obsflDens_ind]=flDens_obs; //Observed flower density
 	flDens[missflDens_ind]=flDens_miss;
-//  	for(i in 1:Nplot_flDensObs_extra) //For each extra observed plot
-// 		flDens[obsflDens_ind_extra[i]+Nplot]=flDens_obs_extra[i];	//Add it to index in flDens
-// 	for(i in 1:Nplot_flDensMiss_extra) //For each extra missing plot
-// 		flDens[missflDens_ind_extra[i]+Nplot]=flDens_miss_extra[i];
-		
+	seedMass[obsSeedMass_ind]	= seedMass_obs; //Observed seed mass
+	seedMass[missSeedMass_ind]	= seedMass_miss; //Missing seed mass
+	seedCount[obsSeedCount_ind]	= seedCount_obs; //Observed seeds per pod
+	seedCount[missSeedCount_ind]	= seedCount_miss; //Missing seeds per pod
+	
 	for(i in 1:Nplot_F){ //Parameters for F plots only
-	  // Pollen per plot = intercept + random field int + random plot int + leafcutter effect + honeybee effect + bay center effect + hbee dist effect
-  	// Moved intPol to Nflw loop to center plot level data
-	  pollenMu_plot[i] = intPollen_field[plotIndex[plotIndex_F2[i]]] + intPollen_plot[i] + //Intercept + field/plot level random effects
-   	  slopeLbeeVisPollen*logLbeeVis_all[plotIndex_F2[i]] +  //Effect of (log) leafcutter visits
-    	slopeHbeeVisPollen*logHbeeVis_all[plotIndex_F2[i]] +  //Effect of (log) honeybee visits
-    	slopeCentPollen*isCent_all[plotIndex_F2[i]] + //Bay center effect
-    	slopeHbeeDistPollen*logHbeeDist_all[plotIndex_F2[i]] + //(log) hbee distance effect
-   	  slopeFlDensPollen*flDens[plotIndex_F2[i]] + //Flower density
-   	  claim15_slopePlDensPollen*plDens[i]; //Claim
+	
+	  int plotI = plotIndex_F2[i]; //Matches F plot i to measurements taken at all plots
+	  	
+		// Pollen per plot 
+	  pollenMu_plot[i] = intPollen_field[plotIndex[plotI]] + //Field random intercept
+	    intPollen_plot[i] + //Plot random intercept
+   	  slopeLbeeVisPollen*logLbeeVis_all[plotI] +  //Effect of (log) leafcutter visits
+    	slopeHbeeVisPollen*logHbeeVis_all[plotI] +  //Effect of (log) honeybee visits
+    	slopeCentPollen*isCent_all[plotI] + //Bay center effect
+    	slopeHbeeDistPollen*logHbeeDist_all[plotI] + //(log) hbee distance effect
+   	  slopeFlDensPollen*flDens[plotI]; //Flower density
+   	  
+   	seedWeightPlot[i] = intSeedWeight +
+  		intSeedWeight_field[plotIndex[plotI]] +
+  		intSeedWeight_plot[i] +
+			slopePollenSeedWeight*pollenMu_plot[i] + //Pollen deposition
+			slopePlDensSeedWeight*plDens[i] + //Planting density
+			slopeCentSeedWeight*isCent_all[plotI] + //Other claim
+			slopeFlDensSeedWeight*flDens[i] + //Other claim
+			slopeHbeeDistSeedWeight*logHbeeDist_all[plotI]; //Other claim 
 	}
 				
 	for(i in 1:Nflw)
 	  pollenMu[i] = intPollen + pollenMu_plot[plotIndex_F[flowerIndex[i]]]; //Assigns plot level pollen mu to Nflw long vector
+		
+	for(i in 1:Nplant){	
+	  
+	  int plotI = plotIndex_F[plantIndex[i]];
+	
+		// Weight per seed = intercept + random int field + random int plot + random int plant
+		seedWeightMu[i] = seedWeightPlot[plotI] +
+  		slopePlSizeSeedWeight*plantSize[i] + //Plant size
+  		slopeSeedCountSeedWeight*seedCount[i] + //Seed count
+  		claim37_slopeFlwSurvSeedWeight*logitFlwSurv[i]; //Claim
+	}
 	
 }
 	
 model {
-
+  
 	pollenCount ~ neg_binomial_2_log(pollenMu,phiPollen); //Pollination rate
+	seedMass ~ exp_mod_normal(seedWeightMu,sigmaSeedWeight,lambdaSeedWeight); //Weight per seed	- exp.normal version
 			
 	// Priors
 	
 	// Pollen deposition - informative priors
-	claim15_slopePlDensPollen ~ normal(0,5); //Claim
-	
-	intPollen ~ normal(3.1,5); //Intercept
+	intPollen ~ normal(0,5); //Intercept
 	slopeHbeeVisPollen ~ normal(0,5); //hbee Visitation effect
 	slopeLbeeVisPollen ~ normal(0,5); //lbee Visitation effect
 	slopeCentPollen~ normal(0,5); //Bay center effect
 	slopeHbeeDistPollen ~ normal(0,5); //(log) hbee distance effect
-	// slopeStockingHbeeDistPollen ~ normal(0,5); //Stocking:hbee distance interaction
 	slopeFlDensPollen ~ normal(0,5); //Flower density
 	sigmaPollen_field ~ gamma(1,1); //Sigma for random field
 	sigmaPollen_plot ~ gamma(1,1); //Sigma for random plot
 	phiPollen ~ gamma(1,1); //Dispersion parameter
 	intPollen_field ~ normal(0,sigmaPollen_field); //Random field int
 	intPollen_plot ~ normal(0,sigmaPollen_plot); //Random plot int
+			
+	// Weight per seed
+	claim37_slopeFlwSurvSeedWeight ~ normal(0,5); //Claim
+	slopeCentSeedWeight ~ normal(0,5); //Other claim
+	slopeFlDensSeedWeight ~ normal(0,5); //Other claim
+	slopeHbeeDistSeedWeight ~ normal(0,5); //Other claim
+	
+	intSeedWeight ~ normal(3.4,5); //Intercept
+	slopePollenSeedWeight ~ normal(0,5); //Slope of pollen deposition
+	slopeSeedCountSeedWeight ~ normal(0,5); //Slope of seed count
+	slopePlSizeSeedWeight ~ normal(0,5); //Slope of plant size
+	slopePlDensSeedWeight ~ normal(0,5); //Slope of plant density
+	//Dispersion terms
+	sigmaSeedWeight ~ gamma(1,1); //SD of seed weight
+	sigmaSeedWeight_field ~ gamma(1,1); //SD of field random effect
+	intSeedWeight_field ~ normal(0,sigmaSeedWeight_field); //field-level random intercepts
+	sigmaSeedWeight_plot ~ gamma(1,1); //SD of plot random effect
+	intSeedWeight_plot ~ normal(0,sigmaSeedWeight_plot); //plot-level random intercepts
+	lambdaSeedWeight ~ gamma(1,1); //Lambda term for exponential process
 }

@@ -166,10 +166,22 @@ parameters {
 	// Flower density per plot
 	vector<lower=5,upper=51>[Nplot_flDensMiss] flDens_miss; //Missing from my fields
 	// vector<lower=5,upper=51>[Nplot_flDensMiss_extra] flDens_miss_extra; //Missing from Riley's fields
+	
+	// Plant size - random effects at plot level are very small, and don't converge well
+	// Density:distance interaction is basically 0, so leaving it out
+	// Normal distribution had marginal PPchecks; t-dist is much better
+	real<lower=-10,upper=10> intPlSize; //Global intercept
+	real<lower=-10,upper=10> slopePlDensPlSize; //Slope of planting density
+	real<lower=-10,upper=10> slopeHbeeDistPlSize; //Slope of hbee distance (edge of field has small plants)
+	real<lower=1e-05,upper=10> sigmaPlSize; //Sigma for within-plot (residual)
+	real<lower=1e-05,upper=10> sigmaPlSize_field; //Sigma for field
+	vector<lower=-10,upper=10>[Nfield] intPlSize_field; //Random intercept for field
+	real<lower=-10,upper=10> nuPlSize; //exp(nu) for t-distribution
 
 	// Pollen deposition
 	
-	real claim15_slopePlDensPollen; //Claim
+	real claim16_slopePlSizePollen; //Claim
+	real slopePlDensPollen; //Other claim
 	
 	real<lower=-10,upper=10> intPollen; //Intercept
 	real<lower=-10,upper=10> slopeHbeeVisPollen; //Slope of hbee visits
@@ -191,6 +203,8 @@ transformed parameters {
 	//Plot-level
 	vector[Nplot_F] pollenMu_plot; //Plot level pollen
 	vector[Nflw] pollenMu; //Expected pollen - flower level
+	vector[Nplot_F] plSizePlotMu; //Plot-level plant size
+	vector[Nplant] plSizeMu; //Expected plant size
 
 	//Imputed missing data;
 	vector[Nplot_F] plDens; //Plant density
@@ -207,6 +221,16 @@ transformed parameters {
 // 		flDens[missflDens_ind_extra[i]+Nplot]=flDens_miss_extra[i];
 		
 	for(i in 1:Nplot_F){ //Parameters for F plots only
+	
+		  // "plotI" used to index measurements from ALL plots, "i" used otherwise
+	  int plotI = plotIndex_F2[i]; 
+	
+		  // Plant size (plot-level) 
+		plSizePlotMu[i] = intPlSize + //Intercept
+		  intPlSize_field[plotIndex_all[plotI]] +  //Field level intercept
+			slopeHbeeDistPlSize*logHbeeDist_all[plotI] + //Distance effect (edge of field has smaller plants)
+			slopePlDensPlSize*plDens[i]; //Planting density effect
+	
 	  // Pollen per plot = intercept + random field int + random plot int + leafcutter effect + honeybee effect + bay center effect + hbee dist effect
   	// Moved intPol to Nflw loop to center plot level data
 	  pollenMu_plot[i] = intPollen_field[plotIndex[plotIndex_F2[i]]] + intPollen_plot[i] + //Intercept + field/plot level random effects
@@ -215,29 +239,46 @@ transformed parameters {
     	slopeCentPollen*isCent_all[plotIndex_F2[i]] + //Bay center effect
     	slopeHbeeDistPollen*logHbeeDist_all[plotIndex_F2[i]] + //(log) hbee distance effect
    	  slopeFlDensPollen*flDens[plotIndex_F2[i]] + //Flower density
-   	  claim15_slopePlDensPollen*plDens[i]; //Claim
+   	  claim16_slopePlSizePollen*plSizePlotMu[i] + //Claim
+   	  slopePlDensPollen*plDens[i]; //Other claim
 	}
 				
 	for(i in 1:Nflw)
 	  pollenMu[i] = intPollen + pollenMu_plot[plotIndex_F[flowerIndex[i]]]; //Assigns plot level pollen mu to Nflw long vector
+	  
+	for(i in 1:Nplant){
+	  int plotI = plotIndex_F[plantIndex[i]]; //Matches plant to F plot
+		// Predicted plant size (taken from plot level measurements above)
+		plSizeMu[i] = plSizePlotMu[plotI];
+	}
 	
 }
 	
 model {
-
+  
+	plantSize ~ student_t(exp(nuPlSize),plSizeMu,sigmaPlSize); //Plant size - T dist  
 	pollenCount ~ neg_binomial_2_log(pollenMu,phiPollen); //Pollination rate
 			
 	// Priors
 	
+		//Plant size - informative priors
+	intPlSize ~ normal(3.2,5); //Intercept
+	slopePlDensPlSize ~ normal(0,5); //Planting density
+	slopeHbeeDistPlSize ~ normal(0,5); //Distance from edge of field
+	sigmaPlSize ~ gamma(1,1); //Sigma for residual
+	sigmaPlSize_field ~ gamma(1,1); //Sigma for field
+	intPlSize_field	~ normal(0,sigmaPlSize_field); //Random intercept for field
+	nuPlSize ~ normal(0,5); //nu for student's t
+	
 	// Pollen deposition - informative priors
-	claim15_slopePlDensPollen ~ normal(0,5); //Claim
+	claim16_slopePlSizePollen ~ normal(0,5); //Claim
+	slopePlDensPollen ~ normal(0,5); //Other claim
 	
 	intPollen ~ normal(3.1,5); //Intercept
 	slopeHbeeVisPollen ~ normal(0,5); //hbee Visitation effect
 	slopeLbeeVisPollen ~ normal(0,5); //lbee Visitation effect
 	slopeCentPollen~ normal(0,5); //Bay center effect
 	slopeHbeeDistPollen ~ normal(0,5); //(log) hbee distance effect
-	// slopeStockingHbeeDistPollen ~ normal(0,5); //Stocking:hbee distance interaction
 	slopeFlDensPollen ~ normal(0,5); //Flower density
 	sigmaPollen_field ~ gamma(1,1); //Sigma for random field
 	sigmaPollen_plot ~ gamma(1,1); //Sigma for random plot

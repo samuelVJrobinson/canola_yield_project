@@ -423,13 +423,13 @@ modFiles <- modFiles[sapply(read.csv('./Seed model claims 3/claimsList_updated.c
   })]
 
 
-for(i in 13){
+for(i in 38){
   overwrite <- TRUE
   if(file.exists(modFiles[i])){
     print(paste0('Starting model ',modFiles[i]))
     #Run model
-    mod <- stan(file=modFiles[i],data=datalist,iter=3000,chains=4,control=list(adapt_delta=0.8),init=0)
-    # mod <- stan(file=modFiles[i],data=datalist,iter=500,chains=1,control=list(adapt_delta=0.8),init=0)
+    # mod <- stan(file=modFiles[i],data=datalist,iter=3000,chains=4,control=list(adapt_delta=0.8),init=0)
+    mod <- stan(file=modFiles[i],data=datalist,iter=400,chains=1,control=list(adapt_delta=0.8),init=0)
     temp <- parTable(mod) #Get parameter summaries
     #Save information to csv file
     modList <- read.csv('./Seed model claims 3/claimsList_updated.csv',sep=',',strip.white = TRUE)
@@ -456,7 +456,6 @@ for(i in 13){
     
   } else print(paste0('Model ',i,' not found'))
 }
-
 
 
 #Marginal plots ---------------------
