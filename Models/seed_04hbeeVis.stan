@@ -169,15 +169,11 @@ parameters {
 	real<lower=-10,upper=10> slopeFlDensHbeeVis; //Slope of flower density
 	real<lower=-10,upper=10> slopeHbeeDistHbeeVis; //Slope of hbee distance
 	real<lower=-10,upper=10> slopeLbeeDistHbeeVis; //Slope of leafcutter distance
-	// real<lower=-10,upper=10> slopeLbeeHbeeDistHbee; //Interaction b/w leafcutter & honeybee distance
-	// real<lower=-10,upper=10> slopeLbeeVisHbeeVis; //Direct effect of leafcutter visitation
-	// real<lower=-10,upper=10> slopeMBayHbee; //Effect of male bay
 	real<lower=-10,upper=10> slopeCentHbeeVis; //Effect of bay position (center)
 	real<lower=1e-5,upper=10> phiHbeeVis; //Dispersion parameter
 	real<lower=0,upper=1> thetaHbeeVis; //Zero-inflation parameter - chance that zero is not from neg.bin.
 	real<lower=1e-5,upper=10> sigmaHbeeVis_field; //Sigma for field
 	vector<lower=-10,upper=10>[Nfield_all] intHbeeVis_field; //Random intercept for field
-
 }
 
 transformed parameters {
@@ -206,11 +202,8 @@ transformed parameters {
 		  intHbeeVis_field[plotIndex_all[i]] + //Random intercepts
 			slopeHbeeDistHbeeVis*logHbeeDist_all[i] +  //log hbee distance			
 			slopeLbeeDistHbeeVis*logLbeeDist_all[i] + //log lbee distance
-			// slopeLbeeHbeeDistHbee*logHbeeDist_all[i]*logLbeeDist_all[i] + //log Hbee: log lbee distance interaction
-			// slopeLbeeVisHbeeVis*logLbeeVis_all[i] + //Direct effect of (log) leafcutter visitation						
 			slopeCentHbeeVis*isCent_all[i] + //bay center effect
 			slopeFlDensHbeeVis*flDens[i]; //Flower density effect
-			// slopeMBayHbee*isMBay_all[i]; //M bay effect 	
 	}	
 	
 }
@@ -236,10 +229,7 @@ model {
 	intHbeeVis ~ normal(0,5); //Intercept	
 	slopeHbeeDistHbeeVis ~ normal(0,5); //Slope of distance effect on hbee visits	
 	slopeLbeeDistHbeeVis ~ normal(0,5); //Effect of leafcutter shelter distance	
-	// slopeLbeeHbeeDistHbee ~ normal(0,5); //Hbee-lbee distance interaction	
-	// slopeLbeeVisHbeeVis ~ normal(0,5); //Direct effect of (log) leafcutter visitation
 	slopeCentHbeeVis ~ normal(0,5); //Effect of center of bay
-	// slopeMBayHbee ~ normal(0,5); //Effect of male bay
 	slopeFlDensHbeeVis ~ normal(0,5); //Flower density effect	
 	phiHbeeVis ~ gamma(1,1); //Dispersion parameter		
 	thetaHbeeVis ~ beta(2,2); // Zero-inflation parameter
@@ -261,5 +251,4 @@ generated quantities {
 			predHbeeVis_all[i] = neg_binomial_2_log_rng(visitMu_hbee[i],phiHbeeVis); //Predicted value drawn from neg.bin		
 		predHbeeVis_resid[i]=predHbeeVis_all[i]-(exp(visitMu_hbee[i])*(1-thetaHbeeVis)); //Residual for predicted value
 	}
-
 }

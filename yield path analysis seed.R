@@ -25,7 +25,7 @@ theme_set(theme_bw()+prestheme) #Sets graph theme to B/Ws + prestheme
 rm(prestheme)
 
 # setwd('~/Projects/UofC/canola_yield_project') #Multivac path
-# setwd('~/Documents/canola_yield_project') #Galpern machine path
+setwd('~/Documents/canola_yield_project/Models') #Galpern machine path
 
 source('../helperFunctions.R')
 
@@ -54,7 +54,7 @@ seedDAG <- dagify(plDens ~ hbeeDist,
                   pollen ~ hbeeVis  + lbeeVis + cent + hbeeDist + flDens,
                   flwCount ~ plSize + cent + flwSurv,
                   flwSurv ~ pollen + plSize + cent + hbeeDist + lbeeDist + flDens,
-                  seedCount ~ pollen + plSize + cent + hbeeDist + flDens + flwSurv,
+                  seedCount ~ pollen + plSize + cent + hbeeDist + flDens + flwSurv + flwCount,
                   seedWeight ~ pollen + seedCount + plSize + plDens + lbeeDist,
                   coords= list(x = setNames(nodeCoords$x,nodeCoords$name),
                                y = setNames(nodeCoords$y,nodeCoords$name)),
@@ -66,10 +66,10 @@ seedDAG <- dagify(plDens ~ hbeeDist,
 load('./datalist_seed.Rdata')
 
 # #Seed field data
-# load("./Seed field analysis/seedfieldDataAll.RData")
+# load("../Seed field analysis/seedfieldDataAll.RData")
 # fieldsAllSeed <- data.frame(allFields); plantsAllSeed <- data.frame(allPlants)
 # pollenAllSeed <- data.frame(allPollen); seedsAllSeed <- data.frame(allSeeds);
-# surveyAllSeed <- data.frame(allSurvey); 
+# surveyAllSeed <- data.frame(allSurvey);
 # plantsAllSeed$Field <- gsub('Unrah','Unruh',plantsAllSeed$Field) #Fixes spelling error
 # seedsAllSeed$Field <- gsub('Unrah','Unruh',seedsAllSeed$Field)
 # seedsAllSeed$EdgeCent <- ifelse(seedsAllSeed$EdgeCent=='Cent','Center',seedsAllSeed$EdgeCent) #Fixes cent/center
@@ -78,7 +78,7 @@ load('./datalist_seed.Rdata')
 # plantsAllSeed <- mutate(plantsAllSeed,Missing=ifelse(Missing<0,NA,Missing))
 # seedsAllSeed <- mutate(seedsAllSeed,Missing=ifelse(Missing<0,NA,Missing))
 # #Extra seed field data (from Riley W.)
-# rileyExtra <- read.csv('./Seed field analysis/rileyExtra.csv')
+# rileyExtra <- read.csv('../Seed field analysis/rileyExtra.csv')
 # setwd('~/Projects/UofC/canola_yield_project')
 # 
 # #Organize names of extra sites from Riley
@@ -86,7 +86,7 @@ load('./datalist_seed.Rdata')
 # rileyFields <- levels(rileyExtra$site)[!(levels(rileyExtra$site) %in% levels(fieldsAllSeed$Field))]
 # samFields <- levels(fieldsAllSeed$Field)
 # fieldsAllSeed$Field <- factor(fieldsAllSeed$Field,levels=c(samFields,rileyFields)) #Apply new ordering of fields to dataframes
-# rileyExtra$site <- factor(rileyExtra$site,levels=c(samFields,rileyFields))  
+# rileyExtra$site <- factor(rileyExtra$site,levels=c(samFields,rileyFields))
 # surveyAllSeed$Field <- factor(surveyAllSeed$Field,levels=c(samFields,rileyFields))
 # pollenAllSeed$Field <- factor(pollenAllSeed$Field,levels=c(samFields,rileyFields))
 # plantsAllSeed$Field <- factor(plantsAllSeed$Field,levels=c(samFields,rileyFields))
@@ -98,24 +98,24 @@ load('./datalist_seed.Rdata')
 # rileyExtra$date[grepl('/',rileyExtra$date)] <- as.character(as.Date(rileyExtra$date,format='%m/%d/%Y')[grepl('/',rileyExtra$date)])
 # rileyExtra$date <- as.Date(rileyExtra$date,format='%F')
 # 
-# rileyExtra <- rileyExtra %>% 
+# rileyExtra <- rileyExtra %>%
 #   #Filter out NA hdist/ldist plots - hard to impute, and no downstream info
-#   filter(!is.na(hdist),!is.na(ldist)) %>% 
+#   filter(!is.na(hdist),!is.na(ldist)) %>%
 #   filter(hdist<=400) #Get rid of plots >400m away from bees (other side of the field)
 # 
 # # #Joins plant ID to seedsAllSeed
-# # temp <- select(plantsAllSeed,Year,Field,Distance,EdgeCent,Branch,Pods,Missing,Plant) %>% 
+# # temp <- select(plantsAllSeed,Year,Field,Distance,EdgeCent,Branch,Pods,Missing,Plant) %>%
 # #   unite(ID,Year:Missing)
 # # seedsAllSeed <- seedsAllSeed %>%
-# #   unite(ID,Year,Field,Distance,EdgeCent,Branch,Pods,Missing,remove=F) %>% 
+# #   unite(ID,Year,Field,Distance,EdgeCent,Branch,Pods,Missing,remove=F) %>%
 # #   left_join(temp,by='ID') %>%  select(-ID)
 # # rm(temp)
 # 
 # # #Add average pollen per plot
-# # surveyAllSeed <- surveyAllSeed %>% 
+# # surveyAllSeed <- surveyAllSeed %>%
 # #   unite(plot,Field,Distance,EdgeCent,remove=F) %>%
 # #   left_join(summarize(group_by(unite(pollenAllSeed,plot,Field,Distance,EdgeCent),plot),
-# #                       polCountPlot=log(mean(Pollen))),by='plot') 
+# #                       polCountPlot=log(mean(Pollen))),by='plot')
 # 
 # datalistField <- list( #Field-level measurements
 #   Nfield=length(fieldsAllSeed$Year), #Number of fields
@@ -136,31 +136,31 @@ load('./datalist_seed.Rdata')
 #   isMBay=Bay=='M', #Is plot from M bay?
 #   totalTime=TotalTime/10, #Total time (mins/10)
 #   plotList=paste(Field,Distance,Bay,EdgeCent),
-#   
+# 
 #   # Flower density
 #   Nplot_flDensObs = sum(!is.na(FlDens)), #Number of plots with observed flDens
 #   Nplot_flDensMiss = sum(is.na(FlDens)), #Number of plots missing flDens
 #   flDens_obs=sqrt(FlDens*4)[!is.na(FlDens)], #(sqrt) Flower density - these were recorded in a 0.25m2 plot
 #   obsflDens_ind = which(!is.na(FlDens)), #Index for observed
-#   missflDens_ind = which(is.na(FlDens)), #Index for missing 
-#   
+#   missflDens_ind = which(is.na(FlDens)), #Index for missing
+# 
 #   #Female-only plots (plant density)
 #   Nplot_F=sum(Bay=='F'), #Number of female plots
 #   plotIndex_F=match(1:length(Distance),which(Bay=='F')), #Index for female-only plots (which female plot j does plot i belong to?)
 #   plotIndex_F2=match(which(Bay=='F'),1:length(Distance)), #Reverse index (which plot i does female plot j belong to?)
-#   
+# 
 #   #Plant density
 #   Nplot_plDensObs = sum(Bay=='F' & !is.na(PlDens)), #Number of F plots with observed plDens
 #   Nplot_plDensMiss = sum(Bay == 'F' & is.na(PlDens)), #Number of F plots missing plDens
 #   plDens_obs=log(PlDens)[Bay=='F' & !is.na(PlDens)], # (log) Plant density in F plots
 #   obsPlDens_ind = which(Bay=='F' & !is.na(PlDens)), #Index for observed
 #   missPlDens_ind = which(Bay=='F' & is.na(PlDens)) #Index for missing
-#   
+# 
 # ))
 # datalistPlot$plotIndex_F[is.na(datalistPlot$plotIndex_F)] <- 0 #Set male plot indices to zero
 # datalistPlot$totalTime[is.na(datalistPlot$totalTime)] <- 0.5 #Fix one missing time point
 # 
-# #Join in extra data from Riley 
+# #Join in extra data from Riley
 # datalistPlot_extra <- with(rileyExtra,
 #                             list(
 #                               Nplot=length(ldist), #Number of extra plots
@@ -193,42 +193,42 @@ load('./datalist_seed.Rdata')
 #   pollenCount=Pollen
 # ))
 # 
-# datalistPlant <- plantsAllSeed %>% 
-#   select(Year:EdgeCent,VegMass,SeedMass,Pods:Plant) %>%  
+# datalistPlant <- plantsAllSeed %>%
+#   select(Year:EdgeCent,VegMass,SeedMass,Pods:Plant) %>%
 #   filter(!is.na(Pods),!is.na(Missing)) %>% #Filter out plants with missing pods/flw counts - only 6 plants, and hard to impute
-#   mutate(AvgSeedMass=1000*AvPodMass/AvPodCount) %>% #Average weight per seed  
+#   mutate(AvgSeedMass=1000*AvPodMass/AvPodCount) %>% #Average weight per seed
 #   with(.,list(
 #     Nplant=length(Distance), #Number of plant samples
 #     plantIndex=match(paste(Field,Distance,'F',EdgeCent),datalistPlot$plotList), #Index for plant (which F plot?)
 #     plantSize=log(VegMass[!is.na(VegMass)]), #(log) weight of veg mass (g)
-#     
+# 
 #     podCount=Pods, #Successful pods
 #     flwCount=(Pods+Missing), #Pods + Missing (total flw production)
 #     logitFlwSurv = logit(Pods/(Pods+Missing)), #Logit flw survival
-#     
-#     #Average seeds per pod 
+# 
+#     #Average seeds per pod
 #     Nplant_seedCountObs = sum(!is.na(AvPodCount)), #Number of observed
 #     Nplant_seedCountMiss = sum(is.na(AvPodCount)), #Number of missing
 #     seedCount_obs=AvPodCount[!is.na(AvPodCount)], #Avg seeds per pod - NAs present
 #     obsSeedCount_ind = which(!is.na(AvPodCount)), #Observed
 #     missSeedCount_ind = which(is.na(AvPodCount)), #Missing
-#     
+# 
 #     #Average mass per seed
 #     Nplant_seedMassObs = sum(!is.na(AvgSeedMass)), #Number of observed
 #     Nplant_seedMassMiss = sum(is.na(AvgSeedMass)), #Number of missing
 #     seedMass_obs = AvgSeedMass[!is.na(AvgSeedMass)], #Avg weight per seed (g/1000 seeds)
 #     obsSeedMass_ind = which(!is.na(AvgSeedMass)), #Index for observed
 #     missSeedMass_ind = which(is.na(AvgSeedMass)), #Index for missing
-#     
+# 
 #     yield=SeedMass[!is.na(SeedMass)], #Weight of all seeds (g)
 #     calcYield = AvPodCount*AvgSeedMass*Pods/1000
 #     # plantList=paste(Field,Distance,'F',EdgeCent,Plant) #Name of plot (character)
 #   ))
 # datalistPlant$calcYield <- ifelse(is.na(datalistPlant$calcYield),-1,datalistPlant$calcYield) #Replaces NAs with -1s
 # 
-# # datalistPod <- seedsAllSeed %>% ungroup() %>% 
-# #   mutate(plantList=paste(Field,Distance,'F',EdgeCent,Plant)) %>% select(-Field,-Distance,-EdgeCent,-Plant) %>% 
-# #   mutate(inPlantList=plantList %in% datalistPlant$plantList) %>% 
+# # datalistPod <- seedsAllSeed %>% ungroup() %>%
+# #   mutate(plantList=paste(Field,Distance,'F',EdgeCent,Plant)) %>% select(-Field,-Distance,-EdgeCent,-Plant) %>%
+# #   mutate(inPlantList=plantList %in% datalistPlant$plantList) %>%
 # #   filter(inPlantList) %>% #Filter out pods where plants had missing flower counts
 # #   filter(!is.na(PodCount),!is.na(PodMass)) %>% #Filter out pods with missing seed counts
 # #   with(.,list(
@@ -236,7 +236,7 @@ load('./datalist_seed.Rdata')
 # #   seedCount=PodCount, #Number of seeds per pod
 # #   seedMass=1000*PodMass/PodCount, #Weight per seed (mg)
 # #   #Index for pod (which plant?)
-# #   podIndex=match(plantList,datalistPlant$plantList) 
+# #   podIndex=match(plantList,datalistPlant$plantList)
 # # ))
 # datalistPlant$plantList <- datalistPlot$plotList <-  NULL
 # 
@@ -247,7 +247,7 @@ load('./datalist_seed.Rdata')
 # rm(datalistField,datalistPlot,datalistFlw,datalistPlant,rileyFields,samFields) #Cleanup
 # str(datalist)
 # 
-# save(datalist,file = './Models/datalist_seed.Rdata')
+# save(datalist,file = './datalist_seed.Rdata')
 
 
 # Run models ----------------------------
@@ -259,15 +259,15 @@ modFiles <- dir(pattern = 'seed_.*\\.stan')
 modList <- vector(mode = 'list',length = length(modFiles))
 names(modList) <- gsub('(seed_.*[0-9]{2}|\\.stan)','',modFiles)
 
-modList[1] <- stan(file=modFiles[1],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0.1) #Plant density, Plant size, Flower Density - OK
-modList[2] <- stan(file=modFiles[2],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #Hbee visitation - OK
-modList[3] <- stan(file=modFiles[3],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #Lbee visitation - OK
-modList[4] <- stan(file=modFiles[4],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #Pollen - OK
-modList[5] <- stan(file=modFiles[5],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #Flower count per plant - OK
-modList[6] <- stan(file=modFiles[6],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #Pod count (flw survival) per plant
-modList[7] <- stan(file=modFiles[7],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #Seeds per pod
-modList[8] <- stan(file=modFiles[8],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #Weight per seed
-modList[9] <- stan(file=modFiles[9],data=datalist,iter=3000,chains=4,control=list(adapt_delta=0.8),init=0) #Yield
+modList[1] <- stan(file=modFiles[1],data=datalist,iter=2000,chains=4,init=0.1) #Plant density, Plant size, Flower Density - OK
+modList[2] <- stan(file=modFiles[2],data=datalist,iter=2000,chains=4,init=0) #Hbee visitation - OK, but traces for RE aren't great
+modList[3] <- stan(file=modFiles[3],data=datalist,iter=2000,chains=4,init=0) #Lbee visitation - OK
+modList[4] <- stan(file=modFiles[4],data=datalist,iter=2000,chains=4,init=0) #Pollen - OK
+modList[5] <- stan(file=modFiles[5],data=datalist,iter=2000,chains=4,init=0) #Flower count per plant - OK
+modList[6] <- stan(file=modFiles[6],data=datalist,iter=2000,chains=4,init=0) #Pod count (flw survival) per plant
+modList[7] <- stan(file=modFiles[7],data=datalist,iter=2000,chains=4,init=0) #Seeds per pod
+modList[8] <- stan(file=modFiles[8],data=datalist,iter=2000,chains=4,init=0) #Weight per seed
+modList[9] <- stan(file=modFiles[9],data=datalist,iter=3000,chains=4,init=0) #Yield
 beepr::beep(1)
 
 #Traceplots
@@ -278,6 +278,8 @@ for(i in 1:length(modList)){
     n <- n[!grepl('_miss',n)] #Gets rid of imputed values
     
     p <- traceplot(modList[[i]],pars=n,inc_warmup=FALSE) #+ geom_hline(yintercept = 0) #Traceplots
+    fastPairs(modList[[i]],pars=n)
+    print(modList[[i]],pars=n)
     # p <- stan_plot(modList[[i]],pars=n) #Pointrange plot
     
     print(p)
@@ -334,10 +336,11 @@ PPplots(modList[[1]],datalist$flDens_obs,c('predFlDens','flDens_resid','predFlDe
 PPplots(modList[[1]],datalist$plantSize,c('predPlSize','plSize_resid','predPlSize_resid'),
         'Plant size') #OK
 PPplots(modList[[2]],c(datalist$hbeeVis,datalist$hbeeVis_extra),
-        c('predHbeeVis_all','hbeeVis_resid','predHbeeVis_resid'),'Honeybee visits') #Not good
+        c('predHbeeVis_all','hbeeVis_resid','predHbeeVis_resid'),'Honeybee visits',
+        ZIpar = 'thetaHbeeVis') #Not good
 PPplots(modList[[3]],c(datalist$lbeeVis,datalist$lbeeVis_extra),
-        c('predLbeeVis_all','lbeeVis_resid','predLbeeVis_resid'),'Leafcutter visits') #OK, but overpredicts at low values
-
+        c('predLbeeVis_all','lbeeVis_resid','predLbeeVis_resid'),'Leafcutter visits',
+        ZIpar='thetaLbeeVis') #OK, but overpredicts at low values
 PPplots(modList[[4]],datalist$pollenCount,c('predPollenCount','pollen_resid','predPollen_resid'),
         'Pollen') #OK
 PPplots(modList[[5]],datalist$flwCount,c('predFlwCount','flwCount_resid','predFlwCount_resid'),
@@ -456,6 +459,13 @@ for(i in 38){
     
   } else print(paste0('Model ',i,' not found'))
 }
+
+#Calculate C-statistic
+
+read.csv('./Seed model claims 3/claimsList_updated.csv',sep=',',strip.white = TRUE) %>% 
+  mutate(pval=pnorm(-abs(Z))*2) %>% 
+  shipley.dSep(.,pval,param)
+
 
 
 #Marginal plots ---------------------

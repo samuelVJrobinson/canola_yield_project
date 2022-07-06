@@ -192,6 +192,7 @@ parameters {
 	real<lower=-10,upper=10> slopeHbeeDistSeedCount; //Slope of honeybee distance on seed count
 	real<lower=-10,upper=10> slopeFlDensSeedCount; //Slope of flower density on seed count
 	real<lower=-10,upper=10> slopeFlwSurvSeedCount; //Slope of plant-level pod survival on seed count
+	real<lower=-10,upper=10> slopeFlwCountSeedCount; //Slope of flower count on seed count
 	real<lower=1e-10,upper=10> sigmaSeedCount; //SD at plant level
 	real<lower=1e-10,upper=10> sigmaSeedCount_field; //SD of field random effect
 	vector<lower=-10,upper=10>[Nfield] intSeedCount_field; //field-level random intercepts
@@ -257,7 +258,8 @@ transformed parameters {
 		// Seed count per pod = intercept + random int field + random int plot + random int plant + hbee visits + pollen deposition
 		seedCountMu[i] = seedCountPlot[plotI] + //Plot-level effects
   		slopePlSizeSeedCount*plantSize[i] + //Plant size
-		  slopeFlwSurvSeedCount*logitFlwSurv[i]; //Flower survival per plant
+		  slopeFlwSurvSeedCount*logitFlwSurv[i] + //Flower survival per plant
+		  slopeFlwCountSeedCount*logFlwCount[i]; //Flower count per plant
 			
 	}
 	
@@ -294,6 +296,7 @@ model {
 	slopeHbeeDistSeedCount ~ normal(0,5); //Slope of leafcutter distance on seed count
 	slopeFlDensSeedCount ~ normal(0,5); //Slope of flower density on seed count
 	slopeFlwSurvSeedCount ~ normal(0,5); //Slope of survival
+	slopeFlwCountSeedCount ~ normal(0,5); //Slope of flower count
 	sigmaSeedCount_field ~ gamma(1,1); //SD of field random effect
 	intSeedCount_field ~ normal(0,sigmaSeedCount_field); //field-level random intercepts
 	sigmaSeedCount_plot ~ gamma(2,1); //SD of plot random effect

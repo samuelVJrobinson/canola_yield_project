@@ -79,26 +79,8 @@ effSize <- function(x) unname(median(x)/diff(quantile(x,c(0.025,0.975))))
 #Does 95% of posterior overlap zero?
 overlap <- function(x) {r <- quantile(x,c(0.025,0.975))>=0; xor(r[1],r[2]);}
 
-# #Posterior predictive check plots - older version
-# PPplots <- function(resid,predResid,actual,pred,main=NULL){
-#   par(mfrow=c(2,1))
-#   resRange <- range(resid)
-#   pResRange <- range(predResid)
-#   xl <- yl <- c(pmin(resRange[1],pResRange[1]),pmax(resRange[2],pResRange[2]))
-#   x <- sum(resid<predResid)/length(resid)
-#   plot(resid~predResid,ylab='Sum actual residuals',xlab='Sum simulated residuals',xlim=xl,ylim=yl,
-#        main=paste(main,' (p =',round(min(x,1-x),3),')'))
-#   # legend('topleft',)
-#   abline(0,1,col='red') #PP plot
-#   plot(actual~pred, #Predicted vs Actual
-#        xlab=paste('Predicted',main),ylab=paste('Actual',main)) 
-#   abline(0,1,col='red')
-#   abline(lm(actual~pred),col='red',lty=2)
-#   par(mfrow=c(1,1))
-# }
-
 #Posterior predictive check plots
-PPplots <- function(mod,actual=NULL,pars=c('pred','resid','predResid'),main='',index=NA,jitterX=NA,scale=''){
+PPplots <- function(mod,actual=NULL,pars=c('pred','resid','predResid'),main='',index=NA,jitterX=NA,scale='',ZIpar=NA){
   if(is.null(mod)) stop('Model not found')
   require(ggpubr)
   oldtheme <- theme_get() #Get theme
@@ -190,10 +172,25 @@ PPplots <- function(mod,actual=NULL,pars=c('pred','resid','predResid'),main='',i
     geom_line(aes(y=y))+
     labs(x='Value',y='Density',title='Actual vs Simulated Density')
   
-  p <- ggarrange(p1,p2,p3,ncol=1,nrow=3)
+  if(is.na(ZIpar)){
+    
+    p <- ggarrange(p1,p2,p3,ncol=1,nrow=3)  
+  } else {
+    #Zero-inflation plots
+    propActualZero <- sum(actual==0)/length(actual)
+    propSimZero <- apply(modVals[[which(nam==pars[1])]],1,function(x) sum(x==0)/length(x))
+    p4 <- data.frame(type=rep(c('Simulated Zeros','ZI parameter'),each=length(modVals[[which(nam==ZIpar)]])),
+               val=c(propSimZero,modVals[[which(nam==ZIpar)]])) %>% 
+      ggplot()+
+      geom_density(aes(x=val,fill=type),alpha=0.5)+
+      geom_vline(xintercept = propActualZero,linetype='dashed')+
+      labs(x='Proportion',y='Density',fill=NULL)+
+      scale_fill_manual(values=c('black','red'))+
+      theme(legend.position = c(0.2,0.9))
+    p <- ggarrange(p1,p2,p3,p4,ncol=2,nrow=2)  
+  }
   
   theme_set(oldtheme)
-  
   return(p)
   
 }
@@ -370,8 +367,8 @@ shipley.test <- function(g,form=FALSE){
 
 shipley.dSep <- function(d,p,lab){
   require(ggplot2); require(dplyr)
-  
-  pvals <- d %>% pull({{p}}) #p-values
+
+    pvals <- d %>% pull({{p}}) #p-values
   
   kval <- 2*length(pvals) #k-val (df)
   if(any(pvals==0)){
@@ -386,9 +383,19 @@ shipley.dSep <- function(d,p,lab){
   tCol <- rev(ifelse(pvals<0.05,'red','black'))
   ttl <- paste0('C-stat: ',formatC(ret[1],3),', k: ',ret[2],', p: ',formatC(ret[3],digits=3))
   
+  #(Approximately) how many terms need to be added to make p-value<0.05?
+  removeP <- function(p){ #Which p-values should be removed?
+    cstatPval <- function(x) 1-pchisq(-2*sum(log(x)),2*length(x)) 
+    remove <- rep(FALSE,length(p))
+    while(cstatPval(p[!remove])<0.05) remove[which.min(ifelse(remove,Inf,p))] <- TRUE 
+    return(remove)  
+  }
+  
   d %>% mutate(param=factor({{lab}},levels=rev({{lab}}))) %>% 
     mutate(tooLow={{p}}<=0.05) %>% 
+    mutate(rem=removeP({{p}})) %>%
     ggplot(aes(x={{p}},y={{lab}},col=tooLow))+
+    geom_point(aes(size=rem),show.legend = FALSE)+
     geom_point(show.legend = FALSE)+
     labs(x='p-value',y=NULL,title=ttl) +
     scale_x_log10(breaks=c(0.001,0.01,0.05,0.5))+
@@ -407,3 +414,4 @@ capFirst <- function(x,decap=FALSE){ #Capitalize/decapitalize first letter of a 
   }
   return(x)
 }
+
