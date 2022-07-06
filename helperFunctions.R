@@ -95,9 +95,10 @@ PPplots <- function(mod,actual=NULL,pars=c('pred','resid','predResid'),main='',i
   
   if(main=='') main <- deparse(substitute(actual))
   
-  pred <- apply(modVals[[which(nam==pars[1])]],2,median) #Median predicted value
-  predUpr <- apply(modVals[[which(nam==pars[1])]],2,function(x) quantile(x,0.9)) #Upper predicted
-  predLwr <- apply(modVals[[which(nam==pars[1])]],2,function(x) quantile(x,0.1)) #Lower predicted
+  genVals <- modVals[[which(nam==pars[1])]] #Generated values
+  pred <- apply(genVals,2,median) #Median predicted value
+  predUpr <- apply(genVals,2,function(x) quantile(x,0.9)) #Upper predicted
+  predLwr <- apply(genVals,2,function(x) quantile(x,0.1)) #Lower predicted
   
   resid <- apply(modVals[[which(nam==pars[2])]],1,function(x) sum(abs(x))) #Sum of actual residuals
   predResid <- apply(modVals[[which(nam==pars[3])]],1,function(x) sum(abs(x))) #Sum of simulated residuals
@@ -121,12 +122,12 @@ PPplots <- function(mod,actual=NULL,pars=c('pred','resid','predResid'),main='',i
          title=paste0(main,' (p = ',round(min(x,1-x),3),')'))+
     xlim(xl)+ylim(yl)
   
-  #Actual vs Predicted plot
+  #Actual vs Generated plot
   
-  d2 <- data.frame(actual,pred,predUpr,predLwr) #Data for predicted vs actual plot
+  d2 <- data.frame(actual,pred,predUpr,predLwr) #Data for generated vs actual plot
   
   if(scale=='log'){
-    d2 <- d2 %>% mutate(across(everything(),~.x+0.1)) #If log-log, add 0.1 to predicted and actual
+    d2 <- d2 %>% mutate(across(everything(),~.x+0.1)) #If log-log, add 0.1 to generated and actual
   }
   
   p2 <- d2 %>% ggplot(aes(x=pred,y=actual))
@@ -142,7 +143,7 @@ PPplots <- function(mod,actual=NULL,pars=c('pred','resid','predResid'),main='',i
   p2 <- p2 +
     geom_smooth(method='lm',se=FALSE,col='blue',linetype='dashed',formula = y~x)+ #Regression line
     geom_abline(intercept = 0,slope=1,col='blue',linetype='solid')+ #1:1 line
-    labs(x=paste('Predicted',main),y=paste('Actual',main)) #Axis labels
+    labs(x=paste('Generated',main),y=paste('Actual',main)) #Axis labels
   
   if(scale=='log'){
     p2 <- p2 + scale_x_log10()+scale_y_log10()
@@ -156,13 +157,9 @@ PPplots <- function(mod,actual=NULL,pars=c('pred','resid','predResid'),main='',i
   xMin <- min(actual)
   
   yDens <- density(actual,from=xMin,to=xMax) #Kernel density of actual data
-  
   predDens <- t(apply(modVals[[which(nam==pars[1])]],1,function(i) density(i,from=xMin,to=xMax)$y))
-  
   predDens <- t(apply(predDens,2,function(i) quantile(i,c(0.05,0.25,0.75,0.95))))
-  
   predDens <- ifelse(predDens<.Machine$double.eps,0,predDens)
-  
   colnames(predDens) <- c('lwr2','lwr1','upr1','upr2')
   
   p3 <- data.frame(x=yDens$x,y=yDens$y,predDens) %>% 
@@ -186,7 +183,7 @@ PPplots <- function(mod,actual=NULL,pars=c('pred','resid','predResid'),main='',i
       geom_vline(xintercept = propActualZero,linetype='dashed')+
       labs(x='Proportion',y='Density',fill=NULL)+
       scale_fill_manual(values=c('black','red'))+
-      theme(legend.position = c(0.2,0.9))
+      theme(legend.position = c(0.25,0.9))
     p <- ggarrange(p1,p2,p3,p4,ncol=2,nrow=2)  
   }
   
