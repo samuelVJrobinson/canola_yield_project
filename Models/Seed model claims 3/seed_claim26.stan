@@ -168,6 +168,7 @@ parameters {
   real slopeFlDensFlwCount; //Other claim
   real slopeHbeeDistFlwCount; //Other claim
   real slopeHbeeVisFlwCount; //Other claim
+  real slopeLbeeDistPollen; //Other claim
   real slopeLbeeVisFlwCount; //Other claim
   
 	// Flower count (per plant) - random effects at plot level weren't converging
@@ -234,6 +235,7 @@ transformed parameters {
   		slopeCentFlwCount*isCent_all[plotI] + //Bay center effect
   		claim26_slopePollenFlwCount*pollenMu_plot[i] + //Claim
   		slopeHbeeDistFlwCount*logHbeeDist_all[plotI] + //Other claim
+  		slopeLbeeDistPollen*logLbeeDist_all[plotI] + //Other claim
   		slopeHbeeVisFlwCount*logHbeeVis_all[plotI] + //Other claim
   		slopeLbeeVisFlwCount*logLbeeVis_all[plotI] + //Other claim
   		slopeFlDensFlwCount*flDens[plotI]; //Other claim
@@ -281,6 +283,7 @@ model {
 	claim26_slopePollenFlwCount ~ normal(0,5); //Claim
 	slopeFlDensFlwCount ~ normal(0,5); //Other claim
 	slopeHbeeDistFlwCount ~ normal(0,5); //Other claim
+	slopeLbeeDistPollen ~ normal(0,5); //Other claim
 	slopeHbeeVisFlwCount ~ normal(0,5); //Other claim
 	slopeLbeeVisFlwCount ~ normal(0,5); //Other claim
 	

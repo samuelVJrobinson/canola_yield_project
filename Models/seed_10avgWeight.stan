@@ -191,8 +191,8 @@ parameters {
 	real<lower=-10,upper=10> slopeSeedCountSeedWeight; //Slope of seed count
 	real<lower=-10,upper=10> slopePlSizeSeedWeight; //Slope of plant size
 	real<lower=-10,upper=10> slopePlDensSeedWeight; //Effect of plant density
+	real<lower=-10,upper=10> slopeLbeeDistSeedWeight; //Effect of leafcutter distance
 	// real slope2016SeedWeight; //Effect of 2016
-	// real<lower=-10,upper=10> slopeLbeeDistSeedWeight; //Effect of leafcutter distance
 	// real<lower=-10,upper=10> slopeStockingSeedWeight; //Effect of half-stocking
 	// // Interactions- These aren't usually used in SEMs
 	// real<lower=-10,upper=10> slopePlDensPlSizeSeedWeight; //Plant size:plant density (p=0.)
@@ -254,9 +254,9 @@ transformed parameters {
   		intSeedWeight_field[plotIndex[plotI]] +
   		intSeedWeight_plot[i] +
 			slopePollenSeedWeight*pollenMu_plot[i] + //Pollen deposition
-			// slope2016SeedWeight*is2016_all[plotI] + //Year effect
-  		// slopeLbeeDistSeedWeight*logLbeeDist_all[plotI] + //Shelter distance effect
+  		slopeLbeeDistSeedWeight*logLbeeDist_all[plotI] + //Shelter distance effect
   		slopePlDensSeedWeight*plDens[i]; //Planting density
+  		// slope2016SeedWeight*is2016_all[plotI] + //Year effect
   		// slopeStockingSeedWeight*lbeeStocking_all[plotI]; //Half-stocking effect
 	
 	}
@@ -321,9 +321,9 @@ model {
 	slopePollenSeedWeight ~ normal(0,5); //Slope of pollen deposition
 	slopeSeedCountSeedWeight ~ normal(0,5); //Slope of seed count
 	slopePlSizeSeedWeight ~ normal(0,5); //Slope of plant size
-	// slope2016SeedWeight ~ normal(0,5); //Effect of year
-	// slopeLbeeDistSeedWeight ~ normal(0,5); //Slope of (log) lbee distance
+	slopeLbeeDistSeedWeight ~ normal(0,5); //Slope of (log) lbee distance
 	slopePlDensSeedWeight ~ normal(0,5); //Slope of plant density
+	// slope2016SeedWeight ~ normal(0,5); //Effect of year
 	// slopeStockingSeedWeight ~ normal(0,5); //Effect of half-stocking
 	// //Interactions
 	// slopePlDensPlSizeSeedWeight ~ normal(0,5); //Plant density:plant size

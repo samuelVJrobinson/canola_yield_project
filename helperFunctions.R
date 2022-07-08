@@ -230,7 +230,7 @@ g2bushels <- function(x){
 }
 
 #Extract fits for marginal plots
-# mod = stanfit model or dataframe
+# mod = stanfit model or dataframe with parameters 
 # parList = named list with vectors of parameters to predict at (passed through expand.grid)
 # otherPars = character vector of other parameters to add to the dataframe (e.g. zero-inflation)
 # q = quantiles to predict at
@@ -378,7 +378,7 @@ shipley.dSep <- function(d,p,lab){
   }
   
   tCol <- rev(ifelse(pvals<0.05,'red','black'))
-  ttl <- paste0('C-stat: ',formatC(ret[1],3),', k: ',ret[2],', p: ',formatC(ret[3],digits=3))
+  ttl <- paste0('C-stat: ',round(ret[1],2),', k: ',ret[2],', p: ',formatC(ret[3],digits=3))
   
   #(Approximately) how many terms need to be added to make p-value<0.05?
   removeP <- function(p){ #Which p-values should be removed?

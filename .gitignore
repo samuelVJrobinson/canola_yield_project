@@ -2,6 +2,7 @@
 *.Rhistory
 *.RData
 !modSummaries_commodity.Rdata
+!modSummaries_seed.Rdata
 *.Ruserdata
 yield path analysis.R
 *.rds

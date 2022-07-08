@@ -34,7 +34,7 @@ load("C:\\Users\\Samuel\\Documents\\Projects\\UofC\\canola_yield_project\\Models
 #Get model names, and make list
 modFiles <- dir(path='.',pattern = 'claim.+\\.stan',full.names = FALSE)
 modFiles <- modFiles[!grepl('template',modFiles)]
-modFiles <- modFiles[sapply(read.csv("claimsList_updated.csv")$Filename,function(x){
+modFiles <- modFiles[sapply(read.csv("claimsList_updated2.csv")$Filename,function(x){
   l <- grep(x,modFiles)
   if(length(l)==0) 0 else l
 })]
@@ -47,7 +47,7 @@ if(file.exists(modFiles[i])){
   temp <- parTable(mod) #Get parameter summaries
   #Save information to csv file
 
-  csvPath <- "C:\\Users\\Samuel\\Documents\\Projects\\UofC\\canola_yield_project\\Models\\Seed model claims 3\\claimsList_updated.csv"
+  csvPath <- "C:\\Users\\Samuel\\Documents\\Projects\\UofC\\canola_yield_project\\Models\\Seed model claims 3\\claimsList_updated2.csv"
   modList <- read.csv(csvPath,sep=',',strip.white = TRUE)
   modList[i,match(names(temp),names(modList))] <- temp[grepl('claim',temp$param),]
   write.csv(modList,csvPath,row.names = FALSE)
@@ -65,7 +65,7 @@ if(file.exists(modFiles[i])){
   parNam <- parNam[!parNam %in% c('intPollen','slopeVisitPol','slopeHbeeDistPollen','sigmaPolField','pollenPhi')]
 
   p <- traceplot(mod,pars=parNam,inc_warmup=FALSE)+labs(title=gsub('.*/','',modFiles[i]))
-  ggsave(paste0('./',gsub('\\.stan','',modFiles[i]),'.png'),p,width=8,height=8)
+  ggsave(paste0('./',gsub('\\.stan','',modFiles[i]),'.png'),p,width=12,height=8)
   # print(mod,pars=parNam)
   # print(modList[i,match(names(temp),names(modList))])
   # fastPairs(mod,pars=parNam)

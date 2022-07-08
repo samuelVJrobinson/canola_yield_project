@@ -8,7 +8,6 @@ library(beepr)
 library(xtable)
 
 library(rstan)
-setwd('./Models')
 rstan_options(auto_write = TRUE)
 options(mc.cores = 6)
 
@@ -24,8 +23,8 @@ prestheme=theme(legend.position='right',
 theme_set(theme_bw()+prestheme) #Sets graph theme to B/Ws + prestheme
 rm(prestheme)
 
-# setwd('~/Projects/UofC/canola_yield_project') #Multivac path
-setwd('~/Documents/canola_yield_project/Models') #Galpern machine path
+setwd('~/Projects/UofC/canola_yield_project/Models') #Multivac path
+# setwd('~/Documents/canola_yield_project/Models') #Galpern machine path
 
 source('../helperFunctions.R')
 
@@ -51,7 +50,7 @@ seedDAG <- dagify(plDens ~ hbeeDist,
                   flDens ~ hbeeDist,
                   hbeeVis ~ flDens + hbeeDist + lbeeDist + cent,
                   lbeeVis ~ flDens + hbeeDist + lbeeDist + cent,
-                  pollen ~ hbeeVis  + lbeeVis + cent + hbeeDist + flDens,
+                  pollen ~ hbeeVis  + lbeeVis + cent + hbeeDist + lbeeDist + flDens,
                   flwCount ~ plSize + cent + flwSurv,
                   flwSurv ~ pollen + plSize + cent + hbeeDist + lbeeDist + flDens,
                   seedCount ~ pollen + plSize + cent + hbeeDist + flDens + flwSurv + flwCount,
@@ -278,7 +277,7 @@ for(i in 1:length(modList)){
     n <- n[!grepl('_miss',n)] #Gets rid of imputed values
     
     p <- traceplot(modList[[i]],pars=n,inc_warmup=FALSE) #+ geom_hline(yintercept = 0) #Traceplots
-    fastPairs(modList[[i]],pars=n)
+    # fastPairs(modList[[i]],pars=n)
     print(modList[[i]],pars=n)
     # p <- stan_plot(modList[[i]],pars=n) #Pointrange plot
     
@@ -378,9 +377,13 @@ tidySeedDAG <- seedDAG %>% #Create tidy dagitty set
 #   geom_dag_text(col='black') +
 #   theme_dag_blank()
 
+tidySeedDAG$data %>% data.frame
+pathCoefs %>% data.frame
+
 tidySeedDAG$data <- tidySeedDAG$data %>% #Match coefs to dagitty set
   rename(xstart=x,ystart=y) %>% 
   full_join(x=pathCoefs,y=.,by=c('to','name')) %>% 
+  filter(!is.na(to)) %>% 
   mutate(isNeg=Z<0,isSig=pval<0.05) %>% 
   mutate(L=sqrt(abs(Z)),1) %>% 
   mutate(edgeLab=ifelse(isSig,as.character(sign(Z)*round(L,1)),'')) %>% 
@@ -408,7 +411,6 @@ ggplot(tidySeedDAG$data,aes(x = xstart, y = ystart, xend = xend, yend = yend))+
 
 unlist(shipley.test(seedDAG,TRUE))
 
-
 # test <- stan(file = "C:\\Users\\Samuel\\Documents\\Projects\\UofC\\canola_yield_project\\Models\\Seed model claims 3\\seed_claim04.stan",
 #              data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0)
 # n <- names(test) #Model parameters
@@ -420,24 +422,24 @@ unlist(shipley.test(seedDAG,TRUE))
 #Get model names, and make list
 modFiles <- dir(path='./Seed model claims 3',pattern = '*\\.stan',full.names = TRUE)
 modFiles <- modFiles[!grepl('template',modFiles)]
-modFiles <- modFiles[sapply(read.csv('./Seed model claims 3/claimsList_updated.csv')$Filename,function(x){
+modFiles <- modFiles[sapply(read.csv('./Seed model claims 3/claimsList_updated2.csv')$Filename,function(x){
     l <- grep(x,modFiles)
     if(length(l)==0) 0 else l
   })]
 
 
-for(i in 38){
+for(i in 14){
   overwrite <- TRUE
   if(file.exists(modFiles[i])){
     print(paste0('Starting model ',modFiles[i]))
     #Run model
-    # mod <- stan(file=modFiles[i],data=datalist,iter=3000,chains=4,control=list(adapt_delta=0.8),init=0)
-    mod <- stan(file=modFiles[i],data=datalist,iter=400,chains=1,control=list(adapt_delta=0.8),init=0)
+    mod <- stan(file=modFiles[i],data=datalist,iter=3000,chains=4,control=list(adapt_delta=0.8),init=0)
+    # mod <- stan(file=modFiles[i],data=datalist,iter=400,chains=1,control=list(adapt_delta=0.8),init=0)
     temp <- parTable(mod) #Get parameter summaries
     #Save information to csv file
-    modList <- read.csv('./Seed model claims 3/claimsList_updated.csv',sep=',',strip.white = TRUE)
+    modList <- read.csv('./Seed model claims 3/claimsList_updated2.csv',sep=',',strip.white = TRUE)
     modList[i,match(names(temp),names(modList))] <- temp[grepl('claim',temp$param),]
-    write.csv(modList,'./Seed model claims 3/claimsList_updated.csv',row.names = FALSE)
+    write.csv(modList,'./Seed model claims 3/claimsList_updated2.csv',row.names = FALSE)
     
     #Check model
     parNam <- names(mod) #Model parameters
@@ -462,20 +464,25 @@ for(i in 38){
 
 #Calculate C-statistic
 
+#Original model
 read.csv('./Seed model claims 3/claimsList_updated.csv',sep=',',strip.white = TRUE) %>% 
   mutate(pval=pnorm(-abs(Z))*2) %>% 
   shipley.dSep(.,pval,param)
 
+read.csv('./Seed model claims 3/claimsList_updated2.csv',sep=',',strip.white = TRUE) %>% 
+  mutate(pval=pnorm(-abs(Z))*2) %>% 
+  shipley.dSep(.,pval,param)
 
 
 #Marginal plots ---------------------
 
+load('modSummaries_seed.Rdata') #Load existing list
 
 #Input parameters get turned into a model matrix, multiplied, compiled
 pl <- list('intPlDens'=1,
-           'slopeHbeeDistPlDens'=with(datalist,seq(min(log(hbee_dist)),max(log(hbee_dist)),length=10)))
+           'slopeHbeeDistPlDens'=with(datalist,seq(min(log(hbee_dist)),max(log(hbee_dist)),length=30)))
 
-getPreds(modList[[1]],pl) %>% 
+getPreds(modSummaries_seed[[1]],pl) %>% 
   ggplot(aes(x=slopeHbeeDistPlDens,y=med))+
   geom_ribbon(aes(ymax=upr,ymin=lwr),alpha=0.2)+
   geom_line()

@@ -176,6 +176,7 @@ parameters {
 	real<lower=-10,upper=10> slopeLbeeVisPollen; //Slope of lbee visits
 	real<lower=-10,upper=10> slopeCentPollen; //Bay center effect
 	real<lower=-10,upper=10> slopeHbeeDistPollen; //(log) hbee distance effect
+	real<lower=-10,upper=10> slopeLbeeDistPollen; //(log) lbee distance effect
 	real<lower=-10,upper=10> slopeFlDensPollen; //Flower density
 	real<lower=1e-10,upper=10> sigmaPollen_field; //Sigma for field-level intercept
 	vector<lower=-10,upper=10>[Nfield] intPollen_field; //Field-level random intercept
@@ -214,6 +215,7 @@ transformed parameters {
     	slopeHbeeVisPollen*logHbeeVis_all[plotIndex_F2[i]] +  //Effect of (log) honeybee visits
     	slopeCentPollen*isCent_all[plotIndex_F2[i]] + //Bay center effect
     	slopeHbeeDistPollen*logHbeeDist_all[plotIndex_F2[i]] + //(log) hbee distance effect
+    	slopeLbeeDistPollen*logLbeeDist_all[plotIndex_F2[i]] + //(log) lbee distance effect
    	  slopeFlDensPollen*flDens[plotIndex_F2[i]] + //Flower density
    	  claim15_slopePlDensPollen*plDens[i]; //Claim
 	}
@@ -237,6 +239,7 @@ model {
 	slopeLbeeVisPollen ~ normal(0,5); //lbee Visitation effect
 	slopeCentPollen~ normal(0,5); //Bay center effect
 	slopeHbeeDistPollen ~ normal(0,5); //(log) hbee distance effect
+	slopeLbeeDistPollen ~ normal(0,5); //(log) lbee distance effect
 	// slopeStockingHbeeDistPollen ~ normal(0,5); //Stocking:hbee distance interaction
 	slopeFlDensPollen ~ normal(0,5); //Flower density
 	sigmaPollen_field ~ gamma(1,1); //Sigma for random field
