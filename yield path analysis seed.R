@@ -23,8 +23,8 @@ prestheme=theme(legend.position='right',
 theme_set(theme_bw()+prestheme) #Sets graph theme to B/Ws + prestheme
 rm(prestheme)
 
-setwd('~/Projects/UofC/canola_yield_project/Models') #Multivac path
-# setwd('~/Documents/canola_yield_project/Models') #Galpern machine path
+# setwd('~/Projects/UofC/canola_yield_project/Models') #Multivac path
+setwd('~/Documents/canola_yield_project/Models') #Galpern machine path
 
 source('../helperFunctions.R')
 
@@ -319,9 +319,9 @@ compareRE(modList[[5]],'intFlwCount_plot')
 compareRE(modList[[6]],'intFlwSurv_field')
 compareRE(modList[[6]],'intFlwSurv_plot')
 compareRE(modList[[7]],'intSeedCount_field')
-compareRE(modList[[7]],'intSeedCount_plot') #
+# compareRE(modList[[7]],'intSeedCount_plot') #
 compareRE(modList[[8]],'intSeedWeight_field')
-compareRE(modList[[8]],'intSeedWeight_plot')
+# compareRE(modList[[8]],'intSeedWeight_plot')
 compareRE(modList[[9]],'ranEffYield_field',1) #Intercepts
 compareRE(modList[[9]],'ranEffYield_field',2) #Slopes
 compareRE(modList[[9]],'ranEffYield_plot',1,0.3) #Intercepts

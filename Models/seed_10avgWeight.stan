@@ -200,8 +200,8 @@ parameters {
 	real<lower=1e-10,upper=10> sigmaSeedWeight; //SD of seed weight
 	real<lower=1e-10,upper=10> sigmaSeedWeight_field; //SD of field random effect
 	vector<lower=-10,upper=10>[Nfield] intSeedWeight_field; //field-level random intercepts
-	real<lower=1e-10,upper=10> sigmaSeedWeight_plot; //SD of plot random effect
-	vector<lower=-10,upper=10>[Nplot_F] intSeedWeight_plot; //plot-level random intercepts
+	// real<lower=1e-10,upper=10> sigmaSeedWeight_plot; //SD of plot random effect
+	// vector<lower=-10,upper=10>[Nplot_F] intSeedWeight_plot; //plot-level random intercepts
 	real<lower=1e-10,upper=10> lambdaSeedWeight; //Lambda term for exponential process
 }
 
@@ -252,7 +252,7 @@ transformed parameters {
    	  
    	seedWeightPlot[i] = intSeedWeight +
   		intSeedWeight_field[plotIndex[plotI]] +
-  		intSeedWeight_plot[i] +
+  		// intSeedWeight_plot[i] +
 			slopePollenSeedWeight*pollenMu_plot[i] + //Pollen deposition
   		slopeLbeeDistSeedWeight*logLbeeDist_all[plotI] + //Shelter distance effect
   		slopePlDensSeedWeight*plDens[i]; //Planting density
@@ -331,8 +331,8 @@ model {
 	sigmaSeedWeight ~ gamma(1,1); //SD of seed weight
 	sigmaSeedWeight_field ~ gamma(1,1); //SD of field random effect
 	intSeedWeight_field ~ normal(0,sigmaSeedWeight_field); //field-level random intercepts
-	sigmaSeedWeight_plot ~ gamma(1,1); //SD of plot random effect
-	intSeedWeight_plot ~ normal(0,sigmaSeedWeight_plot); //plot-level random intercepts
+	// sigmaSeedWeight_plot ~ gamma(1,1); //SD of plot random effect
+	// intSeedWeight_plot ~ normal(0,sigmaSeedWeight_plot); //plot-level random intercepts
 	lambdaSeedWeight ~ gamma(1,1); //Lambda term for exponential process
 }
 

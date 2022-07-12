@@ -191,8 +191,8 @@ parameters {
 	real<lower=1e-10,upper=10> sigmaSeedCount; //SD at plant level
 	real<lower=1e-10,upper=10> sigmaSeedCount_field; //SD of field random effect
 	vector<lower=-10,upper=10>[Nfield] intSeedCount_field; //field-level random intercepts
-	real<lower=1e-10,upper=10> sigmaSeedCount_plot; //SD for plot random effect - bad traces, requires more informative prior
-	vector<lower=-10,upper=10>[Nplot_F] intSeedCount_plot; //plot-level random intercept  - most overlap zero
+	// real<lower=1e-10,upper=10> sigmaSeedCount_plot; //SD for plot random effect - bad traces, requires more informative prior
+	// vector<lower=-10,upper=10>[Nplot_F] intSeedCount_plot; //plot-level random intercept  - most overlap zero
 	real<lower=1e-10,upper=10> lambdaSeedCount; //Lambda term for exponential process
 }
 
@@ -240,7 +240,7 @@ transformed parameters {
 			
 		seedCountPlot[i] = intSeedCount + //Intercept
   		intSeedCount_field[plotIndex[plotI]] + //Field random intercept
-  		intSeedCount_plot[i] + //Plot random intercept
+  		// intSeedCount_plot[i] + //Plot random intercept
   		slopePollenSeedCount*pollenMu_plot[i] + //Pollen deposition (plot level average)
   		slopeCentSeedCount*isCent_all[i] + //Bay center effect
 		  slopeHbeeDistSeedCount*logHbeeDist_all[plotI] + //(log) hbee distance
@@ -297,8 +297,8 @@ model {
 	slopeFlwCountSeedCount ~ normal(0,5); //Slope of flower count
 	sigmaSeedCount_field ~ gamma(1,1); //SD of field random effect
 	intSeedCount_field ~ normal(0,sigmaSeedCount_field); //field-level random intercepts
-	sigmaSeedCount_plot ~ gamma(2,1); //SD of plot random effect
-	intSeedCount_plot ~ normal(0,sigmaSeedCount_plot); //plot-level random intercepts
+	// sigmaSeedCount_plot ~ gamma(2,1); //SD of plot random effect
+	// intSeedCount_plot ~ normal(0,sigmaSeedCount_plot); //plot-level random intercepts
 	sigmaSeedCount ~ gamma(1,1); //Dispersion parameter
 	lambdaSeedCount ~ gamma(1,1); //Lambda term for exponential process
 }
