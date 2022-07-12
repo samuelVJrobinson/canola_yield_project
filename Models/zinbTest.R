@@ -1,4 +1,13 @@
+library(tidyverse)
+library(rstan)
+setwd("~/Documents/canola_yield_project/Models")
+source('../helperFunctions.R')
+rstan_options(auto_write = TRUE)
+options(mc.cores = 6)
+theme_set(theme_bw()) #Sets graph theme to B/Ws + prestheme
+
 #Test estimation of ZINB models
+set.seed(1)
 N <- 300
 x <- runif(N,0,5)
 Beta <- c(0.5,0.2)
@@ -20,7 +29,7 @@ p2 <- c('Beta[1]','Beta[2]','phi','theta')
 stan_trace(testMod,pars=p)
 stan_dens(testMod,pars=p)
 fastPairs(testMod,p2)
-PPplots(testMod,datalist$y,c('generated','resid','generated_resid'),'y',ZIpar='theta') #The actual vs generated plot sucks. Can it be improved?
+PPplots(testMod,datalist$y,c('gen','resid','gen_resid'),'y',ZIpar='theta') #The actual vs generated plot sucks. Can it be improved?
 
 #Something like this:
 t(apply(exp(X %*% t(extract(testMod,'Beta')[[1]]))*(1-outer(rep(1,datalist$N),extract(testMod,'theta')[[1]])),

@@ -37,19 +37,18 @@ model {
 }
 
 generated quantities {
-	
-	int generated[N]; //Generated
-	real resid[N]; //Residual 
-	real generated_resid[N]; //Residual of generated 
+
+	int gen[N]; //Generated
+	real resid[N]; //Residual
+	real gen_resid[N]; //Residual of generated
 	for(i in 1:N){
 		//hbee visits - ZI neg bin
 		resid[i]=y[i]-(exp(mu[i])*(1-theta)); //Residual for actual value x offset
 		if(bernoulli_rng(theta)==1) //If theta generates an extra zero
-			generated[i] = 0; //Predicted value is automatically zero
+			gen[i] = 0; //Predicted value is automatically zero
 		else //Otherwise
-			generated[i] = neg_binomial_2_log_rng(mu[i],phi); //Predicted value drawn from neg.bin		
-		generated_resid[i]=generated[i]-(exp(mu[i])*(1-theta)); //Residual for predicted value
+			gen[i] = neg_binomial_2_log_rng(mu[i],phi); //Predicted value drawn from neg.bin
+		gen_resid[i]=gen[i]-(exp(mu[i])*(1-theta)); //Residual for predicted value
 	}
 }
-
 
