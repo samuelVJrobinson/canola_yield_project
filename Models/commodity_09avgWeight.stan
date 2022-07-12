@@ -109,9 +109,9 @@ parameters {
   real slopeFlwCountSeedWeight; //Slope of flower count
   real slopeFlDensSeedWeight; //Slope of flower density
   real<lower=0> sigmaSeedWeight; //SD of seed weight
-  real<lower=0> sigmaSeedWeight_plot; //SD of plot random effect
+  // real<lower=0> sigmaSeedWeight_plot; //SD of plot random effect
   real<lower=0> sigmaSeedWeight_field; //SD of field random effect
-  vector[Nplot] intSeedWeight_plot; //plot-level random intercepts
+  // vector[Nplot] intSeedWeight_plot; //plot-level random intercepts
   vector[Nfield] intSeedWeight_field; //field-level random intercepts
   real<lower=0> lambdaSeedWeight; //Lambda term for exponential process
 }
@@ -143,7 +143,7 @@ transformed parameters {
 		// Plot-level seed weight
 		seedWeightMuPlot[i] = intSeedWeight + //Intercept
 			intSeedWeight_field[plotIndex[i]] + //Field-level random intercept
-			intSeedWeight_plot[i] + //Plot-level random intercept
+			// intSeedWeight_plot[i] + //Plot-level random intercept
 			slopePlDensSeedWeight*plDens[i] + //Plant density
 			slopeHbeeDistSeedWeight*logHbeeDist[i] + //Distance from edge
 			slopeHbeeVisSeedWeight*logHbeeVis[i] + //(log) hbee visits
@@ -197,9 +197,9 @@ model {
   
   sigmaSeedWeight ~ gamma(1,1); //SD of seed weight
   sigmaSeedWeight_field ~ gamma(1,1); //SD of field random effect
-  sigmaSeedWeight_plot ~ gamma(1,1); //SD of plot random effect
+  // sigmaSeedWeight_plot ~ gamma(1,1); //SD of plot random effect
   intSeedWeight_field ~ normal(0,sigmaSeedWeight_field); //field-level random intercepts
-  intSeedWeight_plot ~ normal(0,sigmaSeedWeight_plot); //plot-level random intercepts
+  // intSeedWeight_plot ~ normal(0,sigmaSeedWeight_plot); //plot-level random intercepts
   lambdaSeedWeight ~ gamma(1,1); //Lambda for exp-normal distribution
 }
 

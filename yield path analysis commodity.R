@@ -20,8 +20,8 @@ prestheme=theme(legend.position='right',
 theme_set(theme_bw()+prestheme) #Sets graph theme to B/Ws + prestheme
 rm(prestheme)
 
-setwd('~/Projects/UofC/canola_yield_project') #Multivac path
-# setwd('~/Documents/canola_yield_project') #Galpern machine path
+# setwd('~/Projects/UofC/canola_yield_project') #Multivac path
+setwd('~/Documents/canola_yield_project') #Galpern machine path
 
 source('helperFunctions.R')
 
@@ -228,9 +228,9 @@ compareRE(modList[[4]],'intFlwCount_plot')
 compareRE(modList[[5]],'intFlwSurv_field')
 compareRE(modList[[5]],'intFlwSurv_plot')
 compareRE(modList[[6]],'intSeedCount_field')
-compareRE(modList[[6]],'intSeedCount_plot') #
+# compareRE(modList[[6]],'intSeedCount_plot') #
 compareRE(modList[[7]],'intSeedWeight_field')
-compareRE(modList[[7]],'intSeedWeight_plot')
+# compareRE(modList[[7]],'intSeedWeight_plot')
 compareRE(modList[[8]],'ranEffYield_field',1) #Intercepts
 compareRE(modList[[8]],'ranEffYield_field',2) #Slopes
 compareRE(modList[[8]],'ranEffYield_plot',1,0.3) #Intercepts
@@ -410,15 +410,15 @@ modList %>%
 # Partial effects plots for commodity fields -----------------------------
 
 #Plant density
+load('modSummaries_commodity.Rdata')
 
 list('intPlDens'=1,
-           'slopeDistPlDens'=with(datalist,seq(min(log(dist)),max(log(dist)),length=10))) %>% 
+           'slopeHbeeDistPlDens'=with(datalist,seq(min(log(dist)),max(log(dist)),length=10))) %>% 
   getPreds(modSummaries_commodity[[1]],parList = .,otherPars = c('sigmaPlDens','sigmaPlDens_field'))
 
-list('intPlDens'=1,
-     'slopeDistPlDens'=with(datalist,seq(min(log(dist)),max(log(dist)),length=10))) %>% 
-  getPreds(modList[[1]],parList = .,otherPars = c('sigmaPlDens','sigmaPlDens_field'))
-
+# list('intPlDens'=1,
+#      'slopeHbeeDistPlDens'=with(datalist,seq(min(log(dist)),max(log(dist)),length=10))) %>% 
+#   getPreds(modList[[1]],parList = .,otherPars = c('sigmaPlDens','sigmaPlDens_field'))
 
 load('modPodcount.Rdata') #All extracted coefficients in list form (mod3)
 mod3 <- extract(modPodcount) #Get coefficients from stan model

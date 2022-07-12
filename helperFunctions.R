@@ -232,11 +232,11 @@ g2bushels <- function(x){
 #Extract fits for marginal plots
 # mod = stanfit model or dataframe with parameters 
 # parList = named list with vectors of parameters to predict at (passed through expand.grid)
-# otherPars = character vector of other parameters to add to the dataframe (e.g. zero-inflation)
+# otherPars = character vector of other parameters to add to the dataframe
 # q = quantiles to predict at
 # nrep = number of replicates of parameters to generate (for data.frame parameters)
 
-getPreds <- function(mod,parList=NULL,otherPars=NULL,q=c(0.5,0.025,0.975),nrep=4000){
+getPreds <- function(mod,parList=NULL,offset=NULL,ZIpar=NULL,otherPars=NULL,q=c(0.5,0.025,0.975),nrep=4000,trans=NULL){
   if(is.null(parList)) stop('Specify parameters')
   dfNames <- c("param","mean","sd","Z","median",
                "lwr","upr","pval","n_eff","Rhat")
@@ -254,14 +254,6 @@ getPreds <- function(mod,parList=NULL,otherPars=NULL,q=c(0.5,0.025,0.975),nrep=4
       stop(paste0('Parameters not found: ',paste(names(parList)[!names(parList) %in% mod$param],collapse=', ')))
     } 
     chooseRows <- mod$param %in% names(parList) 
-    # if(useQuantiles){
-    #   m1 <- mod[chooseRows,c('lwr','upr')] #Upper/lower ranges  
-    #   m2 <- mod[chooseRows,c('median')] #Median
-    # } else {
-    #   m1 <- data.frame(lwr=mod$mean[chooseRows]-1.96*mod$sd[chooseRows],
-    #                    upr=mod$mean[chooseRows]+1.96*mod$sd[chooseRows])
-    #   m2 <- mod$mean[chooseRows] #Mean
-    # }
     m <- mod[chooseRows,c('mean','sd')] 
     m <- do.call('cbind',lapply(1:nrow(m),function(i) rnorm(nrep,m$mean[i],m$sd[i])))
     colnames(m) <- names(parList)
@@ -279,10 +271,24 @@ getPreds <- function(mod,parList=NULL,otherPars=NULL,q=c(0.5,0.025,0.975),nrep=4
   mm <- expand.grid(parList) #Model matrix
   mmMat <- as.matrix(mm)
   
-  pred <- mmMat %*% t(m)
+  if(!is.null(offset)){ #Add offset term if needed
+    m <- cbind(m,offset=rep(1,nrow(m)))
+    mmMat <- cbind(mmMat,offset=rep(1,nrow(mmMat)))
+  } 
+  
+  if(!is.null(ZIpar)){ #Add ZI term if needed (on log scale)
+    m <- cbind(m,ZI=log(1-rnorm(nrep,mod$mean[mod$param==ZIpar],mod$sd[mod$param==ZIpar])))
+    mmMat <- cbind(mmMat,ZI=rep(1,nrow(mmMat)))
+  }
+  
+  pred <- mmMat %*% t(m) #Multiply parameters by model matrix
   pred <- data.frame(t(apply(pred,1,function(x) quantile(x,q))))
   names(pred) <- c('med','lwr','upr')
-  if(!is.null(otherPars)){
+  if(!is.null(trans)){ #If transformation needed
+    pred <- eval(call(trans,pred))
+  }
+  
+  if(!is.null(otherPars)){ #If other parameters needed
     pred <- cbind(pred,sapply(extras,function(x) rep(x,nrow(pred))))
   }
   
