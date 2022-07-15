@@ -243,26 +243,25 @@ getPreds <- function(mod,parList=NULL,offset=NULL,ZIpar=NULL,otherPars=NULL,q=c(
   
   if(class(mod)=='stanfit'){
     m <- extract(mod,par=names(parList))
-    m <- do.call('cbind',m)
-    
+    m <- do.call('cbind',m) #All draws
+    m_mean <- apply(m,1,mean) #Mean values
     if(!is.null(otherPars)){
       extras <- extract(mod,par=otherPars) %>% sapply(.,median)
     }
-    
   } else if(class(mod)=='data.frame' & !any(!names(mod)==dfNames)){ #If using a dataframe
     if(any(!names(parList) %in% mod$param)){
       stop(paste0('Parameters not found: ',paste(names(parList)[!names(parList) %in% mod$param],collapse=', ')))
     } 
     chooseRows <- mod$param %in% names(parList) 
-    m <- mod[chooseRows,c('mean','sd')] 
-    m <- do.call('cbind',lapply(1:nrow(m),function(i) rnorm(nrep,m$mean[i],m$sd[i])))
+    m <- mod[chooseRows,] 
+    m_mean <- setNames(m$mean,names(parList)) #Mean value
+    m <- do.call('cbind',lapply(1:nrow(m),function(i) runif(nrep,m$lwr[i],m$upr[i]))) #Generate draws b/w upr and lower
     colnames(m) <- names(parList)
     
     if(!is.null(otherPars)){
       extras <- mod$median[mod$param %in% otherPars] 
       names(extras) <- otherPars
     }
-    
   } else {
     warning('mod is not stanfit object or dataframe with correct column names')
     return(NA)
@@ -272,18 +271,23 @@ getPreds <- function(mod,parList=NULL,offset=NULL,ZIpar=NULL,otherPars=NULL,q=c(
   mmMat <- as.matrix(mm)
   
   if(!is.null(offset)){ #Add offset term if needed
-    m <- cbind(m,offset=rep(1,nrow(m)))
-    mmMat <- cbind(mmMat,offset=rep(1,nrow(mmMat)))
+    m <- cbind(m,offset=rep(1,nrow(m))) #Slope fixed at 1
+    m_mean <- c(m_mean,setNames(1,'offset'))
+    mmMat <- cbind(mmMat,offset=rep(log(offset),nrow(mmMat)))
   } 
   
   if(!is.null(ZIpar)){ #Add ZI term if needed (on log scale)
-    m <- cbind(m,ZI=log(1-rnorm(nrep,mod$mean[mod$param==ZIpar],mod$sd[mod$param==ZIpar])))
+    i <- mod$param==ZIpar
+    # m <- cbind(m,ZI=log(1-rnorm(nrep,mod$mean[i],mod$sd[i])))
+    # m <- cbind(m,ZI=log(1-c(mod$lwr[i],mod$med[i],mod$upr[i])))
+    m <- cbind(m,ZI=log(1-runif(nrep,mod$lwr[i],mod$upr[i]))) #Add log(1-ZI) param
+    m_mean <- c(m_mean,setNames(log(1-mod$mean[i]),'ZI'))
     mmMat <- cbind(mmMat,ZI=rep(1,nrow(mmMat)))
   }
   
   pred <- mmMat %*% t(m) #Multiply parameters by model matrix
-  pred <- data.frame(t(apply(pred,1,function(x) quantile(x,q))))
-  names(pred) <- c('med','lwr','upr')
+  pred <- data.frame(mmMat %*% m_mean,t(apply(pred,1,function(x) quantile(x,q))))
+  names(pred) <- c('mean','med','lwr','upr')
   if(!is.null(trans)){ #If transformation needed
     pred <- eval(call(trans,pred))
   }
@@ -291,7 +295,6 @@ getPreds <- function(mod,parList=NULL,offset=NULL,ZIpar=NULL,otherPars=NULL,q=c(
   if(!is.null(otherPars)){ #If other parameters needed
     pred <- cbind(pred,sapply(extras,function(x) rep(x,nrow(pred))))
   }
-  
   return(cbind(mm,pred))
 }
 
