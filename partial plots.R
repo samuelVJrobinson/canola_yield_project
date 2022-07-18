@@ -3,8 +3,8 @@
 # Load everything ---------------------------------------------------------
 library(tidyverse)
 theme_set(theme_bw())
-setwd('~/Documents/canola_yield_project/Figures') #Galpern machine path
-# setwd('~/Projects/UofC/canola_yield_project/Models') #Multivac path
+# setwd('~/Documents/canola_yield_project/Figures') #Galpern machine path
+setwd('~/Projects/UofC/canola_yield_project/Models') #Multivac path
 
 source('../helperFunctions.R') #Helper functions
 
@@ -77,27 +77,30 @@ bind_rows(d1,d2) %>%
        fill='Field\nType',col='Field\nType')
 
 #Hbee and Lbee visitation from shelters
-  
+
 dists <- log(1:30)-avgSeedData$logLbeeDistCent #Distances
 
-d2 <- with(avgSeedData,
+d1 <- with(avgSeedData,
            list('intHbeeVis'=1,
                 'slopeFlDensHbeeVis' = flDens_obs$mean,
                 'slopeHbeeDistHbeeVis'=clogHbeeDist$mean,
                 'slopeLbeeDistHbeeVis'=dists,
                 'slopeCentHbeeVis'= 0
            )) %>% 
-  getPreds(modSummaries_seed[[2]],parList = .,offset=timeOffset,ZIpar = 'thetaHbeeVis',trans='exp',q=c(0.5,0.05,0.95))
+  getPreds(modSummaries_seed[[2]],parList = .,offset=timeOffset,ZIpar = 'thetaHbeeVis',
+           trans='exp',q=c(0.5,0.05,0.95))
 
-d2 <- with(avgSeedData,
-           list('intHbeeVis'=1,
-                'slopeFlDensHbeeVis' = flDens_obs$mean,
-                'slopeHbeeDistHbeeVis'=seq(min(clogHbeeDist),max(clogHbeeDist),length=20),
-                'slopeLbeeDistHbeeVis'=clogHbeeDist$mean,
-                'slopeCentHbeeVis'= 0
+debugonce(getPreds)
+
+(d2 <- with(avgSeedData,
+           list('intVisitLbeeVis'=1,
+                'slopeFlDensLbeeVis' = flDens_obs$mean,
+                'slopeHbeeDistLbeeVis'=clogHbeeDist$mean,
+                'slopeLbeeDistLbeeVis'=dists,
+                'slopeCentLbeeVis'= 0
            )) %>% 
-  getPreds(modSummaries_seed[[2]],parList = .,offset=timeOffset,ZIpar = 'thetaHbeeVis',trans='exp',q=c(0.5,0.05,0.95)) %>% 
-  transmute(type='Seed',dist=exp(dists),mean,med,lwr,upr)
+  getPreds(modSummaries_seed[[3]],parList = .,offset=timeOffset,ZIpar = 'thetaLbeeVis',
+           trans='exp',q=c(0.5,0.05,0.95)) )
 
 
 
