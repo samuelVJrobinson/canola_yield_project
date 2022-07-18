@@ -121,7 +121,7 @@ load("C:\\Users\\Samuel\\Documents\\Projects\\UofC\\canola_yield_project\\Commod
 # 
 # #General field data
 # fields2014=
-#   fields2014 %>% 
+#   fields2014 %>%
 #   transmute(Year=2014,Field=paste(Grower,X.), #Concatenates grower name and field number
 #        Area=as.factor(Area), #Converts Area to factor
 #        Lat=Deg.N+Min.N/60,Lon=-(Deg.W+Min.W/60), #Lat/Lon
