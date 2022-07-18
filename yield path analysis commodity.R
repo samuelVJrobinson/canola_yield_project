@@ -47,7 +47,8 @@ load('./Models/datalist_commodity.Rdata')
 #   numHives=NumHives, #Number of hives/field
 #   is2015=Year==2015, #Is year 2015?
 #   isGP=Area!='Lethbridge', #Is area Grand Prairie?
-#   isIrrigated=Irrigated=='Irrigated' #Is field irrigated?
+#   isIrrigated=Irrigated=='Irrigated', #Is field irrigated?
+#   fieldSize=FieldSize_ha #Field size in hectares
 # ))
 # 
 # datalistPlot <- with(arrange(surveyAllComm,factor(paste(Year,Field,Distance))),list( #Plot-level measurements
@@ -64,8 +65,8 @@ load('./Models/datalist_commodity.Rdata')
 #   plDens_obs=log(PlDens[!is.na(PlDens)]), #(log) Planting density
 #   obsPlDens_ind=which(!is.na(PlDens)), #Index for observed
 #   missPlDens_ind=which(is.na(PlDens)), #Index for missing
-# 
-#   flDens=sqrt(FlDens) #(sqrt) Flower density
+#   flDens=sqrt(FlDens)-mean(sqrt(FlDens)), #(sqrt) Flower density - centered
+#   flDensMean=mean(sqrt(FlDens))
 # ))
 # 
 # datalistFlw <- flowersAllComm %>%
@@ -163,7 +164,7 @@ modList <- vector(mode = 'list',length = length(modFiles))
 names(modList) <- gsub('(commodity.*[0-9]{2}|\\.stan)','',modFiles)
 
 modList[1] <- stan(file=modFiles[1],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #OK - Plant density, Plant size, Flower Density
-modList[2] <- stan(file=modFiles[2],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #OK - Visitation
+modList[2] <- stan(file=modFiles[2],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.85),init=0) #OK - Visitation
 modList[3] <- stan(file=modFiles[3],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #OK - Pollen
 modList[4] <- stan(file=modFiles[4],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #OK - Flower count
 modList[5] <- stan(file=modFiles[5],data=datalist,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0); beep(1) #OK - Pod Count (flw survival)
@@ -204,12 +205,14 @@ for(i in 1:length(modList)){
   }
 }
 
+
+
 #Posterior predictive checks - OK 
 PPplots(modList[[1]],datalist$plDens_obs,c('predPlDens','plDens_resid','predPlDens_resid'),
         index = datalist$obsPlDens_ind,main='Plant Density')
 PPplots(modList[[1]],datalist$flDens,c('predFlDens','flDens_resid','predFlDens_resid'),'Flower density')
 PPplots(modList[[1]],datalist$plantSize,c('predPlSize','plSize_resid','predPlSize_resid'),'Plant size')
-PPplots(modList[[2]],datalist$hbeeVis,c('predHbeeVis','hbeeVis_resid','predHbeeVis_resid'),'Honeybee visits',jitterX=0.1) #Not great, tends to overpredict high visitation. Probably 
+PPplots(modList[[2]],datalist$hbeeVis,c('predHbeeVis','hbeeVis_resid','predHbeeVis_resid'),'Honeybee visits',jitterX=0.1) #Not great, tends to overpredict high visitation. 
 PPplots(modList[[3]],datalist$pollenCount,c('predPollenCount','pollen_resid','predPollen_resid'),'Pollen')
 PPplots(modList[[4]],datalist$flwCount,c('predFlwCount','flwCount_resid','predFlwCount_resid'),'Flowers per plant')
 PPplots(modList[[5]],datalist$podCount,c('predPodCount','podCount_resid','predPodCount_resid'),'Pods per plant')

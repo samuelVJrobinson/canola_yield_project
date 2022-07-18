@@ -8,6 +8,7 @@ data {
 	int is2015[Nfield]; //Was field measured in 2015?
 	int isGP[Nfield]; //Was field from Grand Prairie?
 	int isIrrigated[Nfield]; //Was field irrigated?
+	vector[Nfield] fieldSize; //Field size (ha)
 	
 	//Plot level	
 	int Nplot; //Number of plots	
@@ -43,6 +44,7 @@ data {
 transformed data {
 	//Transformations
 	vector[Nfield] logNumHives; //Log number of hives	
+	vector[Nfield] stockingRate; //Stocking rate
 	vector[Nplot] logHbeeDist=log(dist); //Log-transform distance	
 	vector[Nplot] logTime=log(totalTime); //Log-transform time
 	vector[Nplot] logHbeeVis;  //Hbee visitation rate
@@ -56,7 +58,8 @@ transformed data {
 	logHbeeDist=logHbeeDist-mean(logHbeeDist); //Centers distance
 	
 	for(i in 1:Nfield){
-		logNumHives[i]=log(numHives[i]+1); //Log transform number of hives		
+		logNumHives[i]=log(numHives[i]+1); //Log transform number of hives	
+		stockingRate[i] = numHives[i]/fieldSize[i]; //Stocking rate (hives/ha)
 	}
 	
 	for(i in 1:Nplot){ //Log transform of honeybee visitation rate (per 10 mins)
@@ -95,7 +98,7 @@ parameters {
 	real<lower=0> sigmaHbeeVis_Field; //SD of field random intercepts
 	real<lower=0> phiHbeeVis; //Dispersion parameter
 	vector[Nfield] intHbeeVis_field; //field-level random intercepts
-	real<lower=0> lambdaHbeeVis_field; //Lambda for skewed random effects
+	// real<lower=0> lambdaHbeeVis_field; //Lambda for skewed random effects
 }
 
 transformed parameters {		
@@ -133,9 +136,10 @@ model {
 	// slopeYearGpVis ~ normal(0,5); // GP-year interaction
 	slopeFlDensHbeeVis ~ normal(0,5); //Flower density
 	sigmaHbeeVis_Field ~ gamma(1,1); //Sigma for random field
-	intHbeeVis_field ~ exp_mod_normal(0,sigmaHbeeVis_Field,lambdaHbeeVis_field); //Skewed random effects - slightly better than standard normal
-	lambdaHbeeVis_field ~ gamma(1,1); //Lambda for skewed random effects
+	intHbeeVis_field ~ normal(0,sigmaHbeeVis_Field); //Random effects
 	phiHbeeVis ~ gamma(1,1); //Dispersion parameter for NegBin
+	// intHbeeVis_field ~ exp_mod_normal(0,sigmaHbeeVis_Field,lambdaHbeeVis_field); //Skewed random effects - not much better, and harder to estimate
+	// lambdaHbeeVis_field ~ gamma(1,1); //Lambda for skewed random effects
 }
 
 generated quantities {

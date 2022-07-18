@@ -238,16 +238,19 @@ load('./datalist_seed.Rdata')
 # #   podIndex=match(plantList,datalistPlant$plantList)
 # # ))
 # datalistPlant$plantList <- datalistPlot$plotList <-  NULL
-# 
 # datalist <- c(datalistField,datalistPlot,datalistFlw,datalistPlant)
+# 
+# flDensMean <- mean(with(datalist,c(flDens_obs,flDens_obs_extra))) #Center flower density
+# datalist$flDens_obs <- datalist$flDens_obs-flDensMean
+# datalist$flDens_obs_extra <- datalist$flDens_obs_extra-flDensMean
+# datalist$flDensMean <- flDensMean
 # 
 # if(any(sapply(datalist,function(x) sum(is.na(x)))!=0)){ beep(1); print("NAs found in datalist")}
 # 
-# rm(datalistField,datalistPlot,datalistFlw,datalistPlant,rileyFields,samFields) #Cleanup
+# rm(datalistField,datalistPlot,datalistFlw,datalistPlant,rileyFields,samFields,flDensMean) #Cleanup
 # str(datalist)
 # 
 # save(datalist,file = './datalist_seed.Rdata')
-
 
 # Run models ----------------------------
 
