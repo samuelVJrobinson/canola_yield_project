@@ -23,10 +23,11 @@ prestheme=theme(legend.position='right',
 theme_set(theme_classic()+prestheme) #Sets graph theme to B/Ws + prestheme
 rm(prestheme)
 
+#Load and organize everything -----------
+
 #Load from Rdata file
 load("C:\\Users\\Samuel\\Documents\\Projects\\UofC\\canola_yield_project\\Commodity field analysis\\commodityfieldDataAll.RData")
 
-# #Load and organize everything -----------
 # fields2014=read.csv("C:\\Users\\Samuel\\Documents\\Projects\\UofC\\csv files\\field info 2014.csv",stringsAsFactors=F,strip.white=T,na.strings = c("",'NA'))
 # survey2014=read.csv("C:\\Users\\Samuel\\Documents\\Projects\\UofC\\csv files\\survey data 2014.csv",stringsAsFactors=F,strip.white=T,na.strings = c("",'NA'))
 # nectar2014=read.csv("C:\\Users\\Samuel\\Documents\\Projects\\UofC\\csv files\\nectar calibration.csv",stringsAsFactors=F,strip.white=T,na.strings = c("",'NA'))
@@ -119,9 +120,12 @@ load("C:\\Users\\Samuel\\Documents\\Projects\\UofC\\canola_yield_project\\Commod
 # } #Appears to work
 # 
 # #General field data
-# fields2014=transmute(fields2014,Year=2014,Field=paste(Grower,X.), #Concatenates grower name and field number
+# fields2014=
+#   fields2014 %>% 
+#   transmute(Year=2014,Field=paste(Grower,X.), #Concatenates grower name and field number
 #        Area=as.factor(Area), #Converts Area to factor
 #        Lat=Deg.N+Min.N/60,Lon=-(Deg.W+Min.W/60), #Lat/Lon
+#        FieldSize_ha=Field.Size..ha., #Field size (ha)
 #        Variety=as.factor(Variety), #Converts Area to factor
 #        Irrigated=factor(Irrigated,labels=c('Unirrigated','Irrigated')),
 #        Irrigated=factor(Irrigated,levels=c('Irrigated','Unirrigated')),
@@ -132,16 +136,17 @@ load("C:\\Users\\Samuel\\Documents\\Projects\\UofC\\canola_yield_project\\Commod
 #        Surveyed=as.POSIXct(Surveyed,format='%b %d, %Y'),
 #        StartTime=as.POSIXct(paste(Surveyed,Start.Time),format='%Y-%m-%d %H:%M'),
 #        EndTime=as.POSIXct(paste(Surveyed,End.Time),format='%Y-%m-%d %H:%M'),
-#        Temp=Temperature,WindSp=Wind.Speed.m.s.*3.6, #Weather (wind speed in km/hr)
-#        RH=Humidity,Cloud=Cloud.Cover,
+#        Temp=as.numeric(Temperature),WindSp=Wind.Speed.m.s.*3.6, #Weather (wind speed in km/hr)
+#        RH=as.numeric(Humidity),Cloud=Cloud.Cover,
 #        Cloud=ifelse(grepl('overcast',Cloud),'8/8',Cloud),
 #        Cloud=as.numeric(substr(Cloud,0,1))/8) %>%
 #   filter(!is.na(Surveyed)) #Strips unsurveyed fields
 # 
 # fields2015=filter(fields2015,Type=='Commodity') %>%
-#   transmute(Field,Year=2015,
+#   transmute(Year=2015,Field,
 #             Area=as.factor(Area), #Converts Area to factor
 #             Lat=Deg.N,Lon=-Deg.W, #Lat/Lon
+#             FieldSize_ha=Hectares, #Field size (ha)
 #             Variety=as.factor(Variety), #Converts Area to factor
 #             Irrigated=factor(Irrigated,labels=c('Unirrigated','Irrigated')), #Converts Irrigated from logical to factor
 #             BeeYard=factor(Number.of.Hives>0,labels=c('Unstocked','Stocked')), #Converts BeeYard from logical to factor
@@ -163,9 +168,9 @@ load("C:\\Users\\Samuel\\Documents\\Projects\\UofC\\canola_yield_project\\Commod
 #                  NumHives=fields2014$NumHives[matches2014],
 #                  Area=fields2014$Area[matches2014],
 #                  Variety=fields2014$Variety[matches2014], #Matches crop varieties
-#                  Temp=fields2014$Temp[matches2014], #Air Temperature
+#                  Temp=as.numeric(fields2014$Temp[matches2014]), #Air Temperature
 #                  WindSp=fields2014$WindSp[matches2014], #Wind Speed (km/hr)
-#                  RH=fields2014$RH[matches2014], #Relative Humidity
+#                  RH=as.numeric(fields2014$RH[matches2014]), #Relative Humidity
 #                  FlDens=Fls.50cm.2*4,  #Flower Density, converting fls/50cm2 to fls/m2
 #                  Date=fields2014$Surveyed[matches2014],
 #                  StartTime=as.POSIXct(paste(Date,StartTime),format='%Y-%m-%d %H:%M'),
@@ -415,9 +420,9 @@ load("C:\\Users\\Samuel\\Documents\\Projects\\UofC\\canola_yield_project\\Commod
 # #VISITORS: plot-level visitation, with mean nectar, %sugar and pollen counts taken from flowers. Broken down by Clade.
 # #PLANTS: plant-level yield metrics, matched with Honeybee, Fly, and Total visit
 # #SEEDS: flower-level seed mass & seed count, matched with field- and plot-level measurements
-
-#Folder to save images
-folder="C:\\Users\\Samuel\\Documents\\Projects\\UofC\\Commodity field analysis\\Figures"
+# 
+# #Folder to save images
+# folder="C:\\Users\\Samuel\\Documents\\Projects\\UofC\\Commodity field analysis\\Figures"
 
 # General visitation plots --------------------------------------------------------
 
