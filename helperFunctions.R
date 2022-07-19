@@ -6,7 +6,7 @@ logit <- function(x){
 }
 invLogit <- function(x){ 
   i <- exp(x)/(1+exp(x)) 
-  i[is.nan(i)] <- 1 #If x is large enough, becomes Inf/Inf = NaN, but Lim(invLogit) x->Inf = 1
+  # i[is.nan(i)] <- 1 #If x is large enough, becomes Inf/Inf = NaN, but Lim(invLogit) x->Inf = 1
   return(i)
 }
 
@@ -236,7 +236,7 @@ g2bushels <- function(x){
 # q = quantiles to predict at
 # nrep = number of replicates of parameters to generate (for data.frame parameters)
 
-getPreds <- function(mod,parList=NULL,offset=NULL,ZIpar=NULL,otherPars=NULL,q=c(0.5,0.025,0.975),nrep=4000,trans=NULL){
+getPreds <- function(mod,parList=NULL,offset=NULL,ZIpar=NULL,otherPars=NULL,q=c(0.5,0.025,0.975),nrep=4000,trans=NULL,expandGrid=TRUE){
   if(is.null(parList)) stop('Specify parameters')
   dfNames <- c("param","mean","sd","Z","median",
                "lwr","upr","pval","n_eff","Rhat")
@@ -267,7 +267,12 @@ getPreds <- function(mod,parList=NULL,offset=NULL,ZIpar=NULL,otherPars=NULL,q=c(
     return(NA)
   }
   
-  mm <- expand.grid(parList) #Model matrix
+  if(expandGrid){ 
+    mm <- expand.grid(parList) #Create model matrix using expand.grid
+  } else {
+    if(length(unique(sapply(dat,length)))>2) stop('Input parameters have different lengths. Cannot coerce to dataframe')
+    mm <- as.data.frame(parList)
+  }
   mmMat <- as.matrix(mm)
   
   if(!is.null(offset)){ #Add offset term if needed

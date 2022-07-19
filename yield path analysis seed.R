@@ -272,6 +272,8 @@ modList[8] <- stan(file=modFiles[8],data=datalist,iter=2000,chains=4,init=0) #We
 modList[9] <- stan(file=modFiles[9],data=datalist,iter=3000,chains=4,init=0) #Yield
 beepr::beep(1)
 
+apply(extract(modList[[4]],pars='pollenMu_plot')[[1]],2,mean) %>% range
+
 #Traceplots
 for(i in 1:length(modList)){
   if(!is.null(modList[[i]])){
