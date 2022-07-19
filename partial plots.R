@@ -4,8 +4,8 @@
 library(tidyverse)
 library(ggpubr)
 theme_set(theme_bw())
-setwd('~/Documents/canola_yield_project/Figures') #Galpern machine path
-# setwd('~/Projects/UofC/canola_yield_project/Models') #Multivac path
+# setwd('~/Documents/canola_yield_project/Figures') #Galpern machine path
+setwd('~/Projects/UofC/canola_yield_project/Models') #Multivac path
 
 source('../helperFunctions.R') #Helper functions
 
@@ -186,13 +186,41 @@ ggsave('allVisits.png',p,bg='white',width = 12,height=4)
 
 # Pollen plots ------------------------------------------------------------
 
-hbeeVisComm <- log((0:36)+1)
+#median, mean, max:
+#0,1.72,36 max for commodity, 4,22.6,215 for seed
+hbeeVisComm <- log(seq(0,36,20)+1)
+hbeeVisSeed <- log((seq(0,215,20))+1)
 
-with(avgCommData, #Hbee visitation in commodity
+d1 <- with(avgCommData, #Hbee visitation effect
      list('intPollen'=1,
           'slopeHbeeVisPollen'=hbeeVisComm,
           'slopeHbeeDistPollen'= 0
           )) %>% 
-  getPreds(modSummaries_commodity[[3]],parList = .,offset=timeOffset,trans='exp',q=c(0.5,0.05,0.95)) %>% 
+  getPreds(modSummaries_commodity[[3]],parList = .,trans='exp',q=c(0.5,0.05,0.95)) %>% 
   transmute(vis=0:36,mean,med,lwr,upr)
+
+# dists <- sort(unique(commData$clogHbeeDist))
+# d2 <- with(avgCommData, #Hbee distance effect
+#            list('intPollen'=1,
+#                 'slopeHbeeVisPollen'=mean(log((commData$hbeeVis/commData$totalTime)+1)),
+#                 'slopeHbeeDistPollen'= dists
+#            )) %>% 
+#   getPreds(modSummaries_commodity[[3]],parList = .,trans='exp',q=c(0.5,0.05,0.95)) %>% 
+#   transmute(dist=sort(unique(commData$dist)),mean,med,lwr,upr)
+# 
+# d2 %>% ggplot(aes(x=dist))+
+#   geom_ribbon(aes(ymax=upr,ymin=lwr),alpha=0.3)+
+#   geom_line(aes(y=med))+
+#   labs(x='Dist',y='Pollen')
+
+with(avgSeedData, #Hbee distance effect
+           list('intPollen'=1,
+                'slopeHbeeVisPollen'=hbeeVisSeed,
+                'slopeLbeeVisPollen'=0,
+                'slopeCentPollen'=0,
+                'slopeHbeeDistPollen'=0,
+                'slopeLbeeDistPollen'=0,
+                'slopeFlDensPollen'=0
+           )) %>% 
+  getPreds(modSummaries_seed[[4]],parList = .,trans='exp',q=c(0.5,0.05,0.95)) 
 
