@@ -9,3 +9,4 @@ yield path analysis.R
 .~lock.*.csv#
 .Rproj.user
 Comments on paper
+./Manuscript/*.aux
