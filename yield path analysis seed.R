@@ -354,61 +354,6 @@ PPplots(modList[[8]],datalist$seedMass_obs,c('predSeedMass','seedMass_resid','pr
         index=datalist$obsSeedMass_ind,'Seed Mass')
 PPplots(modList[[9]],log(datalist$yield),c('predYield','yield_resid','predYield_resid'),'Seed mass per plant')
 
-# Path diagram ------------------------------------------------------------
-
-load('modSummaries_seed.Rdata')
-
-pathCoefs <- modSummaries_seed %>% #Get path coefficients
-  bind_rows(.id='to') %>% 
-  transmute(to,name=param,Z,pval) %>% 
-  filter(to!='yield',!grepl('(int|sigma|lambda|Phi|phi|rho|nu|theta)',name)) %>% 
-  mutate(to=case_when(
-    to=='flDens' & grepl('PlDens$',name) ~ 'plDens',
-    to=='flDens' & grepl('PlSize$',name) ~ 'plSize',
-    TRUE ~ gsub('avg','seed',to)
-  )) %>% 
-  mutate(name=gsub('slope','',name)) %>% 
-  filter(mapply(grepl,capFirst(to),name)) %>% 
-  mutate(name=mapply(gsub,capFirst(to),'',name)) %>% 
-  mutate(name=capFirst(name,TRUE)) 
-
-tidySeedDAG <- seedDAG %>% #Create tidy dagitty set
-  tidy_dagitty() 
-
-# ggplot(tidySeedDAG,aes(x = x, y = y, xend = xend, yend = yend))+
-#   geom_dag_edges() +
-#   geom_dag_text(col='black') +
-#   theme_dag_blank()
-
-tidySeedDAG$data %>% data.frame
-pathCoefs %>% data.frame
-
-tidySeedDAG$data <- tidySeedDAG$data %>% #Match coefs to dagitty set
-  rename(xstart=x,ystart=y) %>% 
-  full_join(x=pathCoefs,y=.,by=c('to','name')) %>% 
-  filter(!is.na(to)) %>% 
-  mutate(isNeg=Z<0,isSig=pval<0.05) %>% 
-  mutate(L=sqrt(abs(Z)),1) %>% 
-  mutate(edgeLab=ifelse(isSig,as.character(sign(Z)*round(L,1)),'')) %>% 
-  mutate(C=ifelse(isNeg,'red','black')) %>% 
-  mutate(A=ifelse(isSig,1,0.1))
-
-ggplot(tidySeedDAG$data,aes(x = xstart, y = ystart, xend = xend, yend = yend))+
-  annotate('text',x=0.5,y=4.5+0.1,label='Plot Level',size=5)+
-  annotate('rect',xmin=-0.5,ymin=0,xmax=1.5,ymax=4.5,fill=NA,col='black',
-           linetype='dashed',linejoin='round',size=1)+
-  
-  annotate('text',x=3.5,y=3.5+0.1,label='Plant Level',size=5)+
-  annotate('rect',xmin=2,ymin=-0.5,xmax=4.5,ymax=3.5,fill=NA,col='black',
-           linetype='dashed',linejoin='round',size=1)+
-  
-  geom_dag_edges(aes(edge_width=L,edge_colour=C,edge_alpha=A),
-                 arrow_directed=arrow(angle=20,type='open')) +
-  geom_dag_edges(aes(label=edgeLab),label_pos=0.45,edge_alpha=0,label_size=6,fontface='bold',label_colour ='black') +
-  geom_dag_edges(aes(label=edgeLab),label_pos=0.45,edge_alpha=0,label_size=6,fontface='plain',label_colour='white') +
-  geom_dag_label_repel(aes(label=label),col='black',force=0) +
-  theme_dag_blank()
-
 
 # Dagitty claims list for seed fields -------------------------------------
 

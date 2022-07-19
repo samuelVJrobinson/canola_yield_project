@@ -4,8 +4,8 @@
 library(tidyverse)
 library(ggpubr)
 theme_set(theme_bw())
-# setwd('~/Documents/canola_yield_project/Figures') #Galpern machine path
-setwd('~/Projects/UofC/canola_yield_project/Models') #Multivac path
+setwd('~/Documents/canola_yield_project/Figures') #Galpern machine path
+# setwd('~/Projects/UofC/canola_yield_project/Models') #Multivac path
 
 source('../helperFunctions.R') #Helper functions
 
@@ -186,41 +186,122 @@ ggsave('allVisits.png',p,bg='white',width = 12,height=4)
 
 # Pollen plots ------------------------------------------------------------
 
+#Visitation effects
+
 #median, mean, max:
 #0,1.72,36 max for commodity, 4,22.6,215 for seed
-hbeeVisComm <- log(seq(0,36,20)+1)
-hbeeVisSeed <- log((seq(0,215,20))+1)
+hbeeVisComm <- log(seq(0,max(with(commData,hbeeVis/totalTime)),length=30)+1)
+hbeeVisSeed <- log((seq(0,max(with(seedData,hbeeVis/totalTime)),length=100))+1)
+lbeeVisSeed <- log((seq(0,max(with(seedData,lbeeVis/totalTime)),length=100))+1)
+lab <- c('HB Seed','LCB Seed','HB Commodity') 
+labCols <- c('darkorange','darkgreen','black')
 
-d1 <- with(avgCommData, #Hbee visitation effect
+d1 <- with(avgCommData, #Hbee visitation effect - commodity
      list('intPollen'=1,
           'slopeHbeeVisPollen'=hbeeVisComm,
           'slopeHbeeDistPollen'= 0
           )) %>% 
   getPreds(modSummaries_commodity[[3]],parList = .,trans='exp',q=c(0.5,0.05,0.95)) %>% 
-  transmute(vis=0:36,mean,med,lwr,upr)
+  transmute(vis=exp(hbeeVisComm)-1,mean,med,lwr,upr)
 
-# dists <- sort(unique(commData$clogHbeeDist))
-# d2 <- with(avgCommData, #Hbee distance effect
-#            list('intPollen'=1,
-#                 'slopeHbeeVisPollen'=mean(log((commData$hbeeVis/commData$totalTime)+1)),
-#                 'slopeHbeeDistPollen'= dists
-#            )) %>% 
-#   getPreds(modSummaries_commodity[[3]],parList = .,trans='exp',q=c(0.5,0.05,0.95)) %>% 
-#   transmute(dist=sort(unique(commData$dist)),mean,med,lwr,upr)
-# 
-# d2 %>% ggplot(aes(x=dist))+
-#   geom_ribbon(aes(ymax=upr,ymin=lwr),alpha=0.3)+
-#   geom_line(aes(y=med))+
-#   labs(x='Dist',y='Pollen')
-
-with(avgSeedData, #Hbee distance effect
+d2 <- with(avgSeedData, #Hbee vis effect - seed
            list('intPollen'=1,
                 'slopeHbeeVisPollen'=hbeeVisSeed,
-                'slopeLbeeVisPollen'=0,
+                'slopeLbeeVisPollen'=avgSeedData$logLbeeVis$mean,
                 'slopeCentPollen'=0,
                 'slopeHbeeDistPollen'=0,
                 'slopeLbeeDistPollen'=0,
                 'slopeFlDensPollen'=0
            )) %>% 
-  getPreds(modSummaries_seed[[4]],parList = .,trans='exp',q=c(0.5,0.05,0.95)) 
+  getPreds(modSummaries_seed[[4]],parList = .,trans='exp',q=c(0.5,0.05,0.95)) %>% 
+  transmute(vis=exp(hbeeVisSeed)-1,mean,med,lwr,upr)
+
+d3 <- with(avgSeedData, #Lbee vis effect - seed
+           list('intPollen'=1,
+                'slopeHbeeVisPollen'=avgSeedData$logHbeeVis$mean,
+                'slopeLbeeVisPollen'=lbeeVisSeed,
+                'slopeCentPollen'=0,
+                'slopeHbeeDistPollen'=0,
+                'slopeLbeeDistPollen'=0,
+                'slopeFlDensPollen'=0
+           )) %>% 
+  getPreds(modSummaries_seed[[4]],parList = .,trans='exp',q=c(0.5,0.05,0.95)) %>% 
+  transmute(vis=exp(hbeeVisSeed)-1,mean,med,lwr,upr)
+
+p1 <- bind_rows(d2,d3,d1,.id = 'type') %>% 
+  mutate(type=factor(type,labels=lab)) %>% 
+  ggplot(aes(x=vis,y=mean))+
+  geom_ribbon(aes(ymax=upr,ymin=lwr,fill=type),alpha=0.3)+
+  geom_line(aes(col=type))+
+  labs(x='Visits per hour',y='Pollen grains per stigma',fill=NULL,col=NULL)+
+  scale_colour_manual(values=labCols)+
+  scale_fill_manual(values=labCols)+
+  scale_y_log10()
+
+#Distance effects
+hbeeDistComm <- with(avgCommData,seq(clogHbeeDist$min,log(400)-avgCommData$logHbeeDist$mean,length=100))
+hbeeDistSeed <- with(avgSeedData,seq(clogHbeeDist$min,clogHbeeDist$max,length=100))
+lbeeDistSeed <- with(avgSeedData,seq(clogLbeeDist$min,log(100)-avgSeedData$logLbeeDist,length=100))
+
+d1 <- with(avgCommData, #Hbee distance - commodity
+           list('intPollen'=1,
+                'slopeHbeeVisPollen'=avgCommData$logHbeeVis$mean,
+                'slopeHbeeDistPollen'= hbeeDistComm
+           )) %>%
+  getPreds(modSummaries_commodity[[3]],parList = .,trans='exp',q=c(0.5,0.05,0.95)) %>%
+  transmute(dist=exp(hbeeDistComm+avgCommData$logHbeeDist$mean),mean,med,lwr,upr)
+
+d2 <- with(avgSeedData, #Hbee dist - seed
+     list('intPollen'=1,
+          'slopeHbeeVisPollen'=avgSeedData$logHbeeVis$mean,
+          'slopeLbeeVisPollen'=avgSeedData$logLbeeVis$mean,
+          'slopeCentPollen'=0,
+          'slopeHbeeDistPollen'=hbeeDistSeed,
+          'slopeLbeeDistPollen'=0,
+          'slopeFlDensPollen'=0
+     )) %>% 
+  getPreds(modSummaries_seed[[4]],parList = .,trans='exp',q=c(0.5,0.05,0.95)) %>% 
+  transmute(dist=exp(hbeeDistSeed+avgSeedData$logHbeeDist),mean,med,lwr,upr)
+
+d3 <- with(avgSeedData, #Lbee dist - seed
+           list('intPollen'=1,
+                'slopeHbeeVisPollen'=avgSeedData$logHbeeVis$mean,
+                'slopeLbeeVisPollen'=avgSeedData$logLbeeVis$mean,
+                'slopeCentPollen'=0,
+                'slopeHbeeDistPollen'=0,
+                'slopeLbeeDistPollen'=lbeeDistSeed,
+                'slopeFlDensPollen'=0
+           )) %>% 
+  getPreds(modSummaries_seed[[4]],parList = .,trans='exp',q=c(0.5,0.05,0.95)) %>% 
+  transmute(dist=exp(lbeeDistSeed+avgSeedData$logLbeeDist),mean,med,lwr,upr)
+
+p2 <- bind_rows(d2,d3,d1,.id = 'type') %>% 
+  mutate(type=factor(type,labels=lab)) %>% 
+  ggplot(aes(x=dist,y=mean))+
+  geom_ribbon(aes(ymax=upr,ymin=lwr,fill=type),alpha=0.3)+
+  geom_line(aes(col=type))+
+  labs(x='Distance from apiary or shelter (m)',y='Pollen grains per stigma',fill=NULL,col=NULL)+
+  scale_colour_manual(values=labCols)+
+  scale_fill_manual(values=labCols)+
+  scale_y_log10()
+
+p3 <- with(avgSeedData, #Bay position
+     list('intPollen'=1,
+          'slopeHbeeVisPollen'=avgSeedData$logHbeeVis$mean,
+          'slopeLbeeVisPollen'=avgSeedData$logLbeeVis$mean,
+          'slopeCentPollen'=c(0,1),
+          'slopeHbeeDistPollen'=0,
+          'slopeLbeeDistPollen'=0,
+          'slopeFlDensPollen'=0
+     )) %>% 
+  getPreds(modSummaries_seed[[4]],parList = .,trans='exp',q=c(0.5,0.05,0.95)) %>% 
+  transmute(bayType=factor(c('Edge','Centre'),levels=c('Edge','Centre')),mean,med,lwr,upr) %>% 
+  ggplot(aes(x=bayType))+
+  geom_pointrange(aes(y=mean,ymax=upr,ymin=lwr))+
+  labs(x='Female bay position',y='Pollen grains per stigma',fill=NULL,col=NULL)
+
+(p <- ggarrange(p1,p2,p3,ncol=3,nrow=1,legend='bottom',common.legend = TRUE,labels='auto'))
+
+ggsave('allPollen.png',p,bg='white',width = 12,height=4)
+
 
