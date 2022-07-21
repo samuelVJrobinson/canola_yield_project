@@ -229,80 +229,6 @@ g2bushels <- function(x){
   # 2204.62 #lbs per tonne
 }
 
-#Extract fits for marginal plots
-# mod = stanfit model or dataframe with parameters 
-# parList = named list with vectors of parameters to predict at (passed through expand.grid)
-# otherPars = character vector of other parameters to add to the dataframe
-# q = quantiles to predict at
-# nrep = number of replicates of parameters to generate (for data.frame parameters)
-
-getPreds <- function(mod,parList=NULL,offset=NULL,ZIpar=NULL,otherPars=NULL,q=c(0.5,0.025,0.975),nrep=4000,trans=NULL,expandGrid=TRUE){
-  if(is.null(parList)) stop('Specify parameters')
-  dfNames <- c("param","mean","sd","Z","median",
-               "lwr","upr","pval","n_eff","Rhat")
-  
-  if(class(mod)=='stanfit'){
-    m <- extract(mod,par=names(parList))
-    m <- do.call('cbind',m) #All draws
-    m_mean <- apply(m,1,mean) #Mean values
-    if(!is.null(otherPars)){
-      extras <- extract(mod,par=otherPars) %>% sapply(.,median)
-    }
-  } else if(class(mod)=='data.frame' & !any(!names(mod)==dfNames)){ #If using a dataframe
-    if(any(!names(parList) %in% mod$param)){
-      stop(paste0('Parameters not found: ',paste(names(parList)[!names(parList) %in% mod$param],collapse=', ')))
-    } 
-    chooseRows <- mod$param %in% names(parList) 
-    m <- mod[chooseRows,] 
-    m_mean <- setNames(m$mean,names(parList)) #Mean value
-    m <- do.call('cbind',lapply(1:nrow(m),function(i) runif(nrep,m$lwr[i],m$upr[i]))) #Generate draws b/w upr and lower
-    colnames(m) <- names(parList)
-    
-    if(!is.null(otherPars)){
-      extras <- mod$median[mod$param %in% otherPars] 
-      names(extras) <- otherPars
-    }
-  } else {
-    warning('mod is not stanfit object or dataframe with correct column names')
-    return(NA)
-  }
-  
-  if(expandGrid){ 
-    mm <- expand.grid(parList) #Create model matrix using expand.grid
-  } else {
-    if(length(unique(sapply(dat,length)))>2) stop('Input parameters have different lengths. Cannot coerce to dataframe')
-    mm <- as.data.frame(parList)
-  }
-  mmMat <- as.matrix(mm)
-  
-  if(!is.null(offset)){ #Add offset term if needed
-    m <- cbind(m,offset=rep(1,nrow(m))) #Slope fixed at 1
-    m_mean <- c(m_mean,setNames(1,'offset'))
-    mmMat <- cbind(mmMat,offset=rep(log(offset),nrow(mmMat)))
-  } 
-  
-  if(!is.null(ZIpar)){ #Add ZI term if needed (on log scale)
-    i <- mod$param==ZIpar
-    # m <- cbind(m,ZI=log(1-rnorm(nrep,mod$mean[i],mod$sd[i])))
-    # m <- cbind(m,ZI=log(1-c(mod$lwr[i],mod$med[i],mod$upr[i])))
-    m <- cbind(m,ZI=log(1-runif(nrep,mod$lwr[i],mod$upr[i]))) #Add log(1-ZI) param
-    m_mean <- c(m_mean,setNames(log(1-mod$mean[i]),'ZI'))
-    mmMat <- cbind(mmMat,ZI=rep(1,nrow(mmMat)))
-  }
-  
-  pred <- mmMat %*% t(m) #Multiply parameters by model matrix
-  pred <- data.frame(mmMat %*% m_mean,t(apply(pred,1,function(x) quantile(x,q))))
-  names(pred) <- c('mean','med','lwr','upr')
-  if(!is.null(trans)){ #If transformation needed
-    pred <- eval(call(trans,pred))
-  }
-  
-  if(!is.null(otherPars)){ #If other parameters needed
-    pred <- cbind(pred,sapply(extras,function(x) rep(x,nrow(pred))))
-  }
-  return(cbind(mm,pred))
-}
-
 # d-separation claims list from Shipley 2009; shows original terms in brackets with claim & conditioning set outside
 # g = dag object, or list of formulae to be passed to ggdag
 # form = Convert to R-style formulas from dagitty structure?
@@ -424,5 +350,306 @@ capFirst <- function(x,decap=FALSE){ #Capitalize/decapitalize first letter of a 
     substr(x, 1, 1) <- toupper(substr(x, 1, 1))
   }
   return(x)
+}
+
+rnormLim <- function(n,m,s,lwr,upr){ #Generates normally distributed data bounded between upr and lwr
+  r <- rep(NA,n)
+  while(any(is.na(r))){
+    r[is.na(r)] <- rnorm(sum(is.na(r)),m,s)
+    r[r>upr|r<lwr] <- NA
+  }
+  return(r)
+}
+
+#Extract fits for marginal plots
+# mod = stanfit model or dataframe with parameters 
+# parList = named list with vectors of parameters to predict at (passed through expand.grid)
+# otherPars = character vector of other parameters to add to the dataframe
+# q = quantiles to predict at
+# nrep = number of replicates of parameters to generate (for data.frame parameters)
+# simPar = get single draw from posterior instead of using mean + quantiles
+
+getPreds <- function(mod,parList=NULL,offset=NULL,ZIpar=NULL,otherPars=NULL,q=c(0.5,0.025,0.975),nrep=4000,trans=NULL,expandGrid=TRUE,simPar=FALSE){
+  if(is.null(parList)) stop('No parameter list specified')
+  if(any(sapply(parList,is.null))) stop(paste0('Missing parameter (NULL): ',paste0(names(parList)[sapply(parList,is.null)],collapse=', ')))
+  if(any(sapply(parList,function(x) any(is.na(x))))) stop(paste0('Missing parameter (NA): ',paste0(names(parList)[sapply(parList,is.na)],collapse=', ')))
+  if(simPar&nrep!=1){
+    nrep <- 1
+    warning('Setting nRep to 1 to save time')
+  }
+  
+  dfNames <- c("param","mean","sd","Z","median",
+               "lwr","upr","pval","n_eff","Rhat")
+  
+  if(class(mod)=='stanfit'){
+    #NOTE: doesn't work with simPar yet
+    library(rstan)
+    m <- extract(mod,par=names(parList))
+    m <- do.call('cbind',m) #All draws
+    m_mean <- apply(m,1,mean) #Mean values
+    if(!is.null(otherPars)){
+      extras <- extract(mod,par=otherPars) %>% sapply(.,median)
+    }
+  } else if(class(mod)=='data.frame' & !any(!names(mod)==dfNames)){ #If using a dataframe
+    if(any(!names(parList) %in% mod$param)){
+      stop(paste0('Parameters not found: ',paste(names(parList)[!names(parList) %in% mod$param],collapse=', ')))
+    } 
+    chooseRows <- mod$param %in% names(parList) 
+    m <- mod[chooseRows,] #Get coefficients
+    if(!simPar) m_mean <- setNames(m$mean,names(parList)) #Mean value
+    # m <- do.call('cbind',lapply(1:nrow(m),function(i) runif(nrep,m$lwr[i],m$upr[i]))) #Generate draws b/w upr and lower
+
+    #Get range of slope coefficients
+    m <- do.call('cbind',lapply(1:nrow(m),function(i) rnormLim(nrep,m$mean[i],m$sd[i],m$lwr[i],m$upr[i]))) #Bounded draws from normal
+    colnames(m) <- names(parList)
+    
+    if(!is.null(otherPars)){
+      if(simPar){
+        extras <- do.call('cbind',lapply(which(mod$param %in% otherPars),function(i) rnormLim(nrep,mod$mean[i],mod$sd[i],mod$lwr[i],mod$upr[i]))) #Bounded draws from normal
+      } else {
+        extras <- mod$median[mod$param %in% otherPars] 
+      }
+      names(extras) <- otherPars
+    }
+  } else {
+    warning('mod is not stanfit object or dataframe with correct column names')
+    return(NA)
+  }
+  
+  if(expandGrid){ 
+    mm <- expand.grid(parList) #Create model matrix using expand.grid
+  } else {
+    if(length(unique(sapply(parList,length)))>2) stop('Input parameters have different lengths. Cannot coerce to dataframe')
+    mm <- as.data.frame(parList)
+  }
+  mmMat <- as.matrix(mm) #Model matrix
+  
+  if(!is.null(offset)){ #Add offset term if needed
+    m <- cbind(m,offset=rep(1,nrow(m))) #Offset slope fixed at 1
+    if(!simPar) m_mean <- c(m_mean,setNames(1,'offset')) #Column of ones
+    mmMat <- cbind(mmMat,offset=rep(log(offset),nrow(mmMat)))
+  } 
+  
+  if(!is.null(ZIpar)){ #Add ZI term if needed (on log scale)
+    i <- mod$param==ZIpar
+    # m <- cbind(m,ZI=log(1-runif(nrep,mod$lwr[i],mod$upr[i]))) #Add log(1-ZI) param
+    m <- cbind(m,ZI=log(1-rnormLim(nrep,mod$mean[i],mod$sd[i],mod$lwr[i],mod$upr[i])))
+    if(!simPar) m_mean <- c(m_mean,setNames(log(1-mod$mean[i]),'ZI'))
+    mmMat <- cbind(mmMat,ZI=rep(1,nrow(mmMat)))
+  }
+  
+  if(simPar){
+    pred <- data.frame(mmMat %*% t(m))  #Multiply parameters by model matrix
+    names(pred) <- c('mean')
+  } else {
+    pred <- mmMat %*% t(m) #Multiply parameters by model matrix
+    pred <- data.frame(mmMat %*% m_mean,t(apply(pred,1,function(x) quantile(x,q)))) #Get quantiles
+    names(pred) <- c('mean','med','lwr','upr')
+  }
+  
+  if(!is.null(trans)){ #If transformation needed
+    pred <- eval(call(trans,pred))
+  }
+  
+  if(!is.null(otherPars)){ #If other parameters needed
+    nnames <- ncol(pred)+1 #Column position to use
+    pred <- cbind(pred,sapply(extras,function(x) rep(x,nrow(pred))))
+    names(pred)[nnames:ncol(pred)] <- otherPars
+  }
+  return(cbind(mm,pred))
+}
+
+
+#Simulate yield for commodity fields
+
+# dat = list of input variables to use
+# mods = object with model summaries
+# avgFlDens, avgLogHbeeDist, avgLogitFlwSur = averages to use for centering
+# simDat = simulate data from probability distribution, rather than using mean
+# simPar = simulate expected value from posterior, rather than using mean
+
+genCommYield <- function(dat,mods=modSummaries_commodity,
+                         avgFlDens=21.03358,avgLogHbeeDist=3.412705,
+                         avgLogitFlwSurv=1.063261,
+                         simDat=FALSE,simPar=FALSE){
+  library(dplyr)
+  if(simDat&simPar) stop('Can simulate either data (simDat) or expected value (simPar), not both')
+  
+  #Exogenous variables
+  if(!'hbeeDist' %in% names(dat)) dat$hbeeDist <- exp(avgLogHbeeDist) #Hbee dist
+  dat$clogHbeeDist <- log(dat$hbeeDist) - avgLogHbeeDist #centered log dist
+  
+  if(!'numHives' %in% names(dat)) dat$numHives <- 40
+  dat$logNumHives <- log(dat$numHives+1) 
+  
+  #Endogenous variables
+  if((!'plDens' %in% names(dat))|(('plDens' %in% names(dat))&any(is.na(dat$plDens)))){
+    m <- list('intPlDens'=1,'slopeHbeeDistPlDens'=dat$clogHbeeDist) %>%
+      getPreds(mods[['flDens']],parList = .,trans='exp',expandGrid=FALSE,simPar=simPar,nrep=1) %>% 
+      pull(mean)  
+    if(simDat){ #Simulate
+      s <- with(mods[['flDens']], mean[param=='sigmaPlDens'])
+      m <- exp(rnorm(length(m),log(m),s)) 
+    }
+    na <- is.na(dat$plDens) #NAs present?
+    if(any(na)){
+      warning('NAs filled in plDens')
+      dat$plDens[na] <- m[na]
+    } else {
+      dat$plDens <- m
+    }
+  }
+  dat$logPlDens <- log(dat$plDens)
+  
+  if(!'plSize' %in% names(dat)){
+    m <- list('intPlSize'=1,'slopePlDensPlSize'=dat$logPlDens,
+              'slopeHbeeDistPlSize'= dat$clogHbeeDist) %>%
+      getPreds(mods[['flDens']],parList = .,trans='exp',expandGrid=FALSE,simPar=simPar,nrep=1) %>% 
+      pull(mean)
+    if(simDat){ #Simulate
+      s <- with(mods[['flDens']], mean[param=='sigmaPlSize'])
+      m <- exp(rnorm(length(m),log(m),s)) 
+    }
+    dat$plSize <- m
+  }
+  dat$logPlSize <- log(dat$plSize)
+  
+  if(!'flDens' %in% names(dat)){
+    m <- list('intFlDens'=1,'slopePlSizeFlDens'=dat$logPlSize,
+              'slopeHbeeDistFlDens'= dat$clogHbeeDist,
+              'slopePlDensFlDens'=dat$logPlDens) %>%
+      getPreds(mods[['flDens']],parList = .,expandGrid=FALSE,simPar=simPar,nrep=1) %>% 
+      pull(mean)
+    if(simDat){ #Simulate
+      s <- with(mods[['flDens']], mean[param=='sigmaFlDens'])
+      m <- rnorm(length(m),m,s)
+    }
+    dat$flDens <- (m + avgFlDens)^2
+  }
+  dat$csqrtFlDens <- sqrt(dat$flDens)-avgFlDens
+  
+  #Visitation
+  if(!'hbeeVis' %in% names(dat)){
+    m <- list('intHbeeVis'=1,
+              'slopeHbeeDistHbeeVis'=dat$clogHbeeDist,
+              'slopeNumHivesHbeeVis'= dat$logNumHives, 
+              'slopeFlDensHbeeVis' = dat$csqrtFlDens) %>% 
+      getPreds(mods[['hbeeVis']],parList = .,offset=1,trans='exp',expandGrid=FALSE,simPar=simPar,nrep=1) %>% 
+      pull(mean)
+    if(simDat){ #Simulate
+      s <- with(mods[['hbeeVis']], mean[param=='phiHbeeVis'])
+      m <- rnbinom(length(m),mu=m,size=s)
+    }
+    dat$hbeeVis <- m
+  }
+  dat$logHbeeVis <- log(dat$hbeeVis+1) 
+  
+  #Pollen
+  if(!'pollen' %in% names(dat)){
+    m <- list('intPollen'=1,'slopeHbeeVisPollen'=dat$logHbeeVis,
+              'slopeHbeeDistPollen'= dat$clogHbeeDist) %>% 
+      getPreds(mods[['pollen']],parList = .,trans='exp',expandGrid=FALSE,simPar=simPar,nrep=1) %>% 
+      pull(mean)  
+    if(simDat){ #Simulate
+      s <- with(mods[['pollen']], mean[param=='pollenPhi'])
+      m <- rnbinom(length(m),mu=m,size=s)
+    }
+    dat$pollen <- m
+  }
+  dat$clogPollen <- log(dat$pollen+1)-with(mods[['pollen']],mean[param=='intPollen'])
+  
+  #Flower survival to pod (proportion)
+  if(!'flwSurv' %in% names(dat)){
+    m <- list('intFlwSurv'=1,'slopeHbeeVisFlwSurv'=dat$logHbeeVis,
+              'slopePlSizeFlwSurv'= dat$logPlSize,
+              'slopePollenFlwSurv'=dat$clogPollen) %>% 
+      getPreds(mods[['flwSurv']],parList = .,trans='invLogit',expandGrid=FALSE,simPar=simPar,nrep=1) %>% 
+      pull(mean)    
+    if(simDat){ #Simulate  
+      s <- exp(with(mods[['flwSurv']], mean[param=='intPhiFlwSurv']))
+      a <- invLogit(m)*s; b <- (1-invLogit(m))*s #beta binomial parameters
+      m <- rbeta(length(m),a,b)
+    }
+    dat$flwSurv <- m
+  }
+  dat$clogitFlwSurv <- logit(dat$flwSurv)-avgLogitFlwSurv #centered logit flw surv
+  
+  #Flower count
+  if(!'flwCount' %in% names(dat)){
+    m <- list('intFlwCount'=1,'slopePlSizeFlwCount'=dat$logPlSize,
+              'slopeFlwSurvFlwCount'= dat$clogitFlwSurv) %>% 
+      getPreds(mods[['flwCount']],parList = .,trans='exp',expandGrid=FALSE) %>% 
+      pull(mean)  
+    if(simDat){ #Simulate
+      s <- list('intPhiFlwCount'=1,'slopePlSizePhiFlwCount'=dat$logPlSize) %>% 
+        getPreds(mods[['flwCount']],parList = .,trans='exp',expandGrid=FALSE,simPar=simPar,nrep=1) %>% 
+        pull(mean)
+      m <- rnbinom(length(m),mu=m,size=s)
+    }
+    dat$flwCount <- m
+  }
+  dat$logFlwCount <- log(dat$flwCount)
+  
+  #Seeds per pod
+  if(!'seedCount' %in% names(dat)){
+    m <- list('intSeedCount'=1,
+              'slopeHbeeVisSeedCount'=dat$logHbeeVis,
+              'slopePollenSeedCount'= dat$clogPollen,
+              'slopePlSizeSeedCount'=dat$logPlSize,
+              'slopeFlwSurvSeedCount'=dat$clogitFlwSurv,
+              'slopeFlwCountSeedCount'=dat$logFlwCount) %>% 
+      getPreds(mods[['avgCount']],parList = .,otherPars = 'lambdaSeedCount',expandGrid=FALSE,simPar=simPar,nrep=1) %>% 
+      mutate(mean=mean+1/lambdaSeedCount) %>% pull(mean)
+    if(simDat){ #Simulate  
+      s <- with(mods[['avgCount']], mean[param=='sigmaSeedCount'])
+      l <- with(mods[['avgCount']], mean[param=='lambdaSeedCount'])
+      m <- rnorm(length(m),m,s) + rexp(length(m),l)
+    }
+    dat$seedCount <- m
+  }
+  
+  #Seed size
+  if(!'seedWeight' %in% names(dat)){
+    m <- list('intSeedWeight'=1,
+              'slopeHbeeVisSeedWeight'=dat$logHbeeVis,
+              'slopePollenSeedWeight'= dat$clogPollen,
+              'slopeSeedCountSeedWeight'=dat$seedCount,
+              'slopePlSizeSeedWeight'=dat$logPlSize,
+              'slopePlDensSeedWeight'=dat$logPlDens,
+              'slopeHbeeDistSeedWeight'=dat$clogHbeeDist,
+              'slopeFlwSurvSeedWeight'=dat$clogitFlwSurv, #centered logit flw surv
+              'slopeFlwCountSeedWeight'=dat$logFlwCount #Log flower count
+    ) %>% 
+      getPreds(mods[['avgWeight']],parList = .,otherPars = 'lambdaSeedWeight',expandGrid=FALSE,simPar=simPar,nrep=1) %>% 
+      mutate(mean=mean+1/lambdaSeedWeight) %>% pull(mean)
+    if(simDat){ #Simulate
+      s <- with(mods[['avgWeight']], mean[param=='sigmaSeedWeight'])
+      l <- with(mods[['avgWeight']], mean[param=='lambdaSeedWeight'])
+      m <- rnorm(length(m),m,s) + rexp(length(m),l)
+    }
+    dat$seedWeight <- m
+  }
+  
+  #Yield g/plant
+  dat$calcYield <- with(dat,flwSurv*flwCount*seedCount*seedWeight/1000)
+  dat$logCalcYield <- log(dat$calcYield)
+  
+  m <- list('intYield'=1,'slopeYield'=dat$logCalcYield) %>% 
+    getPreds(mods[[8]],parList=.,trans='exp',expandGrid=FALSE,simPar=simPar,nrep=1) %>% 
+    pull(mean)
+  
+  if(simDat){ #Simulate
+    s <- with(mods[['yield']], mean[param=='sigmaYield'])
+    m <- exp(rnorm(length(m),log(m),s)) 
+  }
+  dat$yield <- m
+  
+  #Yield tonnes/ha
+  dat$yield_tha <- (dat$plDens*dat$yield)/100
+  
+  chooseThese <- names(dat) %in% c('hbeeDist','numHives','plDens','plSize','flDens','hbeeVis',
+                                   'pollen','flwSurv','flwCount','seedCount','seedWeight','yield','yield_tha')
+  dat <- dat[chooseThese]
+  return(dat)
 }
 
