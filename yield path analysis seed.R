@@ -282,7 +282,7 @@ for(i in 1:length(modList)){
     n <- n[!grepl('_miss',n)] #Gets rid of imputed values
     
     p <- traceplot(modList[[i]],pars=n,inc_warmup=FALSE) #+ geom_hline(yintercept = 0) #Traceplots
-    # fastPairs(modList[[i]],pars=n)
+    fastPairs(modList[[i]],pars=n)
     print(modList[[i]],pars=n)
     # p <- stan_plot(modList[[i]],pars=n) #Pointrange plot
     
@@ -311,27 +311,6 @@ for(i in 2:length(modSummaries_seed)){
 }
 save(modSummaries_seed,file = 'modSummaries_seed.Rdata'); rm(temp)
 
-# Examine random intercept distributions
-compareRE(modList[[1]],'intPlDens_field') 
-compareRE(modList[[1]],'intPlSize_field')
-compareRE(modList[[1]],'intFlDens_field') #heavy tails
-compareRE(modList[[2]],'intHbeeVis_field') #right skew
-compareRE(modList[[3]],'intLbeeVis_field')
-compareRE(modList[[4]],'intPollen_field')
-compareRE(modList[[4]],'intPollen_plot')
-compareRE(modList[[5]],'intFlwCount_field')
-compareRE(modList[[5]],'intFlwCount_plot')
-compareRE(modList[[6]],'intFlwSurv_field')
-compareRE(modList[[6]],'intFlwSurv_plot')
-compareRE(modList[[7]],'intSeedCount_field')
-# compareRE(modList[[7]],'intSeedCount_plot') #
-compareRE(modList[[8]],'intSeedWeight_field')
-# compareRE(modList[[8]],'intSeedWeight_plot')
-compareRE(modList[[9]],'ranEffYield_field',1) #Intercepts
-compareRE(modList[[9]],'ranEffYield_field',2) #Slopes
-compareRE(modList[[9]],'ranEffYield_plot',1,0.3) #Intercepts
-compareRE(modList[[9]],'ranEffYield_plot',2,0.3) #Slopes
-
 #Posterior predictive checks
 PPplots(modList[[1]],datalist$plDens_obs,c('predPlDens','plDens_resid','predPlDens_resid'),
         index = datalist$obsPlDens_ind,main='Plant Density') #OK, but bimodal peaks
@@ -356,6 +335,26 @@ PPplots(modList[[8]],datalist$seedMass_obs,c('predSeedMass','seedMass_resid','pr
         index=datalist$obsSeedMass_ind,'Seed Mass')
 PPplots(modList[[9]],log(datalist$yield),c('predYield','yield_resid','predYield_resid'),'Seed mass per plant')
 
+# Examine random intercept distributions
+compareRE(modList[[1]],'intPlDens_field') 
+compareRE(modList[[1]],'intPlSize_field')
+compareRE(modList[[1]],'intFlDens_field') #heavy tails
+compareRE(modList[[2]],'intHbeeVis_field') #right skew
+compareRE(modList[[3]],'intLbeeVis_field')
+compareRE(modList[[4]],'intPollen_field')
+compareRE(modList[[4]],'intPollen_plot')
+compareRE(modList[[5]],'intFlwCount_field')
+compareRE(modList[[5]],'intFlwCount_plot')
+compareRE(modList[[6]],'intFlwSurv_field')
+compareRE(modList[[6]],'intFlwSurv_plot')
+compareRE(modList[[7]],'intSeedCount_field')
+# compareRE(modList[[7]],'intSeedCount_plot') #
+compareRE(modList[[8]],'intSeedWeight_field')
+# compareRE(modList[[8]],'intSeedWeight_plot')
+compareRE(modList[[9]],'ranEffYield_field',1) #Intercepts
+compareRE(modList[[9]],'ranEffYield_field',2) #Slopes
+compareRE(modList[[9]],'ranEffYield_plot',1,0.3) #Intercepts
+compareRE(modList[[9]],'ranEffYield_plot',2,0.3) #Slopes
 
 # Dagitty claims list for seed fields -------------------------------------
 

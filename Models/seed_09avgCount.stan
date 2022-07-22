@@ -68,7 +68,7 @@ data {
 	vector[Nplant] plantSize; //Mass of vegetative tissue (no seeds) (g)
 	int podCount[Nplant]; //Number of pods per plant
 	int flwCount[Nplant]; //Number of total flower (pods + missing) per plant
-	vector[Nplant] logitFlwSurv; //Logit flower survival
+	// vector[Nplant] logitFlwSurv; //Logit flower survival
 	
 	//Average seed counts per plant
   int Nplant_seedCountObs; //N observed 
@@ -109,7 +109,7 @@ transformed data {
 	vector[Nplot_all] logHbeeVis_all; //Log-visitation rate for hbees
 	vector[Nplot_all] logLbeeVis_all; //Log-visitation rate for lbees
 	vector[Nplant] logFlwCount; //Log-flower count
-	// vector[Nplant] logitFlwSurv; //(logit) proportion flower survival
+	vector[Nplant] logitFlwSurv; //(logit) proportion flower survival
 	vector[Nplant] logYield = log(yield); //Log yield (g seed per plant)	
 	
 	//Assign values
@@ -147,16 +147,16 @@ transformed data {
 	
 	for(i in 1:Nplant){
 		logFlwCount[i] = log(flwCount[i]); //Log flower count per plant
-		// //Necessary for promoting integers to reals. Otherwise does integer division.
-		// logitFlwSurv[i] = podCount[i];
-		// logitFlwSurv[i] = logitFlwSurv[i]/flwCount[i]; //Proportion surviving pods
-		// if(logitFlwSurv[i]<=0) //Deal with weird 100% and 0% plants
-		// 	logitFlwSurv[i]=0.01;
-		// else if(logitFlwSurv[i]>=1)
-		// 	logitFlwSurv[i]=0.99;
+		//Necessary for promoting integers to reals. Otherwise does integer division.
+		logitFlwSurv[i] = podCount[i];
+		logitFlwSurv[i] = logitFlwSurv[i]/flwCount[i]; //Proportion surviving pods
+		if(logitFlwSurv[i]<=0) //Deal with weird 100% and 0% plants
+			logitFlwSurv[i]=0.01;
+		else if(logitFlwSurv[i]>=1)
+			logitFlwSurv[i]=0.99;
 	}
-	// //Logit transform and center surviving flowers
-	// logitFlwSurv=logit(logitFlwSurv)-mean(logit(logitFlwSurv));
+	//Logit transform and center surviving flowers
+	logitFlwSurv=logit(logitFlwSurv)-mean(logit(logitFlwSurv));
 }
 
 parameters {

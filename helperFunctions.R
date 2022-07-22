@@ -407,13 +407,12 @@ getPreds <- function(mod,parList=NULL,offset=NULL,ZIpar=NULL,otherPars=NULL,q=c(
       if(simPar){
         extras <- do.call('cbind',lapply(which(mod$param %in% otherPars),function(i) rnormLim(nrep,mod$mean[i],mod$sd[i],mod$lwr[i],mod$upr[i]))) #Bounded draws from normal
       } else {
-        extras <- mod$median[mod$param %in% otherPars] 
+        extras <- t(as.matrix(mod$median[mod$param %in% otherPars]))
       }
-      names(extras) <- otherPars
+      colnames(extras) <- otherPars
     }
   } else {
-    warning('mod is not stanfit object or dataframe with correct column names')
-    return(NA)
+    stop('mod is not stanfit object or dataframe with correct column names')
   }
   
   if(expandGrid){ 
@@ -452,9 +451,7 @@ getPreds <- function(mod,parList=NULL,offset=NULL,ZIpar=NULL,otherPars=NULL,q=c(
   }
   
   if(!is.null(otherPars)){ #If other parameters needed
-    nnames <- ncol(pred)+1 #Column position to use
-    pred <- cbind(pred,sapply(extras,function(x) rep(x,nrow(pred))))
-    names(pred)[nnames:ncol(pred)] <- otherPars
+    pred <- cbind(pred,extras) #Bind extras as columns
   }
   return(cbind(mm,pred))
 }
@@ -635,7 +632,7 @@ genCommYield <- function(dat,mods=modSummaries_commodity,
   dat$logCalcYield <- log(dat$calcYield)
   
   m <- list('intYield'=1,'slopeYield'=dat$logCalcYield) %>% 
-    getPreds(mods[[8]],parList=.,trans='exp',expandGrid=FALSE,simPar=simPar,nrep=1) %>% 
+    getPreds(mods[['yield']],parList=.,trans='exp',expandGrid=FALSE,simPar=simPar,nrep=1) %>% 
     pull(mean)
   
   if(simDat){ #Simulate
@@ -652,4 +649,238 @@ genCommYield <- function(dat,mods=modSummaries_commodity,
   dat <- dat[chooseThese]
   return(dat)
 }
+
+#Same, but for seed fields
+genSeedYield <- function(dat,mods=modSummaries_seed,avgLogHbeeDist=4.319893,avgLogLbeeDist=3.181154,
+                         avgFlDens=21.40057,avgLogitFlwSurv=0.7344765,simPar=FALSE, simDat=FALSE){
+  
+  # #Debugging
+  # mods=modSummaries_seed
+  # avgLogHbeeDist=4.319893
+  # avgLogLbeeDist=3.181154
+  # avgFlDens=21.40057
+  # avgLogitFlwSurv=0.7344765
+  # simPar=FALSE
+  # simDat=FALSE
+  # dat <- list()
+  # # dat <- list(hbeeDist=c(5,50,100),lbeeDist=c(10,10,10))
+  
+  library(dplyr)
+  #Exogenous variables
+  if(!'hbeeDist' %in% names(dat)) dat$hbeeDist <- exp(avgLogHbeeDist) #Hbee dist
+  dat$clogHbeeDist <- log(dat$hbeeDist) - avgLogHbeeDist #centered log dist
+  if(!'lbeeDist' %in% names(dat)) dat$lbeeDist <- exp(avgLogLbeeDist) #Hbee dist
+  dat$clogLbeeDist <- log(dat$lbeeDist) - avgLogLbeeDist #centered log dist
+  
+  if(!'isCent' %in% names(dat)) dat$isCent <- 0 #Bay center
+  
+  #Endogenous variables
+  if((!'plDens' %in% names(dat))|(('plDens' %in% names(dat))&any(is.na(dat$plDens)))){
+    m <- list('intPlDens'=1,'slopeHbeeDistPlDens'=dat$clogHbeeDist) %>%
+      getPreds(mods[['flDens']],parList = .,trans='exp',expandGrid=FALSE,simPar=simPar,nrep=1) %>% 
+      pull(mean)  
+    if(simDat){ #Simulate
+      s <- with(mods[['flDens']], mean[param=='sigmaPlDens'])
+      m <- exp(rnorm(length(m),log(m),s)) 
+    }
+    na <- is.na(dat$plDens) #NAs present?
+    if(any(na)){
+      warning('NAs filled in plDens')
+      dat$plDens[na] <- m[na]
+    } else {
+      dat$plDens <- m
+    }
+  }
+  dat$logPlDens <- log(dat$plDens)
+  
+  if(!'plSize' %in% names(dat)){
+    m <- list('intPlSize'=1,'slopePlDensPlSize'=dat$logPlDens,
+              'slopeHbeeDistPlSize'= dat$clogHbeeDist) %>%
+      getPreds(mods[['flDens']],parList = .,trans='exp',expandGrid=FALSE,simPar=simPar,nrep=1) %>% 
+      pull(mean)
+    if(simDat){ #Simulate
+      s <- with(mods[['flDens']], mean[param=='sigmaPlSize'])
+      m <- exp(rnorm(length(m),log(m),s)) 
+    }
+    dat$plSize <- m
+  }
+  dat$logPlSize <- log(dat$plSize)
+  
+  if(!'flDens' %in% names(dat)){
+    m <- list('intFlDens'=1,'slopeHbeeDistFlDens'= dat$clogHbeeDist) %>%
+      getPreds(mods[['flDens']],parList = .,expandGrid=FALSE,simPar=simPar,nrep=1) %>% 
+      pull(mean)
+    if(simDat){ #Simulate
+      s <- with(mods[['flDens']], mean[param=='sigmaFlDens'])
+      m <- rnorm(length(m),m,s)
+    }
+    dat$flDens <- (m + avgFlDens)^2
+  }
+  dat$csqrtFlDens <- sqrt(dat$flDens)-avgFlDens
+  
+  #Hbee Visitation
+  if(!'hbeeVis' %in% names(dat)){
+    m <- list('intHbeeVis'=1,
+              'slopeFlDensHbeeVis' = dat$csqrtFlDens,
+              'slopeHbeeDistHbeeVis'=dat$clogHbeeDist,
+              'slopeLbeeDistHbeeVis'=dat$clogLbeeDist,
+              'slopeCentHbeeVis'=dat$isCent) %>% 
+      getPreds(mods[['hbeeVis']],parList = .,offset=1,expandGrid=FALSE,otherPars = c('phiHbeeVis','thetaHbeeVis'))
+    z <- m$thetaHbeeVis
+    m <- exp(m$mean)
+    if(simDat){ #Simulate zero-inflated counts
+      s <- with(mods[['hbeeVis']], median[param=='phiHbeeVis'])
+      m <- rnbinom(length(m),mu=m,size=s)
+      m <- ifelse(rbinom(length(m),1,z)==1,0,m)
+    } else {
+      m <- m*(1-z) #Zero-inflated mean
+    }
+    dat$hbeeVis <- m
+  }
+  dat$logHbeeVis <- log(dat$hbeeVis+1) 
+  
+  #Lbee visitation
+  if(!'lbeeVis' %in% names(dat)){
+    m <- list('intVisitLbeeVis'=1,
+              'slopeLbeeDistLbeeVis'=dat$clogLbeeDist,
+              'slopeHbeeDistLbeeVis'=dat$clogHbeeDist,
+              'slopeCentLbeeVis'=dat$isCent,
+              'slopeFlDensLbeeVis' = dat$csqrtFlDens
+    ) %>% 
+      getPreds(mods[['lbeeVis']],parList = .,offset=1,expandGrid=FALSE,otherPars = c('phiLbeeVis','thetaLbeeVis'))
+    z <- m$thetaLbeeVis
+    m <- exp(m$mean)
+    if(simDat){ #Simulate zero-inflated counts
+      s <- with(mods[['lbeeVis']], median[param=='phiLbeeVis'])
+      m <- rnbinom(length(m),mu=m,size=s)
+      m <- ifelse(rbinom(length(m),1,z)==1,0,m)
+    } else {
+      m <- m*(1-z) #Zero-inflated mean
+    }
+    dat$lbeeVis <- m
+  }
+  dat$logLbeeVis <- log(dat$lbeeVis+1) 
+  
+  #Pollen
+  if(!'pollen' %in% names(dat)){
+    m <- list('intPollen'=1,
+              'slopeHbeeVisPollen'=dat$logHbeeVis,
+              'slopeLbeeVisPollen'=dat$logLbeeVis,
+              'slopeCentPollen'=dat$isCent,
+              'slopeHbeeDistPollen'= dat$clogHbeeDist,
+              'slopeLbeeDistPollen'= dat$clogLbeeDist,
+              'slopeFlDensPollen'=dat$csqrtFlDens
+    ) %>% 
+      getPreds(mods[['pollen']],parList = .,trans='exp',expandGrid=FALSE,simPar=simPar,nrep=1) %>% 
+      pull(mean)  
+    if(simDat){ #Simulate
+      s <- with(mods[['pollen']], mean[param=='pollenPhi'])
+      m <- rnbinom(length(m),mu=m,size=s)
+    }
+    dat$pollen <- m
+  }
+  dat$clogPollen <- log(dat$pollen+1)-with(mods[['pollen']],mean[param=='intPollen'])
+  
+  #Flower survival to pod (proportion)
+  if(!'flwSurv' %in% names(dat)){
+    m <- list('intFlwSurv'=1,
+              'slopePollenFlwSurv'=dat$clogPollen,
+              'slopePlSizeFlwSurv'= dat$logPlSize,
+              'slopeCentFlwSurv'=dat$isCent,
+              'slopeHbeeDistFlwSurv'=dat$clogHbeeDist,
+              'slopeLbeeDistFlwSurv'=dat$clogLbeeDist,
+              'slopeFlDensFlwSurv'=dat$csqrtFlDens) %>% 
+      getPreds(mods[['flwSurv']],parList = .,trans='invLogit',expandGrid=FALSE,simPar=simPar,nrep=1) %>% 
+      pull(mean)    
+    if(simDat){ #Simulate  
+      s <- exp(with(mods[['flwSurv']], mean[param=='intPhiFlwSurv']))
+      a <- invLogit(m)*s; b <- (1-invLogit(m))*s #beta binomial parameters
+      m <- rbeta(length(m),a,b)
+    }
+    dat$flwSurv <- m
+  }
+  dat$clogitFlwSurv <- logit(dat$flwSurv)-avgLogitFlwSurv #centered logit flw surv
+  
+  #Flower count
+  if(!'flwCount' %in% names(dat)){
+    m <- list('intFlwCount'=1,
+              'slopePlSizeFlwCount'=dat$logPlSize,
+              'slopeCentFlwCount'=dat$isCent,
+              'slopeFlwSurvFlwCount'= dat$clogitFlwSurv
+    ) %>% 
+      getPreds(mods[['flwCount']],parList = .,trans='exp',expandGrid=FALSE,simPar=simPar,nrep=1) %>% 
+      pull(mean)  
+    if(simDat){ #Simulate
+      s <- list('intPhiFlwCount'=1,'slopePlSizePhiFlwCount'=dat$logPlSize) %>% 
+        getPreds(mods[['flwCount']],parList = .,trans='exp',expandGrid=FALSE,simPar=simPar,nrep=1) %>% 
+        pull(mean)
+      m <- rnbinom(length(m),mu=m,size=s)
+    }
+    dat$flwCount <- m
+  }
+  dat$logFlwCount <- log(dat$flwCount)
+  
+  #Seeds per pod
+  if(!'seedCount' %in% names(dat)){
+    m <- list('intSeedCount'=1,
+              'slopePollenSeedCount'= dat$clogPollen,
+              'slopePlSizeSeedCount'=dat$logPlSize,
+              'slopeCentSeedCount'=dat$isCent,
+              'slopeHbeeDistSeedCount'=dat$clogHbeeDist,
+              'slopeFlDensSeedCount'=dat$csqrtFlDens,
+              'slopeFlwSurvSeedCount'=dat$clogitFlwSurv,
+              'slopeFlwCountSeedCount'=dat$logFlwCount
+    ) %>% 
+      getPreds(mods[['avgCount']],parList = .,otherPars = 'lambdaSeedCount',expandGrid=FALSE,simPar=simPar,nrep=1) %>% 
+      mutate(mean=mean+1/lambdaSeedCount) %>% pull(mean)
+    if(simDat){ #Simulate  
+      s <- with(mods[['avgCount']], mean[param=='sigmaSeedCount'])
+      l <- with(mods[['avgCount']], mean[param=='lambdaSeedCount'])
+      m <- rnorm(length(m),m,s) + rexp(length(m),l)
+    }
+    dat$seedCount <- m
+  }
+  
+  #Seed size
+  if(!'seedWeight' %in% names(dat)){
+    m <- list('intSeedWeight'=1,
+              'slopePollenSeedWeight'= dat$clogPollen,
+              'slopeSeedCountSeedWeight'=dat$seedCount,
+              'slopePlSizeSeedWeight'=dat$logPlSize,
+              'slopePlDensSeedWeight'=dat$logPlDens,
+              'slopeLbeeDistSeedWeight'=dat$clogLbeeDist) %>% 
+      getPreds(mods[['avgWeight']],parList = .,otherPars = 'lambdaSeedWeight',expandGrid=FALSE,simPar=simPar,nrep=1) %>% 
+      mutate(mean=mean+1/lambdaSeedWeight) %>% pull(mean)
+    
+    if(simDat){ #Simulate
+      s <- with(mods[['avgWeight']], mean[param=='sigmaSeedWeight'])
+      l <- with(mods[['avgWeight']], mean[param=='lambdaSeedWeight'])
+      m <- rnorm(length(m),m,s) + rexp(length(m),l)
+    }
+    dat$seedWeight <- m
+  }
+  
+  #Yield g/plant
+  dat$calcYield <- with(dat,flwSurv*flwCount*seedCount*seedWeight/1000)
+  dat$logCalcYield <- log(dat$calcYield)
+  
+  m <- list('intYield'=1,'slopeYield'=dat$logCalcYield) %>% 
+    getPreds(mods[['yield']],parList=.,trans='exp',expandGrid=FALSE,simPar=simPar,nrep=1) %>% 
+    pull(mean)
+  
+  if(simDat){ #Simulate
+    s <- with(mods[['yield']], mean[param=='sigmaYield'])
+    m <- exp(rnorm(length(m),log(m),s)) 
+  }
+  dat$yield <- m
+  
+  #Yield tonnes/ha
+  dat$yield_tha <- (dat$plDens*dat$yield)/100
+  
+  chooseThese <- names(dat) %in% c('hbeeDist','lbeeDist','isCent','numHives','plDens','plSize','flDens','hbeeVis','lbeeVis',
+                                   'pollen','flwSurv','flwCount','seedCount','seedWeight','yield','yield_tha')
+  dat <- dat[chooseThese]
+  return(dat)
+}
+
 
