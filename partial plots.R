@@ -58,6 +58,9 @@ timeOffset <- 6 #Use 1 hr offset (1 = 10 mins, 6 = 1 hr)
 lab <- c('HB Seed','LCB Seed','HB Commodity') 
 labCols <- c('darkorange','darkgreen','black')
 
+debugonce(getPreds)
+debugonce(rnormLim)
+
 #Hbee stocking rate numbers
 with(avgCommData,
            list('intHbeeVis'=1,
@@ -655,7 +658,7 @@ for(i in 1:5000){
 
 #Problem occurs at seed 2597
 debugonce(genSeedYield)
-set.seed(2596)
+set.seed(2597)
 genSeedYield(dat = datList, mods = modSummaries_seed, simPar=TRUE)
 
 #Effect of plant size and flower count on seed count is weirdly high (positive and negative). Causing negative seedCounts if both are low

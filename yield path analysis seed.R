@@ -293,20 +293,23 @@ for(i in 1:length(modList)){
 }
 
 # Get model summaries into a list of tables
-# modSummaries_seed <- vector(mode = 'list',length = length(modList)) #Create new empty list
-# names(modSummaries_seed) <- names(modList)
+modSummaries_seed <- vector(mode = 'list',length = length(modList)) #Create new empty list
+names(modSummaries_seed) <- names(modList)
 load('modSummaries_seed.Rdata') #Load existing list
 #Update model summaries if needed
 temp <- lapply(modList,parTable) #Get parameter summaries
 for(i in 1:length(temp)){
   if(class(temp[[i]])=='data.frame'||length(temp[[i]])>1){ #If temp is not empty (model not run)
-    modSummaries_seed[[i]] <- temp[[i]] #Overwrite
+    modSummaries_seed[[i]]$summary <- temp[[i]]$summary #Overwrite
+    modSummaries_seed[[i]]$covMat <- temp[[i]]$covMat
   }
 }
-parNames <- lapply(modSummaries_seed,function(x) x$param) #Clean up extra parameter names
+parNames <- lapply(modSummaries_seed,function(x) x$summary$param) #Clean up extra parameter names
 for(i in 2:length(modSummaries_seed)){
   if(!is.null(modSummaries_seed[[i]])){
-    modSummaries_seed[[i]] <- modSummaries_seed[[i]][!parNames[[i]] %in% unlist(parNames[1:(i-1)]),]
+    chooseThese <- !parNames[[i]] %in% unlist(parNames[1:(i-1)])
+    modSummaries_seed[[i]]$summary <- modSummaries_seed[[i]]$summary[chooseThese,]
+    modSummaries_seed[[i]]$covMat <- modSummaries_seed[[i]]$covMat[chooseThese,chooseThese]
   }
 }
 save(modSummaries_seed,file = 'modSummaries_seed.Rdata'); rm(temp)

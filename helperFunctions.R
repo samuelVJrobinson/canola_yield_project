@@ -14,11 +14,11 @@ invLogit <- function(x){
 parTable <- function(x){
   require(dplyr); require(tidyr)
   if(is.null(x)) return(NA)
-  n <- names(x) #Model parameters
-  n <- n[(!grepl('(\\[[0-9]+,*[0-9]*\\]|lp)',n))|grepl('([sS]igma|slope)',n)] #Drops parameter vectors, unless name contains "sigma" (variance term) or "slope"
-  n <- n[!grepl('_miss',n)] #Gets rid of imputed values
+  N <- names(x) #Model parameters
+  N <- N[(!grepl('(\\[[0-9]+,*[0-9]*\\]|lp)',N))|grepl('([sS]igma|slope)',N)] #Drops parameter vectors, unless name contains "sigma" (variance term) or "slope"
+  N <- N[!grepl('_miss',N)] #Gets rid of imputed values
   
-  parTable <- summary(x,pars=n)$summary %>% 
+  par1 <- summary(x,pars=N)$summary %>% #Posterior summary
     data.frame() %>% 
     transmute(mean,sd,Z=mean/sd,
               median=X50.,lwr=X2.5.,upr=X97.5.,
@@ -27,6 +27,9 @@ parTable <- function(x){
     mutate(across(c(mean:upr,Rhat),~round(.x,3))) %>%
     mutate(pval=round(pval,4),n_eff=round(n_eff)) %>% 
     tibble::rownames_to_column('param')
+  par2 <- cov(do.call('cbind',extract(x,pars=N))) #Covariance matrix
+  
+  return(list(summary=par1,covMat=par2))
 }
 
 
@@ -352,11 +355,17 @@ capFirst <- function(x,decap=FALSE){ #Capitalize/decapitalize first letter of a 
   return(x)
 }
 
-rnormLim <- function(n,m,s,lwr,upr){ #Generates normally distributed data bounded between upr and lwr
-  r <- rep(NA,n)
-  while(any(is.na(r))){
-    r[is.na(r)] <- rnorm(sum(is.na(r)),m,s)
-    r[r>upr|r<lwr] <- NA
+rnormLim <- function(n,mu,Sigma,lwr,upr){ #Generates normally distributed data bounded between upr and lwr
+  if(is.matrix(Sigma)){ #Multivariate normal
+    #NEEDS WORK
+    
+    r[is.na(r)] <- MASS::mvrnorm(sum(is.na(r)),mu,Sigma)
+  } else { #Normal
+    r <- rep(NA,n)
+    while(any(is.na(r))){
+      r[is.na(r)] <- rnorm(sum(is.na(r)),mu,Sigma)
+      r[r>upr|r<lwr] <- NA
+    }
   }
   return(r)
 }
@@ -382,32 +391,34 @@ getPreds <- function(mod,parList=NULL,offset=NULL,ZIpar=NULL,otherPars=NULL,q=c(
                "lwr","upr","pval","n_eff","Rhat")
   
   if(class(mod)=='stanfit'){
-    #NOTE: doesn't work with simPar yet
-    library(rstan)
-    m <- extract(mod,par=names(parList))
-    m <- do.call('cbind',m) #All draws
-    m_mean <- apply(m,1,mean) #Mean values
-    if(!is.null(otherPars)){
-      extras <- extract(mod,par=otherPars) %>% sapply(.,median)
-    }
-  } else if(class(mod)=='data.frame' & !any(!names(mod)==dfNames)){ #If using a dataframe
-    if(any(!names(parList) %in% mod$param)){
-      stop(paste0('Parameters not found: ',paste(names(parList)[!names(parList) %in% mod$param],collapse=', ')))
+    stop("Doesn't work using stanfit objects")
+    # #NOTE: doesn't work with simPar yet
+    # library(rstan)
+    # m <- extract(mod,par=names(parList))
+    # m <- do.call('cbind',m) #All draws
+    # m_mean <- apply(m,1,mean) #Mean values
+    # if(!is.null(otherPars)){
+    #   extras <- extract(mod,par=otherPars) %>% sapply(.,median)
+    # }
+  } else if(class(mod$summary)=='data.frame' & !any(!names(mod$summary)==dfNames)){ #If using a dataframe
+    if(any(!names(parList) %in% mod$summary$param)){
+      stop(paste0('Parameters not found: ',paste(names(parList)[!names(parList) %in% mod$summary$param],collapse=', ')))
     } 
-    chooseRows <- mod$param %in% names(parList) 
-    m <- mod[chooseRows,] #Get coefficients
+    chooseRows <- mod$summary$param %in% names(parList) 
+    m <- mod$summary[chooseRows,] #Get coefficients
     if(!simPar) m_mean <- setNames(m$mean,names(parList)) #Mean value
     # m <- do.call('cbind',lapply(1:nrow(m),function(i) runif(nrep,m$lwr[i],m$upr[i]))) #Generate draws b/w upr and lower
 
     #Get range of slope coefficients
-    m <- do.call('cbind',lapply(1:nrow(m),function(i) rnormLim(nrep,m$mean[i],m$sd[i],m$lwr[i],m$upr[i]))) #Bounded draws from normal
+    # m <- do.call('cbind',lapply(1:nrow(m),function(i) rnormLim(nrep,m$mean[i],m$sd[i],m$lwr[i],m$upr[i]))) #Bounded draws from normal
+    m <- rnormLim(nrep,m$mean,mod$cov,m$lwr,m$upr) #Bounded draws from MVnormal
     colnames(m) <- names(parList)
     
     if(!is.null(otherPars)){
       if(simPar){
-        extras <- do.call('cbind',lapply(which(mod$param %in% otherPars),function(i) rnormLim(nrep,mod$mean[i],mod$sd[i],mod$lwr[i],mod$upr[i]))) #Bounded draws from normal
+        extras <- do.call('cbind',lapply(which(mod$summary$param %in% otherPars),function(i) rnormLim(nrep,mod$summary$mean[i],mod$summary$sd[i],mod$summary$lwr[i],mod$summary$upr[i]))) #Bounded draws from normal
       } else {
-        extras <- t(as.matrix(mod$median[mod$param %in% otherPars]))
+        extras <- t(as.matrix(mod$summary$median[mod$summary$param %in% otherPars]))
       }
       colnames(extras) <- otherPars
     }
@@ -430,10 +441,10 @@ getPreds <- function(mod,parList=NULL,offset=NULL,ZIpar=NULL,otherPars=NULL,q=c(
   } 
   
   if(!is.null(ZIpar)){ #Add ZI term if needed (on log scale)
-    i <- mod$param==ZIpar
-    # m <- cbind(m,ZI=log(1-runif(nrep,mod$lwr[i],mod$upr[i]))) #Add log(1-ZI) param
-    m <- cbind(m,ZI=log(1-rnormLim(nrep,mod$mean[i],mod$sd[i],mod$lwr[i],mod$upr[i])))
-    if(!simPar) m_mean <- c(m_mean,setNames(log(1-mod$mean[i]),'ZI'))
+    i <- mod$summary$param==ZIpar
+    # m <- cbind(m,ZI=log(1-runif(nrep,mod$summary$lwr[i],mod$summary$upr[i]))) #Add log(1-ZI) param
+    m <- cbind(m,ZI=log(1-rnormLim(nrep,mod$summary$mean[i],mod$summary$sd[i],mod$summary$lwr[i],mod$summary$upr[i])))
+    if(!simPar) m_mean <- c(m_mean,setNames(log(1-mod$summary$mean[i]),'ZI'))
     mmMat <- cbind(mmMat,ZI=rep(1,nrow(mmMat)))
   }
   

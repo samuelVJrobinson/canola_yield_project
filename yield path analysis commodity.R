@@ -182,13 +182,16 @@ load('modSummaries_commodity.Rdata')
 temp <- lapply(modList,parTable) #Get parameter summaries
 for(i in 1:length(temp)){
   if(class(temp[[i]])=='data.frame'||length(temp[[i]])>1){ #If temp is not empty (model not run)
-    modSummaries_commodity[[i]] <- temp[[i]] #Overwrite
+    modSummaries_commodity[[i]]$summary <- temp[[i]]$summary #Overwrite
+    modSummaries_commodity[[i]]$covMat <- temp[[i]]$covMat
   }
 }
-parNames <- lapply(modSummaries_commodity,function(x) x$param) #Clean up extra parameter names
+parNames <- lapply(modSummaries_commodity,function(x) x$summary$param) #Clean up extra parameter names
 for(i in 2:length(modSummaries_commodity)){
   if(!is.null(modSummaries_commodity[[i]])){
-    modSummaries_commodity[[i]] <- modSummaries_commodity[[i]][!parNames[[i]] %in% unlist(parNames[1:(i-1)]),]
+    chooseThese <- !parNames[[i]] %in% unlist(parNames[1:(i-1)])
+    modSummaries_commodity[[i]]$summary <- modSummaries_commodity[[i]]$summary[chooseThese,]
+    modSummaries_commodity[[i]]$covMat <- modSummaries_commodity[[i]]$covMat[chooseThese,chooseThese]
   }
 }
 save(modSummaries_commodity,file = 'modSummaries_commodity.Rdata')
