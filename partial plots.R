@@ -58,9 +58,6 @@ timeOffset <- 6 #Use 1 hr offset (1 = 10 mins, 6 = 1 hr)
 lab <- c('HB Seed','LCB Seed','HB Commodity') 
 labCols <- c('darkorange','darkgreen','black')
 
-debugonce(getPreds)
-debugonce(rnormLim)
-
 #Hbee stocking rate numbers
 with(avgCommData,
            list('intHbeeVis'=1,
@@ -138,6 +135,8 @@ d1 <- with(avgSeedData, #Hbee visits
            trans='exp',q=c(0.5,0.05,0.95)) %>% 
   transmute(dist=1:30,mean,med,lwr,upr)
 
+# debugonce(getPreds)
+
 d2 <- with(avgSeedData, #Lbee visits
            list('intVisitLbeeVis'=1,
                 'slopeFlDensLbeeVis' = 0,
@@ -202,8 +201,8 @@ ggsave('allVisits.png',p,bg='white',width = 12,height=4)
 #median, mean, max:
 #0,1.72,36 max for commodity, 4,22.6,215 for seed
 hbeeVisComm <- log(seq(0,max(with(commData,hbeeVis/totalTime)),length=30)+1)
-hbeeVisSeed <- log((seq(0,max(with(seedData,hbeeVis/totalTime)),length=100))+1)
-lbeeVisSeed <- log((seq(0,max(with(seedData,lbeeVis/totalTime)),length=100))+1)
+hbeeVisSeed <- log((seq(0,100,length=100))+1)
+lbeeVisSeed <- log((seq(0,100,length=100))+1)
 lab <- c('HB Seed','LCB Seed','HB Commodity') 
 labCols <- c('darkorange','darkgreen','black')
 
@@ -250,8 +249,8 @@ p1 <- bind_rows(d2,d3,d1,.id = 'type') %>%
   scale_y_log10()
 
 #Distance effects
-hbeeDistComm <- with(avgCommData,seq(clogHbeeDist$min,log(400)-avgCommData$logHbeeDist$mean,length=100))
-hbeeDistSeed <- with(avgSeedData,seq(clogHbeeDist$min,clogHbeeDist$max,length=100))
+hbeeDistComm <- with(avgCommData,seq(clogHbeeDist$min,log(100)-avgCommData$logHbeeDist$mean,length=100))
+hbeeDistSeed <- with(avgSeedData,seq(clogHbeeDist$min,log(100)-avgSeedData$logHbeeDist,length=100))
 lbeeDistSeed <- with(avgSeedData,seq(clogLbeeDist$min,log(100)-avgSeedData$logLbeeDist,length=100))
 
 d1 <- with(avgCommData, #Hbee distance - commodity
@@ -319,7 +318,7 @@ ggsave('allPollen.png',p,bg='white',width = 12,height=4)
 
 #pollenPlot means - Taken from model output
 commPollenPlot <- seq(-1.2644033,0.9869057,length=20) 
-modSummaries_commodity[[3]]$mean[1] #Intercept
+modSummaries_commodity[[3]]$summary$mean[1] #Intercept
 seedPollenPlot <- seq(-3.573654,2.364599,length=20) 
 modSummaries_seed[[4]]$mean[1] #Intercept
 
@@ -334,7 +333,7 @@ d1 <- with(avgCommData,
           'slopePollenFlwSurv'=commPollenPlot
           )) %>% 
   getPreds(modSummaries_commodity[[5]],trans='invLogit',parList = .,q=c(0.5,0.05,0.95)) %>% 
-  transmute(pol=exp(commPollenPlot+modSummaries_commodity[[3]]$mean[1]),mean,med,lwr,upr) 
+  transmute(pol=exp(commPollenPlot+modSummaries_commodity[[3]]$summary$mean[1]),mean,med,lwr,upr) 
 
 d2 <- with(avgSeedData, 
      list('intFlwSurv'=1,
@@ -345,7 +344,7 @@ d2 <- with(avgSeedData,
           'slopeFlDensFlwSurv'=0
      )) %>% 
   getPreds(modSummaries_seed[[6]],parList = .,trans='invLogit',q=c(0.5,0.05,0.95)) %>% 
-  transmute(pol=exp(seedPollenPlot+modSummaries_seed[[4]]$mean[1]),mean,med,lwr,upr) 
+  transmute(pol=exp(seedPollenPlot+modSummaries_seed[[4]]$summary$mean[1]),mean,med,lwr,upr) 
 
 p1 <- bind_rows(d1,d2,.id = 'type') %>% 
   mutate(type=factor(type,labels=lab)) %>% 
@@ -366,9 +365,8 @@ d1 <- with(avgCommData,
                 'slopeFlwSurvSeedCount'=0, #centered logit flw surv
                 'slopeFlwCountSeedCount'=avgCommData$logFlwCount$mean #Log flower count
            )) %>% 
-  getPreds(modSummaries_commodity[[6]],parList = .,q=c(0.5,0.05,0.95),otherPars = 'lambdaSeedCount') %>% 
-  mutate(across(c(mean:upr),~.x+1/lambdaSeedCount)) %>% 
-  transmute(pol=exp(commPollenPlot+modSummaries_commodity[[3]]$mean[1]),mean,med,lwr,upr) 
+  getPreds(modSummaries_commodity[[6]],parList = .,q=c(0.5,0.05,0.95),ENpar = 'lambdaSeedCount') %>% 
+  transmute(pol=exp(commPollenPlot+modSummaries_commodity[[3]]$summary$mean[1]),mean,med,lwr,upr) 
 
 d2 <- with(avgSeedData, 
            list('intSeedCount'=1,
@@ -380,9 +378,8 @@ d2 <- with(avgSeedData,
                 'slopeFlwSurvSeedCount'=avgSeedData$logitFlwSurv$mean,
                 'slopeFlwCountSeedCount'=avgSeedData$logFlwCount$mean
            )) %>% 
-  getPreds(modSummaries_seed[[7]],parList = .,otherPars='lambdaSeedCount',q=c(0.5,0.05,0.95)) %>% 
-  mutate(across(c(mean:upr),~.x+1/lambdaSeedCount)) %>% 
-  transmute(pol=exp(seedPollenPlot+modSummaries_seed[[4]]$mean[1]),mean,med,lwr,upr) 
+  getPreds(modSummaries_seed[[7]],parList = .,ENpar='lambdaSeedCount',q=c(0.5,0.05,0.95)) %>%
+  transmute(pol=exp(seedPollenPlot+modSummaries_seed[[4]]$summary$mean[1]),mean,med,lwr,upr) 
 
 p2 <- bind_rows(d1,d2,.id = 'type') %>% 
     mutate(type=factor(type,labels=lab)) %>% 
@@ -394,7 +391,6 @@ p2 <- bind_rows(d1,d2,.id = 'type') %>%
     scale_x_log10()
 
 #Seed size
-
 d1 <- with(avgCommData, 
            list('intSeedWeight'=1,
                 'slopeHbeeVisSeedWeight'=avgCommData$logHbeeVis$mean,
@@ -406,9 +402,8 @@ d1 <- with(avgCommData,
                 'slopeFlwSurvSeedWeight'=0, #centered logit flw surv
                 'slopeFlwCountSeedWeight'=avgCommData$logFlwCount$mean #Log flower count
            )) %>% 
-  getPreds(modSummaries_commodity[[7]],parList = .,q=c(0.5,0.05,0.95),otherPars = 'lambdaSeedWeight') %>% 
-  mutate(across(c(mean:upr),~.x+(1/lambdaSeedWeight))) %>% 
-  transmute(pol=exp(commPollenPlot+modSummaries_commodity[[3]]$mean[1]),mean,med,lwr,upr) 
+  getPreds(modSummaries_commodity[[7]],parList = .,q=c(0.5,0.05,0.95),ENpar = 'lambdaSeedWeight') %>% 
+  transmute(pol=exp(commPollenPlot+modSummaries_commodity[[3]]$summary$mean[1]),mean,med,lwr,upr) 
 
 d2 <- with(avgSeedData, 
            list('intSeedWeight'=1,
@@ -418,9 +413,8 @@ d2 <- with(avgSeedData,
                 'slopePlDensSeedWeight'=avgSeedData$plDens_obs$mean,
                 'slopeLbeeDistSeedWeight'=0
            )) %>% 
-  getPreds(modSummaries_seed[[8]],parList = .,otherPars='lambdaSeedWeight',q=c(0.5,0.05,0.95)) %>% 
-  mutate(across(c(mean:upr),~.x+(1/lambdaSeedWeight))) %>% 
-  transmute(pol=exp(seedPollenPlot+modSummaries_seed[[4]]$mean[1]),mean,med,lwr,upr) 
+  getPreds(modSummaries_seed[[8]],parList = .,ENpar='lambdaSeedWeight',q=c(0.5,0.05,0.95)) %>% 
+  transmute(pol=exp(seedPollenPlot+modSummaries_seed[[4]]$summary$mean[1]),mean,med,lwr,upr) 
 
 p3 <- bind_rows(d1,d2,.id = 'type') %>% 
     mutate(type=factor(type,labels=lab)) %>% 
@@ -483,8 +477,7 @@ d1 <- with(avgCommData,
                 'slopeFlwSurvSeedCount'=0, #centered logit flw surv
                 'slopeFlwCountSeedCount'=avgCommData$logFlwCount$mean #Log flower count
            )) %>% 
-  getPreds(modSummaries_commodity[[6]],parList = .,q=c(0.5,0.05,0.95),otherPars = 'lambdaSeedCount') %>% 
-  mutate(across(c(mean:upr),~.x+1/lambdaSeedCount)) %>% 
+  getPreds(modSummaries_commodity[[6]],parList = .,q=c(0.5,0.05,0.95),ENpar = 'lambdaSeedCount') %>% 
   transmute(plSize=exp(commPlSize),mean,med,lwr,upr) 
 
 d2 <- with(avgSeedData, 
@@ -497,8 +490,7 @@ d2 <- with(avgSeedData,
                 'slopeFlwSurvSeedCount'=avgSeedData$logitFlwSurv$mean,
                 'slopeFlwCountSeedCount'=avgSeedData$logFlwCount$mean
            )) %>% 
-  getPreds(modSummaries_seed[[7]],parList = .,otherPars='lambdaSeedCount',q=c(0.5,0.05,0.95)) %>% 
-  mutate(across(c(mean:upr),~.x+1/lambdaSeedCount)) %>% 
+  getPreds(modSummaries_seed[[7]],parList = .,ENpar='lambdaSeedCount',q=c(0.5,0.05,0.95)) %>% 
   transmute(plSize=exp(seedPlSize),mean,med,lwr,upr) 
 
 p2 <- bind_rows(d1,d2,.id = 'type') %>% 
@@ -511,7 +503,6 @@ p2 <- bind_rows(d1,d2,.id = 'type') %>%
   scale_x_log10()
 
 #Seed size
-
 d1 <- with(avgCommData, 
            list('intSeedWeight'=1,
                 'slopeHbeeVisSeedWeight'=avgCommData$logHbeeVis$mean,
@@ -522,9 +513,8 @@ d1 <- with(avgCommData,
                 'slopeHbeeDistSeedWeight'=0, #centered log hbee dist
                 'slopeFlwSurvSeedWeight'=0, #centered logit flw surv
                 'slopeFlwCountSeedWeight'=avgCommData$logFlwCount$mean #Log flower count
-           )) %>% 
-  getPreds(modSummaries_commodity[[7]],parList = .,q=c(0.5,0.05,0.95),otherPars = 'lambdaSeedWeight') %>% 
-  mutate(across(c(mean:upr),~.x+1/lambdaSeedWeight)) %>% 
+         )) %>% 
+  getPreds(modSummaries_commodity[[7]],parList = .,q=c(0.5,0.05,0.95),ENpar = 'lambdaSeedWeight') %>% 
   transmute(plSize=exp(commPlSize),mean,med,lwr,upr) 
 
 d2 <- with(avgSeedData, 
@@ -535,8 +525,7 @@ d2 <- with(avgSeedData,
                 'slopePlDensSeedWeight'=avgSeedData$plDens_obs$mean,
                 'slopeLbeeDistSeedWeight'=0 #centered log lbee dist
            )) %>% 
-  getPreds(modSummaries_seed[[8]],parList = .,otherPars='lambdaSeedWeight',q=c(0.5,0.05,0.95)) %>% 
-  mutate(across(c(mean:upr),~.x+(1/lambdaSeedWeight))) %>% 
+  getPreds(modSummaries_seed[[8]],parList = .,ENpar='lambdaSeedWeight',q=c(0.5,0.05,0.95)) %>% 
   transmute(plSize=exp(seedPlSize),mean,med,lwr,upr) 
 
 p3 <- bind_rows(d1,d2,.id = 'type') %>% 
@@ -559,6 +548,8 @@ ggsave('allSeeds_plSize.png',p,bg='white',width = 12,height=4)
 # avgCommData$logitFlwSurv$mean #avg logit flw surv
 
 debugonce(genCommYield)
+debugonce(getPreds)
+# debugonce(rnormLim)
 d <- list()
 d_mean <- genCommYield(dat=d,simPar=TRUE)
 d <- replicate(100,genCommYield(dat=d,simPar = TRUE),simplify = FALSE) %>% bind_rows()
@@ -589,7 +580,8 @@ d %>% mutate(numHives=factor(numHives)) %>% group_by(hbeeDist,numHives) %>%
   summarize(med=median(yield_tha),lwr=quantile(yield_tha,0.25),upr=quantile(yield_tha,0.75),medVis=median(hbeeVis)) %>% 
   ggplot(aes(x=hbeeDist,y=med))+
   geom_ribbon(aes(ymax=upr,ymin=lwr,fill=numHives),alpha=0.3)+
-  geom_line(data=d_mean,aes(x=hbeeDist,y=yield_tha,col=numHives))
+  geom_line(data=d_mean,aes(x=hbeeDist,y=yield_tha,col=numHives))+
+  labs(x='Hbee distance',y='Yield')
   
 #Visitation effect
 datList <- list(

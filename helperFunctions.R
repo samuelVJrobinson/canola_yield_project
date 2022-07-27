@@ -355,16 +355,16 @@ capFirst <- function(x,decap=FALSE){ #Capitalize/decapitalize first letter of a 
   return(x)
 }
 
-rnormLim <- function(n,mu,Sigma,lwr,upr){ #Generates normally distributed data bounded between upr and lwr
+rnormLim <- function(N,mu,Sigma,lwr,upr){ #Generates normally distributed data bounded between upr and lwr
   if(is.matrix(Sigma)){ #Multivariate normal
-    r <- matrix(NA,N,length(m))
+    r <- matrix(NA,N,length(mu),dimnames = list(1:N,colnames(Sigma)))
     while(any(is.na(r[,1]))){
       r[is.na(r[,1]),] <- MASS::mvrnorm(sum(is.na(r[,1])),mu,Sigma)
-      inLims <- apply(sapply(1:ncol(r),function(i) r[,i]>lwr[i] & r[,i]<upr[i]),1,any)
-      r[!inLims,] <- NA
+      outLims <- apply(matrix(sapply(1:ncol(r),function(i) r[,i]<lwr[i] | r[,i]>upr[i]),nrow=N),1,any)
+      r[outLims,] <- NA
     }
   } else { #Normal
-    r <- rep(NA,n)
+    r <- rep(NA,N)
     while(any(is.na(r))){
       r[is.na(r)] <- rnorm(sum(is.na(r)),mu,Sigma)
       r[r>upr|r<lwr] <- NA
@@ -376,20 +376,24 @@ rnormLim <- function(n,mu,Sigma,lwr,upr){ #Generates normally distributed data b
 #Extract fits for marginal plots
 # mod = stanfit model or dataframe with parameters 
 # parList = named list with vectors of parameters to predict at (passed through expand.grid)
+# offset = time span for count data offset
+# ZIpar = parameter for zero-inflated distribution
+# ENpar = parameter for exponential-normal distribution
 # otherPars = character vector of other parameters to add to the dataframe
 # q = quantiles to predict at
 # nrep = number of replicates of parameters to generate (for data.frame parameters)
 # simPar = get single draw from posterior instead of using mean + quantiles
 
-getPreds <- function(mod,parList=NULL,offset=NULL,ZIpar=NULL,otherPars=NULL,q=c(0.5,0.025,0.975),nrep=4000,trans=NULL,expandGrid=TRUE,simPar=FALSE){
+getPreds <- function(mod,parList=NULL,offset=NULL,ZIpar=NULL,ENpar=NULL,
+                     otherPars=NULL,q=c(0.5,0.025,0.975),nrep=4000,trans=NULL,expandGrid=TRUE,simPar=FALSE){
   if(is.null(parList)) stop('No parameter list specified')
   if(any(sapply(parList,is.null))) stop(paste0('Missing parameter (NULL): ',paste0(names(parList)[sapply(parList,is.null)],collapse=', ')))
   if(any(sapply(parList,function(x) any(is.na(x))))) stop(paste0('Missing parameter (NA): ',paste0(names(parList)[sapply(parList,is.na)],collapse=', ')))
   if(simPar&nrep!=1){
     nrep <- 1
-    warning('Setting nRep to 1 to save time')
+    warning('Setting nRep to 1 to save time in simulation')
   }
-  
+
   dfNames <- c("param","mean","sd","Z","median",
                "lwr","upr","pval","n_eff","Rhat")
   
@@ -407,19 +411,19 @@ getPreds <- function(mod,parList=NULL,offset=NULL,ZIpar=NULL,otherPars=NULL,q=c(
     if(any(!names(parList) %in% mod$summary$param)){
       stop(paste0('Parameters not found: ',paste(names(parList)[!names(parList) %in% mod$summary$param],collapse=', ')))
     } 
-    chooseRows <- mod$summary$param %in% names(parList) 
-    m <- mod$summary[chooseRows,] #Get coefficients
-    if(!simPar) m_mean <- setNames(m$mean,names(parList)) #Mean value
-    # m <- do.call('cbind',lapply(1:nrow(m),function(i) runif(nrep,m$lwr[i],m$upr[i]))) #Generate draws b/w upr and lower
-
-    #Get range of slope coefficients
-    # m <- do.call('cbind',lapply(1:nrow(m),function(i) rnormLim(nrep,m$mean[i],m$sd[i],m$lwr[i],m$upr[i]))) #Bounded draws from normal
-    m <- rnormLim(nrep,m$mean,mod$cov,m$lwr,m$upr) #Bounded draws from MVnormal
-    colnames(m) <- names(parList)
     
+    draws <- rnormLim(nrep,mod$summary$mean,mod$cov,mod$summary$lwr,mod$summary$upr) #Bounded draws from MVnormal
+    
+    chooseRows <- mod$summary$param %in% names(parList) 
+    # m <- mod$summary[chooseRows,] #Get summary of coefs
+    if(!simPar) m_mean <- setNames(mod$summary$mean,mod$summary$param) #Mean value
+    
+    #NEEDS UPDATING
     if(!is.null(otherPars)){
       if(simPar){
-        extras <- do.call('cbind',lapply(which(mod$summary$param %in% otherPars),function(i) rnormLim(nrep,mod$summary$mean[i],mod$summary$sd[i],mod$summary$lwr[i],mod$summary$upr[i]))) #Bounded draws from normal
+        extras <- do.call('cbind',lapply(which(mod$summary$param %in% otherPars),function(i){
+          rnormLim(nrep,mod$summary$mean[i],mod$summary$sd[i],mod$summary$lwr[i],mod$summary$upr[i]) #Bounded draws from normal
+        }))
       } else {
         extras <- t(as.matrix(mod$summary$median[mod$summary$param %in% otherPars]))
       }
@@ -430,33 +434,52 @@ getPreds <- function(mod,parList=NULL,offset=NULL,ZIpar=NULL,otherPars=NULL,q=c(
   }
   
   if(expandGrid){ 
-    mm <- expand.grid(parList) #Create model matrix using expand.grid
+    mmMat <- expand.grid(parList) #Create model matrix using expand.grid
   } else {
-    if(length(unique(sapply(parList,length)))>2) stop('Input parameters have different lengths. Cannot coerce to dataframe')
-    mm <- as.data.frame(parList)
+    if(length(unique(sapply(parList,length)))>2) stop('Input parameters have different lengths. Cannot coerce to matrix')
+    mmMat <- as.data.frame(parList)
   }
-  mmMat <- as.matrix(mm) #Model matrix
+  mmMat <- as.matrix(mmMat) #Model matrix
   
   if(!is.null(offset)){ #Add offset term if needed
-    m <- cbind(m,offset=rep(1,nrow(m))) #Offset slope fixed at 1
+    draws <- cbind(draws,offset=rep(1,nrep)) #Offset slope fixed at 1
     if(!simPar) m_mean <- c(m_mean,setNames(1,'offset')) #Column of ones
     mmMat <- cbind(mmMat,offset=rep(log(offset),nrow(mmMat)))
   } 
   
   if(!is.null(ZIpar)){ #Add ZI term if needed (on log scale)
     i <- mod$summary$param==ZIpar
-    # m <- cbind(m,ZI=log(1-runif(nrep,mod$summary$lwr[i],mod$summary$upr[i]))) #Add log(1-ZI) param
-    m <- cbind(m,ZI=log(1-rnormLim(nrep,mod$summary$mean[i],mod$summary$sd[i],mod$summary$lwr[i],mod$summary$upr[i])))
-    if(!simPar) m_mean <- c(m_mean,setNames(log(1-mod$summary$mean[i]),'ZI'))
+    draws[,i] <- log(1-draws[,i]) #Log-ZI parameter
+    colnames(draws)[i] <- 'ZI'
+    if(!simPar){
+      m_mean[i] <- log(1-mod$summary$mean[i])
+      names(m_mean)[i] <- 'ZI'
+    } 
     mmMat <- cbind(mmMat,ZI=rep(1,nrow(mmMat)))
   }
   
-  if(simPar){
-    pred <- data.frame(mmMat %*% t(m))  #Multiply parameters by model matrix
+  if(!is.null(ENpar)){ #Add exp-normal term if needed
+    i <- mod$summary$param==ENpar
+    draws[,i] <- 1/draws[,i] #EN parameter
+    colnames(draws)[i] <- 'EN'
+    if(!simPar){
+      m_mean[i] <- 1/mod$summary$mean[i]
+      names(m_mean)[i] <- 'EN'
+    } 
+    mmMat <- cbind(mmMat,EN=rep(1,nrow(mmMat)))
+  }
+  
+  #Matrix of parameter draws, using only columns from model matrix
+  chooseCols <- match(colnames(mmMat),colnames(draws))
+  parMat <- as.matrix(draws[,chooseCols])
+  if(nrow(parMat)!=ncol(mmMat)) parMat <- t(parMat) #Rotate vector if needed
+  
+  if(simPar){ 
+    pred <- data.frame(mmMat %*% parMat)  #Multiply parameters by model matrix
     names(pred) <- c('mean')
   } else {
-    pred <- mmMat %*% t(m) #Multiply parameters by model matrix
-    pred <- data.frame(mmMat %*% m_mean,t(apply(pred,1,function(x) quantile(x,q)))) #Get quantiles
+    pred <- mmMat %*% parMat #Multiply parameters by model matrix
+    pred <- data.frame(mmMat %*% m_mean[chooseCols],t(apply(pred,1,function(x) quantile(x,q)))) #Get quantiles
     names(pred) <- c('mean','med','lwr','upr')
   }
   
@@ -467,7 +490,7 @@ getPreds <- function(mod,parList=NULL,offset=NULL,ZIpar=NULL,otherPars=NULL,q=c(
   if(!is.null(otherPars)){ #If other parameters needed
     pred <- cbind(pred,extras) #Bind extras as columns
   }
-  return(cbind(mm,pred))
+  return(cbind(mmMat,pred))
 }
 
 
@@ -567,7 +590,7 @@ genCommYield <- function(dat,mods=modSummaries_commodity,
     }
     dat$pollen <- m
   }
-  dat$clogPollen <- log(dat$pollen+1)-with(mods[['pollen']],mean[param=='intPollen'])
+  dat$clogPollen <- log(dat$pollen+1)-with(mods[['pollen']]$summary,mean[param=='intPollen'])
   
   #Flower survival to pod (proportion)
   if(!'flwSurv' %in% names(dat)){
