@@ -357,9 +357,12 @@ capFirst <- function(x,decap=FALSE){ #Capitalize/decapitalize first letter of a 
 
 rnormLim <- function(n,mu,Sigma,lwr,upr){ #Generates normally distributed data bounded between upr and lwr
   if(is.matrix(Sigma)){ #Multivariate normal
-    #NEEDS WORK
-    
-    r[is.na(r)] <- MASS::mvrnorm(sum(is.na(r)),mu,Sigma)
+    r <- matrix(NA,N,length(m))
+    while(any(is.na(r[,1]))){
+      r[is.na(r[,1]),] <- MASS::mvrnorm(sum(is.na(r[,1])),mu,Sigma)
+      inLims <- apply(sapply(1:ncol(r),function(i) r[,i]>lwr[i] & r[,i]<upr[i]),1,any)
+      r[!inLims,] <- NA
+    }
   } else { #Normal
     r <- rep(NA,n)
     while(any(is.na(r))){
