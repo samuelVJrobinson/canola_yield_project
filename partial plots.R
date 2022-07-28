@@ -98,7 +98,6 @@ d2 <- with(avgSeedData, #Hbee visitation in seed fields
 #   labs(x='Distance from apiary (m)',y='Visits per hour',
 #        fill='Field\nType',col='Field\nType')
 
-# debugonce(getPreds)
 d3 <- with(avgSeedData,
                   list('intVisitLbeeVis'=1,
                        'slopeFlDensLbeeVis' = 0,
@@ -110,16 +109,18 @@ d3 <- with(avgSeedData,
                   ZIpar = 'thetaLbeeVis',trans='exp',q=c(0.5,0.05,0.95)) %>% 
   transmute(dist=exp(dists),mean,med,lwr,upr)
 
+
 (p1 <- bind_rows(d2,d3,d1,.id = 'type') %>% 
   mutate(type=factor(type,labels=lab)) %>% 
   ggplot(aes(x=dist,y=mean))+
   geom_ribbon(aes(ymax=upr,ymin=lwr,fill=type),alpha=0.3)+
   geom_line(aes(col=type))+
-  # coord_cartesian(y=c(0,150))+
+  # coord_cartesian(y=c(0,150),clip='on')+
+  ylim(0,150)+
   labs(x='Distance from apiary (m)',y='Visits per hour',fill=NULL,col=NULL)+
   scale_colour_manual(values=labCols)+
-  scale_fill_manual(values=labCols))
-
+  scale_fill_manual(values=labCols)
+)
 
 #Hbee and Lbee visitation from shelters
 
@@ -149,7 +150,7 @@ d2 <- with(avgSeedData, #Lbee visits
            trans='exp',q=c(0.5,0.05,0.95)) %>% 
   transmute(dist=1:30,mean,med,lwr,upr)
 
-p2 <- bind_rows(d1,d2,.id='type') %>% 
+(p2 <- bind_rows(d1,d2,.id='type') %>% 
   mutate(type=factor(type,labels=lab[1:2])) %>% 
   ggplot(aes(x=dist,y=mean))+
   geom_ribbon(aes(ymax=upr,ymin=lwr,fill=type),alpha=0.3)+
@@ -158,7 +159,7 @@ p2 <- bind_rows(d1,d2,.id='type') %>%
        fill=NULL,col=NULL)+
   # coord_cartesian(y=c(0,300))+
   scale_colour_manual(values=labCols)+
-  scale_fill_manual(values=labCols)
+  scale_fill_manual(values=labCols))
 
 #Center and edge of bays
 d1 <- with(avgSeedData, #Hbee visits
