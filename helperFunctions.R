@@ -448,7 +448,7 @@ getPreds <- function(mod,parList=NULL,offset=NULL,ZIpar=NULL,ENpar=NULL,
   } 
   
   if(!is.null(ZIpar)){ #Add ZI term if needed (on log scale)
-    i <- mod$summary$param==ZIpar
+    i <- which(mod$summary$param==ZIpar)
     draws[,i] <- log(1-draws[,i]) #Log-ZI parameter
     colnames(draws)[i] <- 'ZI'
     if(!simPar){
@@ -459,7 +459,7 @@ getPreds <- function(mod,parList=NULL,offset=NULL,ZIpar=NULL,ENpar=NULL,
   }
   
   if(!is.null(ENpar)){ #Add exp-normal term if needed
-    i <- mod$summary$param==ENpar
+    i <- which(mod$summary$param==ENpar)
     draws[,i] <- 1/draws[,i] #EN parameter
     colnames(draws)[i] <- 'EN'
     if(!simPar){

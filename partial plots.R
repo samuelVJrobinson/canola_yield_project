@@ -5,8 +5,8 @@ library(tidyverse)
 library(ggpubr)
 library(parallel)
 theme_set(theme_bw())
-setwd('~/Documents/canola_yield_project/Figures') #Galpern machine path
-# setwd('~/Projects/UofC/canola_yield_project/Models') #Multivac path
+# setwd('~/Documents/canola_yield_project/Figures') #Galpern machine path
+setwd('~/Projects/UofC/canola_yield_project/Models') #Multivac path
 
 source('../helperFunctions.R') #Helper functions
 
@@ -98,6 +98,7 @@ d2 <- with(avgSeedData, #Hbee visitation in seed fields
 #   labs(x='Distance from apiary (m)',y='Visits per hour',
 #        fill='Field\nType',col='Field\nType')
 
+# debugonce(getPreds)
 d3 <- with(avgSeedData,
                   list('intVisitLbeeVis'=1,
                        'slopeFlDensLbeeVis' = 0,
@@ -109,15 +110,15 @@ d3 <- with(avgSeedData,
                   ZIpar = 'thetaLbeeVis',trans='exp',q=c(0.5,0.05,0.95)) %>% 
   transmute(dist=exp(dists),mean,med,lwr,upr)
 
-p1 <- bind_rows(d2,d3,d1,.id = 'type') %>% 
+(p1 <- bind_rows(d2,d3,d1,.id = 'type') %>% 
   mutate(type=factor(type,labels=lab)) %>% 
   ggplot(aes(x=dist,y=mean))+
   geom_ribbon(aes(ymax=upr,ymin=lwr,fill=type),alpha=0.3)+
   geom_line(aes(col=type))+
-  coord_cartesian(y=c(0,150))+
+  # coord_cartesian(y=c(0,150))+
   labs(x='Distance from apiary (m)',y='Visits per hour',fill=NULL,col=NULL)+
   scale_colour_manual(values=labCols)+
-  scale_fill_manual(values=labCols)
+  scale_fill_manual(values=labCols))
 
 
 #Hbee and Lbee visitation from shelters
@@ -155,7 +156,7 @@ p2 <- bind_rows(d1,d2,.id='type') %>%
   geom_line(aes(col=type))+
   labs(x='Distance from shelter (m)',y='Visits per hour',
        fill=NULL,col=NULL)+
-  coord_cartesian(y=c(0,300))+
+  # coord_cartesian(y=c(0,300))+
   scale_colour_manual(values=labCols)+
   scale_fill_manual(values=labCols)
 
