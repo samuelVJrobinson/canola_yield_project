@@ -865,6 +865,5 @@ p4 <- bind_rows(d1,d2,.id = 'type') %>%
   scale_fill_manual(values=c('darkorange','darkgreen'))+
   theme(legend.position = c(0.8,0.8))
  
-
 p <- ggarrange(p1,p2,p3,p4,labels = 'auto')
 ggsave('allYield_alternate.png',p,height=10,width=10)
