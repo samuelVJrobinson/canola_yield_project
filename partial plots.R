@@ -3,10 +3,11 @@
 # Load everything ---------------------------------------------------------
 library(tidyverse)
 library(ggpubr)
+library(metR)
 library(parallel)
 theme_set(theme_bw())
-# setwd('~/Documents/canola_yield_project/Figures') #Galpern machine path
-setwd('~/Projects/UofC/canola_yield_project/Models') #Multivac path
+setwd('~/Documents/canola_yield_project/Figures') #Galpern machine path
+# setwd('~/Projects/UofC/canola_yield_project/Models') #Multivac path
 
 source('../helperFunctions.R') #Helper functions
 
@@ -115,7 +116,7 @@ d3 <- with(avgSeedData,
   ggplot(aes(x=dist,y=mean))+
   geom_ribbon(aes(ymax=upr,ymin=lwr,fill=type),alpha=0.3)+
   geom_line(aes(col=type))+
-  # coord_cartesian(y=c(0,150))+
+  coord_cartesian(y=c(0,150))+
   labs(x='Distance from apiary (m)',y='Visits per hour',fill=NULL,col=NULL)+
   scale_colour_manual(values=labCols)+
   scale_fill_manual(values=labCols))
@@ -149,16 +150,16 @@ d2 <- with(avgSeedData, #Lbee visits
            trans='exp',q=c(0.5,0.05,0.95)) %>% 
   transmute(dist=1:30,mean,med,lwr,upr)
 
-p2 <- bind_rows(d1,d2,.id='type') %>% 
+(p2 <- bind_rows(d1,d2,.id='type') %>% 
   mutate(type=factor(type,labels=lab[1:2])) %>% 
   ggplot(aes(x=dist,y=mean))+
   geom_ribbon(aes(ymax=upr,ymin=lwr,fill=type),alpha=0.3)+
   geom_line(aes(col=type))+
   labs(x='Distance from shelter (m)',y='Visits per hour',
        fill=NULL,col=NULL)+
-  # coord_cartesian(y=c(0,300))+
+  coord_cartesian(y=c(0,300))+
   scale_colour_manual(values=labCols)+
-  scale_fill_manual(values=labCols)
+  scale_fill_manual(values=labCols))
 
 #Center and edge of bays
 d1 <- with(avgSeedData, #Hbee visits
@@ -183,13 +184,13 @@ d2 <- with(avgSeedData, #Lbee visits
            trans='exp',q=c(0.5,0.05,0.95)) %>% 
   transmute(bayType=c('Edge','Centre'),mean,med,lwr,upr)
 
-p3 <- bind_rows(d1,d2,.id='type') %>% 
+(p3 <- bind_rows(d1,d2,.id='type') %>% 
   mutate(type=factor(type,labels=lab[1:2])) %>% 
   mutate(bayType=factor(bayType,levels=c('Edge','Centre'))) %>% 
   ggplot(aes(x=bayType,col=type))+
   geom_pointrange(aes(y=mean,ymax=upr,ymin=lwr))+
   labs(x='Female bay position',y='Visits per hour',fill=NULL,col=NULL)+
-  scale_colour_manual(values=labCols[1:2])
+  scale_colour_manual(values=labCols[1:2]))
 
 (p <- ggarrange(p1,p2,p3,ncol=3,nrow=1,common.legend = TRUE,legend='bottom',labels = 'auto'))
 
@@ -239,7 +240,7 @@ d3 <- with(avgSeedData, #Lbee vis effect - seed
   getPreds(modSummaries_seed[[4]],parList = .,trans='exp',q=c(0.5,0.05,0.95)) %>% 
   transmute(vis=exp(hbeeVisSeed)-1,mean,med,lwr,upr)
 
-p1 <- bind_rows(d2,d3,d1,.id = 'type') %>% 
+(p1 <- bind_rows(d2,d3,d1,.id = 'type') %>% 
   mutate(type=factor(type,labels=lab)) %>% 
   ggplot(aes(x=vis,y=mean))+
   geom_ribbon(aes(ymax=upr,ymin=lwr,fill=type),alpha=0.3)+
@@ -247,7 +248,7 @@ p1 <- bind_rows(d2,d3,d1,.id = 'type') %>%
   labs(x='Visits per hour',y='Pollen grains per stigma',fill=NULL,col=NULL)+
   scale_colour_manual(values=labCols)+
   scale_fill_manual(values=labCols)+
-  scale_y_log10()
+  scale_y_log10())
 
 #Distance effects
 hbeeDistComm <- with(avgCommData,seq(clogHbeeDist$min,log(100)-avgCommData$logHbeeDist$mean,length=100))
@@ -286,7 +287,7 @@ d3 <- with(avgSeedData, #Lbee dist - seed
   getPreds(modSummaries_seed[[4]],parList = .,trans='exp',q=c(0.5,0.05,0.95)) %>% 
   transmute(dist=exp(lbeeDistSeed+avgSeedData$logLbeeDist),mean,med,lwr,upr)
 
-p2 <- bind_rows(d2,d3,d1,.id = 'type') %>% 
+(p2 <- bind_rows(d2,d3,d1,.id = 'type') %>% 
   mutate(type=factor(type,labels=lab)) %>% 
   ggplot(aes(x=dist,y=mean))+
   geom_ribbon(aes(ymax=upr,ymin=lwr,fill=type),alpha=0.3)+
@@ -294,9 +295,9 @@ p2 <- bind_rows(d2,d3,d1,.id = 'type') %>%
   labs(x='Distance from apiary or shelter (m)',y='Pollen grains per stigma',fill=NULL,col=NULL)+
   scale_colour_manual(values=labCols)+
   scale_fill_manual(values=labCols)+
-  scale_y_log10()
+  scale_y_log10())
 
-p3 <- with(avgSeedData, #Bay position
+(p3 <- with(avgSeedData, #Bay position
      list('intPollen'=1,
           'slopeHbeeVisPollen'=avgSeedData$logHbeeVis$mean,
           'slopeLbeeVisPollen'=avgSeedData$logLbeeVis$mean,
@@ -309,7 +310,7 @@ p3 <- with(avgSeedData, #Bay position
   transmute(bayType=factor(c('Edge','Centre'),levels=c('Edge','Centre')),mean,med,lwr,upr) %>% 
   ggplot(aes(x=bayType))+
   geom_pointrange(aes(y=mean,ymax=upr,ymin=lwr))+
-  labs(x='Female bay position',y='Pollen grains per stigma',fill=NULL,col=NULL)
+  labs(x='Female bay position',y='Pollen grains per stigma',fill=NULL,col=NULL))
 
 (p <- ggarrange(p1,p2,p3,ncol=3,nrow=1,legend='bottom',common.legend = TRUE,labels='auto'))
 
@@ -347,7 +348,7 @@ d2 <- with(avgSeedData,
   getPreds(modSummaries_seed[[6]],parList = .,trans='invLogit',q=c(0.5,0.05,0.95)) %>% 
   transmute(pol=exp(seedPollenPlot+modSummaries_seed[[4]]$summary$mean[1]),mean,med,lwr,upr) 
 
-p1 <- bind_rows(d1,d2,.id = 'type') %>% 
+(p1 <- bind_rows(d1,d2,.id = 'type') %>% 
   mutate(type=factor(type,labels=lab)) %>% 
   mutate(across(c(mean:upr),~.x*100)) %>% 
   ggplot(aes(x=pol,y=mean))+
@@ -355,7 +356,7 @@ p1 <- bind_rows(d1,d2,.id = 'type') %>%
   geom_line(aes(col=type))+
   labs(x='Pollen grains per stigma',y='Flower survival (%)',fill=NULL,col=NULL)+
   scale_colour_manual(values=labCols)+scale_fill_manual(values=labCols)+
-  scale_x_log10()
+  scale_x_log10())
 
 #Seeds per pod
 d1 <- with(avgCommData, 
@@ -382,14 +383,14 @@ d2 <- with(avgSeedData,
   getPreds(modSummaries_seed[[7]],parList = .,ENpar='lambdaSeedCount',q=c(0.5,0.05,0.95)) %>%
   transmute(pol=exp(seedPollenPlot+modSummaries_seed[[4]]$summary$mean[1]),mean,med,lwr,upr) 
 
-p2 <- bind_rows(d1,d2,.id = 'type') %>% 
+(p2 <- bind_rows(d1,d2,.id = 'type') %>% 
     mutate(type=factor(type,labels=lab)) %>% 
     ggplot(aes(x=pol,y=mean))+
     geom_ribbon(aes(ymax=upr,ymin=lwr,fill=type),alpha=0.3)+
     geom_line(aes(col=type))+
     labs(x='Pollen grains per stigma',y='Seeds per pod',fill=NULL,col=NULL)+
     scale_colour_manual(values=labCols)+scale_fill_manual(values=labCols)+
-    scale_x_log10()
+    scale_x_log10())
 
 #Seed size
 d1 <- with(avgCommData, 
@@ -417,14 +418,14 @@ d2 <- with(avgSeedData,
   getPreds(modSummaries_seed[[8]],parList = .,ENpar='lambdaSeedWeight',q=c(0.5,0.05,0.95)) %>% 
   transmute(pol=exp(seedPollenPlot+modSummaries_seed[[4]]$summary$mean[1]),mean,med,lwr,upr) 
 
-p3 <- bind_rows(d1,d2,.id = 'type') %>% 
+(p3 <- bind_rows(d1,d2,.id = 'type') %>% 
     mutate(type=factor(type,labels=lab)) %>% 
     ggplot(aes(x=pol,y=mean))+
     geom_ribbon(aes(ymax=upr,ymin=lwr,fill=type),alpha=0.3)+
     geom_line(aes(col=type))+
     labs(x='Pollen grains per stigma',y='Seed size (mg)',fill=NULL,col=NULL)+
     scale_colour_manual(values=labCols)+scale_fill_manual(values=labCols)+
-    scale_x_log10()
+    scale_x_log10())
 
 (p <- ggarrange(p1,p2,p3,ncol=3,common.legend = TRUE,legend='bottom'))
 ggsave('allSeeds_pollen.png',p,bg='white',width = 12,height=4)
@@ -459,7 +460,7 @@ d2 <- with(avgSeedData,
   getPreds(modSummaries_seed[[6]],parList = .,trans='invLogit',q=c(0.5,0.05,0.95)) %>% 
   transmute(plSize=exp(seedPlSize),mean,med,lwr,upr) 
 
-p1 <- bind_rows(d1,d2,.id = 'type') %>% 
+(p1 <- bind_rows(d1,d2,.id = 'type') %>% 
   mutate(type=factor(type,labels=lab)) %>% 
   mutate(across(c(mean:upr),~.x*100)) %>% 
   ggplot(aes(x=plSize,y=mean))+
@@ -467,7 +468,7 @@ p1 <- bind_rows(d1,d2,.id = 'type') %>%
   geom_line(aes(col=type))+
   labs(x='Plant size (g)',y='Flower survival (%)',fill=NULL,col=NULL)+
   scale_colour_manual(values=labCols)+scale_fill_manual(values=labCols) +
-  scale_x_log10()
+  scale_x_log10())
 
 #Seeds per pod
 d1 <- with(avgCommData, 
@@ -494,14 +495,14 @@ d2 <- with(avgSeedData,
   getPreds(modSummaries_seed[[7]],parList = .,ENpar='lambdaSeedCount',q=c(0.5,0.05,0.95)) %>% 
   transmute(plSize=exp(seedPlSize),mean,med,lwr,upr) 
 
-p2 <- bind_rows(d1,d2,.id = 'type') %>% 
+(p2 <- bind_rows(d1,d2,.id = 'type') %>% 
   mutate(type=factor(type,labels=lab)) %>% 
   ggplot(aes(x=plSize,y=mean))+
   geom_ribbon(aes(ymax=upr,ymin=lwr,fill=type),alpha=0.3)+
   geom_line(aes(col=type))+
   labs(x='Plant size (g)',y='Seeds per pod',fill=NULL,col=NULL)+
   scale_colour_manual(values=labCols)+scale_fill_manual(values=labCols)+
-  scale_x_log10()
+  scale_x_log10())
 
 #Seed size
 d1 <- with(avgCommData, 
@@ -529,18 +530,17 @@ d2 <- with(avgSeedData,
   getPreds(modSummaries_seed[[8]],parList = .,ENpar='lambdaSeedWeight',q=c(0.5,0.05,0.95)) %>% 
   transmute(plSize=exp(seedPlSize),mean,med,lwr,upr) 
 
-p3 <- bind_rows(d1,d2,.id = 'type') %>% 
+(p3 <- bind_rows(d1,d2,.id = 'type') %>% 
   mutate(type=factor(type,labels=lab)) %>% 
   ggplot(aes(x=plSize,y=mean))+
   geom_ribbon(aes(ymax=upr,ymin=lwr,fill=type),alpha=0.3)+
   geom_line(aes(col=type))+
   labs(x='Plant size (g)',y='Seed size (mg)',fill=NULL,col=NULL)+
   scale_colour_manual(values=labCols)+scale_fill_manual(values=labCols)+
-  scale_x_log10()
+  scale_x_log10())
 
 (p <- ggarrange(p1,p2,p3,ncol=3,common.legend = TRUE,legend='bottom'))
 ggsave('allSeeds_plSize.png',p,bg='white',width = 12,height=4)
-
 
 # Total yield and seed size for commodity fields -----------------------------------------------------
 
@@ -548,8 +548,8 @@ ggsave('allSeeds_plSize.png',p,bg='white',width = 12,height=4)
 # avgCommData$logHbeeDist$mean #avg log hbee dist
 # avgCommData$logitFlwSurv$mean #avg logit flw surv
 
-debugonce(genCommYield)
-debugonce(getPreds)
+# debugonce(genCommYield)
+# debugonce(getPreds)
 # debugonce(rnormLim)
 d <- list()
 d_mean <- genCommYield(dat=d,simPar=TRUE)
@@ -585,14 +585,20 @@ d %>% mutate(numHives=factor(numHives)) %>% group_by(hbeeDist,numHives) %>%
   labs(x='Hbee distance',y='Yield')
   
 #Visitation effect
+
+quantile(commData$hbeeVis/commData$totalTime,c(0.05,0.1,0.5,0.9,0.95))
+
 datList <- list(
-  hbeeVis=0:36,
+  hbeeVis=0:11,
   plDens=50 #Same plant density
 ) 
 
 # debugonce(genCommYield)
 # debugonce(getPreds)
 d_mean <- genCommYield(datList) %>% as.data.frame() 
+
+# debugonce(genCommYield)
+# genCommYield(dat = datList, mods = modSummaries_commodity, simPar=TRUE)
 
 {
   cl <- makeCluster(14)
@@ -604,81 +610,261 @@ d_mean <- genCommYield(datList) %>% as.data.frame()
   stopCluster(cl)
 }
 
-p1 <- d %>% group_by(hbeeVis) %>% 
+(p1 <- d %>% group_by(hbeeVis) %>% 
   summarize(med=median(seedWeight),lwr=quantile(seedWeight,0.05),upr=quantile(seedWeight,0.95)) %>% 
   ggplot(aes(x=hbeeVis*6))+
   geom_ribbon(aes(ymax=upr,ymin=lwr),alpha=0.3)+
-  geom_line(data=d_mean,aes(y=yield_tha))+
-  labs(x='Honey bee visits per hour',y='Simulated seed size (mg/seed)')
+  geom_line(data=d_mean,aes(y=seedWeight))+
+  labs(x='Honey bee visits per hour',y='Simulated seed size (mg/seed)'))
 
-p2 <- d %>% group_by(hbeeVis) %>% 
+(p2 <- d %>% group_by(hbeeVis) %>% 
   summarize(med=median(yield_tha),lwr=quantile(yield_tha,0.05),upr=quantile(yield_tha,0.95)) %>% 
   ggplot(aes(x=hbeeVis*6))+
   geom_ribbon(aes(ymax=upr,ymin=lwr),alpha=0.3)+
   geom_line(data=d_mean,aes(y=yield_tha))+
-  labs(x='Honey bee visits per hour',y='Simulated yield (t/ha)')
+  labs(x='Honey bee visits per hour',y='Simulated yield (t/ha)'))
 
 ggarrange(p1,p2,ncol=1,nrow=2)
 
-# Total yield and seed size for commodity fields -----------------------------------------------------
-
-#Try this again, but check that genSeedYield is using centered logit flw for avgCount and avgWeight
-#Also, check correlation between plSize and flwCount. How is this done in commodity models?
+# Total yield and seed size for seed fields -----------------------------------------------------
 
 # avgSeedData$logHbeeDistCent #avg log hbee dist
 # avgSeedData$logLbeeDistCent #avg logit flw surv
 # avgSeedData$flDensMean$mean #Avg sqrt flw dens
 
-# # debugonce(genSeedYield)
-# d <- list()
-# d_mean <- genSeedYield(dat=d,simPar=FALSE)
+d <- list()
+d_mean <- genSeedYield(dat=d,simPar=FALSE)
 # d <- replicate(100,genSeedYield(dat=d,simPar = TRUE),simplify = FALSE) %>% bind_rows()
 
-#Visitation effect
-datList <- list(
-  hbeeVis=0:150,
-  plDens=40 #Same plant density
-) 
+#Distance effect
+with(seedData,list(
+  hbeeDist=c(hbee_dist,hbee_dist_extra),
+  lbeeDist=c(lbee_dist,lbee_dist_extra))) %>% 
+  lapply(.,function(x) quantile(x,c(0.05,0.1,0.5,0.9,0.95)))
+
+summary(exp(seedData$plantSize))
+summary(exp(seedData$plDens_obs))
+
+datList <- expand.grid(hbeeDist=exp(seq(log(5),log(400),length.out=20)),
+                       lbeeDist=exp(seq(log(4),log(60),length.out=20)),
+                       plDens=38,plSize=25.2
+                       ) %>% 
+  lapply(.,function(x) x)
 
 d_mean <- genSeedYield(datList,mods=modSummaries_seed) %>% as.data.frame()
 
-#Problem: keeps crashing randomly if seedCount<0
-d <- vector('list',5000)
-for(i in 1:5000){
-  set.seed(i)
-  d[[i]] <- genSeedYield(dat = datList, mods = modSummaries_seed, simPar=TRUE)
-}
+b <- seq(3.2,3.6,0.05)
+(p1 <- d_mean %>% 
+    ggplot(aes(x=hbeeDist,y=lbeeDist,z=seedWeight))+
+    geom_contour(col='black')+
+    geom_label_contour(skip=0,breaks=b,fill='white',label.size=0)+
+    labs(x='Honey bee distance',y='Leafcutter distance',fill='Simulated\nseed size\n(mg/seed)')+
+    scale_fill_distiller())
 
-#Problem occurs at seed 2597
-debugonce(genSeedYield)
-set.seed(2597)
-genSeedYield(dat = datList, mods = modSummaries_seed, simPar=TRUE)
+b <- seq(2.5,3.7,0.1)
+(p2 <- d_mean %>% 
+    ggplot(aes(x=hbeeDist,y=lbeeDist,z=yield_tha))+
+    geom_contour(col='black',breaks=b)+
+    geom_label_contour(skip=1,breaks=b,fill='white',label.size=0)+
+    labs(x='Honey bee distance',y='Leafcutter distance',fill='Simulated\nyield\n(t/ha)')
+  )
 
-#Effect of plant size and flower count on seed count is weirdly high (positive and negative). Causing negative seedCounts if both are low
+ggarrange(p1,p2,ncol=2)
 
-{
-  cl <- makeCluster(14)
-  clusterExport(cl=cl,c('genSeedYield'))
+# #Faceted plot - can't control contours as easily
+# d_mean %>% select(hbeeDist,lbeeDist,seedWeight,yield_tha) %>%
+#   pivot_longer(-contains('Dist')) %>%
+#   mutate(name=factor(name,labels=c('Seed size (mg/seed)','Yield (t/ha)'))) %>%
+#   ggplot(aes(x=hbeeDist,y=lbeeDist,z=value))+
+#   facet_wrap(~name,scales='free')+
+#   geom_contour(col='black')+
+#   geom_label_contour(skip=1,fill='white',label.size=0)+
+#   labs(x='Honey bee distance',y='Leafcutter distance')
+
+#Visitation effect alone
+with(seedData,list( #Range of lbee/hbee visitations
+  hbeeVis=(c(hbeeVis,hbeeVis_extra)/c(totalTime,totalTime_extra)),
+  lbeeVis=(c(lbeeVis,lbeeVis_extra)/c(totalTime,totalTime_extra)))) %>% 
+  lapply(.,function(x) quantile(x,c(0.05,0.1,0.5,0.9,0.95)))
+
+datList <- expand.grid(hbeeVis=exp(seq(0,log(84),length.out=20)),
+            lbeeVis=exp(seq(0,log(64),length.out=20)),
+            plDens=38,plSize=25.2
+            ) %>% lapply(.,function(x) x)
+
+d_mean <- genSeedYield(datList,mods=modSummaries_seed) %>% as.data.frame()
+
+b <- seq(3.41,3.44,0.005)
+(p1 <- d_mean %>% 
+  mutate(across(c(hbeeVis,lbeeVis),~.x*6)) %>% 
+  ggplot(aes(x=hbeeVis,y=lbeeVis,z=seedWeight))+
+  geom_contour(col='black',breaks=b)+
+  geom_label_contour(skip=0,breaks=b,fill='white',label.size=0)+
+  labs(x='Honey bee visits per hour',y='Leafcutter visits per hour')+
+  scale_fill_distiller())
+
+b <- seq(3.25,3.45,0.025)
+(p2 <- d_mean %>% 
+  mutate(across(c(hbeeVis,lbeeVis),~.x*6)) %>% 
+  ggplot(aes(x=hbeeVis,y=lbeeVis,z=yield_tha))+
+    geom_contour(col='black',breaks=b)+
+    geom_label_contour(skip=0,breaks=b,fill='white',label.size=0)+
+  labs(x='Honey bee visits per hour',y='Leafcutter visits per hour'))
+
+ggarrange(p1,p2,ncol=1,nrow=2)
+
+
+# (p1 <- d %>% group_by(hbeeVis) %>% 
+#   summarize(med=median(seedWeight),lwr=quantile(seedWeight,0.05),upr=quantile(seedWeight,0.95)) %>% 
+#   ggplot(aes(x=hbeeVis*6))+
+#   geom_ribbon(aes(ymax=upr,ymin=lwr),alpha=0.3)+
+#   geom_line(aes(y=med))+# geom_line(data=d_mean,aes(y=yield_tha))+
+#   labs(x='Honey bee visits per hour',y='Simulated seed size (mg/seed)'))
+# 
+# (p2 <- d %>% group_by(hbeeVis) %>% 
+#   summarize(med=median(yield_tha),lwr=quantile(yield_tha,0.05),upr=quantile(yield_tha,0.95)) %>% 
+#   ggplot(aes(x=hbeeVis*6))+
+#   geom_ribbon(aes(ymax=upr,ymin=lwr),alpha=0.3)+
+#   # geom_line(data=d_mean,aes(y=yield_tha))+
+#   geom_line(aes(y=med))+
+#   labs(x='Honey bee visits per hour',y='Simulated yield (t/ha)'))
+
+# Yield and seed size for both field types -------------------------------------
+
+xaxis <- 'Distance from HB hives (m)'
+
+#Commodity fields - distance and stocking effect
+# summary(exp(commData$plantSize))
+# summary(exp(commData$plDens_obs))
+
+datList <- expand.grid(hbeeDist=exp(seq(log(1),log(400),length=30)),
+                       plDens=48.5, #plSize=18,
+                       numHives=c(0,40)
+) %>% lapply(.,function(x) x)
+
+d_mean <- genCommYield(datList) %>% as.data.frame() %>%
+  mutate(numHives=factor(numHives))
+
+{ #Takes about 10 s
+  cl <- makeCluster(14) 
+  clusterExport(cl=cl,c('genCommYield'))
   d <- parLapply(cl,1:1000,function(i,d,m){
     source('../helperFunctions.R') #Helper functions
-    genSeedYield(dat = d, mods = m, simPar=TRUE)},d=datList,m=modSummaries_seed)
+    genCommYield(dat = d, mods = m, simPar=TRUE)},d=datList,m=modSummaries_commodity) %>% 
+    bind_rows(.id='rep')
   stopCluster(cl)
-  d <- bind_rows(d,.id='rep')
+  }
+
+(p1 <- d %>% mutate(numHives=factor(numHives)) %>% group_by(hbeeDist,numHives) %>% 
+  summarize(med=median(seedWeight),lwr=quantile(seedWeight,0.1),upr=quantile(seedWeight,0.9)) %>% 
+  ggplot(aes(x=hbeeDist,y=med,group=numHives))+
+  geom_ribbon(aes(ymax=upr,ymin=lwr),alpha=0.3)+
+  geom_line(data=d_mean,aes(x=hbeeDist,y=seedWeight))+
+  annotate('text',x=c(300,300),y=c(2.85,2.77),label=c('40 hives','0 hives'))+
+  labs(x=xaxis,y='Seed size (mg/seed)'))
+
+(p2 <- d %>% mutate(numHives=factor(numHives)) %>% group_by(hbeeDist,numHives) %>% 
+  summarize(med=median(yield_tha),lwr=quantile(yield_tha,0.1),upr=quantile(yield_tha,0.9)) %>% 
+  ggplot(aes(x=hbeeDist,y=med,group=numHives))+
+  geom_ribbon(aes(ymax=upr,ymin=lwr),alpha=0.3)+
+  geom_line(data=d_mean,aes(x=hbeeDist,y=yield_tha))+
+  annotate('text',x=c(300,300),y=c(3.45,3.35),label=c('40 hives','0 hives'))+
+  labs(x=xaxis,y='Yield (t/ha)'))
+
+#Seed fields
+
+#Distance effect
+# with(seedData,list(
+#   hbeeDist=c(hbee_dist,hbee_dist_extra),
+#   lbeeDist=c(lbee_dist,lbee_dist_extra))) %>% 
+#   lapply(.,function(x) quantile(x,c(0.05,0.1,0.5,0.9,0.95)))
+# summary(exp(seedData$plantSize))
+# summary(exp(seedData$plDens_obs))
+yaxis <- "Distance from LCB shelters (m)"
+
+datList <- expand.grid(hbeeDist=exp(seq(log(5),log(400),length.out=20)),
+                       plDens=38,#plSize=25.2
+                       lbeeDist=exp(seq(log(4),log(60),length.out=20))
+                       
+) %>% 
+  lapply(.,function(x) x)
+
+d_mean <- genSeedYield(datList,mods=modSummaries_seed) %>% as.data.frame()
+
+b <- seq(3.2,3.6,0.05)
+(p3 <- d_mean %>% 
+    ggplot(aes(x=hbeeDist,y=lbeeDist,z=seedWeight))+
+    geom_contour(col='black')+
+    geom_label_contour(skip=0,breaks=b,fill='white',label.size=0)+
+    labs(x=xaxis,y=yaxis,fill='Simulated\nseed size\n(mg/seed)')+
+    scale_fill_distiller())
+
+b <- seq(2.5,3.7,0.1)
+(p4 <- d_mean %>% 
+    ggplot(aes(x=hbeeDist,y=lbeeDist,z=yield_tha))+
+    geom_contour(col='black',breaks=b)+
+    geom_label_contour(skip=1,breaks=b,fill='white',label.size=0)+
+    labs(x=xaxis,y=yaxis,fill='Simulated\nyield\n(t/ha)')
+)
+
+p <- ggarrange(p1,p2,p3,p4,labels = 'auto')
+ggsave('allYield.png',p,height=10,width=10)
+
+#Alternate version with biplots
+
+datList <- list(plDens=38,#plSize=25.2
+  hbeeDist=exp(seq(log(5),log(100),length.out=20)),
+  lbeeDist=exp(avgSeedData$logLbeeDistCent))
+
+{ #Takes about 10 s
+  cl <- makeCluster(14) 
+  clusterExport(cl=cl,c('genSeedYield'))
+  d1 <- parLapply(cl,1:1000,function(i,d,m){
+    source('../helperFunctions.R') #Helper functions
+    genSeedYield(dat = d, mods = m, simPar=TRUE)},d=datList,m=modSummaries_seed) %>% 
+    bind_rows(.id='rep')
+  stopCluster(cl)
 }
 
-p1 <- d %>% group_by(lbeeVis) %>% 
-  summarize(med=median(seedWeight),lwr=quantile(seedWeight,0.05),upr=quantile(seedWeight,0.95)) %>% 
-  ggplot(aes(x=hbeeVis*6))+
-  geom_ribbon(aes(ymax=upr,ymin=lwr),alpha=0.3)+
-  geom_line(aes(y=med))+# geom_line(data=d_mean,aes(y=yield_tha))+
-  labs(x='Honey bee visits per hour',y='Simulated seed size (mg/seed)')
+datList <- list(plDens=38,#plSize=25.2
+                hbeeDist=exp(avgSeedData$logHbeeDistCent),
+                lbeeDist=exp(seq(log(4),log(60),length.out=20)))
 
-p2 <- d %>% group_by(hbeeVis) %>% 
-  summarize(med=median(yield_tha),lwr=quantile(yield_tha,0.05),upr=quantile(yield_tha,0.95)) %>% 
-  ggplot(aes(x=hbeeVis*6))+
-  geom_ribbon(aes(ymax=upr,ymin=lwr),alpha=0.3)+
-  # geom_line(data=d_mean,aes(y=yield_tha))+
-  geom_line(aes(y=med))+
-  labs(x='Honey bee visits per hour',y='Simulated yield (t/ha)')
+{ #Takes about 10 s
+  cl <- makeCluster(14) 
+  clusterExport(cl=cl,c('genSeedYield'))
+  d2 <- parLapply(cl,1:1000,function(i,d,m){
+    source('../helperFunctions.R') #Helper functions
+    genSeedYield(dat = d, mods = m, simPar=TRUE)},d=datList,m=modSummaries_seed) %>% 
+    bind_rows(.id='rep')
+  stopCluster(cl)
+}
 
+p3 <- bind_rows(d1,d2,.id = 'type') %>% 
+  mutate(type=factor(type,labels=c('HB Dist','LCB Dist'))) %>% 
+  mutate(dist=ifelse(type=='HB Dist',hbeeDist,lbeeDist)) %>% 
+  group_by(type,dist) %>% 
+  summarize(med=median(seedWeight),lwr=quantile(seedWeight,0.1),upr=quantile(seedWeight,0.9)) %>% 
+  ggplot(aes(x=dist,y=med))+
+  geom_ribbon(aes(ymax=upr,ymin=lwr,fill=type),alpha=0.3,show.legend = FALSE)+
+  geom_line(aes(col=type),show.legend = FALSE)+
+  labs(x='Distance from apiary or shelter (m)',y='Seed size (mg/seed)',col='Visitor',fill='Visitor')+
+  scale_colour_manual(values=c('darkorange','darkgreen'))+
+  scale_fill_manual(values=c('darkorange','darkgreen'))
 
+p4 <- bind_rows(d1,d2,.id = 'type') %>% 
+  mutate(type=factor(type,labels=c('HB Dist','LCB Dist'))) %>% 
+  mutate(dist=ifelse(type=='HB Dist',hbeeDist,lbeeDist)) %>% 
+  group_by(type,dist) %>% 
+  summarize(med=median(yield_tha),lwr=quantile(yield_tha,0.1),upr=quantile(yield_tha,0.9)) %>% 
+  ggplot(aes(x=dist,y=med))+
+  geom_ribbon(aes(ymax=upr,ymin=lwr,fill=type),alpha=0.3)+
+  geom_line(aes(col=type))+
+  labs(x='Distance from apiary or shelter (m)',y='Yield (t/ha)',col=NULL,fill=NULL)+
+  scale_colour_manual(values=c('darkorange','darkgreen'))+
+  scale_fill_manual(values=c('darkorange','darkgreen'))+
+  theme(legend.position = c(0.8,0.8))
+ 
+
+p <- ggarrange(p1,p2,p3,p4,labels = 'auto')
+ggsave('allYield_alternate.png',p,height=10,width=10)
