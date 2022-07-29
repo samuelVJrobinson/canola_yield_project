@@ -1,4 +1,5 @@
 # MAKES PARTIAL EFFECTS PLOTS FOR SUB-MODELS
+# ALSO CREATES SUMMARY TABLES OF VARIABLES (DATA) AND PARAMETERS FROM MODELS
 
 # Load everything ---------------------------------------------------------
 library(tidyverse)
@@ -59,13 +60,13 @@ timeOffset <- 6 #Use 1 hr offset (1 = 10 mins, 6 = 1 hr)
 lab <- c('HB Seed','LCB Seed','HB Commodity') 
 labCols <- c('darkorange','darkgreen','black')
 
-#Hbee stocking rate numbers
+#Hbee visitation at edge given different stocking rates
 with(avgCommData,
            list('intHbeeVis'=1,
                 'slopeHbeeDistHbeeVis'=log(1),
                 'slopeNumHivesHbeeVis'= log(c(0,20,40)+1), 
                 'slopeFlDensHbeeVis' = 0)) %>% 
-  getPreds(modSummaries_commodity[[2]],parList = .,offset=timeOffset,
+  getPreds(modSummaries_commodity[['hbeeVis']],parList = .,offset=timeOffset,
            trans='exp',q=c(0.5,0.05,0.95)) %>% 
   transmute(type='Commodity',numHives=c(0,20,40),mean,med,lwr,upr) 
 
@@ -78,7 +79,7 @@ d1 <- with(avgCommData, #Hbee visitation in commodity
      'slopeHbeeDistHbeeVis'=dists,
      'slopeNumHivesHbeeVis'= log(40+1), 
      'slopeFlDensHbeeVis' = 0)) %>% 
-  getPreds(modSummaries_commodity[[2]],parList = .,offset=timeOffset,trans='exp',q=c(0.5,0.05,0.95)) %>% 
+  getPreds(modSummaries_commodity[['hbeeVis']],parList = .,offset=timeOffset,trans='exp',q=c(0.5,0.05,0.95)) %>% 
   transmute(dist=exp(dists),mean,med,lwr,upr)
 
 d2 <- with(avgSeedData, #Hbee visitation in seed fields
@@ -88,7 +89,7 @@ d2 <- with(avgSeedData, #Hbee visitation in seed fields
           'slopeLbeeDistHbeeVis'= 0,
           'slopeCentHbeeVis'= 0
           )) %>% 
-  getPreds(modSummaries_seed[[2]],parList = .,offset=timeOffset,
+  getPreds(modSummaries_seed[['hbeeVis']],parList = .,offset=timeOffset,
            ZIpar = 'thetaHbeeVis',trans='exp',q=c(0.5,0.05,0.95)) %>% 
   transmute(dist=exp(dists),mean,med,lwr,upr)
 
@@ -99,15 +100,14 @@ d2 <- with(avgSeedData, #Hbee visitation in seed fields
 #   labs(x='Distance from apiary (m)',y='Visits per hour',
 #        fill='Field\nType',col='Field\nType')
 
-# debugonce(getPreds)
-d3 <- with(avgSeedData,
+d3 <- with(avgSeedData, #Leafcutters in seed fields
                   list('intVisitLbeeVis'=1,
                        'slopeFlDensLbeeVis' = 0,
                        'slopeHbeeDistLbeeVis'=dists2,
                        'slopeLbeeDistLbeeVis'= 0,
                        'slopeCentLbeeVis'= 0
                   )) %>% 
-         getPreds(modSummaries_seed[[3]],parList = .,offset=timeOffset,
+         getPreds(modSummaries_seed[['lbeeVis']],parList = .,offset=timeOffset,
                   ZIpar = 'thetaLbeeVis',trans='exp',q=c(0.5,0.05,0.95)) %>% 
   transmute(dist=exp(dists),mean,med,lwr,upr)
 
@@ -123,7 +123,6 @@ d3 <- with(avgSeedData,
 
 
 #Hbee and Lbee visitation from shelters
-
 dists <- log(1:30)-avgSeedData$logLbeeDistCent #log Shelter Distances
 
 d1 <- with(avgSeedData, #Hbee visits
@@ -133,7 +132,7 @@ d1 <- with(avgSeedData, #Hbee visits
                 'slopeLbeeDistHbeeVis'=dists,
                 'slopeCentHbeeVis'= 0
            )) %>% 
-  getPreds(modSummaries_seed[[2]],parList = .,offset=timeOffset,ZIpar = 'thetaHbeeVis',
+  getPreds(modSummaries_seed[['hbeeVis']],parList = .,offset=timeOffset,ZIpar = 'thetaHbeeVis',
            trans='exp',q=c(0.5,0.05,0.95)) %>% 
   transmute(dist=1:30,mean,med,lwr,upr)
 
@@ -146,7 +145,7 @@ d2 <- with(avgSeedData, #Lbee visits
                 'slopeLbeeDistLbeeVis'=dists,
                 'slopeCentLbeeVis'= 0
            )) %>% 
-  getPreds(modSummaries_seed[[3]],parList = .,offset=timeOffset,ZIpar = 'thetaLbeeVis',
+  getPreds(modSummaries_seed[['lbeeVis']],parList = .,offset=timeOffset,ZIpar = 'thetaLbeeVis',
            trans='exp',q=c(0.5,0.05,0.95)) %>% 
   transmute(dist=1:30,mean,med,lwr,upr)
 
@@ -169,7 +168,7 @@ d1 <- with(avgSeedData, #Hbee visits
                 'slopeLbeeDistHbeeVis'=0,
                 'slopeCentHbeeVis'= c(0,1)
            )) %>% 
-  getPreds(modSummaries_seed[[2]],parList = .,offset=timeOffset,ZIpar = 'thetaHbeeVis',
+  getPreds(modSummaries_seed[['hbeeVis']],parList = .,offset=timeOffset,ZIpar = 'thetaHbeeVis',
            trans='exp',q=c(0.5,0.05,0.95)) %>% 
   transmute(bayType=c('Edge','Centre'),mean,med,lwr,upr)
 
@@ -180,7 +179,7 @@ d2 <- with(avgSeedData, #Lbee visits
                 'slopeLbeeDistLbeeVis'=0,
                 'slopeCentLbeeVis'= c(0,1)
            )) %>% 
-  getPreds(modSummaries_seed[[3]],parList = .,offset=timeOffset,ZIpar = 'thetaLbeeVis',
+  getPreds(modSummaries_seed[['lbeeVis']],parList = .,offset=timeOffset,ZIpar = 'thetaLbeeVis',
            trans='exp',q=c(0.5,0.05,0.95)) %>% 
   transmute(bayType=c('Edge','Centre'),mean,med,lwr,upr)
 
@@ -306,15 +305,17 @@ d3 <- with(avgSeedData, #Lbee dist - seed
           'slopeLbeeDistPollen'=0,
           'slopeFlDensPollen'=0
      )) %>% 
-  getPreds(modSummaries_seed[[4]],parList = .,trans='exp',q=c(0.5,0.05,0.95)) %>% 
-  transmute(bayType=factor(c('Edge','Centre'),levels=c('Edge','Centre')),mean,med,lwr,upr) %>% 
-  ggplot(aes(x=bayType))+
-  geom_pointrange(aes(y=mean,ymax=upr,ymin=lwr))+
-  labs(x='Female bay position',y='Pollen grains per stigma',fill=NULL,col=NULL))
+    getPreds(modSummaries_seed[[4]],parList = .,trans='exp',q=c(0.5,0.05,0.95)) %>% 
+    transmute(bayType=factor(c('Edge','Centre'),levels=c('Edge','Centre')),mean,med,lwr,upr) %>% 
+    ggplot(aes(x=bayType))+
+    geom_pointrange(aes(y=mean,ymax=upr,ymin=lwr),col='darkolivegreen3')+
+    labs(x='Female bay position',y='Pollen grains per stigma',fill=NULL,col=NULL))
 
 (p <- ggarrange(p1,p2,p3,ncol=3,nrow=1,legend='bottom',common.legend = TRUE,labels='auto'))
 
 ggsave('allPollen.png',p,bg='white',width = 12,height=4)
+
+# data.frame(x=1,y=1:10) %>% ggplot(aes(x=x,y=y,col=y))+geom_point()+scale_color_gradient(low='darkorange',high='darkgreen')
 
 # Seed production - pollen ---------------------------------------------------
 
@@ -322,10 +323,10 @@ ggsave('allPollen.png',p,bg='white',width = 12,height=4)
 commPollenPlot <- seq(-1.2644033,0.9869057,length=20) 
 modSummaries_commodity[[3]]$summary$mean[1] #Intercept
 seedPollenPlot <- seq(-3.573654,2.364599,length=20) 
-modSummaries_seed[[4]]$mean[1] #Intercept
+modSummaries_seed[[4]]$summary$mean[1] #Intercept
 
 lab <- c('Commodity','Seed')
-labCols <- c('blue','darkred')
+labCols <- c('black','darkolivegreen3')
 
 #Flower survival
 d1 <- with(avgCommData, 
@@ -356,7 +357,7 @@ d2 <- with(avgSeedData,
   geom_line(aes(col=type))+
   labs(x='Pollen grains per stigma',y='Flower survival (%)',fill=NULL,col=NULL)+
   scale_colour_manual(values=labCols)+scale_fill_manual(values=labCols)+
-  scale_x_log10())
+  scale_x_log10()+theme(legend.position = c(0.75,0.2),legend.background = element_rect(fill='white',colour='black',size=0.1)))
 
 #Seeds per pod
 d1 <- with(avgCommData, 
@@ -390,7 +391,7 @@ d2 <- with(avgSeedData,
     geom_line(aes(col=type))+
     labs(x='Pollen grains per stigma',y='Seeds per pod',fill=NULL,col=NULL)+
     scale_colour_manual(values=labCols)+scale_fill_manual(values=labCols)+
-    scale_x_log10())
+    scale_x_log10()+theme(legend.position = 'none'))
 
 #Seed size
 d1 <- with(avgCommData, 
@@ -425,10 +426,10 @@ d2 <- with(avgSeedData,
     geom_line(aes(col=type))+
     labs(x='Pollen grains per stigma',y='Seed size (mg)',fill=NULL,col=NULL)+
     scale_colour_manual(values=labCols)+scale_fill_manual(values=labCols)+
-    scale_x_log10())
+    scale_x_log10()+theme(legend.position = 'none'))
 
-(p <- ggarrange(p1,p2,p3,ncol=3,common.legend = TRUE,legend='bottom'))
-ggsave('allSeeds_pollen.png',p,bg='white',width = 12,height=4)
+# (p <- ggarrange(p1,p2,p3,ncol=3,common.legend = TRUE,legend='bottom'))
+# ggsave('allSeeds_pollen.png',p,bg='white',width = 12,height=4)
 
 # Seed production - plant size ---------------------------------------------------
 
@@ -437,7 +438,7 @@ commPlSize <- with(avgCommData$plantSize,seq(min,max,length=20))
 seedPlSize <- with(avgSeedData$plantSize,seq(min,max,length=20))
 
 lab <- c('Commodity','Seed')
-labCols <- c('blue','darkred')
+labCols <- c('black','darkolivegreen3')
 
 #Flower survival
 d1 <- with(avgCommData, 
@@ -460,7 +461,7 @@ d2 <- with(avgSeedData,
   getPreds(modSummaries_seed[[6]],parList = .,trans='invLogit',q=c(0.5,0.05,0.95)) %>% 
   transmute(plSize=exp(seedPlSize),mean,med,lwr,upr) 
 
-(p1 <- bind_rows(d1,d2,.id = 'type') %>% 
+(p4 <- bind_rows(d1,d2,.id = 'type') %>% 
   mutate(type=factor(type,labels=lab)) %>% 
   mutate(across(c(mean:upr),~.x*100)) %>% 
   ggplot(aes(x=plSize,y=mean))+
@@ -468,7 +469,7 @@ d2 <- with(avgSeedData,
   geom_line(aes(col=type))+
   labs(x='Plant size (g)',y='Flower survival (%)',fill=NULL,col=NULL)+
   scale_colour_manual(values=labCols)+scale_fill_manual(values=labCols) +
-  scale_x_log10())
+  scale_x_log10()+theme(legend.position = 'none'))
 
 #Seeds per pod
 d1 <- with(avgCommData, 
@@ -495,14 +496,14 @@ d2 <- with(avgSeedData,
   getPreds(modSummaries_seed[[7]],parList = .,ENpar='lambdaSeedCount',q=c(0.5,0.05,0.95)) %>% 
   transmute(plSize=exp(seedPlSize),mean,med,lwr,upr) 
 
-(p2 <- bind_rows(d1,d2,.id = 'type') %>% 
+(p5 <- bind_rows(d1,d2,.id = 'type') %>% 
   mutate(type=factor(type,labels=lab)) %>% 
   ggplot(aes(x=plSize,y=mean))+
   geom_ribbon(aes(ymax=upr,ymin=lwr,fill=type),alpha=0.3)+
   geom_line(aes(col=type))+
   labs(x='Plant size (g)',y='Seeds per pod',fill=NULL,col=NULL)+
   scale_colour_manual(values=labCols)+scale_fill_manual(values=labCols)+
-  scale_x_log10())
+  scale_x_log10()+theme(legend.position = 'none'))
 
 #Seed size
 d1 <- with(avgCommData, 
@@ -530,17 +531,21 @@ d2 <- with(avgSeedData,
   getPreds(modSummaries_seed[[8]],parList = .,ENpar='lambdaSeedWeight',q=c(0.5,0.05,0.95)) %>% 
   transmute(plSize=exp(seedPlSize),mean,med,lwr,upr) 
 
-(p3 <- bind_rows(d1,d2,.id = 'type') %>% 
+(p6 <- bind_rows(d1,d2,.id = 'type') %>% 
   mutate(type=factor(type,labels=lab)) %>% 
   ggplot(aes(x=plSize,y=mean))+
   geom_ribbon(aes(ymax=upr,ymin=lwr,fill=type),alpha=0.3)+
   geom_line(aes(col=type))+
   labs(x='Plant size (g)',y='Seed size (mg)',fill=NULL,col=NULL)+
   scale_colour_manual(values=labCols)+scale_fill_manual(values=labCols)+
-  scale_x_log10())
+    scale_x_log10()+theme(legend.position = 'none'))
+  
 
-(p <- ggarrange(p1,p2,p3,ncol=3,common.legend = TRUE,legend='bottom'))
-ggsave('allSeeds_plSize.png',p,bg='white',width = 12,height=4)
+# (p <- ggarrange(p1,p2,p3,ncol=3,common.legend = TRUE,legend='bottom'))
+# ggsave('allSeeds_plSize.png',p,bg='white',width = 12,height=4)
+
+(p <- ggarrange(p1,p2,p3,p4,p5,p6,nrow=2,ncol=3,common.legend = FALSE))
+ggsave('allSeeds.png',p,bg='white',width = 10,height=6)
 
 # Total yield and seed size for commodity fields -----------------------------------------------------
 
@@ -867,3 +872,61 @@ p4 <- bind_rows(d1,d2,.id = 'type') %>%
  
 p <- ggarrange(p1,p2,p3,p4,labels = 'auto')
 ggsave('allYield_alternate.png',p,height=10,width=10)
+
+# General summary of variables for both models -----------------------
+
+commDatSummary <- with(commData,list(
+  'Number of hives'=numHives,'Distance to edge (m)'=dist,
+  'HB visitation (hr$^{-1}$)'=6*hbeeVis/totalTime,
+  'Flower density (m$^2$)'=(flDens+flDensMean)^2,
+  'Pollen per stigma'=pollenCount,
+  'Plant density (m$^2$)'=plDens_obs,
+  'Plant vegetative mass (g)'=VegMass,
+  'Plant seed mass (g)'=yield,
+  'Flowers per plant'=flwCount,'Pods per plant'=podCount,'Seeds per pod'=seedCount,'Seed size (mg)'=seedMass
+  )) %>% 
+  lapply(.,function(x) data.frame(Mean=mean(x),Median=median(x),SD=sd(x),Min=min(x),Max=max(x))) %>% 
+  bind_rows(.id='Variable') 
+
+seedDatSummary <- with(seedData,list(
+  'Distance to edge (m)'=c(hbee_dist,hbee_dist_extra),
+  'Distance to LCB shelter (m)'=c(lbee_dist,lbee_dist_extra),
+  'HB visitation (hr$^{-1}$)'=6*c(hbeeVis,hbeeVis_extra)/c(totalTime,totalTime_extra),
+  'LCB visitation (hr$^{-1}$)'=6*c(lbeeVis,lbeeVis_extra)/c(totalTime,totalTime_extra),
+  'Bay Edge/Centre'=c(isCent,isCent_extra),
+  'Flower density (m$^2$)'=(c(flDens_obs,flDens_obs_extra)+flDensMean)^2,
+  'Pollen per stigma'=pollenCount,
+  'Plant density (m$^2$)'=plDens_obs,
+  'Plant vegetative mass (g)'=exp(seedData$plantSize),
+  'Plant seed mass (g)'=yield,
+  'Flowers per plant'=flwCount,
+  'Pods per plant'=podCount,
+  'Seeds per pod'=seedCount_obs,'Seed size (mg)'=seedMass_obs
+)) %>% 
+  lapply(.,function(x) data.frame(Mean=mean(x),Median=median(x),SD=sd(x),Min=min(x),Max=max(x))) %>% 
+  bind_rows(.id='Variable')
+  
+bind_rows(commDatSummary,seedDatSummary,.id='Field Type') %>% 
+  mutate(`Field Type`=ifelse(`Field Type`==1,'Commodity','Seed')) %>% 
+  xtable::xtable(.,digits=c(0,0,2,2,2,2,2,2)) %>% 
+  print(.,include.rownames=FALSE,sanitize.text.function=identity)
+
+
+# General summary of parameters for both models ---------------------------
+
+lapply(modSummaries_commodity,function(x) x$summary) %>% #Get path coefficients
+  bind_rows(.id='to') %>% 
+  transmute(to,name=param,Z,pval) %>% 
+  filter(to!='yield',!grepl('(int|sigma|lambda|Phi|phi|rho)',name)) %>% 
+  mutate(to=case_when(
+    to=='flDens' & grepl('PlDens$',name) ~ 'plDens',
+    to=='flDens' & grepl('PlSize$',name) ~ 'plSize',
+    TRUE ~ gsub('avg','seed',to)
+  )) %>% 
+  mutate(name=gsub('slope','',name)) %>% 
+  filter(mapply(grepl,capFirst(to),name)) %>% 
+  mutate(name=mapply(gsub,capFirst(to),'',name)) %>% 
+  mutate(name=capFirst(name,TRUE)) 
+  
+
+

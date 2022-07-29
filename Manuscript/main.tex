@@ -35,6 +35,7 @@
 \usepackage[breakable]{tcolorbox} %Allows boxes to be made, and allows boxes to be breakable
 \usepackage{capt-of} %Allows captions outside of float environments
 \usepackage{setspace} %Double/1.5 spacing
+\usepackage{multirow} %Multirow tables
 
 %%% HEADERS & FOOTERS
 %\usepackage{fancyhdr} % This should be set AFTER setting up the page geometry
@@ -244,7 +245,7 @@ Our five main hypotheses are outlined as follows:
 
 %REVIEW
 This study assesses the strength of the connections between visitation, pollination, and yield, in a globally important crop species, and identifies the relative importance of bee pollination for seed production, using in-field data from two distinct cropping systems.
-Other studies of crop pollination focus on individual components, such as visitation and pollination \citep{cresswell1999, thomson2001}, or visitation and yield \citep{steffan2003, manning2005, hudewenz2013}, but have not incorporated the links in a single framework (but see \citealp{saez2018}, and few have used realistic field data \citep{morandin2005, isaacs2010}.
+Other studies of crop pollination focus on individual components, such as visitation and pollination \citep{cresswell1999, thomson2001}, or visitation and yield \citep{steffan2003, manning2005, hudewenz2013}, but have not incorporated the links in a single framework (but see \citealp{saez2018}), and few have used realistic field data \citep{morandin2005, isaacs2010}.
 This work adds to the body of literature examining the resource context of pollination services \citep{haig1988} within cropping systems \citep{marini2015, tamburini2016, fijen2018, tamburini2019}, and identifies directions of future research in seed production systems.
 
 \section{Methods}
@@ -307,7 +308,7 @@ These models let us model how visitation ultimately influences seed yield, while
 Pod set can suppress future vegetative growth and flower production \citep{stephenson1981}, but SEMs do not allow for causal loops \citep{grace2012}, so we included a path from pod set to flower production as the closest approximation of this process.
 The direction of the path could be reversed, implying that large flower production reduces the proportion of pod set, but we considered only the first scenario, as \citet{sabbahi2006} showed that low pod set increases flower production.
 
-The underlying models of each pSEM were specified as generalized linear mixed-effects models (GLMMs, see Equation sets S1 and S2 for model specifications).
+The underlying models of each pSEM were specified as generalized linear mixed-effects models (GLMMs).
 GLMMs can model processes that occur at different levels; for example, seed size was modelled at the plant level, while pollen deposition was modeled at the flower level.
 % Random intercepts were used to model variance between fields, within-field (pollen, flower survival, seed count \& size), and within-plot (seed count \& size).
 Random intercepts were used to model variance at the field level and plot level, but plot-level variance terms had poor traces and low effective sample sizes, indicating low variation within plots.
@@ -315,6 +316,7 @@ Therefore, we omitted plot-level random effects for the commodity field models o
 % Continuous responses were modeled using log-normal (plant density, plant size), square-root normal (flower density), and exponential-normal distributions (weight per seed), while counts were modeled as a negative-binomial (honey bee visits, pollen grains per stigma, flowers per plant, seeds per pod) or zero-inflated negative-binomial distribution (LCB visits) with a log-link function. (Move to appendix)
 Visitation models used $log$(time) as an ``offset" variable to account for differences in observation times.
 Plant and pollen samples were not collected from male bays in seed fields, and there were no large differences in visitation rates for honey bees or LCBs (p = 0.32, 0.72, respectively) once other terms were included as covariates, so bay identity was excluded from further analysis.
+See Equation sets S1 and S2 for model specifications) Table \ref{tab:dataSummary} for a brief summary of the variables used in each SEM
 % Pod set (fraction of flowers that matured into pods) was modeled using a beta-binomial distribution with a logit-link function.
 % Interactions between predictors were evident in honey bee visitation rate (Year:Locality interaction) and plant density (Irrigation:Year) in commodity canola, and for LCB visitation (Tent Stocking:Distance from edge) in seed canola, and were included in each model (represented as Y-shaped path in Figures \ref{fig:allSEM} and \ref{fig:allSEM}). 
 
@@ -374,18 +376,19 @@ Finally, pollen deposition increased pod set and seeds per pod in seed canola, b
 
 \subsection{Visitation}
 
-Honey bee visitation decreased with distance away from the apiary, in both commodity and seed canola fields.
-In commodity fields, honey bee visitation decreased from 6.4 visits/hr at the edge to 1.0 visits/hr at the centre of the field (400 m) (p$=$0.0002, Figure \ref{fig:allVisits}, apiary of 40 hives).
+Honey bee visitation decreased with distance away from the edge of the field in both commodity and seed canola fields.
+In commodity fields, HB visitation decreased from 12 visits/hr at the edge to 1.8 visits/hr at 400 m into the field (Figure \ref{fig:allVisits}a, apiary of 40 hives).
 % Visitation rates were higher in both years in Lethbridge (2014: 9.3 visits/hr, 2015: 7.1), but were higher in 2015 than 2014 at Grande Prairie (Z=2.3, p$=$0.02), rising from 5 visits/hr at the field edge in 2014 to 17 visits/hr in 2015. % (at a stocking level of 20 hives). 
-Higher stocking rates increased honey bee visitation at the edge of the field from 3.9 visits/hr with an apiary of 20 hives, increasing to 6.4 visits/hr with 40 hives (Z=5.3, p$<$0.0001), while unstocked field edges had an average of 0.4 visits/hr.
-Honey bee visitation was much higher overall in seed canola fields, and decreased from 99.5 visits/hr at edge to 78.8 visits/hr at the centre of the field (Z=-2.5, p$=$0.01). 
-Honey bee visitation was also lower near leafcutter shelters (Z=3.9, p$=$0.001), dropping from 60 visits/hr at 10 m to 34 visits/hr at 2 m, likely due to competition with LCBs (Figure \ref{fig:allVisits}).
+Lower stocking rates decreased HB visitation at the edge of the field to 7.4 visits/hr at 20 hives, while unstocked field edges had an average of 0.8 visits/hr.
+Unsurprisingly (given the higher stocking rate of 160 hives per field), HB visitation was much higher in seed canola fields, and decreased from 96.4 visits/hr at edge to 85.7 visits/hr at the centre of the field (Figure \ref{fig:allVisits}a). 
+Visitation was also much lower near LCB shelters, dropping from 81 visits/hr at 20 m to 31 at 2 m (Figure \ref{fig:allVisits}b), likely due to competition with LCBs.
 
-LCB visitation declined rapidly with distance from the nearest shelter, showing visitation rates of 350 visits/hr at 2 m declining to 83 visits/hr at 10 m (Z=-11.4, p$=$0.0001). 
-Surprisingly, LCB visitation was also higher at the edge of the field than the centre (Z=-4.4, p$=$0.0001, 114 visits/hr vs 28 visits/hr).
-% However, there was no difference in visitation rates between the edge and the centre when leafcutter cocoon stocking was lower (Z=2.2, p$=$0.028), indicating that leafcutters at high stocking densities likely aggregate in shelters close to the edge of the field (Figure \ref{fig:hbeeDist_both}).
-% There was no difference in visitation rates between the male bay and the edge of the female bays (LCB: p$=$0.72, honey bee: p$=$0.32). 
-LCB visitation was also lower in the centre of the female bays (p$=$0.04, 51 vs. 29 visits/hr), while honey bee visitation was higher (p$=$0.008, 71 vs. 117 visits/hr, Figure \ref{fig:allVisits}), indicating that pollination is likely done by different species in different parts of the field.
+Leafcutter bee visitation was much higher close to their shelters, and surprisingly, was also higher at the edge of the field.
+Visitation dropped from 350 visits/hr at 2 m from the shelter to 50 visits/hr at 20 m (Figure \ref{fig:allVisits}b). 
+Interestingly, LCB visitation decreased from 119 visits/hr at the edge of the field to 25 at the centre.
+% However, there was no difference in visitation rates between the edge and the centre when LCB cocoon stocking was lower (Z=2.2, p$=$0.028), indicating that LCBs at high stocking densities likely aggregate in shelters close to the edge of the field (Figure \ref{fig:hbeeDist_both}).
+% There was no difference in visitation rates between the male bay and the edge of the female bays (LCB: p$=$0.72, HB: p$=$0.32). 
+The difference in LCB visitation between the edge and centre of the female bays was weak (p=0.14), while HB visitation was higher (88 vs. 139 visits/hr, Figure \ref{fig:allVisits}), indicating that pollination is likely done by different species in different parts of the field.
 %Therefore, visitation by both species strongly decreases with distance from the edge of the field, decreases with distance from the leafcutter shelters in seed canola fields, and is done by different bees at the centre of the female bay.
 
 \begin{figure}
@@ -397,13 +400,13 @@ LCB visitation was also lower in the centre of the female bays (p$=$0.04, 51 vs.
 
 \subsection{Pollen Deposition}
 
-LCB visitation increased pollen deposition in seed canola fields, but honey bees did not increase pollen deposition in either commodity or seed canola fields.
-Pollen deposition on stigmas was high in commodity canola (mean: 293 grains per stigma, SD: 385, range: 0--3981), but honey bee visitation had no impact on this (p$=$0.77, Figure \ref{fig:allPollen}).
-Pollen deposition slighly declined with distance from the edge of the field, but this relationship was weak (p$=$0.07) and only amounted to a 6\% average decrease (290 grains per stigma at the field edge vs. 240 at field centre).
+LCB visitation increased pollen deposition in seed canola fields, but honey bees did not increase pollen deposition in commodity or seed canola fields.
+Pollen deposition on stigmas was high in commodity canola (mean: 293 grains/stigma, SD: 385, range: 0--3981), but honey bee visitation had no impact on this (p$=$0.77, Figure \ref{fig:allPollen}a).
+Pollen deposition declined weakly with distance from the edge of the field (p$=$0.09), but this only amounted to a 6\% average decrease (290 grains/stigma at the field edge vs. 240 at field centre).
 % Flies were also common visitors in commodity fields (Table \ref{tab:propVisitors}), but had no effect on pollen deposition (p$=$0.577), so only honey bees and LCBs were considered as potential pollinators (other flower visitors were rare).
-In seed canola, pollen deposition was much lower overall (mean: 22 grains per stigma, SD: 43, range: 0--578), and decreased from 23 to 11 grains/stigma from the edge to the centre of the field (Z=-4.4, p$=$0.0001, Figure \ref{fig:distCentPol}).
-LCB visits increased pollen deposition from 12 grains/stigma at 6 visits/hr to 16 pollen grains at 60 visits/hr (Z=3.2, p$=$0.002, Figure \ref{fig:visPol_both}), but there was no effect of honey bee visitation (Z=0.98, p$=$0.33), implying that most of the pollen deposition in seed fields is the result of LCB visitation.
-Pollen deposition also decreased from 23 grains/stigma at the edge of the female bay to 13 at the centre of the bay independent of visitation (Z=-4.5, p$=$0.0001), suggesting that pollen may be lost from bees crossing over from male bays \citep{pinnisch1990}.%, who likely visit flowers at the edge of the bay first. 
+In seed canola, pollen deposition was much lower overall (mean: 22 grains per stigma, SD: 43, range: 0--578), and decreased from 26.3 grains/stigma at the edge to 11.5 at the centre of the field (Figure \ref{fig:allPollen}b) independent of visitation.
+LCB visitation increased pollen deposition from 13 grains/stigma at 0 visits/hr to 25 pollen grains at 100 visits/hr (Figure \ref{fig:allPollen}a), but there was no effect of honey bee visitation (p$=$0.20), implying that most of the pollen deposition in seed fields is the result of LCB visitation.
+Pollen deposition also decreased from 15 grains/stigma at the edge of the female bay to 9 at the centre of the bay independent of visitation, suggesting that pollen may be lost from bees crossing over from male bays.% \citep{pinnisch1990}.%, who likely visit flowers at the edge of the bay first. 
 
 \begin{figure}
     \centering
@@ -423,8 +426,15 @@ Pollen deposition also decreased from 23 grains/stigma at the edge of the female
 % Plant density was slightly lower at the edge of commodity canola fields (Z=1.68, p=0.09), but was much lower in seed canola (Z=5.2, p$<$0.0001), indicating lower seedling survival at the edges of the field.
 % Neither irrigation (p=0.76), site (p=0.86), nor distance from field edge (p=0.70) directly influenced commodity canola plant size, but plants were larger in 2015 (Z=2.5, p=0.01). 
 
-Plant size had by far the strongest positive effect on the number of pods produced, and there was evidence of pod set suppressing flower production.
-Commodity canola plants produced fewer flowers (mean: 198, SD: 157, range: 13--1419) than seed canola plants (mean: 468, SD: 328, range: 26--2712), and also produced fewer pods per plant (mean: 143, SD: 114, range: 5--892 vs. mean: 303, SD: 208, range: 10--1410).
+\begin{figure}
+    \centering
+    \includegraphics[width=0.9\textwidth,keepaspectratio=true]{../Figures/allSeeds.png}
+    \caption{Effect of pollen deposition (top row) and plant size (bottom row) on flower survival, seeds per pod, and seed size.}
+    \label{fig:allSeeds}
+\end{figure}
+
+Plant size had by far the strongest positive effect on the number of pods produced (see plant paths in Figure \ref{fig:allSEM}), and there was evidence of pod set suppressing flower production.
+Commodity canola plants produced fewer flowers than seed canola plants, and also produced fewer pods per plant overall.
 In both commodity and seed canola, plant size had a strong positive effect on the total number of flowers per plant as well as pod set (both p$<$0.001).
 Pod set had a strong negative influence on total flowers per plant (p$<$0.0001) in both commodity and seed canola (both p$<<$0.0001), indicating that high pod set suppresses future flower production.
 Finally, commodity plants were also lower-yielding (mean: 6.8 g of seeds per plant, SD: 6.0, range: 0.01--47.9) than seed canola plants (mean: 9.6, SD: 7.9, range: 0.02--60.8).
@@ -434,8 +444,8 @@ Plant size had a positive effect on seed size and seeds per pod in seed canola, 
 The relationship between seed size and number was negative in seed canola but positive in commodity canola.
 Commodity canola plants produced more seeds per pod (mean: 23.0 seeds per pod, SD: 7.4) than seed canola (mean: 16.3 seeds per pod, SD: 9.1), 
 but seed size was lower in commodity canola (mean: 2.74 mg/seed, SD: 1.04) than seed canola mean (mean: 3.59 mg/seed, SD: 1.33).
-In commodity canola, plant size did not affect seeds per pod or seed size (p=0.32) or seed size (Z=-0.40, p=0.69, Figure \ref{fig:seedWeightCount_both}), but eed size was positively related to seeds per pod (Z=6.1, p$<$0.0001, Figure \ref{fig:seedWeightCount_both}).
-In seed canola, however, seed size increased with plant size (Z=4.7, p$<$0.0001, Figure \ref{fig:seedWeightCount_both}), decreased with seeds per pod (Z=-13.1, p$<$0.0001), and interestingly, increased with plant density (Z=2.9, p$=$0.004), suggesting resource limitation at both the pod and the plant level. 
+In commodity canola, plant size did not affect seeds per pod or seed size (p=0.32) or seed size (Z=-0.40, p=0.69, Figure \ref{fig:allSeeds}), but seed size was positively related to seeds per pod (Z=6.1, p$<$0.0001, Figure \ref{fig:allSeeds}).
+In seed canola, however, seed size increased with plant size (Z=4.7, p$<$0.0001, Figure \ref{fig:allSeeds}), decreased with seeds per pod (Z=-13.1, p$<$0.0001), and interestingly, increased with plant density (Z=2.9, p$=$0.004), suggesting resource limitation at both the pod and the plant level. 
 There were also between-year differences in seeds per pod (commodity canola only: Z=4.7, p$<$0.0001, 21.7 seeds per pod in 2014, 24.6 in 2015) and seed size (commodity canola: Z=2.2, p=0.031, 2.04 mg/seed in 2014, 2.31 mg/seed in 2015; seed canola: Z=3.6, p=0.0003, 3.11mg/seed in 2015, 3.59mg/seed in 2016), pointing to differences in overall growing conditions between years.
 
 % \subsection{Prediction 4: Pollinated plants produce more seeds}
@@ -522,8 +532,8 @@ The decrease of pollen deposition with distance into the field (independent of v
 This may be due to lower levels of competition at the centre of the field, leading to a higher nectar (or pollen) standing crop. %LH: more likely that bees at centre of F bays carry less pollen
 Foraging \textit{Bombus} take smaller trips between flowers and will forage in smaller areas under nectar-rich conditions (area-restricted search, \citealp{pyke1978b, heinrich1979}), so leafcutter foraging may follow a similar pattern, causing lower pollen deposition at the centre of the field where competition is lower.
 %LCBs are extremely fast fliers, and are difficult to follow after they leave an inflorescence, meaning that tracking their movements during an entire foraging bout would be almost impossible.
-% Visits by honey bee foragers were almost twice as high in the centre of the female bay, but pollen deposition was about 40\% lower (  Figure \ref{fig:distCentPol}), which correspondingly is 
-% Honey bees in seed fields tended to visit more in the centre of the female bay, even close to the edge of the field, yet pollen deposition was still about 40\% lower (Figure \ref{fig:distCentPol}).
+% Visits by honey bee foragers were almost twice as high in the centre of the female bay, but pollen deposition was about 40\% lower (  Figure \ref{fig:allPollen}), which correspondingly is 
+% Honey bees in seed fields tended to visit more in the centre of the female bay, even close to the edge of the field, yet pollen deposition was still about 40\% lower (Figure \ref{fig:allPollen}).
 % While we found that LCBs also tend to avoid the centre of the female bays, and decrease with distance into the field, this extra dependence could have been caused by the fact that the visitation data represents a short ``snapshot'' of the pollen deposition process.
 % For example, canola flowers are receptive for 1-2 days before the petals dehisce, while the surveys only recorded 5 or 10 minutes of visitation, meaning we may have not captured the deposition process on the time scale that it occurs, and the extra variance is being accounted for by distance from field edge and the centre of the female bay.
 % Leafcutter visitation can be extremely sporadic, so the distance and bay position measurements capture differences in the average visitation process better than 10 minute measurements.
@@ -576,7 +586,7 @@ Interestingly, plant density had a positive effect on seed size in seed canola, 
 %Seed size
 Plant size was one of the dominant factors controlling seed size in seed canola, while in commodity canola, plant size did not influence seed size.
 Plant size can positively influence seed size in some plant species \citep{maddox1983}, and this appears to be true in canola \citep{riffkin2012} as well as other Brassicaceae \citep{mazer1987}.
-Similarly, seeds per pod and seed weight varied positively in commodity canola, this pattern was reversed in seed canola (Figure \ref{fig:seedWeightCount_both}). 
+Similarly, seeds per pod and seed weight varied positively in commodity canola, this pattern was reversed in seed canola (Figure \ref{fig:allSeeds}). 
 These differences likely occurred because of variation in available seed resources among the parts of the plant \citep{vanNoordwijk1986}, which can cause a positive size-number relationship even in resource-limited plants. 
 In commodity canola, pollen is readily available, and there seems to be little difference between outcrossed- and self-pollen \citep{steffan2003, rosa2011}. 
 Canola plants produce flowers from the bottom up, and produce fewer, smaller seeds at the ends of the branches because the younger pods have access to fewer resources at the end of the season \citep{sabbahi2006}, resulting in an increased rate of seed abortion \citep{clarke1979}.
