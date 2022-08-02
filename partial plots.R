@@ -914,19 +914,37 @@ bind_rows(commDatSummary,seedDatSummary,.id='Field Type') %>%
 
 # General summary of parameters for both models ---------------------------
 
+commNames <- data.frame(name=c('numHives','hbeeDist','hbeeVis','pollen',
+                                'plSize','plDens','flDens',
+                                'flwCount','flwSurv','seedCount','seedWeight'),
+                         labs=c('Number of hives','Distance from hives','Honey bee visits','Pollen count',
+                                'Plant size','Plant density','Flower density',
+                                'Flowers per plant','Pods per plant','Seeds per pod','Seed size'))
+
 lapply(modSummaries_commodity,function(x) x$summary) %>% #Get path coefficients
-  bind_rows(.id='to') %>% 
-  transmute(to,name=param,Z,pval) %>% 
-  filter(to!='yield',!grepl('(int|sigma|lambda|Phi|phi|rho)',name)) %>% 
-  mutate(to=case_when(
-    to=='flDens' & grepl('PlDens$',name) ~ 'plDens',
-    to=='flDens' & grepl('PlSize$',name) ~ 'plSize',
-    TRUE ~ gsub('avg','seed',to)
+  bind_rows(.id='model') %>% 
+  filter(model!='yield') %>% #,!grepl('(int|sigma|lambda|Phi|phi|rho)',param)) %>%
+  # mutate(param=gsub('int','Intercept',param))
+  mutate(model=case_when(
+    model=='flDens' & grepl('PlDens$',param) ~ 'plDens',
+    model=='flDens' & grepl('PlSize$',param) ~ 'plSize',
+    TRUE ~ gsub('avg','seed',model)
   )) %>% 
-  mutate(name=gsub('slope','',name)) %>% 
-  filter(mapply(grepl,capFirst(to),name)) %>% 
-  mutate(name=mapply(gsub,capFirst(to),'',name)) %>% 
-  mutate(name=capFirst(name,TRUE)) 
+  mutate(param=gsub('slope','',param)) %>% 
+  filter(mapply(grepl,capFirst(model),param)) %>% 
+  mutate(param=mapply(gsub,capFirst(model),'',param)) %>% 
+  mutate(param=capFirst(param,TRUE)) %>% 
+  left_join(commNames,by=c('model'='name')) %>% 
+  mutate(param=case_when(
+    param=='int' ~ 'Intercept',
+    TRUE ~ capFirst(gsub('_field','_Field',param))
+  )) %>% 
+  select(-model) %>% rename(model=labs) %>% 
+  left_join(commNames,by=c('param'='name')) %>%
+  mutate(param=ifelse(is.na(labs),param,labs)) %>% 
+  select(param,model,mean:Rhat) %>% 
+  head(10)
+  
   
 
 
