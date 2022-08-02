@@ -166,9 +166,9 @@ parameters {
 	real<lower=-10,upper=10>  slopeCentFlwCount; //Effect of bay center
 	real<lower=-10,upper=10>  slopeFlwSurvFlwCount; //Effect of flower survival on flower count
 	real<lower=1e-10,upper=10> sigmaFlwCount_field; //SD of field-level random effect
-	real<lower=1e-10,upper=10> sigmaFlwCount_plot; //SD of plot-level random effect
+	// real<lower=1e-10,upper=10> sigmaFlwCount_plot; //SD of plot-level random effect
 	vector<lower=-10,upper=10>[Nfield] intFlwCount_field; //Field-level random effect
-	vector<lower=-10,upper=10>[Nplot_F] intFlwCount_plot; //Plot-level random effect
+	// vector<lower=-10,upper=10>[Nplot_F] intFlwCount_plot; //Plot-level random effect
 	real<lower=-10,upper=10> intPhiFlwCount; //Intercept for sigma
 	real<lower=-10,upper=10>  slopePlSizePhiFlwCount; //Effect of plant size on sigma
 	// real<lower=1e-05> sigmaPhiFlwCount_field; //Sigma for field level sigma
@@ -187,7 +187,7 @@ transformed parameters {
 		// Flower count per plant (plot level)
 		flwCountPlot[i] = intFlwCount + //Intercept
 		  intFlwCount_field[plotIndex[plotIndex_F2[i]]] + //Field random intercept
-		  intFlwCount_plot[i] + //Plot random intercept
+		  // intFlwCount_plot[i] + //Plot random intercept
   		slopeCentFlwCount*isCent_all[plotIndex_F2[i]]; //Bay center effect
 	}
 			
@@ -216,8 +216,8 @@ model {
 	slopeFlwSurvFlwCount ~ normal(0,5); //Flower survival
 	sigmaFlwCount_field ~ gamma(1,1); //SD of field-level random effect
 	intFlwCount_field ~ normal(0,sigmaFlwCount_field); //Field-level random effect
-	sigmaFlwCount_plot ~ gamma(1,1); //SD of plot-level random effect
-	intFlwCount_plot ~ normal(0,sigmaFlwCount_plot); //Plot-level random effects
+	// sigmaFlwCount_plot ~ gamma(1,1); //SD of plot-level random effect
+	// intFlwCount_plot ~ normal(0,sigmaFlwCount_plot); //Plot-level random effects
 	intPhiFlwCount ~ normal(0,5); //Terms for variance
 	slopePlSizePhiFlwCount ~ normal(0,5);
 	// sigmaPhiFlwCount_field ~ gamma(1,1); //Sigma for field level sigma

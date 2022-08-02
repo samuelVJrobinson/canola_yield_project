@@ -43,7 +43,6 @@ nodeCoords <- data.frame(name=c('numHives','hbeeDist','lbeeDist','hbeeVis','lbee
                              0,1,1,0.5,
                              0,1,3,2))
 
-
 #Specify model
 seedDAG <- dagify(plDens ~ hbeeDist,
                   plSize ~ plDens + hbeeDist,
@@ -293,8 +292,8 @@ for(i in 1:length(modList)){
 }
 
 # Get model summaries into a list of tables
-modSummaries_seed <- vector(mode = 'list',length = length(modList)) #Create new empty list
-names(modSummaries_seed) <- names(modList)
+# modSummaries_seed <- vector(mode = 'list',length = length(modList)) #Create new empty list
+# names(modSummaries_seed) <- names(modList)
 load('modSummaries_seed.Rdata') #Load existing list
 #Update model summaries if needed
 temp <- lapply(modList,parTable) #Get parameter summaries
@@ -330,7 +329,7 @@ PPplots(modList[[3]],c(datalist$lbeeVis,datalist$lbeeVis_extra),
 PPplots(modList[[4]],datalist$pollenCount,c('predPollenCount','pollen_resid','predPollen_resid'),
         'Pollen') #OK
 PPplots(modList[[5]],datalist$flwCount,c('predFlwCount','flwCount_resid','predFlwCount_resid'),
-        'Flowers per plant') #OK
+        'Flowers per plant') #PP not great, but everything else is fine - probably due to log-scaling issue
 PPplots(modList[[6]],datalist$podCount,c('predPodCount','podCount_resid','predPodCount_resid'),'Pods per plant') #OK
 PPplots(modList[[7]],datalist$seedCount_obs,c('predSeedCount','seedCount_resid','predSeedCount_resid'),
         index=datalist$obsSeedCount_ind,'Seeds per pod') #OK, but distribution is weird, even with exp-normal. 

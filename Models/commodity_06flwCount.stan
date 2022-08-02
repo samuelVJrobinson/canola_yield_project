@@ -91,8 +91,8 @@ parameters {
 	// real slope2015FlwCount; //Slope of 2015 effect
 	real<lower=0> phiFlwCount_field; //SD of field-level random effect
 	vector[Nfield] intFlwCount_field; //Field-level random effect
-	real<lower=0> phiFlwCount_plot; //SD of plot-level random effect
-	vector[Nplot] intFlwCount_plot; //Plot-level random effect
+	// real<lower=0> phiFlwCount_plot; //SD of plot-level random effect
+	// vector[Nplot] intFlwCount_plot; //Plot-level random effect
 	//Sigma (variance) modeled as a function of plant size
 	real intPhiFlwCount; //Intercept for sigma
 	real slopePlSizePhiFlwCount; //Effect of plant size on sigma
@@ -113,8 +113,8 @@ transformed parameters {
 	for(i in 1:Nplot){ 
 		// Flower count per plant (plot level)
     flwCountPlot[i] = intFlwCount + //Intercept
-      intFlwCount_field[plotIndex[i]] + //Field-level random intercept
-      intFlwCount_plot[i]; //Plot-level random intercept
+      intFlwCount_field[plotIndex[i]]; //Field-level random intercept
+      // intFlwCount_plot[i]; //Plot-level random intercept
     	// slope2015FlwCount*is2015[plotIndex[i]]; //Year effect
 	}
 	
@@ -146,8 +146,8 @@ model {
   // slope2015FlwCount ~ normal(0,5); //Slope of 2015 effect
   phiFlwCount_field ~ gamma(1,1); //SD of field-level random effect
   intFlwCount_field ~ normal(0,phiFlwCount_field); //Field-level random intercept
-  phiFlwCount_plot ~ gamma(1,1); //SD of plot-level random effect
-  intFlwCount_plot ~ normal(0,phiFlwCount_plot); //Plot-level random intercept
+  // phiFlwCount_plot ~ gamma(1,1); //SD of plot-level random effect
+  // intFlwCount_plot ~ normal(0,phiFlwCount_plot); //Plot-level random intercept
   //Variance (sigma) terms
   intPhiFlwCount ~ normal(0,5); //Intercept
   slopePlSizePhiFlwCount ~ normal(0,5);

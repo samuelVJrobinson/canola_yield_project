@@ -873,7 +873,7 @@ p4 <- bind_rows(d1,d2,.id = 'type') %>%
 p <- ggarrange(p1,p2,p3,p4,labels = 'auto')
 ggsave('allYield_alternate.png',p,height=10,width=10)
 
-# General summary of variables for both models -----------------------
+# General summary of variables (data) for both models -----------------------
 
 commDatSummary <- with(commData,list(
   'Number of hives'=numHives,'Distance to edge (m)'=dist,
@@ -906,22 +906,30 @@ seedDatSummary <- with(seedData,list(
   lapply(.,function(x) data.frame(Mean=mean(x),Median=median(x),SD=sd(x),Min=min(x),Max=max(x))) %>% 
   bind_rows(.id='Variable')
   
-bind_rows(commDatSummary,seedDatSummary,.id='Field Type') %>% 
-  mutate(`Field Type`=ifelse(`Field Type`==1,'Commodity','Seed')) %>% 
-  xtable::xtable(.,digits=c(0,0,2,2,2,2,2,2)) %>% 
-  print(.,include.rownames=FALSE,sanitize.text.function=identity)
+# #Version using xtable - needs updating to account for rotated rows
+# bind_rows(commDatSummary,seedDatSummary,.id='Field Type') %>% 
+#   mutate(`Field Type`=ifelse(`Field Type`==1,'Commodity','Seed')) %>% 
+#   xtable::xtable(.,digits=c(0,0,2,2,2,2,2,2)) %>% 
+#   print(.,include.rownames=FALSE,sanitize.text.function=identity)
 
+library(knitr)
+library(kableExtra)
+
+bind_rows(commDatSummary,seedDatSummary,.id='Field Type') %>%
+  mutate(`Field Type`=ifelse(`Field Type`==1,'Commodity','Seed')) %>% 
+  kable(format = 'latex',escape = FALSE,digits=c(0,0,2,2,2,2,2,2)) %>% 
+  collapse_rows(columns=1)
 
 # General summary of parameters for both models ---------------------------
 
 commNames <- data.frame(name=c('numHives','hbeeDist','hbeeVis','pollen',
                                 'plSize','plDens','flDens',
                                 'flwCount','flwSurv','seedCount','seedWeight'),
-                         labs=c('Number of hives','Distance from hives','Honey bee visits','Pollen count',
+                         labs=c('Number of hives','HB distance','HB visits','Pollen count',
                                 'Plant size','Plant density','Flower density',
                                 'Flowers per plant','Pods per plant','Seeds per pod','Seed size'))
 
-lapply(modSummaries_commodity,function(x) x$summary) %>% #Get path coefficients
+commPars <- lapply(modSummaries_commodity,function(x) x$summary) %>% #Get path coefficients
   bind_rows(.id='model') %>% 
   filter(model!='yield') %>% #,!grepl('(int|sigma|lambda|Phi|phi|rho)',param)) %>%
   # mutate(param=gsub('int','Intercept',param))
@@ -931,20 +939,71 @@ lapply(modSummaries_commodity,function(x) x$summary) %>% #Get path coefficients
     TRUE ~ gsub('avg','seed',model)
   )) %>% 
   mutate(param=gsub('slope','',param)) %>% 
-  filter(mapply(grepl,capFirst(model),param)) %>% 
+  # filter(mapply(grepl,capFirst(model),param)) %>% 
   mutate(param=mapply(gsub,capFirst(model),'',param)) %>% 
   mutate(param=capFirst(param,TRUE)) %>% 
   left_join(commNames,by=c('model'='name')) %>% 
-  mutate(param=case_when(
-    param=='int' ~ 'Intercept',
-    TRUE ~ capFirst(gsub('_field','_Field',param))
-  )) %>% 
   select(-model) %>% rename(model=labs) %>% 
   left_join(commNames,by=c('param'='name')) %>%
   mutate(param=ifelse(is.na(labs),param,labs)) %>% 
-  select(param,model,mean:Rhat) %>% 
-  head(10)
+  select(model,param,mean:Rhat,-Z) %>% 
+  mutate(param=capFirst(param)) %>% 
+  mutate(param=case_when(
+    param=='Int' ~ 'Intercept',
+    model=='Pods per plant' & param=='IntPhi' ~ 'Phi',
+    model=='Flowers per plant' & param=='IntPhi' ~ 'Intercept (Phi)',
+    model=='Flowers per plant' & param=='PlSizePhi' ~ 'Plant size (Phi)',
+    model=='Flowers per plant' & param=='SigmaPhi (field)' ~ 'Sigma (field Phi)',
+    TRUE ~ gsub('_(f|F)ield',' (field)',param)
+  ))
   
-  
+seedNames <- data.frame(name=c('numHives','hbeeDist','lbeeDist','hbeeVis','lbeeVis','pollen',
+                                'plSize','plDens','flDens','cent',
+                                'flwCount','flwSurv','seedCount','seedWeight'),
+                         labs=c('Number of hives','HB distance','LCB distance',
+                                'HB visits','LCB visits','Pollen count',
+                                'Plant size','Plant density','Flower density','Bay centre',
+                                'Flowers per plant','Pods per plant','Seeds per pod','Seed size'))  
 
+seedPars <- lapply(modSummaries_seed,function(x) x$summary) %>% #Get path coefficients
+  bind_rows(.id='model') %>% filter(model!='yield') %>% 
+  mutate(model=case_when(
+    model=='flDens' & grepl('(PlDens$|PlDens_)',param) ~ 'plDens',
+    model=='flDens' & grepl('(PlSize$|PlSize_)',param) ~ 'plSize',
+    TRUE ~ gsub('avg','seed',model)
+  )) %>% 
+  mutate(param=gsub('slope','',param)) %>% 
+  mutate(param=capFirst(mapply(gsub,capFirst(model),'',param),TRUE)) %>% 
+  left_join(seedNames,by=c('model'='name')) %>% 
+  select(-model) %>% rename(model=labs) %>% 
+  left_join(seedNames,by=c('param'='name')) %>%
+  mutate(param=ifelse(is.na(labs),param,labs)) %>% 
+  select(model,param,mean:Rhat,-Z) %>% 
+  mutate(param=capFirst(param)) %>% 
+  mutate(param=case_when(
+    param=='Int'|param=='IntVisit' ~ 'Intercept',
+    param=='Theta' ~'Theta (ZI)',
+    param=='Nu' ~'Nu (DF)',
+    param=='Sigma_field' ~ 'Sigma (field)',
+    param=='Sigma_plot' ~ 'Sigma (plot)',
+    grepl('per plant',model) & param=='IntPhi' ~ 'Intercept (Phi)',
+    grepl('per plant',model) & param=='PlSizePhi' ~ 'Plant size (Phi)',
+    # grepl('per plant',model) & param=='SigmaPhi (field)' ~ 'Sigma (field Phi)',
+    TRUE ~ param
+  ))
 
+# #Single table too large
+# bind_rows(commPars,seedPars,.id='Field Type') %>%
+#   mutate(`Field Type`=ifelse(`Field Type`==1,'Commodity','Seed')) %>% 
+#   rename('Parameter'='param','SD'='sd','Min'='lwr','Max'='upr','p-value'='pval',
+#          '$N_{eff}$'='n_eff','$\\hat{R}'='Rhat') %>%
+#   rename_with(capFirst) %>% 
+#   kable(format = 'latex',escape = FALSE,digits=c(0,0,2,2,2,2,2,2)) %>% 
+#   collapse_rows(columns=c(1,2))
+
+commPars %>%
+  rename('Parameter'='param','SD'='sd','Min'='lwr','Max'='upr','p-value'='pval',
+         'N$_{eff}$'='n_eff','$\\hat{R}'='Rhat') %>%
+  rename_with(capFirst) %>%
+  kable(format = 'latex',escape = FALSE,digits=c(0,0,2,2,2,2,2,3,0,3)) %>%
+  collapse_rows(columns=1)
