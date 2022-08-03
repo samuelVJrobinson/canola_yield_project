@@ -350,7 +350,7 @@ All component GLMMs of the pSEM were written in Stan 2.18.1 \citep{gelman2015} a
 We used weakly informative normal priors ($\mu=0, \sigma=5$) for fixed effects and gamma priors ($\alpha=1, \beta=1$) for the variance components.
 Four separate chains were run with an adaptive phase of 1000 iterations, and a sampling phase of 1000 iterations, then checked for convergence of the chains ($\hat{R} \approx$1) and low autocorrelation within chains (high $N_{eff}$).
 We assessed the underlying probability distribution functions of each model using posterior predictive checks \citep{gelman2013}, and found that the probability distributions were properly specified (p$\sim$0.5).
-p-values were calculated using the Z-scores (mean/SD) of the sampled posterior distributions; unless otherwise specified, p-values are lower than 0.05 (see Table \ref{tab:commCoef} and \ref{tab:seedCoef} for more detailed model summaries). 
+p-values were calculated using the Z-scores (mean/SD) of the sampled posterior distributions; unless otherwise specified, listed model coefficents have a p-value less than 0.05, and are considered ``strong" effects where p-values are $<0.01$ (see Table \ref{tab:commCoef} and \ref{tab:seedCoef} for more detailed model summaries). 
 % This means that while the average seed counts (per plant) were unbiased, the variance within a plant was not. 
 % However, the negative binomial distribution had the closest posterior predictive checks of any other distribution. 
 % Predictions from models are median values of the posterior, representing the median prediction, while intervals displayed in figures are credible intervals (CIs), representing 95\% of the samples drawn from the posterior distribution (analogous to confidence intervals, see \citealt{gelman2013}).
@@ -434,8 +434,8 @@ Pollen deposition also decreased from 15 grains/stigma at the edge of the female
 \end{figure}
 
 Plant size had by far the strongest positive effect on the number of pods produced (see plant paths in Figure \ref{fig:allSEM}), and there was evidence of pod set suppressing flower production.
-Commodity canola plants produced fewer flowers than seed canola plants, and also produced fewer pods per plant overall.
-In both commodity and seed canola, plant size had a strong positive effect on the total number of flowers per plant as well as pod set (both p$<$0.001).
+Commodity canola plants produced fewer flowers than seed canola plants, and also produced fewer pods per plant overall (Table \ref{tab:dataSummary}).
+In both commodity and seed canola, plant size had a strong positive effect on the total number of flowers per plant as well as pod set.
 Pod set had a strong negative influence on total flowers per plant (p$<$0.0001) in both commodity and seed canola (both p$<<$0.0001), indicating that high pod set suppresses future flower production.
 Finally, commodity plants were also lower-yielding (mean: 6.8 g of seeds per plant, SD: 6.0, range: 0.01--47.9) than seed canola plants (mean: 9.6, SD: 7.9, range: 0.02--60.8).
 However, the harvest index of commodity canola (mean: 0.26, SD: 0.08, range: 0.005--0.65) was higher than seed canola (mean: 0.23, SD: 0.09, range: 0.003--0.55), meaning that commodity plants produced more seeds per gram of biomass than seed canola plants.%, likely due to the lack of pollen limitation.
