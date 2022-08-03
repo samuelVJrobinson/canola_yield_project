@@ -226,6 +226,7 @@ PPplots(modList[[8]],log(datalist$yield),c('predYield','yield_resid','predYield_
 # Examine random intercept distributions
 compareRE(modList[[1]],'intPlDens_field') 
 compareRE(modList[[1]],'intPlSize_field')
+# compareRE(modList[[1]],'intPlSize_plot') #Not great. Most overlap zero, and N_eff for sigma is low
 compareRE(modList[[1]],'intFlDens_field') 
 compareRE(modList[[2]],'intVisit_field') #skew-normal, but looks OK
 compareRE(modList[[3]],'intPollen_field')
@@ -277,17 +278,16 @@ modFiles <- modFiles[sapply(read.csv('./Commodity model claims 3/claimsList_upda
 # modList <- vector(mode = 'list',length = length(modFiles))
 # names(modList) <- paste0('claim',formatC(1:length(modList),width=2,flag='0'))
 
-# runThese <- 8:24 #1:length(modFiles)
+runThese <- sapply(paste0('commodity_claim',formatC(c(2,3,6,9,10),width = 2,flag = 0),'.stan'),function(x) grep(x,modFiles))
 
-# for(i in runThese){
-{
-  i <- 8
+for(i in runThese){
+  # i <- 8
   overwrite <- TRUE
   if(file.exists(modFiles[i])){
     print(paste0('Starting model ',modFiles[i]))
     mod <- stan(file=modFiles[i],data=datalist,iter=3000,chains=4,control=list(adapt_delta=0.8),init=0)
     
-    temp <- parTable(mod) #Get parameter summaries
+    temp <- parTable(mod)$summary #Get parameter summaries
     #Save information to csv file
     modList <- read.csv('./Commodity model claims 3/claimsList_updated2.csv',sep=',',strip.white = TRUE)
     modList[i,match(names(temp),names(modList))] <- temp[grepl('claim',temp$param),]
@@ -317,10 +317,12 @@ modFiles <- modFiles[sapply(read.csv('./Commodity model claims 3/claimsList_upda
 
 #Calculate C-statistic
 
-modList <- read.csv('./Commodity model claims 3/claimsList_updated2.csv',sep=',',strip.white = TRUE)
-
-modList %>% 
+#Original model
+read.csv('./Commodity model claims 3/claimsList_updated.csv',sep=',',strip.white = TRUE) %>% 
   mutate(pval=pnorm(-abs(Z))*2) %>% 
   shipley.dSep(.,pval,param)
 
-# debugonce(shipley.dSep)
+#Updated
+read.csv('./Commodity model claims 3/claimsList_updated2.csv',sep=',',strip.white = TRUE) %>% 
+  mutate(pval=pnorm(-abs(Z))*2) %>% 
+  shipley.dSep(.,pval,param)

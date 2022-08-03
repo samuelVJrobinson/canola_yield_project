@@ -113,7 +113,6 @@ parameters {
   real slopePlSizeSeedCount; //Slope of plant size - p=0.22
   real slopeFlwSurvSeedCount; //Slope of flower survival
   real slopeFlwCountSeedCount; //Slope of flower count
-  // real slope2015SeedCount; //Year effect - p=0.0003
   real<lower=0> sigmaSeedCount; //SD of seed count
   real<lower=0> sigmaSeedCount_field; //SD of field random effect - OK
   vector[Nfield] intSeedCount_field; //field-level random intercepts

@@ -6,6 +6,8 @@ library(tidyverse)
 library(ggpubr)
 library(metR)
 library(parallel)
+library(knitr)
+library(kableExtra)
 theme_set(theme_bw())
 setwd('~/Documents/canola_yield_project/Figures') #Galpern machine path
 # setwd('~/Projects/UofC/canola_yield_project/Models') #Multivac path
@@ -670,7 +672,7 @@ b <- seq(2.5,3.7,0.1)
 (p2 <- d_mean %>% 
     ggplot(aes(x=hbeeDist,y=lbeeDist,z=yield_tha))+
     geom_contour(col='black',breaks=b)+
-    geom_label_contour(skip=1,breaks=b,fill='white',label.size=0)+
+    geom_label_contour(skip=0,breaks=b,fill='white',label.size=0)+
     labs(x='Honey bee distance',y='Leafcutter distance',fill='Simulated\nyield\n(t/ha)')
   )
 
@@ -765,7 +767,7 @@ d_mean <- genCommYield(datList) %>% as.data.frame() %>%
   ggplot(aes(x=hbeeDist,y=med,group=numHives))+
   geom_ribbon(aes(ymax=upr,ymin=lwr),alpha=0.3)+
   geom_line(data=d_mean,aes(x=hbeeDist,y=seedWeight))+
-  annotate('text',x=c(300,300),y=c(2.85,2.77),label=c('40 hives','0 hives'))+
+  annotate('text',x=c(300,300),y=c(2.825,2.75),label=c('40 hives','0 hives'))+
   labs(x=xaxis,y='Seed size (mg/seed)'))
 
 (p2 <- d %>% mutate(numHives=factor(numHives)) %>% group_by(hbeeDist,numHives) %>% 
@@ -773,7 +775,7 @@ d_mean <- genCommYield(datList) %>% as.data.frame() %>%
   ggplot(aes(x=hbeeDist,y=med,group=numHives))+
   geom_ribbon(aes(ymax=upr,ymin=lwr),alpha=0.3)+
   geom_line(data=d_mean,aes(x=hbeeDist,y=yield_tha))+
-  annotate('text',x=c(300,300),y=c(3.45,3.35),label=c('40 hives','0 hives'))+
+  annotate('text',x=c(300,300),y=c(2.65,2.45),label=c('40 hives','0 hives'))+
   labs(x=xaxis,y='Yield (t/ha)'))
 
 #Seed fields
@@ -800,7 +802,7 @@ b <- seq(3.2,3.6,0.05)
 (p3 <- d_mean %>% 
     ggplot(aes(x=hbeeDist,y=lbeeDist,z=seedWeight))+
     geom_contour(col='black')+
-    geom_label_contour(skip=0,breaks=b,fill='white',label.size=0)+
+    geom_label_contour(skip=1,breaks=b,fill='white',label.size=0)+
     labs(x=xaxis,y=yaxis,fill='Simulated\nseed size\n(mg/seed)')+
     scale_fill_distiller())
 
@@ -873,6 +875,30 @@ p4 <- bind_rows(d1,d2,.id = 'type') %>%
 p <- ggarrange(p1,p2,p3,p4,labels = 'auto')
 ggsave('allYield_alternate.png',p,height=10,width=10)
 
+#Alternate version showing effect of bay in seed fields
+
+datList <- expand.grid(hbeeDist=exp(seq(log(5),log(400),length.out=20)),
+                       lbeeDist=exp(seq(log(4),log(60),length.out=20)),
+                       plDens=38, #plSize=25.2
+                       isCent=c(0,1)
+                       ) %>% lapply(.,function(x) x)
+
+d_mean <- genSeedYield(datList,mods=modSummaries_seed) %>% as.data.frame() %>% 
+  mutate(isCent=factor(isCent,labels=c('Bay Edge','Bay Centre'))) %>% 
+  select(hbeeDist,lbeeDist,isCent,seedWeight,yield_tha) %>% 
+  pivot_longer(cols=c(seedWeight,yield_tha)) %>% 
+  mutate(name=factor(name,labels=c('Seed size (mg)','Yield (t/ha)'))) 
+
+p <- ggplot(data=NULL,aes(x=hbeeDist,y=lbeeDist,z=value))+
+  geom_contour(data=filter(d_mean,grepl('Seed',name)),col='black',binwidth=0.05)+
+  geom_label_contour(data=filter(d_mean,grepl('Seed',name)),skip=0,binwidth=0.05,fill='white',label.size=0)+
+  geom_contour(data=filter(d_mean,!grepl('Seed',name)),col='black',binwidth=0.1)+
+  geom_label_contour(data=filter(d_mean,!grepl('Seed',name)),skip=0,binwidth=0.1,fill='white',label.size=0)+
+  facet_grid(name~isCent)+
+  labs(x=xaxis,y=yaxis,fill='Simulated\nseed size\n(mg/seed)')
+
+ggsave('seedYield_bayCent.png',p,height=10,width=10)
+
 # General summary of variables (data) for both models -----------------------
 
 commDatSummary <- with(commData,list(
@@ -912,13 +938,11 @@ seedDatSummary <- with(seedData,list(
 #   xtable::xtable(.,digits=c(0,0,2,2,2,2,2,2)) %>% 
 #   print(.,include.rownames=FALSE,sanitize.text.function=identity)
 
-library(knitr)
-library(kableExtra)
-
 bind_rows(commDatSummary,seedDatSummary,.id='Field Type') %>%
   mutate(`Field Type`=ifelse(`Field Type`==1,'Commodity','Seed')) %>% 
   kable(format = 'latex',escape = FALSE,digits=c(0,0,2,2,2,2,2,2)) %>% 
-  collapse_rows(columns=1)
+  collapse_rows(columns=1) %>% 
+  clipr::write_clip() #Writes to clipboard
 
 # General summary of parameters for both models ---------------------------
 
@@ -934,11 +958,12 @@ commPars <- lapply(modSummaries_commodity,function(x) x$summary) %>% #Get path c
   filter(model!='yield') %>% #,!grepl('(int|sigma|lambda|Phi|phi|rho)',param)) %>%
   # mutate(param=gsub('int','Intercept',param))
   mutate(model=case_when(
-    model=='flDens' & grepl('PlDens$',param) ~ 'plDens',
-    model=='flDens' & grepl('PlSize$',param) ~ 'plSize',
+    model=='flDens' & grepl('(PlDens$|PlDens_)',param) ~ 'plDens',
+    model=='flDens' & grepl('(PlSize$|PlSize_)',param) ~ 'plSize',
     TRUE ~ gsub('avg','seed',model)
   )) %>% 
   mutate(param=gsub('slope','',param)) %>% 
+  filter(!grepl('Pol$',param)&model!='pollen') %>%   
   # filter(mapply(grepl,capFirst(model),param)) %>% 
   mutate(param=mapply(gsub,capFirst(model),'',param)) %>% 
   mutate(param=capFirst(param,TRUE)) %>% 
@@ -955,7 +980,23 @@ commPars <- lapply(modSummaries_commodity,function(x) x$summary) %>% #Get path c
     model=='Flowers per plant' & param=='PlSizePhi' ~ 'Plant size (Phi)',
     model=='Flowers per plant' & param=='SigmaPhi (field)' ~ 'Sigma (field Phi)',
     TRUE ~ gsub('_(f|F)ield',' (field)',param)
+  )) %>% mutate(pval=case_when(
+    grepl('(Sigma|Lambda|Phi|Theta)',param) ~ '-',
+    pval==0 ~ '$<$0.0001',
+    TRUE ~ formatC(pval)
   ))
+
+commPars %>%
+  rename('Parameter'='param','SD'='sd','Min'='lwr','Max'='upr','p-value'='pval',
+         'N$_{eff}$'='n_eff','$\\hat{R}$'='Rhat') %>%
+  rename_with(capFirst) %>%
+  kable(format = 'latex',escape = FALSE,digits=c(0,0,2,2,2,2,2,3,0,3),longtable=TRUE) %>%
+  kable_styling(font_size = 9,latex_options = c("repeat_header")) %>%
+  # column_spec(1, width = "8em") %>%
+  collapse_rows(columns=1,longtable_clean_cut=FALSE) %>% 
+  clipr::write_clip() #Writes to clipboard
+  
+#Seed model parameters
   
 seedNames <- data.frame(name=c('numHives','hbeeDist','lbeeDist','hbeeVis','lbeeVis','pollen',
                                 'plSize','plDens','flDens','cent',
@@ -990,7 +1031,23 @@ seedPars <- lapply(modSummaries_seed,function(x) x$summary) %>% #Get path coeffi
     grepl('per plant',model) & param=='PlSizePhi' ~ 'Plant size (Phi)',
     # grepl('per plant',model) & param=='SigmaPhi (field)' ~ 'Sigma (field Phi)',
     TRUE ~ param
+  )) %>% mutate(pval=case_when(
+    grepl('(Sigma|Lambda|Phi|Theta)',param) ~ '-',
+    pval==0 ~ '$<$0.0001',
+    TRUE ~ formatC(pval)
   ))
+
+seedPars %>%
+  rename('Parameter'='param','SD'='sd','Min'='lwr','Max'='upr','p-value'='pval',
+         'N$_{eff}$'='n_eff','$\\hat{R}$'='Rhat') %>%
+  rename_with(capFirst) %>%
+  kable(format = 'latex',escape = FALSE,digits=c(0,0,2,2,2,2,2,3,0,3),longtable=TRUE) %>%
+  kable_styling(font_size = 9,latex_options = c("repeat_header")) %>%
+  # column_spec(1, width = "8em") %>%
+  collapse_rows(columns=1,longtable_clean_cut=FALSE) %>% 
+  clipr::write_clip() #Writes to clipboard
+
+
 
 # #Single table too large
 # bind_rows(commPars,seedPars,.id='Field Type') %>%
@@ -1001,9 +1058,4 @@ seedPars <- lapply(modSummaries_seed,function(x) x$summary) %>% #Get path coeffi
 #   kable(format = 'latex',escape = FALSE,digits=c(0,0,2,2,2,2,2,2)) %>% 
 #   collapse_rows(columns=c(1,2))
 
-commPars %>%
-  rename('Parameter'='param','SD'='sd','Min'='lwr','Max'='upr','p-value'='pval',
-         'N$_{eff}$'='n_eff','$\\hat{R}'='Rhat') %>%
-  rename_with(capFirst) %>%
-  kable(format = 'latex',escape = FALSE,digits=c(0,0,2,2,2,2,2,3,0,3)) %>%
-  collapse_rows(columns=1)
+

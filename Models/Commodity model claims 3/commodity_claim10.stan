@@ -91,10 +91,10 @@ parameters {
 	real slopePlDensPlSize; //Slope of planting density
 	real slopeDistPlSize; //Slope of distance
 	real<lower=0> sigmaPlSize_field; //SD of field-level intercept
-	real<lower=0> sigmaPlSize_plot; //SD of plot-level intercept
+	// real<lower=0> sigmaPlSize_plot; //SD of plot-level intercept
 	real<lower=0> sigmaPlSize; //Sigma for within-plot (residual)
 	vector[Nfield] intPlSize_field; //Random intercept for field - most overlap zero, but not all: probably should keep it
-	vector[Nplot] intPlSize_plot; //Random intercept for plot - not great n_eff or Rhat, but looic is worse without it
+	// vector[Nplot] intPlSize_plot; //Random intercept for plot - not great n_eff or Rhat, but looic is worse without it
 
 	// Pollen deposition
 	
@@ -129,7 +129,7 @@ transformed parameters {
 		// Plant size (plot-level)
 		plSizePlotMu[i] = intPlSize + //Intercept
 		  intPlSize_field[plotIndex[i]] + //Field-level random effect
-		  intPlSize_plot[i] + //Plot-level random effect
+		  // intPlSize_plot[i] + //Plot-level random effect
 			slopePlDensPlSize*plDens[i] +  //Plant density
 			slopeDistPlSize*logHbeeDist[i]; //Distance effect (edge of field has smaller plants)
 			
@@ -167,10 +167,10 @@ model {
 	slopePlDensPlSize ~ normal(0,5); //Plant density
 	slopeDistPlSize ~ normal(0,5); //Distance effect
 	sigmaPlSize_field ~ gamma(1,1); //Sigma for random field
-	sigmaPlSize_plot ~ gamma(1,1); //Sigma for random plot
+	// sigmaPlSize_plot ~ gamma(1,1); //Sigma for random plot
 	sigmaPlSize ~ gamma(1,1); //Sigma for residual
 	intPlSize_field ~ normal(0,sigmaPlSize_field); //Random field int
-	intPlSize_plot ~ normal(0,sigmaPlSize_plot); //Random int plot
+	// intPlSize_plot ~ normal(0,sigmaPlSize_plot); //Random int plot
 
 	// Pollen deposition - informative priors	
 	
