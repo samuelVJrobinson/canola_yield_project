@@ -549,6 +549,11 @@ d2 <- with(avgSeedData,
 (p <- ggarrange(p1,p2,p3,p4,p5,p6,nrow=2,ncol=3,common.legend = FALSE))
 ggsave('allSeeds.png',p,bg='white',width = 10,height=6)
 
+# Total yield and seed size - plant density --------------------------
+
+
+
+
 # Total yield and seed size for commodity fields -----------------------------------------------------
 
 # avgCommData$flDensMean$mean #Avg sqrt flw dens
@@ -762,8 +767,10 @@ d_mean <- genCommYield(datList) %>% as.data.frame() %>%
   stopCluster(cl)
   }
 
+quantRanges <- c(0.025,0.975) #Ranges of quantiles to use
+
 (p1 <- d %>% mutate(numHives=factor(numHives)) %>% group_by(hbeeDist,numHives) %>% 
-  summarize(med=median(seedWeight),lwr=quantile(seedWeight,0.1),upr=quantile(seedWeight,0.9)) %>% 
+  summarize(med=median(seedWeight),lwr=quantile(seedWeight,quantRanges[1]),upr=quantile(seedWeight,quantRanges[2])) %>% 
   ggplot(aes(x=hbeeDist,y=med,group=numHives))+
   geom_ribbon(aes(ymax=upr,ymin=lwr),alpha=0.3)+
   geom_line(data=d_mean,aes(x=hbeeDist,y=seedWeight))+
@@ -771,7 +778,7 @@ d_mean <- genCommYield(datList) %>% as.data.frame() %>%
   labs(x=xaxis,y='Seed size (mg/seed)'))
 
 (p2 <- d %>% mutate(numHives=factor(numHives)) %>% group_by(hbeeDist,numHives) %>% 
-  summarize(med=median(yield_tha),lwr=quantile(yield_tha,0.1),upr=quantile(yield_tha,0.9)) %>% 
+  summarize(med=median(yield_tha),lwr=quantile(yield_tha,quantRanges[1]),upr=quantile(yield_tha,quantRanges[2])) %>% 
   ggplot(aes(x=hbeeDist,y=med,group=numHives))+
   geom_ribbon(aes(ymax=upr,ymin=lwr),alpha=0.3)+
   geom_line(data=d_mean,aes(x=hbeeDist,y=yield_tha))+
@@ -802,7 +809,7 @@ b <- seq(3.2,3.6,0.05)
 (p3 <- d_mean %>% 
     ggplot(aes(x=hbeeDist,y=lbeeDist,z=seedWeight))+
     geom_contour(col='black')+
-    geom_label_contour(skip=1,breaks=b,fill='white',label.size=0)+
+    geom_label_contour(skip=0,breaks=b,fill='white',label.size=0)+
     labs(x=xaxis,y=yaxis,fill='Simulated\nseed size\n(mg/seed)')+
     scale_fill_distiller())
 
@@ -810,7 +817,7 @@ b <- seq(2.5,3.7,0.1)
 (p4 <- d_mean %>% 
     ggplot(aes(x=hbeeDist,y=lbeeDist,z=yield_tha))+
     geom_contour(col='black',breaks=b)+
-    geom_label_contour(skip=1,breaks=b,fill='white',label.size=0)+
+    geom_label_contour(skip=0,breaks=b,fill='white',label.size=0)+
     labs(x=xaxis,y=yaxis,fill='Simulated\nyield\n(t/ha)')
 )
 
@@ -885,19 +892,35 @@ datList <- expand.grid(hbeeDist=exp(seq(log(5),log(400),length.out=20)),
 
 d_mean <- genSeedYield(datList,mods=modSummaries_seed) %>% as.data.frame() %>% 
   mutate(isCent=factor(isCent,labels=c('Bay Edge','Bay Centre'))) %>% 
-  select(hbeeDist,lbeeDist,isCent,seedWeight,yield_tha) %>% 
+  # select(hbeeDist,lbeeDist,isCent,seedWeight,yield_tha) %>% 
   pivot_longer(cols=c(seedWeight,yield_tha)) %>% 
   mutate(name=factor(name,labels=c('Seed size (mg)','Yield (t/ha)'))) 
 
-p <- ggplot(data=NULL,aes(x=hbeeDist,y=lbeeDist,z=value))+
+(p <- ggplot(data=NULL,aes(x=hbeeDist,y=lbeeDist,z=value))+
   geom_contour(data=filter(d_mean,grepl('Seed',name)),col='black',binwidth=0.05)+
   geom_label_contour(data=filter(d_mean,grepl('Seed',name)),skip=0,binwidth=0.05,fill='white',label.size=0)+
   geom_contour(data=filter(d_mean,!grepl('Seed',name)),col='black',binwidth=0.1)+
   geom_label_contour(data=filter(d_mean,!grepl('Seed',name)),skip=0,binwidth=0.1,fill='white',label.size=0)+
-  facet_grid(name~isCent)+
-  labs(x=xaxis,y=yaxis,fill='Simulated\nseed size\n(mg/seed)')
+  facet_grid(isCent~name)+
+  labs(x=xaxis,y=yaxis,fill='Simulated\nseed size\n(mg/seed)'))
 
-ggsave('seedYield_bayCent.png',p,height=10,width=10)
+ggsave('allYield_bayCent.png',p,height=10,width=10)
+
+d_mean %>% 
+  filter(!grepl('Seed',name),isCent=='Bay Centre',lbeeDist>40,lbeeDist<50) %>% 
+  select(hbeeDist,plSize:yield) %>% 
+  pivot_longer(-hbeeDist) %>% mutate(name=factor(name,levels=unique(name))) %>% 
+  ggplot(aes(x=hbeeDist,y=value))+geom_point()+
+  facet_wrap(~name,scales='free_y')
+  
+genSeedYield(datList,mods=modSummaries_seed) %>% as.data.frame() %>% 
+  mutate(isCent=factor(isCent,labels=c('Bay Edge','Bay Centre')),podCount=flwCount*flwSurv) %>% 
+  filter(isCent=='Bay Centre',lbeeDist>40,lbeeDist<50) %>% 
+  select(hbeeDist,plSize:flwCount,podCount,seedCount:yield) %>% 
+  pivot_longer(-hbeeDist) %>% mutate(name=factor(name,levels=unique(name))) %>% 
+  ggplot(aes(x=hbeeDist,y=value))+geom_point()+
+  facet_wrap(~name,scales='free_y')
+
 
 # General summary of variables (data) for both models -----------------------
 
@@ -907,8 +930,7 @@ commDatSummary <- with(commData,list(
   'Flower density (m$^2$)'=(flDens+flDensMean)^2,
   'Pollen per stigma'=pollenCount,
   'Plant density (m$^2$)'=plDens_obs,
-  'Plant vegetative mass (g)'=VegMass,
-  'Plant seed mass (g)'=yield,
+  'Plant vegetative mass (g)'=VegMass,'Plant seed mass (g)'=yield,'Harvest index (g/g)'=yield/VegMass,
   'Flowers per plant'=flwCount,'Pods per plant'=podCount,'Seeds per pod'=seedCount,'Seed size (mg)'=seedMass
   )) %>% 
   lapply(.,function(x) data.frame(Mean=mean(x),Median=median(x),SD=sd(x),Min=min(x),Max=max(x))) %>% 
@@ -923,8 +945,9 @@ seedDatSummary <- with(seedData,list(
   'Flower density (m$^2$)'=(c(flDens_obs,flDens_obs_extra)+flDensMean)^2,
   'Pollen per stigma'=pollenCount,
   'Plant density (m$^2$)'=plDens_obs,
-  'Plant vegetative mass (g)'=exp(seedData$plantSize),
+  'Plant vegetative mass (g)'=exp(plantSize),
   'Plant seed mass (g)'=yield,
+  'Harvest index (g/g)'=yield/exp(plantSize),
   'Flowers per plant'=flwCount,
   'Pods per plant'=podCount,
   'Seeds per pod'=seedCount_obs,'Seed size (mg)'=seedMass_obs

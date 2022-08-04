@@ -41,7 +41,7 @@ nodeCoords <- data.frame(name=c('numHives','hbeeDist','hbeeVis','pollen',
                                 'flwCount','flwSurv','seedCount','seedWeight'),
                          labs=c('Number\nof Hives','Distance','Honey bee\nVisits','Pollen\nCount',
                                 'Plant\nSize','Plant\nDensity','Flower\nDensity',
-                                'Flowers\nper Plant','Pods\nper Plant','Seeds\nper Pod','Seed\nSize'),
+                                'Flowers\nper Plant','Pod Set\n(%)','Seeds\nper Pod','Seed\nSize'),
                          x=c(0,1,0.5,0.5,
                              2.5,0,1,
                              3.5,4,2.5,3.5),
@@ -66,7 +66,7 @@ commDAG <- dagify(plDens ~ hbeeDist,
 )
 
 #Get path coefficients (Z-scores) and match to edges
-pathCoefs <- modSummaries_commodity %>% #Get path coefficients
+pathCoefs <- lapply(modSummaries_commodity,function(x) x$summary) %>%  #Get path coefficients
   bind_rows(.id='to') %>% 
   transmute(to,name=param,Z,pval) %>% 
   filter(to!='yield',!grepl('(int|sigma|lambda|Phi|phi|rho)',name)) %>% 
@@ -108,7 +108,7 @@ commDAG$data <- commDAG$data %>% #Match coefs to dagitty set
   annotate('text',x=3.5,y=3.5+0.1,label='Plant Level',size=5)+
   annotate('rect',xmin=2,ymin=-0.5,xmax=4.5,ymax=3.5,fill=NA,col='black',
            linetype='dashed',linejoin='round',size=1)+
-  
+  annotate('label',x=3.25,y=4.25,label='Commodity fields',size=10)+
   geom_dag_edges(aes(edge_width=L,edge_colour=C,edge_alpha=A),
                  arrow_directed=arrow(angle=20,type='open')) +
   geom_dag_edges(aes(label=edgeLab),label_pos=0.45,edge_alpha=0,label_size=6,fontface='bold',label_colour ='black') +
@@ -124,7 +124,7 @@ nodeCoords <- data.frame(name=c('numHives','hbeeDist','lbeeDist','hbeeVis','lbee
                          labs=c('Number\nof Hives','Honey bee\nDistance','Leafcutter\nDistance',
                                 'Honey bee\nVisits','Leafcutter\nVisits','Pollen\nCount',
                                 'Plant\nSize','Plant\nDensity','Flower\nDensity','Bay Centre',
-                                'Flowers\nper Plant','Pods\nper Plant','Seeds\nper Pod','Seed\nSize'),
+                                'Flowers\nper Plant','Pod Set\n(%)','Seeds\nper Pod','Seed\nSize'),
                          x=c(0,0,1,0,1,0.5,
                              2.5,0,1,0.5,
                              3.5,4,2.5,3.5),
@@ -149,7 +149,7 @@ seedDAG <- dagify(plDens ~ hbeeDist,
                   labels=setNames(nodeCoords$labs,nodeCoords$name)
 )
 
-pathCoefs <- modSummaries_seed %>% #Get path coefficients
+pathCoefs <- lapply(modSummaries_seed,function(x) x$summary) %>% #Get path coefficients
   bind_rows(.id='to') %>% 
   transmute(to,name=param,Z,pval) %>% 
   filter(to!='yield',!grepl('(int|sigma|lambda|Phi|phi|rho|nu|theta)',name)) %>% 
@@ -184,7 +184,7 @@ tidySeedDAG$data <- tidySeedDAG$data %>% #Match coefs to dagitty set
   annotate('text',x=3.5,y=3.5+0.1,label='Plant Level',size=5)+
   annotate('rect',xmin=2,ymin=-0.5,xmax=4.5,ymax=3.5,fill=NA,col='black',
            linetype='dashed',linejoin='round',size=1)+
-  
+  annotate('label',x=3.25,y=4.25,label='Seed fields',size=10)+  
   geom_dag_edges(aes(edge_width=L,edge_colour=C,edge_alpha=A),
                  arrow_directed=arrow(angle=20,type='open')) +
   geom_dag_edges(aes(label=edgeLab),label_pos=0.45,edge_alpha=0,label_size=6,fontface='bold',label_colour ='black') +
@@ -195,7 +195,7 @@ tidySeedDAG$data <- tidySeedDAG$data %>% #Match coefs to dagitty set
 
 # Combine plots -----------------------------------------------------------
 
-(p <- ggarrange(commSEM,seedSEM,ncol=1,nrow=2,labels=c('Commodity Field Models','Seed Field Models'),label.x = 0.5))
+(p <- ggarrange(commSEM,seedSEM,ncol=1,nrow=2))
 ggsave('./Figures/allSEM.png',p,height = 14,width=12,bg='white')
 
 
