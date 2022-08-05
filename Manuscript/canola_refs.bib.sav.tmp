@@ -2380,4 +2380,107 @@ on seed production.},
   number    = {6},
   pages     = {861--866},
   issn      = {1365-2435},
-  abstract  = {1 The flower of Brassica napus L. appears to 
+  abstract  = {1 The flower of Brassica napus L. appears to be typically zoophilous (suited to animal pollination) because of its visually attractive petals, robust stigma and nectaries. Pollination by wind is feasible, however, and its likely effectiveness is not immediately foreseeable because of the complexity of interactions between objects and windborne particles. 
+2 Computational fluid dynamics (CFD) and wind-tunnel experiments were used to investigate the aerodynamic interactions between the flower and a windborne suspension of its pollen. 
+3 The flower's petals handicapped wind pollination by reducing the target efficiency of the upwind-facing stigma. For downwind-facing flowers, pollen reception was negligible.
+4 Several aspects of the plant's architecture (floral structure, pollen cohesiveness, inflorescence structure) are uncompromisingly zoophilous. Estimates of the amount of wind pollination suggest that it is unlikely to be important for the long-distance dispersal of B. napus genes such as those from genetically modified varieties. 
+5 This study illustrates how CFD may become a powerful tool in future analyses of wind pollination.},
+  doi       = {10.1111/j.0269-8463.2004.00917.x},
+  file      = {:C\:\\Users\\Samuel\\Documents\\Papers\\cresswell et al 2004.pdf:PDF},
+  groups    = {Canola pollination},
+  keywords  = {ambophily, anemophily, computational fluid dynamics, gene flow},
+  owner     = {Samuel},
+  publisher = {Blackwell Science Ltd},
+  timestamp = {2014.10.07},
+  url       = {http://dx.doi.org/10.1111/j.0269-8463.2004.00917.x},
+}
+
+@Article{pinnisch1990,
+  author   = {Pinnisch, R. and McVetty, P. B. E.},
+  journal  = {Canadian Journal of Plant Science},
+  title    = {Seed production of hybrid summer rape in the field using the pol cytoplasmic male sterility system: a first attempt},
+  year     = {1990},
+  number   = {3},
+  pages    = {611--618},
+  volume   = {70},
+  abstract = {Hybrid summer rape (Brassica napus L.) seed production blocks were established at two locations in Manitoba in 1986 and 1987 to examine the effect of distance from the pollen source on seed yield, (both total and hybrid) and percent hybridity of seed produced on rows of a male sterile line of the open pollinated population B. napus cultivar, Marnoo, possessing the pol cytoplasmic male sterility inducing cytoplasm. A 10:1 ratio of male sterile line (A-line) to pollen parent was employed. Leaf cutter bees (Megachile rotundata F.) were used as the pollen vector between the two parents. In 1986, no significant differences in total seed yield were found among A-line rows, while in 1987, significant differences in total seed yields of A-line rows were found. Differences in hybrid seed yields among A-line rows were significant for all locations and years. Leaf cutter bees were found to be effective pollinators of the A-line plants. Less than half and less than a third of the seed produced on the A-line rows in 1986 and 1987, respectively, was hybrid seed. The high percentage of non-hybrid seed present in the seed lot may have been due to incomplete male sterility of the Marnoo A-line population. Total seed yields, hybrid seed yields and percent hybridity all declined linearly as distance from the pollen source increased. Improvement in the degree of male sterility of the Marnoo A-line population and/or a reduction in the 10:1 ratio of parents, and subsequent maximum A-line row to R-line row distance, will be necessary if hybrid summer rape seed production using this pol CMS A-line is to be commercially viable},
+  doi      = {10.4141/cjps90-077},
+  eprint   = {https://doi.org/10.4141/cjps90-077},
+  file     = {:pinnisch and mcvetty 1990.pdf:PDF},
+  groups   = {Canola pollination},
+  keywords = {Brassica napus L., CMS, hybrid, hybridity},
+  url      = {https://doi.org/10.4141/cjps90-077},
+}
+
+@Article{pyke1978b,
+  author    = {Graham H. Pyke},
+  journal   = {Theoretical Population Biology},
+  title     = {Optimal foraging: Movement patterns of bumblebees between inflorescences},
+  year      = {1978},
+  issn      = {0040-5809},
+  number    = {1},
+  pages     = {72--98},
+  volume    = {13},
+  abstract  = {Nectar-collecting bumblebees are hypothesized to employ rules of movement which result in the maximum net rate of energy gain (i.e., are optimal). The optimal movement rules are derived from a mathematical model and are used to generate predicted patterns of movement. The predicted patterns are compared with field observations. These observations support the hypothesis. An important component of the mathematical model is the memory of the foraging animal. The field data have implications concerning the memory capabilities of the bumblebees.},
+  doi       = {http://dx.doi.org/10.1016/0040-5809(78)90036-9},
+  file      = {:C\:\\Users\\Samuel\\Documents\\Papers\\pyke 1978.pdf:PDF},
+  groups    = {Pollinator movement, Movement},
+  owner     = {Samuel},
+  timestamp = {2015.02.17},
+  url       = {http://www.sciencedirect.com/science/article/pii/0040580978900369},
+}
+
+@Article{vanNoordwijk1986,
+  author    = {van Noordwijk, A. J. and de Jong, G.},
+  journal   = {The American Naturalist},
+  title     = {Acquisition and Allocation of Resources: Their Influence on Variation in Life History Tactics},
+  year      = {1986},
+  number    = {1},
+  pages     = {137--142},
+  volume    = {128},
+  doi       = {10.1086/284547},
+  eprint    = {https://doi.org/10.1086/284547},
+  file      = {:van noordwijk and de jong 1986.pdf:PDF},
+  groups    = {Life history},
+  owner     = {Samuel},
+  timestamp = {2019.01.27},
+  url       = {https://doi.org/10.1086/284547},
+}
+
+@Manual{kassambara2020,
+  title  = {{ggpubr}: 'ggplot2' Based Publication Ready Plots},
+  author = {Alboukadel Kassambara},
+  note   = {R package version 0.4.0},
+  year   = {2020},
+  groups = {Statistics},
+  url    = {https://CRAN.R-project.org/package=ggpubr},
+}
+
+@Book{wickham2016,
+  author    = {Hadley Wickham},
+  publisher = {Springer-Verlag New York},
+  title     = {{ggplot2}: Elegant Graphics for Data Analysis},
+  year      = {2016},
+  isbn      = {978-3-319-24277-4},
+  groups    = {Statistics},
+  url       = {https://ggplot2.tidyverse.org},
+}
+
+  
+@Misc{RStan,
+  author = {{Stan Development Team}},
+  note   = {R package version 2.26.13},
+  title  = {{RStan}: the {R} interface to {Stan}},
+  groups = {Statistics},
+  url    = {https://mc-stan.org/},
+}
+
+@Article{adamidis2019,
+  author    = {George C. Adamidis and Ralph V. Cartar and Andony P. Melathopoulos and Stephen F. Pernal and Shelley E. Hoover},
+  journal   = {Scientific Reports},
+  title     = {Pollinators enhance crop yield and shorten the growing season by modulating plant functional characteristics: A comparison of 23 canola varieties},
+  year      = {2019},
+  month     = {oct},
+  number    = {1},
+  volume    = {9},
+  abstract  = {Insect pollination of flowers should change the within-season allocation of resources in plants. But the nature of this life-history response, particularly regarding allocation to roots, photosynthetic structures, and flowers, is empirically unresolved. This study uses a greenhouse experiment to investigate the effect of insect pollination on the reproductive output of 23 varieties of a globally important crop—canola (Brassica napus). Overall, insect pollination modified the functional characteristics (flower timing & effort, plant size & shape, seed packaging, root biomass) of canola, increasing seed production and quality, and pollinator dependence. Reproductive output and pollinator dependence were defined by strong trait trade-offs, which ranged from more pollinator-dependent plants favouring early reproductive effort, to less pollinator-dependent plants favouring a prolonged phenology with smaller plant size and lower seed quality. Seed production decreased with pollinator dependence in the absence of pollinators. The agricultural preference for hybrid varieties will increase seed production compared to open-pollinated varieties, but, even so, pollinators typically enhance seed production of both types. Our study elucidates how insect pollination alters the character and function of a globally important crop, supporting optimization of yield via intensification of insect pollinatio

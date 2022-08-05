@@ -745,7 +745,7 @@ ggarrange(p1,p2,ncol=1,nrow=2)
 
 xaxis <- 'Distance from HB hives (m)'
 
-#Commodity fields - distance and stocking effect
+##Commodity fields - distance and stocking effect
 # summary(exp(commData$plantSize))
 # summary(exp(commData$plDens_obs))
 
@@ -769,20 +769,25 @@ d_mean <- genCommYield(datList) %>% as.data.frame() %>%
 
 quantRanges <- c(0.025,0.975) #Ranges of quantiles to use
 
-(p1 <- d %>% mutate(numHives=factor(numHives)) %>% group_by(hbeeDist,numHives) %>% 
-  summarize(med=median(seedWeight),lwr=quantile(seedWeight,quantRanges[1]),upr=quantile(seedWeight,quantRanges[2])) %>% 
-  ggplot(aes(x=hbeeDist,y=med,group=numHives))+
+#Needed for placing annotations at the same place on each plot
+d1 <- d %>% mutate(numHives=factor(numHives)) %>% group_by(hbeeDist,numHives) %>% 
+  summarize(med=median(seedWeight),lwr=quantile(seedWeight,quantRanges[1]),upr=quantile(seedWeight,quantRanges[2]))
+   
+(p1 <- d1 %>% ggplot(aes(x=hbeeDist,y=med,group=numHives))+
   geom_ribbon(aes(ymax=upr,ymin=lwr),alpha=0.3)+
   geom_line(data=d_mean,aes(x=hbeeDist,y=seedWeight))+
   annotate('text',x=c(300,300),y=c(2.825,2.75),label=c('40 hives','0 hives'))+
+  annotate('label',x=300,y=min(d1$lwr)+(max(d1$upr)-min(d1$lwr))*0.2,label='Commodity fields\nSeed size (mg/seed)')+
   labs(x=xaxis,y='Seed size (mg/seed)'))
 
-(p2 <- d %>% mutate(numHives=factor(numHives)) %>% group_by(hbeeDist,numHives) %>% 
-  summarize(med=median(yield_tha),lwr=quantile(yield_tha,quantRanges[1]),upr=quantile(yield_tha,quantRanges[2])) %>% 
-  ggplot(aes(x=hbeeDist,y=med,group=numHives))+
+d2 <-  d %>% mutate(numHives=factor(numHives)) %>% group_by(hbeeDist,numHives) %>% 
+  summarize(med=median(yield_tha),lwr=quantile(yield_tha,quantRanges[1]),upr=quantile(yield_tha,quantRanges[2])) 
+  
+(p2 <- d2 %>% ggplot(aes(x=hbeeDist,y=med,group=numHives))+
   geom_ribbon(aes(ymax=upr,ymin=lwr),alpha=0.3)+
   geom_line(data=d_mean,aes(x=hbeeDist,y=yield_tha))+
   annotate('text',x=c(300,300),y=c(2.65,2.45),label=c('40 hives','0 hives'))+
+  annotate('label',x=300,y=min(d2$lwr)+(max(d2$upr)-min(d2$lwr))*0.2,label='Commodity fields\nYield (t/ha)')+
   labs(x=xaxis,y='Yield (t/ha)'))
 
 #Seed fields
@@ -797,12 +802,9 @@ quantRanges <- c(0.025,0.975) #Ranges of quantiles to use
 yaxis <- "Distance from LCB shelters (m)"
 
 datList <- expand.grid(hbeeDist=exp(seq(log(5),log(400),length.out=20)),
-                       plDens=38,#plSize=25.2
-                       lbeeDist=exp(seq(log(4),log(60),length.out=20))
-                       
-) %>% 
+                       plDens=38,isCent=0, #plSize=25.2
+                       lbeeDist=exp(seq(log(4),log(60),length.out=20))) %>% 
   lapply(.,function(x) x)
-
 d_mean <- genSeedYield(datList,mods=modSummaries_seed) %>% as.data.frame()
 
 b <- seq(3.2,3.6,0.05)
@@ -810,6 +812,7 @@ b <- seq(3.2,3.6,0.05)
     ggplot(aes(x=hbeeDist,y=lbeeDist,z=seedWeight))+
     geom_contour(col='black')+
     geom_label_contour(skip=0,breaks=b,fill='white',label.size=0)+
+    annotate('label',x=300,y=55,label='Seed fields - Bay edge\nSeed size (mg/seed)')+
     labs(x=xaxis,y=yaxis,fill='Simulated\nseed size\n(mg/seed)')+
     scale_fill_distiller())
 
@@ -818,11 +821,52 @@ b <- seq(2.5,3.7,0.1)
     ggplot(aes(x=hbeeDist,y=lbeeDist,z=yield_tha))+
     geom_contour(col='black',breaks=b)+
     geom_label_contour(skip=0,breaks=b,fill='white',label.size=0)+
+    annotate('label',x=300,y=55,label='Seed fields - Bay edge\nYield (t/ha)')+
     labs(x=xaxis,y=yaxis,fill='Simulated\nyield\n(t/ha)')
 )
 
-p <- ggarrange(p1,p2,p3,p4,labels = 'auto')
-ggsave('allYield.png',p,height=10,width=10)
+datList <- expand.grid(hbeeDist=exp(seq(log(5),log(400),length.out=20)),
+                       plDens=38,isCent=1,
+                       lbeeDist=exp(seq(log(4),log(60),length.out=20))) %>% 
+  lapply(.,function(x) x)
+d_mean <- genSeedYield(datList,mods=modSummaries_seed) %>% as.data.frame()
+
+b <- seq(3.2,3.6,0.05)
+(p5 <- d_mean %>% 
+    ggplot(aes(x=hbeeDist,y=lbeeDist,z=seedWeight))+
+    geom_contour(col='black')+
+    geom_label_contour(skip=0,breaks=b,fill='white',label.size=0)+
+    annotate('label',x=300,y=55,label='Seed fields - Bay centre\nSeed size (mg/seed)')+
+    labs(x=xaxis,y=yaxis,fill='Simulated\nseed size\n(mg/seed)')+
+    scale_fill_distiller())
+
+b <- seq(2.5,3.7,0.1)
+(p6 <- d_mean %>% 
+    ggplot(aes(x=hbeeDist,y=lbeeDist,z=yield_tha))+
+    geom_contour(col='black',breaks=b)+
+    geom_label_contour(skip=0,breaks=b,fill='white',label.size=0)+
+    annotate('label',x=300,y=55,label='Seed fields - Bay centre\nYield (t/ha)')+
+    labs(x=xaxis,y=yaxis,fill='Simulated\nyield\n(t/ha)')
+)
+
+(p <- ggarrange(p1,p2,p3,p4,p5,p6,nrow=3,ncol=2,labels = 'auto'))
+ggsave('allYield.png',p,height=12,width=10)
+
+#Take a look at parameters in seed field bay centres at 45 m from LCB
+d_mean %>% 
+  filter(!grepl('Seed',name),isCent=='Bay Centre',lbeeDist>40,lbeeDist<50) %>% 
+  select(hbeeDist,plSize:yield) %>% 
+  pivot_longer(-hbeeDist) %>% mutate(name=factor(name,levels=unique(name))) %>% 
+  ggplot(aes(x=hbeeDist,y=value))+geom_point()+
+  facet_wrap(~name,scales='free_y')
+
+genSeedYield(datList,mods=modSummaries_seed) %>% as.data.frame() %>% 
+  mutate(isCent=factor(isCent,labels=c('Bay Edge','Bay Centre')),podCount=flwCount*flwSurv) %>% 
+  filter(isCent=='Bay Centre',lbeeDist>40,lbeeDist<50) %>% 
+  select(hbeeDist,plSize:flwCount,podCount,seedCount:yield) %>% 
+  pivot_longer(-hbeeDist) %>% mutate(name=factor(name,levels=unique(name))) %>% 
+  ggplot(aes(x=hbeeDist,y=value))+geom_point()+
+  facet_wrap(~name,scales='free_y')
 
 #Alternate version with biplots
 
@@ -882,47 +926,7 @@ p4 <- bind_rows(d1,d2,.id = 'type') %>%
 p <- ggarrange(p1,p2,p3,p4,labels = 'auto')
 ggsave('allYield_alternate.png',p,height=10,width=10)
 
-#Alternate version showing effect of bay in seed fields
-
-datList <- expand.grid(hbeeDist=exp(seq(log(5),log(400),length.out=20)),
-                       lbeeDist=exp(seq(log(4),log(60),length.out=20)),
-                       plDens=38, #plSize=25.2
-                       isCent=c(0,1)
-                       ) %>% lapply(.,function(x) x)
-
-d_mean <- genSeedYield(datList,mods=modSummaries_seed) %>% as.data.frame() %>% 
-  mutate(isCent=factor(isCent,labels=c('Bay Edge','Bay Centre'))) %>% 
-  # select(hbeeDist,lbeeDist,isCent,seedWeight,yield_tha) %>% 
-  pivot_longer(cols=c(seedWeight,yield_tha)) %>% 
-  mutate(name=factor(name,labels=c('Seed size (mg)','Yield (t/ha)'))) 
-
-(p <- ggplot(data=NULL,aes(x=hbeeDist,y=lbeeDist,z=value))+
-  geom_contour(data=filter(d_mean,grepl('Seed',name)),col='black',binwidth=0.05)+
-  geom_label_contour(data=filter(d_mean,grepl('Seed',name)),skip=0,binwidth=0.05,fill='white',label.size=0)+
-  geom_contour(data=filter(d_mean,!grepl('Seed',name)),col='black',binwidth=0.1)+
-  geom_label_contour(data=filter(d_mean,!grepl('Seed',name)),skip=0,binwidth=0.1,fill='white',label.size=0)+
-  facet_grid(isCent~name)+
-  labs(x=xaxis,y=yaxis,fill='Simulated\nseed size\n(mg/seed)'))
-
-ggsave('allYield_bayCent.png',p,height=10,width=10)
-
-d_mean %>% 
-  filter(!grepl('Seed',name),isCent=='Bay Centre',lbeeDist>40,lbeeDist<50) %>% 
-  select(hbeeDist,plSize:yield) %>% 
-  pivot_longer(-hbeeDist) %>% mutate(name=factor(name,levels=unique(name))) %>% 
-  ggplot(aes(x=hbeeDist,y=value))+geom_point()+
-  facet_wrap(~name,scales='free_y')
-  
-genSeedYield(datList,mods=modSummaries_seed) %>% as.data.frame() %>% 
-  mutate(isCent=factor(isCent,labels=c('Bay Edge','Bay Centre')),podCount=flwCount*flwSurv) %>% 
-  filter(isCent=='Bay Centre',lbeeDist>40,lbeeDist<50) %>% 
-  select(hbeeDist,plSize:flwCount,podCount,seedCount:yield) %>% 
-  pivot_longer(-hbeeDist) %>% mutate(name=factor(name,levels=unique(name))) %>% 
-  ggplot(aes(x=hbeeDist,y=value))+geom_point()+
-  facet_wrap(~name,scales='free_y')
-
-
-# General summary of variables (data) for both models -----------------------
+# Summary of variables (data) for both models -----------------------
 
 commDatSummary <- with(commData,list(
   'Number of hives'=numHives,'Distance to edge (m)'=dist,
@@ -967,7 +971,7 @@ bind_rows(commDatSummary,seedDatSummary,.id='Field Type') %>%
   collapse_rows(columns=1) %>% 
   clipr::write_clip() #Writes to clipboard
 
-# General summary of parameters for both models ---------------------------
+# Summary of parameters for both models ---------------------------
 
 commNames <- data.frame(name=c('numHives','hbeeDist','hbeeVis','pollen',
                                 'plSize','plDens','flDens',
@@ -1082,3 +1086,28 @@ seedPars %>%
 #   collapse_rows(columns=c(1,2))
 
 
+
+# Summary of parameters for total yield models ---------------
+
+bind_rows(modSummaries_commodity$yield$summary,
+          modSummaries_seed$yield$summary,.id='Field Type') %>% 
+  mutate(`Field Type`=ifelse(`Field Type`==1,'Commodity','Seed')) %>% 
+  mutate(param=case_when(
+    param=='intYield' ~ 'Intercept',
+    param=='slopeYield' ~ 'Predicted Yield',
+    param=='sigmaYield_field[1]' ~ 'Sigma (field intercept)',
+    param=='sigmaYield_field[2]' ~ 'Sigma (field slope)',
+    param=='sigmaYield_plot[1]' ~ 'Sigma (plot intercept)',
+    param=='sigmaYield_plot[2]' ~ 'Sigma (plot slope)',
+    param=='sigmaYield' ~ 'Sigma',
+    param=='rhoField' ~ 'Correlation (Int:Slope field)',
+    param=='rhoPlot' ~ 'Correlation (Int:Slope plot)'
+  )) %>%
+  rename('Parameter'='param','Mean'='mean','SD'='sd','Min'='lwr','Max'='upr','p-value'='pval',
+         'N$_{eff}$'='n_eff','$\\hat{R}$'='Rhat') %>% 
+  kable(format = 'latex',escape = FALSE,digits=c(0,0,3,3,2,3,3,3,3,0,3)) %>%
+  kable_styling(font_size = 9) %>%
+  # column_spec(1, width = "8em") %>%
+  collapse_rows(columns=1) %>% 
+  clipr::write_clip() #Writes to clipboard
+  

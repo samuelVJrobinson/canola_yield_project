@@ -108,7 +108,7 @@ Field Type & Variable & Mean & Median & SD & Min & Max\\
 
 \clearpage
 
-\section*{Appendix B: Supplementary information on visitation}
+\section*{Appendix B: Additional information on insect visitors}
 
 During 2015, we recorded whether honey bees were top-working or side-working flowers (see also \citealp{free1973, free1983, mohr1988}).
 Top-working bees landed on the top of the flower and inserted their proboscis down between the petals to access the nectaries of the flower, while side-working bees landed on the side of the flower and stole nectar by inserted their proboscis between the petals, avoiding contact with the stigma or anthers. 
@@ -152,7 +152,7 @@ Nectar forager & 75 & 138 & 832 & 24 & 428 & 242 \\
 
 \clearpage
 
-\section*{Appendix C: Supplementary information on models}
+\section*{Appendix C: Additional information on models}
 
 \subsection*{Commodity canola models}
 
@@ -176,35 +176,12 @@ Formulas for commodity canola model using \texttt{lmer}-style R formulas. Terms 
     &   \text{distribution = exponential-normal} \\
 \end{align*}
 
-\subsection*{Seed canola models}
-
-Formulas for seed canola model using \texttt{lmer}-style R formulas. Terms on right side of $\sim$ indicate fixed effects, while terms in brackets indicate random effects (heirarchical intercepts). \textit{distribution} indicates the type of probability distribution function used to model each variable.
-
-\begin{align*}
-    \text{Plant Density} \sim & \text{HB Distance} + (1|\text{Field}), \text{distribution = log-normal} \\
-    \text{Plant Size} \sim & \text{HB Distance} + \text{Plant Density} + (1|\text{Field}) ,\text{distribution = log-t} \\
-    \text{Flower Density} \sim & \text{HB Distance} + (1|\text{Field}), \text{distribution = square root-t} \\
-    \text{LCB Visits} \sim & \text{offset}(log(\text{Time})) + \text{HB Distance} + \text{LCB Distance} + \text{Bay Centre} + \\
-    &   \text{Flower Density} + (1|\text{Field}), \text{family = ZI negative binomial} \\
-    \text{HB Visits} \sim & \text{offset}(log(\text{Time})) + \text{HB Distance} + \text{LCB Distance} + \text{Bay Centre} + \\
-    &   \text{Flower Density} + (1|\text{Field}), \text{family = ZI negative binomial} \\
-    \text{Pollen per Stigma} \sim & \text{HB Visits} + \text{LCB Visits} + \text{Bay Centre} + \text{HB Distance} + \text{LCB Distance} +\\
-    &   \text{Flower Density} + (1|\text{Field}) + (1|\text{Plot}), \text{family = negative binomial} \\
-    \text{Flowers per Plant} \sim & \text{Plant Size} + \text{Bay Centre} + \text{\% Pod Set} + (1|\text{Field}),\\
-    &   \phi \sim \text{Plant Size}, \text{family = negative binomial} \\
-    \text{\% Pod Set} \sim & \text{Pollen} + \text{Plant Size} + \text{Bay Centre} + \text{HB Distance} + \text{LCB Distance} + \\
-    &   \text{Flower Density} + (1|\text{Field}) + (1|\text{Plot}), \text{family = beta-binomial} \\
-    \text{Seeds per Pod} \sim & \text{Pollen} + \text{Plant Size} + \text{Bay Centre} + \text{HB Distance} + \text{Flower Density} +\\
-    &   \text{\% Pod Set} + \text{Flowers per plant} + (1|\text{Field}), \text{family = negative binomial} \\
-    \text{Weight per Seed} \sim & \text{Pollen} + \text{Seeds per Pod} + \text{Plant Size} + \text{LCB Distance} +\\
-    &   \text{Plant Density} + (1|\text{Field}), \text{family = exponential-normal}\\
-\end{align*}
-
-\subsection*{Commodity canola model coefficients}
-
 \begingroup\fontsize{9}{11}\selectfont
 
 \begin{longtable}{l|l|r|r|r|r|r|l|r|r}
+
+\caption{Summary of parameters for commodity canola models} \\
+
 \hline
 Model & Parameter & Mean & SD & Median & Min & Max & P-value & N$_{eff}$ & $\hat{R}$\\
 \hline
@@ -330,12 +307,37 @@ Model & Parameter & Mean & SD & Median & Min & Max & P-value & N$_{eff}$ & $\hat
 \end{longtable}
 \endgroup{}
 
+\subsection*{Seed canola models}
 
-\subsection*{Seed canola model coefficients}
+Formulas for seed canola model using \texttt{lmer}-style R formulas. Terms on right side of $\sim$ indicate fixed effects, while terms in brackets indicate random effects (heirarchical intercepts). \textit{distribution} indicates the type of probability distribution function used to model each variable.
+
+\begin{align*}
+    \text{Plant Density} \sim & \text{HB Distance} + (1|\text{Field}), \text{distribution = log-normal} \\
+    \text{Plant Size} \sim & \text{HB Distance} + \text{Plant Density} + (1|\text{Field}) ,\text{distribution = log-t} \\
+    \text{Flower Density} \sim & \text{HB Distance} + (1|\text{Field}), \text{distribution = square root-t} \\
+    \text{LCB Visits} \sim & \text{offset}(log(\text{Time})) + \text{HB Distance} + \text{LCB Distance} + \text{Bay Centre} + \\
+    &   \text{Flower Density} + (1|\text{Field}), \text{family = ZI negative binomial} \\
+    \text{HB Visits} \sim & \text{offset}(log(\text{Time})) + \text{HB Distance} + \text{LCB Distance} + \text{Bay Centre} + \\
+    &   \text{Flower Density} + (1|\text{Field}), \text{family = ZI negative binomial} \\
+    \text{Pollen per Stigma} \sim & \text{HB Visits} + \text{LCB Visits} + \text{Bay Centre} + \text{HB Distance} + \text{LCB Distance} +\\
+    &   \text{Flower Density} + (1|\text{Field}) + (1|\text{Plot}), \text{family = negative binomial} \\
+    \text{Flowers per Plant} \sim & \text{Plant Size} + \text{Bay Centre} + \text{\% Pod Set} + (1|\text{Field}),\\
+    &   \phi \sim \text{Plant Size}, \text{family = negative binomial} \\
+    \text{\% Pod Set} \sim & \text{Pollen} + \text{Plant Size} + \text{Bay Centre} + \text{HB Distance} + \text{LCB Distance} + \\
+    &   \text{Flower Density} + (1|\text{Field}) + (1|\text{Plot}), \text{family = beta-binomial} \\
+    \text{Seeds per Pod} \sim & \text{Pollen} + \text{Plant Size} + \text{Bay Centre} + \text{HB Distance} + \text{Flower Density} +\\
+    &   \text{\% Pod Set} + \text{Flowers per plant} + (1|\text{Field}), \text{family = negative binomial} \\
+    \text{Weight per Seed} \sim & \text{Pollen} + \text{Seeds per Pod} + \text{Plant Size} + \text{LCB Distance} +\\
+    &   \text{Plant Density} + (1|\text{Field}), \text{family = exponential-normal}\\
+\end{align*}
+
 
 \begingroup\fontsize{9}{11}\selectfont
 
 \begin{longtable}{l|l|r|r|r|r|r|l|r|r}
+
+\caption{Summary of parameters for seed canola models} \\
+
 \hline
 Model & Parameter & Mean & SD & Median & Min & Max & P-value & N$_{eff}$ & $\hat{R}$\\
 \hline
@@ -507,3 +509,64 @@ Model & Parameter & Mean & SD & Median & Min & Max & P-value & N$_{eff}$ & $\hat
 \end{longtable}
 \endgroup{}
 
+
+\clearpage
+
+\subsection*{Total yield models}
+
+Formulas for total yield models are  using \texttt{lmer}-style R formulas. Predicted yield for each plant was calculated as: pods per plant $\times$ seeds per pod $\times$ weight per seed. Terms on right side of $\sim$ indicate fixed effects, while terms in brackets indicate random intercepts (and slopes). 
+
+\begin{align*}
+    \text{Total Yield} \sim & log(\text{Predicted Yield}) + (log(\text{Predicted Yield})|\text{Field}) + \\
+    & (log(\text{Predicted Yield})|\text{Plot}), \text{distribution = log-normal} \\
+\end{align*}
+
+\begin{table}[h]
+\centering\begingroup\fontsize{9}{11}\selectfont
+\caption{Summary of parameters for total yield models}
+
+\begin{tabular}{l|l|r|r|r|r|r|r|r|r|r}
+\hline
+Field Type & Parameter & Mean & SD & Z & median & Min & Max & p-value & N$_{eff}$ & $\hat{R}$\\
+\hline
+ & Intercept & -0.318 & 0.042 & -7.62 & -0.317 & -0.397 & -0.236 & 0.000 & 982 & 1.000\\
+\cline{2-11}
+ & Predicted Yield & 1.007 & 0.018 & 55.64 & 1.007 & 0.972 & 1.044 & 0.000 & 1044 & 1.000\\
+\cline{2-11}
+ & Sigma (field intercept) & 0.119 & 0.041 & 2.89 & 0.112 & 0.051 & 0.216 & 0.004 & 292 & 1.020\\
+\cline{2-11}
+ & Sigma (field slope) & 0.026 & 0.019 & 1.37 & 0.023 & 0.001 & 0.072 & 0.170 & 295 & 1.013\\
+\cline{2-11}
+ & Sigma (plot intercept) & 0.389 & 0.037 & 10.47 & 0.388 & 0.318 & 0.465 & 0.000 & 506 & 1.005\\
+\cline{2-11}
+ & Sigma (plot slope) & 0.169 & 0.017 & 9.86 & 0.168 & 0.135 & 0.204 & 0.000 & 556 & 1.006\\
+\cline{2-11}
+ & Sigma & 0.253 & 0.008 & 33.30 & 0.253 & 0.239 & 0.268 & 0.000 & 2002 & 1.000\\
+\cline{2-11}
+ & Correlation (Int:Slope field) & -0.400 & 0.448 & -0.89 & -0.525 & -0.944 & 0.626 & 0.372 & 660 & 1.005\\
+\cline{2-11}
+\multirow{-9}{*}{\raggedright\arraybackslash Commodity} & Correlation (Int:Slope plot) & -0.989 & 0.007 & -140.44 & -0.990 & -0.998 & -0.972 & 0.000 & 936 & 1.005\\
+\cline{1-11}
+ & Intercept & -0.210 & 0.072 & -2.90 & -0.210 & -0.348 & -0.066 & 0.004 & 738 & 1.007\\
+\cline{2-11}
+ & Predicted Yield & 0.856 & 0.025 & 34.62 & 0.856 & 0.806 & 0.904 & 0.000 & 672 & 1.008\\
+\cline{2-11}
+ & Sigma (field intercept) & 0.040 & 0.018 & 2.28 & 0.038 & 0.011 & 0.079 & 0.022 & 226 & 1.005\\
+\cline{2-11}
+ & Sigma (field slope) & 0.010 & 0.007 & 1.56 & 0.009 & 0.001 & 0.023 & 0.118 & 217 & 1.005\\
+\cline{2-11}
+ & Sigma (plot intercept) & 0.097 & 0.013 & 7.26 & 0.097 & 0.072 & 0.124 & 0.000 & 470 & 1.005\\
+\cline{2-11}
+ & Sigma (plot slope) & 0.032 & 0.005 & 5.83 & 0.032 & 0.021 & 0.043 & 0.000 & 379 & 1.006\\
+\cline{2-11}
+ & Sigma & 0.289 & 0.012 & 23.59 & 0.289 & 0.266 & 0.314 & 0.000 & 1218 & 1.001\\
+\cline{2-11}
+ & Correlation (Int:Slope field) & -0.470 & 0.436 & -1.08 & -0.616 & -0.946 & 0.603 & 0.281 & 457 & 1.005\\
+\cline{2-11}
+\multirow{-9}{*}{\raggedright\arraybackslash Seed} & Correlation (Int:Slope plot) & -0.902 & 0.038 & -23.81 & -0.909 & -0.954 & -0.808 & 0.000 & 486 & 1.007\\
+\hline
+\end{tabular}
+\endgroup{}
+
+\label{tab:totalYieldCoefs}
+\end{table}

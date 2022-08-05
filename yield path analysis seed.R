@@ -268,7 +268,7 @@ modList[5] <- stan(file=modFiles[5],data=datalist,iter=2000,chains=4,init=0) #Fl
 modList[6] <- stan(file=modFiles[6],data=datalist,iter=2000,chains=4,init=0) #Pod count (flw survival) per plant
 modList[7] <- stan(file=modFiles[7],data=datalist,iter=2000,chains=4,init=0) #Seeds per pod
 modList[8] <- stan(file=modFiles[8],data=datalist,iter=2000,chains=4,init=0) #Weight per seed
-modList[9] <- stan(file=modFiles[9],data=datalist,iter=3000,chains=4,init=0) #Yield
+modList[9] <- stan(file=modFiles[9],data=datalist,iter=3000,chains=4,init=0,control=list(adapt_delta=0.9)) #Yield
 beepr::beep(1)
 
 apply(extract(modList[[4]],pars='pollenMu_plot')[[1]],2,mean) %>% range
