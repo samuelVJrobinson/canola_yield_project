@@ -102,6 +102,7 @@ d2 <- with(avgSeedData, #Hbee visitation in seed fields
 #   labs(x='Distance from apiary (m)',y='Visits per hour',
 #        fill='Field\nType',col='Field\nType')
 
+
 d3 <- with(avgSeedData, #Leafcutters in seed fields
                   list('intVisitLbeeVis'=1,
                        'slopeFlDensLbeeVis' = 0,
@@ -113,16 +114,22 @@ d3 <- with(avgSeedData, #Leafcutters in seed fields
                   ZIpar = 'thetaLbeeVis',trans='exp',q=c(0.5,0.05,0.95)) %>% 
   transmute(dist=exp(dists),mean,med,lwr,upr)
 
+
 (p1 <- bind_rows(d2,d3,d1,.id = 'type') %>% 
   mutate(type=factor(type,labels=lab)) %>% 
   ggplot(aes(x=dist,y=mean))+
   geom_ribbon(aes(ymax=upr,ymin=lwr,fill=type),alpha=0.3)+
   geom_line(aes(col=type))+
+<<<<<<< HEAD
+  # coord_cartesian(y=c(0,150),clip='on')+
+  ylim(0,150)+
+=======
   coord_cartesian(y=c(0,150))+
+>>>>>>> dd0c28ad2cbea783a58adf47135ac3e4da2ca02c
   labs(x='Distance from apiary (m)',y='Visits per hour',fill=NULL,col=NULL)+
   scale_colour_manual(values=labCols)+
-  scale_fill_manual(values=labCols))
-
+  scale_fill_manual(values=labCols)
+)
 
 #Hbee and Lbee visitation from shelters
 dists <- log(1:30)-avgSeedData$logLbeeDistCent #log Shelter Distances
