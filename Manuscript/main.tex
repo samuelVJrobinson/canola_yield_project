@@ -154,38 +154,39 @@ This model serves as a step towards a dynamic model of pollination services, and
 \section*{Introduction}
 %SH: PARAGRAPH COULD BE REMOVED/SHORTENED FOR PAPER, BUT FINE FOR THESIS
 Animal pollination of agricultural flowering plants is an important ecosystem service that contributes to about 10\% of total crop production value worldwide \citep{gallai2009}, and animal-pollinated plants produce a large number of important micronutrients in the human diet \citep{eilers2011}.
-Therefore, understanding the process of animal pollination in crops is economically and ecologically important. %REWORD? ECONOMICS DOESN'T COME INTO THE THESIS, SO MAYBE DON'T MENTION IT? 
-Agricultural pollination, however, is largely treated as a single process, even though there are many links in the chain of events that result in the production of a fruit.
-Visitation of flowers by animals, typically bees and other insects, can result in pollen deposition on the stigma of the flower, followed by the growth of pollen tubes into the style and fertilization of ovules \citep{erbar2003}. 
-After fertilization, the plant may provide resources to fertilized fruits (or ovules within a fruit) to mature them into fruit \citep{goldberg1994}.
-Each step has many other underlying processes (\textit{e.g.} stigma receptivity, pollen tube growth, ovule abortion, fruit maturation, reviewed in \citealp{real1983, giovannoni2001, erbar2003, takayama2005}, and others), but even at the level of this coarse approximation, most studies of agricultural pollination fail to account for important underlying processes.
-Pollinating animals rarely visit equally on all flowers in a blooming crop field\citep{currie1997, brosi2008, isaacs2010}, but some agronomic studies implicitly make this assumption \citep{phillips1989, bommarco2012, bartomeus2014}. 
-Pollen deposition from visitors depends on a number of factors (\textit{e.g} behaviour on flowers, size of pollinator), and whether this deposited pollen from visitors results in increased fruit production depends on the pollination context (\textit{e.g.} self-pollination) and the life history and resource contexts of the plant (\textit{e.g.} annual vs. perennial, determinate vs. indeterminate growth, light, soil nutrients and moisture).
-Moving beyond the ``black-box" model of agricultural pollination requires accounting for these steps, and is necessary for understanding the contextual value of pollination services, as well as optimizing crop yield in novel circumstances.
+Pollination, however, is largely treated as a single process, even though there are many links in the chain of events that result in the production of a fruit.
+Visitation of flowers by animals (typically bees or other insects) can increase pollen deposition on the stigma of the flower, followed by fertilization of the ovules, and maturation of the ovaries into mature fruit \citep{erbar2003, goldberg1994}.
+Each step has many other underlying processes (\textit{e.g.} stigma receptivity, pollen tube growth, ovule abortion, fruit maturation, reviewed in \citealp{real1983, giovannoni2001, erbar2003, takayama2005}, and others), but even at this level of approximation, most studies of agricultural pollination fail to account for important underlying processes.
+Moving beyond this ``black-box" model of agricultural pollination requires accounting for these steps, and is needed for contextualizing the value of pollination services, as well as optimizing crop yield in novel circumstances.
+
+
+% Pollinating animals rarely visit equally on all flowers in a blooming crop field\citep{currie1997, brosi2008, isaacs2010}, but some agronomic studies implicitly make this assumption \citep{phillips1989, bommarco2012, bartomeus2014}. 
+% Pollen deposition from visitors depends on a number of factors (\textit{e.g} behaviour on flowers, size of pollinator), and whether this deposited pollen from visitors results in increased fruit production depends on the pollination context (\textit{e.g.} self-pollination) and the life history and resource contexts of the plant (\textit{e.g.} annual vs. perennial, determinate vs. indeterminate growth, light, soil nutrients and moisture).
 %affect roughly one-third of the world's agricultural crops \citep{klein2007}
 
-Pollinator visitation is not spatially uniform within fields, as most pollinators are central-place foragers, meaning that visitation rates decline with distance away from their nest, and the bloom of flowering crops is not uniform. %REWORD
+\subsection{Insect visitation}
+
+Pollinator visitation is not spatially uniform within fields, as visitation rates typically decline with distance away from their nest site.
 Smaller bees fly shorter distances than larger bees \citep{greenleaf2007,zurbuchen2010}, so their presence at the centre of large fields can be limited \citep{isaacs2010}. 
 Hence, managing the location and density of managed pollinators in relation to their target crops is important for optimal yield of pollinator-dependent crops \citep{fries1983,cresswell2004b}.
-Foraging insects will often specialize on certain species or morphs of flowers in order to forage more efficiently \citep{heinrich1976b, goulson1997}. 
-However, pollination of hybrid seed crops requires movement of pollen between spatially separated lines of plants, so floral specialization can reduce the pollination services in these systems \citep{waytesMsc, gaffney2019}.
-Competition between different species of foraging insects can occur if they deplete floral resources, but foragers can spatially or temporally separate their foraging to reduce competition (\citealp{schaffer1979,thomson1987}, but see \citealp{steffan2000}), thereby increasing their fitness. 
-Both resource depletion or interference competition can motivate visitors to reduce competition by increasing their foraging distance, switching between floral morphs more often, or visiting less frequently \citep{heinrich1979, greenleaf2006}.
-Thus, variation in visitation is driven by both distance from their nest (see Chapter 2), as well as competition with foragers from other aggregations, and increased competition can benefit plant fitness.
+Similarly, foragers will often specialize on certain species or morphs of flowers in order to forage more efficiently (floral fidelity, \citealp{heinrich1976b, goulson1997}). 
+Pollination of hybrid seed crops presents a conundrum: it requires movement of pollen between separate lines of plants, meaning that fidelity can reduce the pollen transfer in these systems \citep{waytesMsc, gaffney2019}.
+Competition between different species of foraging insects can occur if they deplete floral resources, but foragers can spatially or temporally separate their foraging to reduce competition (\citealp{schaffer1979,thomson1987}, but see \citealp{steffan2000}). This can motivate visitors to reduce competition by increasing their foraging distance, switching between floral morphs more often, or visiting less frequently \citep{heinrich1979, greenleaf2006}.
+Thus, variation in visitation can be driven by distance, competition with other foragers, or floral specialization; however, this is seldom considered, as commercial pollinators are often treated as a single agricultural ``input" (akin to fertilizer).
 % Much of the worldwide agricultural demand for insect pollination is accomplished by the European honey bee, (\textit{Apis mellifera} L., hereafter ``honey bee") because of its large colony size, ease of transport, and ease of breeding (\citealp{winston1991}, but see also \citealp{winfree2008}).
 % However, several other types of pollinators are commonly used, including the alfalfa leafcutting bee, (\textit{Megachile rotundata} F., hereafter ``leafcutter bee"; \citealp{pitts2011}), and a large variety of wild pollinators \citep{rader2015}.
 
 Insect visitation of flowers can enhance fruit production in flowering plants by increasing either the quantity or quality of pollen deposited on the stigma \citep{stephenson1981,burd1994,aizen2007}, providing a larger range of female mate choice for each flower.
-Many flowering plant species are capable of self-pollination, but typically produce more fruit or seeds from outcrossed pollen \citep{knight2005} transported from conspecific plants by wind or an animal vector, but not all animal visitors are equal from a flowering plant's perspective.
-For example, large-bodied insects can deposit more pollen per visit on the stigma of the flower because they have a greater chance of contacting the stigmatic surface \citep{sahli2007}. 
-Pollinator behaviour is also important, as flower-visiting insects may steal nectar, clean off pollen between visits, or travel mainly between flowers on the same plant \citep{thomson1986, herrera1987}.
+Many flowering plant species are capable of self-pollination, but typically produce more fruit or seeds from outcrossed pollen \citep{knight2005} transported from conspecific plants by wind or an animal vector.
+Not all animal visitors are equal from a flowering plant's perspective: large-bodied insects can deposit more pollen per visit on the stigma of the flower \citep{sahli2007}.
+Similarly, not all pollinators behave the same: flower-visiting insects may steal nectar, groom pollen between visits, or travel mainly between flowers on the same plant \citep{thomson1986, herrera1987}.
 Finally, the benefit of extra pollen deposition is diminishing \citep{plowright1981}, with very high numbers of pollen grains causing less and less of an increase in fruit production \citep{ashman2004, harder2016}.
-%; some are obligate outcrossers, and have self-incompatibility mechanisms in place to prevent fertilization by their own pollen.
-% Other plants have separate male and female flowers, or separate male and female plants, so their pollen must be transported from male flowers to female flowers, either by wind or an animal vector. 
+Again, this is seldom considered within agricultural systems, but some do examine optimal rates of stocking.
 
-%REVIEW LANGUAGE
-%RC: POINT OF PARAGRAPH SHOULD BE THAT AFTER POLLEN RECEIPT, PLANT STILL HAS TO DECIDE WHETHER TO ACCEPT IT, OR WAIT TO INVEST LATER (FUTURE-PRESENT TRADEOFFS)
-%RALPH'S ARGUMENT IS WAY TOO GENERAL. POINT SHOULD BE THAT POLLEN OR RESOURCES CAN BE LIMITING (USUALLY RESOURCES), AND THAT PLANT MAY COMPENSATE FOR LOW POLLEN USING EXTRA GROWTH
+\subsection{Plant resources}
+
+%START HERE
+
 Seed production can be limited by plant resources as well as pollen \citep{galen1985, haig1988,campbell1993}, meaning that the benefits of insect pollination depend on the resources available to the plant \citep{stephenson1981, tamburini2017}.
 Pollen limitation can also occur at multiple levels within a plant, reducing the number of seeds per fruit, the number of mature fruit, or both \citep{burd1994}.
 Low pollen deposition may reduce the number of mature fruit via flower abortion \citep{knight2006}, where poorly-pollinated flowers are cut off from the plant.
@@ -594,7 +595,7 @@ We consider the first process more likely, as planting density under uniform con
 
 This study has revealed some of the detailed aspects of pollination in commodity and seed canola crops.
 First, it shows how two important species of commercial pollinators decline with distance from their nesting sites, and how LCBs unexpectedly decline with distance from the edge of the field.
-Second, it sheds light on the relative importance of HBs and LCBs as pollinators, showing that current levels of HB stocking do not strongly influence pollination in commodity canola crops, and that LCBs are likely the primary pollinators of seed canola.
+Second, it sheds light on the relative importance of HBs and LCBs as pollinators, showing that commonly-used levels of HB stocking do not strongly influence yield in commodity canola crops, and that LCBs are likely the primary pollinators of seed canola.
 Finally, it contextualizes the value of pollination alongside plant resources, showing that plant resources and pollen limit production in seed canola, while only plant resources limit commodity production.
 Our unique SEM approach allowed us to formulate and test relationships within a causal framework, which we consider to be extremely valuable, and highly underused in agricultural studies.
 Our model serves as an approximation of a dynamic process, but could be built upon by using dynamic linear models \citep{iwasa2000,nord2011} to examine how plants dynamically respond to changes in pollination.
