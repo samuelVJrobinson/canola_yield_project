@@ -125,12 +125,8 @@ nodeCoords <- data.frame(name=c('numHives','hbeeDist','lbeeDist','hbeeVis','lbee
                                 'Honey bee\nVisits','Leafcutter\nVisits','Pollen\nCount',
                                 'Plant\nSize','Plant\nDensity','Flower\nDensity','Bay Centre',
                                 'Flowers\nper Plant','Pod Set\n(%)','Seeds\nper Pod','Seed\nSize'),
-                         x=c(0,0,1,0,1,0.5,
-                             2.5,0,1,0.5,
-                             3.5,4,2.5,3.5),
-                         y=c(4,4,4,3,3,2,
-                             0,1,1,0.5,
-                             0,1,3,2))
+                         x=c(0,0,1,0,1,0.5,2.5,0,1,0.5,3.5,4,2.5,3.5),
+                         y=c(4,4,4,3,3,2,0,1,1,0.5,0,1,3,2))
 
 
 #Specify model
