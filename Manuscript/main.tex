@@ -154,47 +154,40 @@ This model serves as a step towards a dynamic model of pollination services, and
 \section*{Introduction}
 %SH: PARAGRAPH COULD BE REMOVED/SHORTENED FOR PAPER, BUT FINE FOR THESIS
 Animal pollination of agricultural flowering plants is an important ecosystem service that contributes to about 10\% of total crop production value worldwide \citep{gallai2009}, and animal-pollinated plants produce a large number of important micronutrients in the human diet \citep{eilers2011}.
-Therefore, understanding the process of animal pollination in crops is economically and ecologically important. %REWORD? ECONOMICS DOESN'T COME INTO THE THESIS, SO MAYBE DON'T MENTION IT? 
-Agricultural pollination, however, is largely treated as a single process, even though there are many links in the chain of events that result in the production of a fruit.
-Visitation of flowers by animals, typically bees and other insects, can result in pollen deposition on the stigma of the flower, followed by the growth of pollen tubes into the style and fertilization of ovules \citep{erbar2003}. 
-After fertilization, the plant may provide resources to fertilized fruits (or ovules within a fruit) to mature them into fruit \citep{goldberg1994}.
-Each step has many other underlying processes (\textit{e.g.} stigma receptivity, pollen tube growth, ovule abortion, fruit maturation, reviewed in \citealp{real1983, giovannoni2001, erbar2003, takayama2005}, and others), but even at the level of this coarse approximation, most studies of agricultural pollination fail to account for important underlying processes.
-Pollinating animals rarely visit equally on all flowers in a blooming crop field\citep{currie1997, brosi2008, isaacs2010}, but some agronomic studies implicitly make this assumption \citep{phillips1989, bommarco2012, bartomeus2014}. 
-Pollen deposition from visitors depends on a number of factors (\textit{e.g} behaviour on flowers, size of pollinator), and whether this deposited pollen from visitors results in increased fruit production depends on the pollination context (\textit{e.g.} self-pollination) and the life history and resource contexts of the plant (\textit{e.g.} annual vs. perennial, determinate vs. indeterminate growth, light, soil nutrients and moisture).
-Moving beyond the ``black-box" model of agricultural pollination requires accounting for these steps, and is necessary for understanding the contextual value of pollination services, as well as optimizing crop yield in novel circumstances.
+Pollination of these crops, however, is largely treated as a single process, even though there are many links in the chain of events that result in the production of a fruit.
+Visitation of flowers by animals (typically bees or other insects) can increase pollen deposition on the stigma of the flower, followed by fertilization of the ovules, and maturation of fruit \citep{erbar2003, goldberg1994}.
+Each step has many other underlying processes (\textit{e.g.} stigma receptivity, pollen tube growth, ovule abortion), but even at this level of approximation, most studies of agricultural pollination fail to account for important underlying processes.
+Moving beyond this ``black-box" model of agricultural pollination requires accounting for these steps, and is needed for contextualizing the value of pollination services, as well as optimizing crop yield in novel circumstances.
+
+
+% Pollinating animals rarely visit equally on all flowers in a blooming crop field\citep{currie1997, brosi2008, isaacs2010}, but some agronomic studies implicitly make this assumption \citep{phillips1989, bommarco2012, bartomeus2014}. 
+% Pollen deposition from visitors depends on a number of factors (\textit{e.g} behaviour on flowers, size of pollinator), and whether this deposited pollen from visitors results in increased fruit production depends on the pollination context (\textit{e.g.} self-pollination) and the life history and resource contexts of the plant (\textit{e.g.} annual vs. perennial, determinate vs. indeterminate growth, light, soil nutrients and moisture).
 %affect roughly one-third of the world's agricultural crops \citep{klein2007}
 
-Pollinator visitation is not spatially uniform within fields, as most pollinators are central-place foragers, meaning that visitation rates decline with distance away from their nest, and the bloom of flowering crops is not uniform. %REWORD
+% INSECT VISITATION
+
+Pollinator visitation is not uniform within fields: visitation rates typically decline with distance away from the pollinators' nest sites.
 Smaller bees fly shorter distances than larger bees \citep{greenleaf2007,zurbuchen2010}, so their presence at the centre of large fields can be limited \citep{isaacs2010}. 
-Hence, managing the location and density of managed pollinators in relation to their target crops is important for optimal yield of pollinator-dependent crops \citep{fries1983,cresswell2004b}.
-Foraging insects will often specialize on certain species or morphs of flowers in order to forage more efficiently \citep{heinrich1976b, goulson1997}. 
-However, pollination of hybrid seed crops requires movement of pollen between spatially separated lines of plants, so floral specialization can reduce the pollination services in these systems \citep{waytesMsc, gaffney2019}.
-Competition between different species of foraging insects can occur if they deplete floral resources, but foragers can spatially or temporally separate their foraging to reduce competition (\citealp{schaffer1979,thomson1987}, but see \citealp{steffan2000}), thereby increasing their fitness. 
-Both resource depletion or interference competition can motivate visitors to reduce competition by increasing their foraging distance, switching between floral morphs more often, or visiting less frequently \citep{heinrich1979, greenleaf2006}.
-Thus, variation in visitation is driven by both distance from their nest (see Chapter 2), as well as competition with foragers from other aggregations, and increased competition can benefit plant fitness.
+Hence, managing the location and density of managed pollinators is important for optimal yield of pollinator-dependent crops \citep{fries1983,cresswell2004b}.
+Similarly, foragers will often specialize on certain species or morphs of flowers in order to forage more efficiently (floral fidelity, \citealp{heinrich1976b, goulson1997}). 
+Pollination of hybrid seed crops presents a challenge for specialized foragers, as it requires movement of pollen between separate lines of plants, meaning that fidelity can reduce pollen transfer \citep{waytesMsc, gaffney2019}.
+Competition for floral resources can occur between different species of foragers, but they can spatially or temporally separate their foraging to reduce competition (\citealp{schaffer1979,thomson1987}, but see \citealp{steffan2000}), such as switching between floral morphs more often, or visiting less frequently \citep{heinrich1979, greenleaf2006}.
+Thus, variation in visitation can be driven by distance, competition with other foragers, or floral specialization; however, this is seldom considered, as commercial pollinators are often treated as a single agricultural ``input" (akin to fertilizer).
 % Much of the worldwide agricultural demand for insect pollination is accomplished by the European honey bee, (\textit{Apis mellifera} L., hereafter ``honey bee") because of its large colony size, ease of transport, and ease of breeding (\citealp{winston1991}, but see also \citealp{winfree2008}).
 % However, several other types of pollinators are commonly used, including the alfalfa leafcutting bee, (\textit{Megachile rotundata} F., hereafter ``leafcutter bee"; \citealp{pitts2011}), and a large variety of wild pollinators \citep{rader2015}.
 
-Insect visitation of flowers can enhance fruit production in flowering plants by increasing either the quantity or quality of pollen deposited on the stigma \citep{stephenson1981,burd1994,aizen2007}, providing a larger range of female mate choice for each flower.
-Many flowering plant species are capable of self-pollination, but typically produce more fruit or seeds from outcrossed pollen \citep{knight2005} transported from conspecific plants by wind or an animal vector, but not all animal visitors are equal from a flowering plant's perspective.
-For example, large-bodied insects can deposit more pollen per visit on the stigma of the flower because they have a greater chance of contacting the stigmatic surface \citep{sahli2007}. 
-Pollinator behaviour is also important, as flower-visiting insects may steal nectar, clean off pollen between visits, or travel mainly between flowers on the same plant \citep{thomson1986, herrera1987}.
-Finally, the benefit of extra pollen deposition is diminishing \citep{plowright1981}, with very high numbers of pollen grains causing less and less of an increase in fruit production \citep{ashman2004, harder2016}.
-%; some are obligate outcrossers, and have self-incompatibility mechanisms in place to prevent fertilization by their own pollen.
-% Other plants have separate male and female flowers, or separate male and female plants, so their pollen must be transported from male flowers to female flowers, either by wind or an animal vector. 
+Seed production can be limited by plant resources as well as pollen, meaning that the benefits of insect pollination depend on the resources available to the plant \citep{stephenson1981, marini2015, tamburini2017, tamburini2019}.
+Pollination can enhance fruit production in flowering plants by increasing either the quantity or quality of pollen deposited on the stigma \citep{stephenson1981,burd1994,aizen2007}.
+Many flowering plant species are capable of self-pollination, but can produce more fruit or seeds from outcrossed pollen \citep{knight2005}.
+However, the benefit of this extra pollen deposition is diminishing \citep{plowright1981}, with very high numbers of pollen grains causing less and less of an increase in fruit production \citep{ashman2004, harder2016}.
+% Not all animal visitors are equal from a flowering plant's perspective: large-bodied insects can deposit more pollen per visit on the stigma of the flower \citep{sahli2007}, but some visitors may steal nectar, groom pollen between visits, or travel mainly between flowers on the same plant \citep{thomson1986, herrera1987}, reducing their utility to the plant.
+Pollen limitation can also occur at multiple levels within a plant, reducing the number of seeds per fruit or the number of mature fruit \citep{burd1994}.
+Low pollen deposition cause flower abortion, where poorly-pollinated flowers are cut off from the plant \citep{knight2006}, but an indeterminate growth strategy may help to offset this, by simply making more flowers \citep{doust1982,lawrence1993, sabbahi2006, bos2007}.
+Additional pollen may result in a greater number of seeds per fruit \citep{knight2006}, which in turn may result in a reduction in the size per seed due to competition between ovules or fruit \citep{free1968, mazer1987}.
+Seed size can also vary strongly among plants, and can be affected by resources available to the plant \citep{mazer1987, venable1992}. 
+Therefore, understanding how plants allocate their seed resources under pollen or resource deficits are important for managing agricultural production \citep{bos2007, tamburini2019}.
 
-%REVIEW LANGUAGE
-%RC: POINT OF PARAGRAPH SHOULD BE THAT AFTER POLLEN RECEIPT, PLANT STILL HAS TO DECIDE WHETHER TO ACCEPT IT, OR WAIT TO INVEST LATER (FUTURE-PRESENT TRADEOFFS)
-%RALPH'S ARGUMENT IS WAY TOO GENERAL. POINT SHOULD BE THAT POLLEN OR RESOURCES CAN BE LIMITING (USUALLY RESOURCES), AND THAT PLANT MAY COMPENSATE FOR LOW POLLEN USING EXTRA GROWTH
-Seed production can be limited by plant resources as well as pollen \citep{galen1985, haig1988,campbell1993}, meaning that the benefits of insect pollination depend on the resources available to the plant \citep{stephenson1981, tamburini2017}.
-Pollen limitation can also occur at multiple levels within a plant, reducing the number of seeds per fruit, the number of mature fruit, or both \citep{burd1994}.
-Low pollen deposition may reduce the number of mature fruit via flower abortion \citep{knight2006}, where poorly-pollinated flowers are cut off from the plant.
-Plants with an indeterminate growth strategy may compensate for a high flower abortion rate by simply making more flowers, resulting in similar seed production to pollinated plants \citep{doust1982,lawrence1993, sabbahi2006, bos2007}.
-Whether individual plants can compensate for low pollination depends on the time remaining in the season, as well as the resources available to create extra shoots and flowers.
-Pollen limitation may also reduce the number of seeds per fruit, so additional pollen may result in a greater number of seeds per fruit \citep{knight2006}, which in turn may result in a reduction in the size per seed \citep{free1968, mazer1987} due to competition between ovules.
-Seed size can vary strongly among plants, and can be affected by resources available to the plant \citep{mazer1987, venable1992}. 
-For example, \citet{maddox1983} observed a negative size-number tradeoff in \emph{Plantago} seeds, but only after accounting for the positive effect of plant size, indicating that larger plants were better able to provision their seeds.
-Since the size and number of offspring are direct determinants of a given plant's fitness, and the yield of the plant in an agricultural setting, allocation strategies that plants use under situations of pollen or resource deficits are important both theoretically, and in the context of food production \citep{bos2007, tamburini2019}. 
+% For example, \citet{maddox1983} observed a negative size-number tradeoff in \emph{Plantago} seeds, but only after accounting for the positive effect of plant size, indicating that larger plants were better able to provision their seeds.
 %, as the optimum seed size may differ depending on the growing conditions \citep{silvertown1989}.
 %Na\"{i}vely, we may expect a size-number tradeoff to result in a single optimal seed size regardless of plant size \citep{smith1974}, but 
 %\citep{galen1985} showed that \emph{Clintonia borealis} produced a greater number of larger seeds when supplemented with outcrossed pollen, but only when competing fruits on the stem were removed.
@@ -204,16 +197,16 @@ Since the size and number of offspring are direct determinants of a given plant'
 %understanding how plants allocate resources in situations of limited pollen deficit and pollen increase
 %understanding how pollen deficits change in the context of resource availability,
 
-Insect pollination is especially important in the production of hybrid canola crops (\textit{Brassica napus} L.).
-Hybrid ``commodity canola" (used for oil and meal production) is the offspring of two parental ``seed canola" breeding lines, a male-sterile ``female" line and a hermaphroditic  ``male" line \citep{westcott2001,steffan2003,clay2009}. 
-Seed canola production requires a large number of pollinators to ensure pollination of the female line (seed from the male line is not harvested), and extra pollination may also increase the yield of commodity canola \citep{morandin2005,rader_phd,bommarco2012,bartomeus2015,perrot2018}. 
-However, many studies of commodity canola pollination suffer from either a lack of realistic context, have a number of potential confounding variables, or infer plant-level outcomes from flower-level treatments. 
-Greenhouse experiments typically involve unrealistically high pollination, nutrient availability, and water, all of which can influence yield \citep{bartomeus2015,marini2015}.
-Field studies often relate yield to indirect measures of pollination services, such as insect abundance, species richness, or distance from sources of potential pollinators \citep{morandin2005,ricketts2008}, rather than direct measures, such as visitation rates or pollen deposition per stigma.
-These pollination proxies are then related to measures of yield, such as grams of seed per m$^2$, which may be useful to growers, but provide limited information about how plants dynamically respond to pollen exclusion or addition (but see \citealp{sabbahi2005}).
-Net- or cage-treatments exclude insect vistiation from certain plants or flowers, but can alter wind pollination, humidity, light, or pest pressure \citep{olsson1960, neal2004, jauker2008}, meaning that the sole effect of lower insect visitation is confounded by other factors.
-These methods offer an incomplete picture of how pollination relates to yield in canola crops \citep{ouvrard2019}, and obscure estimates of pollinator value in a globally valuable crop species \citep{melathopoulos2015}. 
-Thus, whether pollination impacts commodity canola production (or if not, why not) is poorly understood.
+Insect pollination is especially important in the production of canola crops (\textit{Brassica napus} L.).
+Hybrid \emph{commodity canola} (used for oil and meal production) is the offspring of two parental \emph{seed canola} breeding lines, a male-sterile ``female" and a hermaphroditic ``male" line \citep{westcott2001,steffan2003,clay2009}. 
+Seed canola production requires a large number of pollinators to ensure pollination of the female line (seed from the male line is not harvested), but there are few published studies that examine pollination in these systems (see \citealp{mesquida1981, mesquida1991}).
+Extra pollination may also increase the yield of commodity canola \citep{morandin2005,rader_phd,bommarco2012,bartomeus2015,perrot2018}, but this is unclear, as many  key studies suffer from either a lack of realistic context, have a number of potential confounding variables, or infer plant-level outcomes from flower-level treatments \citep{ouvrard2019}. 
+Greenhouse experiments typically involve unrealistically high levels of pollination, nutrient availability, and water, all of which can interact with yield \citep{bartomeus2015,marini2015}.
+Field studies often relate yield to indirect measures of pollination services, such as insect abundance, species richness, or distance from sources of potential pollinators \citep{morandin2005,ricketts2008}, rather than visitation rates or pollen deposition.
+These proxies provide limited information about how plants dynamically respond to pollen exclusion or addition (but see \citealp{sabbahi2005}).
+Net- or cage-treatments exclude insect visitation from certain plants or flowers, but can alter wind pollination, humidity, light, or pest pressure \citep{olsson1960, neal2004, jauker2008}.
+All of these methods give an incomplete picture of how pollination relates to yield in canola crops \citep{ouvrard2019}, and obscure estimates of pollinator value in a globally valuable crop species \citep{melathopoulos2015}.
+
 %and both honey bees and leafcutter bees are used in Canada 
 %depending on the variety \citep{hudewenz2013, lindstrom2016}, 
 %has hermaphroditic flowers and 
@@ -224,27 +217,24 @@ Thus, whether pollination impacts commodity canola production (or if not, why no
 % As of 2010, 93\% of this canola was transgenic, herbicide-tolerant canola, with transgenic traits encoding for glyphosate or glufocinate resistance in approximately equal proportions \citep{ccc2010}. 
 % The ``male" breeding line has both anthers and stigmas (hermaphroditic), but carries a nuclear fertility-restoring trait, meaning that the offspring they sire on the female line will have their anther production restored. 
 
-Fruit production in plants involves a sequence of processes (visitation $\rightarrow$ pollen deposition $\rightarrow$ fruit production $\leftarrow$ plant resources), that determine the magnitude of the link between pollination and the components of crop yield.
-However, most studies of how pollination relates to crop yield either examine each process independently, or omit intermediate steps in the sequence of events (but see \citealp{saez2018}), meaning that the relative importance of visitation and plant resources are unresolved.
-Using both commodity and seed canola provides an opportunity to compare two plant varieties that differ strongly in their pollination requirements, using a similar type of structural model, while accounting for agricultural differences between varieties (spatial arrangement, planting density, irrigation).
-% Since the process linking insect visitation to seed production has several intermediate steps, and is contingent on resource factors, we need a more complete model of crop yield that links plant-level responses to biological processes that occur at the plot and field level.
-%Introduce each component of the path analysis
-
-%SH: SEEMS ODD TO HAVE REFS MIXED IN WITH YOUR HYPOTHESES
-In this study, we modeled how distance influences pollinator visitation, which in turn influences pollen deposition and seed yield, using commodity and hybrid seed canola crops in Alberta, Canada.
-Our five main hypotheses are outlined as follows:
-\begin{enumerate} 
-    \item Foraging honey bees and leafcutter bees are sensitive to distance due to cost of flight \citep{schmid1985}, and deplete floral resources with visitation. Therefore, insect visitation should decline with distance from their hive or shelter to achieve equivalent rewards \citep{dukas1998, cresswell2000}. 
-    \item Visiting bees can deposit pollen on stigmas, so areas with high rates visitation should have more pollen deposition on stigmas than areas with low rates of visitation \citep{mesquida1988c, hoyle2007}, depending on foraging behaviour of the bee \citep{free1983}.
-    % \item Plant size is limited by resources, which can be reduced by competition with neighbours, so areas with fewer plants per m$^2$ should have larger plants \citep{angadi2003}. %Not revelvant
-    \item Seed production for a given plant is limited by the resources it is able to sequester. Therefore, large plants should have more resources at their disposal, and should produce more fruit per plant and produce a higher number of larger seeds per fruit \citep{galen1985, lawrence1993, marini2015}.
-    \item Seed production in resource-rich plants is also limited by pollination. Plants in areas with high pollen deposition should have a higher proportion of successful flowers \citep{sabbahi2005}, and a higher number of seeds per pod \citep{morandin2005}.
-\end{enumerate}
-
-%REVIEW
+Seed production in canola involves a sequence of processes (visitation $\rightarrow$ pollen deposition $\rightarrow$ fruit production $\leftarrow$ plant resources), that determine the magnitude of the link between pollination and the components of crop yield (seed size/number).
+However, other studies of canola pollination focus on individual processes, such as visitation and pollination \citep{cresswell1999, thomson2001}, or visitation and yield \citep{steffan2003, manning2005, hudewenz2013}, but have not incorporated the links in a single framework (but see \citealp{saez2018}), and few have used realistic field data \citep{morandin2005, isaacs2010}.
+In this study, we examine how distance influences pollinator visitation, which in turn influences pollen deposition and seed yield, using commodity and seed canola crops in Alberta, Canada.
+Using both commodity and seed canola provides an opportunity to compare two plant varieties that differ strongly in their pollination requirements, using a similar type of structural model, while accounting for agricultural differences between varieties.
+We expected that extra pollination would increase pollination and seed production in commodity canola, but that the magnitude of the increase would be much higher in seed canola, and that plant size (a proxy for plant resources) would similarly increase seed production.
 This study assesses the strength of the connections between visitation, pollination, and yield, in a globally important crop species, and identifies the relative importance of bee pollination for seed production, using in-field data from two distinct cropping systems.
-Other studies of crop pollination focus on individual components, such as visitation and pollination \citep{cresswell1999, thomson2001}, or visitation and yield \citep{steffan2003, manning2005, hudewenz2013}, but have not incorporated the links in a single framework (but see \citealp{saez2018}), and few have used realistic field data \citep{morandin2005, isaacs2010}.
-This work adds to the body of literature examining the resource context of pollination services \citep{haig1988} within cropping systems \citep{marini2015, tamburini2016, fijen2018, tamburini2019}, and identifies directions of future research in seed production systems.
+
+% Since the processes linking insect visitation to seed production has several intermediate steps, and is contingent on resource factors, we need a more complete model of crop yield that links plant-level responses to biological processes that occur at the plot and field level.
+% This work adds to the body of literature examining the resource context of pollination services \citep{haig1988} within cropping systems \citep{marini2015, tamburini2016, fijen2018, tamburini2019}, and identifies directions of future research in seed production systems.
+
+% Our five main hypotheses are outlined as follows:
+% \begin{enumerate} 
+%     \item Foraging honey bees and leafcutter bees are sensitive to distance due to cost of flight \citep{schmid1985}, and deplete floral resources with visitation. Therefore, insect visitation should decline with distance from their hive or shelter to achieve equivalent rewards \citep{dukas1998, cresswell2000}. 
+%     \item Visiting bees can deposit pollen on stigmas, so areas with high rates visitation should have more pollen deposition on stigmas than areas with low rates of visitation \citep{mesquida1988c, hoyle2007}, depending on foraging behaviour of the bee \citep{free1983}.
+%     % \item Plant size is limited by resources, which can be reduced by competition with neighbours, so areas with fewer plants per m$^2$ should have larger plants \citep{angadi2003}. %Not revelvant
+%     \item Seed production for a given plant is limited by the resources it is able to sequester. Therefore, large plants should have more resources at their disposal, and should produce more fruit per plant and produce a higher number of larger seeds per fruit \citep{galen1985, lawrence1993, marini2015}.
+%     \item Seed production in resource-rich plants is also limited by pollination. Plants in areas with high pollen deposition should have a higher proportion of successful flowers \citep{sabbahi2005}, and a higher number of seeds per pod \citep{morandin2005}.
+% \end{enumerate}
 
 \section*{Methods}
 
@@ -463,7 +453,7 @@ Interestingly, the simulations also showed evidence of nonlinear behaviour occur
 
 \section*{Discussion}
 
-This study examined how visitation contributes to pollen deposition and seed yield in two canola crops, and showed a strong link between visitation and yield in seed canola, but not in commodity canola.
+We examined how bee visitation contributes to pollen deposition and seed yield in two canola crops, and showed a strong link between visitation and yield in seed canola, but not in commodity canola.
 HB and LCB visitation decreased with distance from their respective hive or shelter, but unexpectedly, LCBs were found more at the edge of the crop.
 HB visitation had little direct influence on pollen deposition in either crop type, while LCB visitation had a positive effect on pollen deposition in seed canola.
 We found that commodity canola production is largely limited by plant size, while seed canola production is limited by both pollen and plant size.
@@ -515,29 +505,25 @@ The stigmas and flowers of \emph{Brassica} are not aligned for dispersal and dep
 However, wind-induced self-pollination (plant shaking) can increase yield in \textit{Brassica} \citep{williams1986, mesquida1988c}, and fields without bee pollination have outcrossing rates of about 20\% within the field \citep{rakow1987,becker1992}.
 % The style of \textit{Brassica} grows past the anthers during maturation, allowing deposition of large amounts of self-pollen, suggesting that self-pollination is the dominant mode of pollination.
 HBs can assist in deposition of self-pollen, as \citet{ali2011} found that \textit{Apis dorsata} and \textit{Apis florea} can both deposit 100-200 grains of pollen per visit on a canola flower (\emph{B. napus} var. \emph{Bulbul}).
-However, \citet{waytesMsc} used male-sterile flowers from seed canola fields and found that HB pollen foragers deposited far less outcrossed pollen ($\sim$ 2 grains per visit), suggesting that much of the pollen deposited on commodity canola stigmas is self-pollen. 
-Because the overall pollen deposition rates found in this study were so high, HB visitation seems to have made little difference in the amount of self-pollination, as large amounts of pollen were present on commodity canola stigmas even at the centre of unstocked fields.
-These results suggest that commodity canola stigmas are largely saturated with self-pollen, swamping any extra pollen deposition by HBs.
+However, \citet{waytesMsc} used male-sterile flowers from seed canola fields and found that HB pollen foragers deposited far less outcrossed pollen ($\sim$ 2 grains per visit), suggesting that much of the pollen deposited on commodity canola stigmas may be self-pollen. 
+Because the overall pollen deposition rates found in this study were high, HB visitation seems to have made little difference in the amount of self-pollination, as large amounts of pollen were present on commodity canola stigmas even at the centre of unstocked fields.
+This suggests that commodity canola stigmas are largely saturated with self-pollen, swamping any extra pollen deposition by HBs.
 % The typical lifetime of a canola flower is approximately 3 days, and the stigmatic surface is receptive for 24--36 hours within this period \citep{eisikowitch1981,hoyle2007}, so it may be that 10-minutes of observing flower visitors was too short of a time interval to relate to pollen deposition.
 % This is unlikely, however, 
 %SH: DOING A BACK-OF-ENVELOPE CALC: 0.23 VISITS/HR X 2 GRAINS/VISIT X 12 HR X 3 DAYS = 5-6 GRAINS PER DAY, LESS THAN 1% OF STIGMA LOAD
 % This runs contrary to other studies in commodity canola (\citealp{sabbahi2005}, but see \citealp{garibaldi2013} and \citealp{waytesMsc}), so why did 
 
-%REVIEW THIS
-The limited pollen-transferring behaviour of HBs was also reflected in the pollen counts, as deposition strongly increased with LCB visitation, but not with HB visitation.
-LCBs tend to switch between male and female flowers more frequently than HBs do \citep{waytesMsc}, transport more viable pollen between flowers \citep{parker2015}, and tend not to side-work canola flowers \citep{soroka2001}, which may explain their increased pollination efficacy.
-Pollen deposition in seed fields also decreased with distance from the edge of the field, and was lower in the centre of the female bays, but this was not explained solely by LCB abundance (Figure \ref{fig:allSEM}).
-During foraging bouts, LCBs may travel further between flowers than HBs do \citep{brunet2019}, but pollen carryover from the edge to the centre of the bay female is likely reduced, as LCBs likely visit the edge of the female bay before venturing into the centre \citep{thomson1986, pinnisch1990}.
-Pollen counts decreased with distance into the field (independent of visitation), suggests that pollinators are less efficient at transfering pollen.
-Foraging \textit{Bombus} take shorter trips between flowers under nectar-rich conditions (area-restricted search, \citealp{pyke1978b, heinrich1979}), suggesting that HBs and LCBs may operate similarly at the centre of seed fields, causing lower pollen deposition at the centre of the field where competition is lower.
-% This may be due to lower levels of competition at the centre of the field, leading to a higher nectar (or pollen) standing crop. %LH: more likely that bees at centre of F bays carry less pollen
-%LCBs are extremely fast fliers, and are difficult to follow after they leave an inflorescence, meaning that tracking their movements during an entire foraging bout would be almost impossible.
-% Visits by HB foragers were almost twice as high in the centre of the female bay, but pollen deposition was about 40\% lower (  Figure \ref{fig:allPollen}), which correspondingly is 
-% HBs in seed fields tended to visit more in the centre of the female bay, even close to the edge of the field, yet pollen deposition was still about 40\% lower (Figure \ref{fig:allPollen}).
-% While we found that LCBs also tend to avoid the centre of the female bays, and decrease with distance into the field, this extra dependence could have been caused by the fact that the visitation data represents a short ``snapshot'' of the pollen deposition process.
-% For example, canola flowers are receptive for 1-2 days before the petals dehisce, while the surveys only recorded 5 or 10 minutes of visitation, meaning we may have not captured the deposition process on the time scale that it occurs, and the extra variance is being accounted for by distance from field edge and the centre of the female bay.
-% Leafcutter visitation can be extremely sporadic, so the distance and bay position measurements capture differences in the average visitation process better than 10 minute measurements.
-% Pollen deposition also likely changes over the course of the season, as flower availability decreases.
+Our models also showed that pollen-transferring behaviour of HBs is limited in seed fields, as deposition strongly increased with LCB visitation but not HB visitation.
+HBs in seed fields tended to visit more in the centre of the female bay, even close to the edge of the field, yet pollen deposition was still about 40\% lower.
+LCBs switch between male and female flowers more frequently than HBs, travel further between flowers, transport more viable pollen, and tend not to side-work canola flowers \citep{soroka2001, parker2015, waytesMsc, brunet2019}, all of which may explain their higher pollination efficacy.
+Pollen deposition in seed fields also decreased with distance from the edge of the field, and was lower in the centre of the female bays independent of visitation, suggesting lower pollen tranfer per visit.
+These may have been caused by two separate processes: a) low pollen carryover with distance into the female bays, and b) shorter trips between flowers at the centre of the field.
+Pollen carryover from the edge to the centre of the bay female is likely reduced as LCBs typically visit the edge of the female bay before venturing into the centre \citep{thomson1986, pinnisch1990}.
+\textit{Bombus} take shorter trips between flowers under nectar-rich conditions \citep{pyke1978b, heinrich1979}, suggesting that HBs and LCBs may operate similarly at the centre of seed fields, resulting in lower pollen transfer.
+While manipulating nectar levels within a field to produce greater travel between flowers could be extremely difficult, this suggests that the optimal width of female bays within seed fields may be lower than is currently practiced.
+
+While we found that HBs have no direct effect on pollen deposition in either crop type, they may have an indirect positive effect caused by: a) increasing airborne pollen from male-fertile flowers \citet{pierre2010}, b) lowering nectar and pollen standing crop, causing LCBs to travel further \citep{pyke1978b, heinrich1979}, or c) lowering floral fidelity on higher-rewarding flowers in the male bays \citep{mesquida1978, waytesMsc,gaffney2019}.
+A simple test of this might be to remove HB hives from a seed field (mid-season) and observe changes in LCB visitation before and after the removal.
 
 \subsection*{Seed production} % The total yield of a canola plant is a function of three components: number of pods per plant, number of seeds per pod, and seed size.
 
@@ -551,7 +537,7 @@ Flowers per plant was reduced by pod set, implying that high pod set suppresses 
 The first scenario is more likely, as \citet{sabbahi2006} and \citet{mesquida1981} both found that canola plants compensated for experimental removal of flowers by increasing branch and flower production, until the plant reached about 170 pods.
 There were also effects of distance on pod set independent of pollen: pod set decreased with distance from the edge of the field, distance to LCB shelters, and was lower at the centre of the female bays.
 \citet{mesquida1978} also found that pod set in male-sterile canola declined quickly with distance from the male-fertile plants (due to wind pollination), but the effect we found is likely related to the earlier effect of lower pollen carryover at the centre of the female bays, and possibly the centre of the field.
-Finally, the effect size of pollen deposition (Z=3.1) was much smaller than that of plant size (Z=19.9), indicating that the factors controlling plant size (e.g. fertilizer application, soil quality) likely constrain pod production more strongly than pollination alone \citep{marini2015}. 
+Finally, the effect of plant size was roughly 6x larger than that of pollen deposition, indicating that the factors controlling plant size (e.g. fertilizer application, soil quality) likely constrain pod production more strongly than pollination alone \citep{marini2015,tamburini2017, gagic2017, tamburini2019}. 
 
 %RC: SEEMS AN INTERACTION WOULD TEST THIS BETTER
 % Pollination increased pod production in seed canola, but not in commodity canola, meaning that extra pollination is valuable for seed canola crops, but not commodity canola. % Their final number of pods is similar to the plants from our study (mean: 143), but we found that larger plants also had greater pod set, in addition to higher flower production, presumably caused by the larger pool of resources that large plants are able to invest into reproduction. 
@@ -568,6 +554,7 @@ While we did not quantify pod position on branches, the pods at the end of the b
 Unexpectedly, plant density had a \emph{positive} effect on seed size in both crop types, which may be caused by two different processes: a) plant density could be positively related to resource availability if plant survival is higher in plots with better growing conditions (i.e. Berkson's paradox, \citep{snoep2014}) or b) plant density may improve the microclimate conditions of the canola stand, reducing heat or desiccation stress on individual plants.
 We consider the first process more likely, as planting density under uniform conditions typically has little effect on seed size (\citealt{Angadi2003}).
 In summary, our results add to a growing body of literature on the context-dependent value of pollination services \citep{marini2015, tamburini2017, tamburini2019}.
+
 
 % The decrease in seed number at the centre of the bay may ultimately be caused by reduced pollen deposition from lower visitation \citep{mesquida1981,mesquida1982}.
 %Increased plant density within a patch can lead to more pollinator visitation \citep{kunin1997}, but not necessarily more visits per flower \citep{klinkhamer1990}.  
@@ -596,48 +583,24 @@ In summary, our results add to a growing body of literature on the context-depen
 % Ovule abortion in \textit{Brassica} is also higher at the beginning and end of the flowering season, likely because of a lower amount of high-quality pollen available at the tails of the season \citep{wang2011}.
 % Similarly, the main raceme of canola tends to produce the most seeds per pod, with accessory branches producing fewer, smaller seeds, again due to flowers on branches being produced later in the season than the flowers on the main raceme \citep{clarke1979}.
 
-\subsection{Yield simulations}
+\subsection*{Conclusion} 
 
-% %RESULTS:
-% The path analysis simulations further confirmed the results of the analysis: HB visitation had little effect on yield in either crop type, but LCB visitation improved yield in seed crops.
-% The simulations showed no large effect of HB stocking on seed size or total yield in commodity fields (Figure \ref{fig:allYield}a, b), aside from the effect associated with distance from the edge of the field.
-% Similarly, the simulations for seed fields showed a small increase in seed size and total yield with distance from the HB hives at the field edges, but the effect of distance from the leafcutter shelters was much more dramatic (compare the spacing of isolines along the x-axis and y-axis in Figures \ref{fig:allYield}c, d).
-% A second set of simulations were run only in seed fields, in order to compare the effect of pollinator distances between the bay edge and centre. 
-% This revealed that not only total seed size and overall yield lower at the bay centre, but that the effect of HB distance is effectively \emph{nil} at the bay centre (yield isolines are essentially horizontal in bay centre, and slightly tilted at the bay edge, Figure \ref{fig:allYield}d, f).
-% Interestingly, the simulations also showed evidence of nonlinear behaviour occurring in the centre of seed field bays, where a local minima in yield appears at approximately 25 m away from HB hives and 45 m away from LCB shelters (Figure \ref{fig:allYield})f), likely because of an interaction between the components of yield (seeds per pod, pods per plant, and weight per seed). 
-
-\subsection*{Summary} %RC: VERY CANOLA-FOCUSED
-
-%Taken from pollen section
-HBs may have an indirect positive effect on pollen deposition, as they may cause LCBs to travel farther by lowering overall nectar and pollen standing crop, or release airborne pollen from male-fertile flowers.
-\citet{pierre2010} showed that HBs can increase the amount of airborne pollen by foraging on male-fertile flowers and releasing pollen from the anthers, causing increased yields in nearby male-sterile flowers; therefore, HBs may indirectly contribute to a higher rate of wind pollination.
-HBs may also cause LCBs to forage at further distances away from their shelters.
-Bumble bees move further between flowers when foraging in \textit{Trifolium} fields that have been depleted by HBs \citet{heinrich1979}, so a similar process could occur in canola seed fields. 
-LCBs do not appear to use area-restricted search \citep{brunet2019}, but we expect that the foraging range of leafcutter bees around their shelters would sitill decrease, because if HBs lower pollen and nectar levels at the edge of the field, then leafcutter bees should travel shorter distances to gather the same reward (according to the predictions of Chapter 2).
-We also expect that foraging leafcutter bees would make shorter trips between flowers (similar to \citealp{heinrich1979}), and possibly may switch between bays less frequently \citep{waytesMsc,gaffney2019}, due to a greater floral fidelity on higher-rewarding flowers in the male bay \citep{mesquida1978}.
-If this is true, this would result in a lower rate of (overall) pollen deposition by leafcutter bees during the same period.
-However, testing this would require observations of seed canola fields that were only stocked with leafcutter bees, which is extremely rare in southern Alberta.
-%RC: MAY HAVE TO CHOP FOR THE MANUSCRIPT, BECAUSE IT DOESN'T HAVE OTHER AREA-RESTRICTED SEARCH LIT
-%A simple test of this would be to remove HB hives from a seed field, mid-season, and perform observations of leafcutter visitation patterns before and after the removal.
-
-This study assesses the relative importance of pollination and plant resources for the production of canola crops, using field-realistic data from central and southern Alberta.
-First, it shows that insect visitation changes across small spatial scales (meters for leafcutter bees, tens of meters for HBs), and are at odds with the large scales of Albertan crop fields \citep{fritz2015}.
-Visitation of both HBs and leafcutter bees in canola fields is concentrated at the edge of fields, and is lower at the centre of the female bays in seed canola.	
-Second, HBs have little direct influence on pollen deposition in either crop system, likely due to a high background level of pollen deposition on stigmas in commodity canola, whereby extra pollen deposition is of little benefit to plant reproduction.
-Seed canola plants, in contrast, have much lower levels of pollen deposition overall, and leafcutter bees deliver a large direct benefit to fruit and seed production. 
-The centre of the female bays illustrates this effect: HBs have a higher visitation rate, but pollen deposition, pod set, and seed set are all lower.
-Finally, both plant size and pollination limit seed production in seed canola, but only plant size limits commodity canola production, showing the relative importance of both pollination and plant resources using in-field data.
-
-Several future lines of work could be followed based on this study.
-First, other factors besides total seed yield are important for commodity canola production, such as green seed and oil content \citep{tautorus1994, abbadi2011, ghazani2013}.
-Our work identified the effect of bee pollination on seed production in terms of total weight, but may have overlooked these aspects of yield valuation \citep{bommarco2012}. 
-Secondly, we found that HBs appear to add little pollination value for seed canola crops, but since we did not use fields that had no HBs, there may be unobserved indirect benefits that HBs add.
-For example, they may contribute to better pollination by leafcutter bees by reducing the nectar and pollen standing crop, causing leafcutter bees to forager further away from their shelter \citep{pyke1978b, heinrich1979}, or by increasing the amount of airborne pollen \citep{eisikowitch1981,mesquida1982}.
-Third, while the random-intercept model that we used accounts for field-to-field variation in growing conditions, this also means that we may have marginalized across other factors that were not accounted for by plant size, such as nutrients, soil moisture, crop pests, and variety.
-Pollination benefits to all flowering crops are contextual, even in highly-pollination dependent crops \citep{tamburini2017, tamburini2019}; that is, the effect of additional pollination depends on the levels of other plant resources available during growth \citep{marini2015, bartomeus2015, gagic2017}.
-Finally, SEMs cannot model causal loops \citep{grace2006}, which is closer to the method by which plants respond to lack of pollination (\emph{i.e.} pollination failure $\rightarrow$ plant growth $\rightarrow$ flower production).
-Our model serves as an approximation of this process, but could be built upon by using dynamic linear programming techniques \citep{iwasa2000,nord2011} to examine how plants dynamically respond to pollen failure.
+This study has revealed some of the detailed aspects of pollination in commodity and seed canola crops.
+First, it shows how two important species of commercial pollinators decline with distance from their nesting sites, and how LCBs unexpectedly decline with distance from the edge of the field.
+Second, it sheds light on the relative importance of HBs and LCBs as pollinators, showing that commonly-used levels of HB stocking do not strongly influence yield in commodity canola crops, and that LCBs are likely the primary pollinators of seed canola.
+Finally, it contextualizes the value of pollination alongside plant resources, showing that plant resources and pollen limit production in seed canola, while only plant resources limit commodity production.
+Our unique SEM approach allowed us to formulate and test relationships within a causal framework, which we consider to be extremely valuable, and highly underused in agricultural studies.
+Our model serves as an approximation of a dynamic process, but could be built upon by using dynamic linear models \citep{iwasa2000, nord2011, saez2018} to examine how plants dynamically respond to changes in pollination.
 These would lend greater understanding to the process of hybrid seed production, and could be used to more accurately predict crop yields in novel scenarios.
+
+% Several future lines of work could be followed based on this study.
+% First, other factors besides total seed yield are important for commodity canola production, such as green seed and oil content \citep{tautorus1994, abbadi2011, ghazani2013}.
+% Our work identified the effect of bee pollination on seed production in terms of total weight, but may have overlooked these aspects of yield valuation \citep{bommarco2012}. 
+% Secondly, we found that HBs appear to add little pollination value for seed canola crops, but since we did not use fields that had no HBs, there may be unobserved indirect benefits that HBs add.
+% For example, they may contribute to better pollination by leafcutter bees by reducing the nectar and pollen standing crop, causing leafcutter bees to forager further away from their shelter \citep{pyke1978b, heinrich1979}, or by increasing the amount of airborne pollen \citep{eisikowitch1981,mesquida1982}.
+% Third, while the random-intercept model that we used accounts for field-to-field variation in growing conditions, this also means that we may have marginalized across other factors that were not accounted for by plant size, such as nutrients, soil moisture, crop pests, and variety.
+% Pollination benefits to all flowering crops are contextual, even in highly-pollination dependent crops \citep{tamburini2017, tamburini2019}; that is, the effect of additional pollination depends on the levels of other plant resources available during growth \citep{marini2015, bartomeus2015, gagic2017}.
+% Finally, SEMs cannot model causal loops \citep{grace2006}, which is closer to the method by which plants respond to lack of pollination (\emph{i.e.} pollination failure $\rightarrow$ plant growth $\rightarrow$ flower production).
 
 %First, HBs have lower per-visit pollen deposition on canola than \textit{Bombus} or \textit{Megachile} \citep{sahli2007, woodcock2013}.
 %This can be compensated for by using a high density of HB hives in comparison to the crop area \citep{manning2005, clay2009}, but canola fields in Alberta are very large \citep{fritz2015}, so 

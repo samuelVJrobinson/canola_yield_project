@@ -120,12 +120,9 @@ d3 <- with(avgSeedData, #Leafcutters in seed fields
   ggplot(aes(x=dist,y=mean))+
   geom_ribbon(aes(ymax=upr,ymin=lwr,fill=type),alpha=0.3)+
   geom_line(aes(col=type))+
-<<<<<<< HEAD
   # coord_cartesian(y=c(0,150),clip='on')+
   ylim(0,150)+
-=======
   coord_cartesian(y=c(0,150))+
->>>>>>> dd0c28ad2cbea783a58adf47135ac3e4da2ca02c
   labs(x='Distance from apiary (m)',y='Visits per hour',fill=NULL,col=NULL)+
   scale_colour_manual(values=labCols)+
   scale_fill_manual(values=labCols)
