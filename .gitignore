@@ -10,3 +10,4 @@ yield path analysis.R
 .Rproj.user
 Comments on paper
 ./Manuscript/*.aux
+texput.log
