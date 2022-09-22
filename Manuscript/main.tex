@@ -85,16 +85,13 @@
 \doublespacing
 
 \begin{abstract}
-Insect-mediated pollination of crops is an important input to agricultural production, but pollination management suffers from key mechanistic gaps that hinder its greater utility. 
-While pollination services to plants have a solid theoretical and mechanistic framework, agricultural pollination is often treated as a statistical ``black box", without reference to the mechanisms underlying the process of pollination and fruit production.
-We present a causal model that links insect visitation to pollination to three separate components of yield, using two types of canola (\textit{Brassica napus}) production systems.
-%Visitation by honey bees was strongly related to distance in both commodity and seed canola fields, with visitation decreasing with distance away from the edge of the field (where the hives were located).
-%In seed fields, leafcutter bee visitation strongly decreased with distance away from their shelter, but interestingly, also decreased with distance from the edge of the field in high-density shelters, meaning that foragers may be migrating from shelters at the centre of the field to shelters at the edge.
-Commodity canola yield was mainly controlled by plant size, and there was no relationship between \textit{Apis mellifera} visitation and pollen deposition, or deposition and seed yield.
-In comparison, seed canola yield was also controlled by plant size, but there was also a strong relationship between visitation and pollen deposition, as well as deposition and seed yield.
-We also found that \textit{Megachile rotundata} visitation in seed canola strongly increased pollen deposition, but \textit{A. mellifera} visitation did not.
+Insect-mediated pollination of crops is an important input to agricultural production, but pollination management suffers from key knowledge gaps that hinder its greater utility. 
+While a solid theoretical and mechanistic framework for plant pollination exists, the pollination of agricultural crops is often treated as a ``black box”, without reference to the specific mechanisms underlying the processes of pollination and fruit production. 
+We present a causal model that links insect visitation to pollination to three separate components of yield, using field data from two types of canola (\emph{Brassica napus}) production systems. 
+Our results demonstrate that yield in commodity canola fields is primarily determined by plant size, and we found no relationship between honey bee visitation and pollen deposition, or pollen deposition and seed yield. 
+In contrast, yield in seed production canola fields was similarly controlled by plant size, but there was also a strong relationship between bee visitation and pollen deposition, as well as deposition and seed yield. 
+Leafcutting bee visitation in particular strongly increased pollen deposition in seed canola fields, whereas honey bee visitation did not. 
 This model serves as a step towards a dynamic model of pollination services, and points to the contextual importance of pollination services in seed canola production.
-
 \end{abstract}
 
 % Current Intro Structure:
@@ -154,10 +151,10 @@ This model serves as a step towards a dynamic model of pollination services, and
 \section*{Introduction}
 %SH: PARAGRAPH COULD BE REMOVED/SHORTENED FOR PAPER, BUT FINE FOR THESIS
 Animal pollination of agricultural flowering plants is an important ecosystem service that contributes to about 10\% of total crop production value worldwide \citep{gallai2009}, and animal-pollinated plants produce a large number of important micronutrients in the human diet \citep{eilers2011}.
-Pollination of these crops, however, is largely treated as a single process, even though there are many links in the chain of events that result in the production of a fruit.
-Visitation of flowers by animals (typically bees or other insects) can increase pollen deposition on the stigma of the flower, followed by fertilization of the ovules, and maturation of fruit \citep{erbar2003, goldberg1994}.
-Each step has many other underlying processes (\textit{e.g.} stigma receptivity, pollen tube growth, ovule abortion), but even at this level of approximation, most studies of agricultural pollination fail to account for important underlying processes.
-Moving beyond this ``black-box" model of agricultural pollination requires accounting for these steps, and is needed for contextualizing the value of pollination services, as well as optimizing crop yield in novel circumstances.
+Pollination of these crops, however, is largely treated as a single step, while in reality there are many links in the chain of events that result in fruit production.
+Visitation of flowers by animals (typically bees or other insects) can increase the deposition of pollen onto the stigma of the flower, but in order for fruit set to occur, this must be followed by fertilization of the ovules, and maturation of fruit \citep{erbar2003, goldberg1994}.
+Each step has many other underlying constituent components (\textit{e.g.} stigma receptivity, pollen tube growth, ovule abortion), but even at this coarse level of approximation, most studies of agricultural pollination fail to account for important underlying processes.
+Moving beyond this ``black-box" model of agricultural pollination requires incorporation of these steps, and is needed for contextualizing the value of pollination services, as well as optimizing crop yield in novel circumstances.
 
 
 % Pollinating animals rarely visit equally on all flowers in a blooming crop field\citep{currie1997, brosi2008, isaacs2010}, but some agronomic studies implicitly make this assumption \citep{phillips1989, bommarco2012, bartomeus2014}. 
@@ -168,24 +165,24 @@ Moving beyond this ``black-box" model of agricultural pollination requires accou
 
 Pollinator visitation is not uniform within fields: visitation rates typically decline with distance away from the pollinators' nest sites.
 Smaller bees fly shorter distances than larger bees \citep{greenleaf2007,zurbuchen2010}, so their presence at the centre of large fields can be limited \citep{isaacs2010}. 
-Hence, managing the location and density of managed pollinators is important for optimal yield of pollinator-dependent crops \citep{fries1983,cresswell2004b}.
+Hence, managing the location and density of pollinators is important for optimal yield of pollinator-dependent crops \citep{fries1983,cresswell2004b}.
 Similarly, foragers will often specialize on certain species or morphs of flowers in order to forage more efficiently (floral fidelity, \citealp{heinrich1976b, goulson1997}). 
 Pollination of hybrid seed crops presents a challenge for specialized foragers, as it requires movement of pollen between separate lines of plants, meaning that fidelity can reduce pollen transfer \citep{waytesMsc, gaffney2019}.
 Competition for floral resources can occur between different species of foragers, but they can spatially or temporally separate their foraging to reduce competition (\citealp{schaffer1979,thomson1987}, but see \citealp{steffan2000}), such as switching between floral morphs more often, or visiting less frequently \citep{heinrich1979, greenleaf2006}.
-Thus, variation in visitation can be driven by distance, competition with other foragers, or floral specialization; however, this is seldom considered, as commercial pollinators are often treated as a single agricultural ``input" (akin to fertilizer).
+Thus, variation in visitation can be driven by distance, competition with other foragers, or floral specialization, as well as plant traits such as nectar production and flower size; however, this spatial variation is seldom considered, as commercial pollinators are often treated as a single agricultural ``input" (akin to fertilizer).
 % Much of the worldwide agricultural demand for insect pollination is accomplished by the European honey bee, (\textit{Apis mellifera} L., hereafter ``honey bee") because of its large colony size, ease of transport, and ease of breeding (\citealp{winston1991}, but see also \citealp{winfree2008}).
 % However, several other types of pollinators are commonly used, including the alfalfa leafcutting bee, (\textit{Megachile rotundata} F., hereafter ``leafcutter bee"; \citealp{pitts2011}), and a large variety of wild pollinators \citep{rader2015}.
 
 Seed production can be limited by plant resources as well as pollen, meaning that the benefits of insect pollination depend on the resources available to the plant \citep{stephenson1981, marini2015, tamburini2017, tamburini2019}.
-Pollination can enhance fruit production in flowering plants by increasing either the quantity or quality of pollen deposited on the stigma \citep{stephenson1981,burd1994,aizen2007}.
+Pollination can enhance fruit production in flowering plants by increasing either the quantity or quality of pollen deposited on the stigma \citep{stephenson1981, burd1994, aizen2007}.
 Many flowering plant species are capable of self-pollination, but can produce more fruit or seeds from outcrossed pollen \citep{knight2005}.
-However, the benefit of this extra pollen deposition is diminishing \citep{plowright1981}, with very high numbers of pollen grains causing less and less of an increase in fruit production \citep{ashman2004, harder2016}.
+However, the returns from this extra pollen deposition are diminishing \citep{plowright1981}, with very high numbers of pollen grains causing decreasing improvements in fruit production \citep{ashman2004, harder2016}.
 % Not all animal visitors are equal from a flowering plant's perspective: large-bodied insects can deposit more pollen per visit on the stigma of the flower \citep{sahli2007}, but some visitors may steal nectar, groom pollen between visits, or travel mainly between flowers on the same plant \citep{thomson1986, herrera1987}, reducing their utility to the plant.
 Pollen limitation can also occur at multiple levels within a plant, reducing the number of seeds per fruit or the number of mature fruit \citep{burd1994}.
-Low pollen deposition cause flower abortion, where poorly-pollinated flowers are cut off from the plant \citep{knight2006}, but an indeterminate growth strategy may help to offset this, by simply making more flowers \citep{doust1982,lawrence1993, sabbahi2006, bos2007}.
+Low pollen deposition can also cause flower abortion, where poorly-pollinated flowers are abcised from the plant \citep{stephenson1981}; an indeterminate growth strategy may offset this by enabling the plant to continue producing more flowers \citep{doust1982, lawrence1993, sabbahi2006, bos2007}.
 Additional pollen may result in a greater number of seeds per fruit \citep{knight2006}, which in turn may result in a reduction in the size per seed due to competition between ovules or fruit \citep{free1968, mazer1987}.
-Seed size can also vary strongly among plants, and can be affected by resources available to the plant \citep{mazer1987, venable1992}. 
-Therefore, understanding how plants allocate their seed resources under pollen or resource deficits are important for managing agricultural production \citep{bos2007, tamburini2019}.
+Seed size can also vary dramatically among plants, and can be affected by resources available to the plant \citep{mazer1987, venable1992}. 
+Therefore, understanding how plants allocate reproduction under pollen or resource deficits are important for managing agricultural production \citep{bos2007, tamburini2019}.
 
 % For example, \citet{maddox1983} observed a negative size-number tradeoff in \emph{Plantago} seeds, but only after accounting for the positive effect of plant size, indicating that larger plants were better able to provision their seeds.
 %, as the optimum seed size may differ depending on the growing conditions \citep{silvertown1989}.
@@ -197,12 +194,12 @@ Therefore, understanding how plants allocate their seed resources under pollen o
 %understanding how plants allocate resources in situations of limited pollen deficit and pollen increase
 %understanding how pollen deficits change in the context of resource availability,
 
-Insect pollination is especially important in the production of canola crops (\textit{Brassica napus} L.).
+Insect pollination is especially important in the production of canola (\textit{Brassica napus} L.).
 Hybrid \emph{commodity canola} (used for oil and meal production) is the offspring of two parental \emph{seed canola} breeding lines, a male-sterile ``female" and a hermaphroditic ``male" line \citep{westcott2001,steffan2003,clay2009}. 
-Seed canola production requires a large number of pollinators to ensure pollination of the female line (seed from the male line is not harvested), but there are few published studies that examine pollination in these systems (see \citealp{mesquida1981, mesquida1991}).
-Extra pollination may also increase the yield of commodity canola \citep{morandin2005,rader_phd,bommarco2012,bartomeus2015,perrot2018}, but this is unclear, as many  key studies suffer from either a lack of realistic context, have a number of potential confounding variables, or infer plant-level outcomes from flower-level treatments \citep{ouvrard2019}. 
+Seed canola production therefore requires a large number of pollinators to ensure pollen transfer from the male to the femal line (seeds from the male line are not harvested), but there are few studies that examine pollination in these seed production systems (but see \citealp{mesquida1981, mesquida1991}).
+Bee pollination may also increase the yield of commodity canola \citep{morandin2005, rader_phd, bommarco2012, bartomeus2015,perrot2018}, but this is unclear, as many key studies suffer from either a lack of realistic context, have a number of potential confounding variables, or infer plant-level outcomes from flower-level treatments \citep{ouvrard2019}. 
 Greenhouse experiments typically involve unrealistically high levels of pollination, nutrient availability, and water, all of which can interact with yield \citep{bartomeus2015,marini2015}.
-Field studies often relate yield to indirect measures of pollination services, such as insect abundance, species richness, or distance from sources of potential pollinators \citep{morandin2005,ricketts2008}, rather than visitation rates or pollen deposition.
+Field studies often relate yield to indirect measures of pollination services, such as species richness or distance from sources of potential pollinators, or do not examine production at the plant level \citep{morandin2005, ricketts2008}.
 These proxies provide limited information about how plants dynamically respond to pollen exclusion or addition (but see \citealp{sabbahi2005}).
 Net- or cage-treatments exclude insect visitation from certain plants or flowers, but can alter wind pollination, humidity, light, or pest pressure \citep{olsson1960, neal2004, jauker2008}.
 All of these methods give an incomplete picture of how pollination relates to yield in canola crops \citep{ouvrard2019}, and obscure estimates of pollinator value in a globally valuable crop species \citep{melathopoulos2015}.
@@ -221,7 +218,7 @@ Seed production in canola involves a sequence of processes (visitation $\rightar
 However, other studies of canola pollination focus on individual processes, such as visitation and pollination \citep{cresswell1999, thomson2001}, or visitation and yield \citep{steffan2003, manning2005, hudewenz2013}, but have not incorporated the links in a single framework (but see \citealp{saez2018}), and few have used realistic field data \citep{morandin2005, isaacs2010}.
 In this study, we examine how distance influences pollinator visitation, which in turn influences pollen deposition and seed yield, using commodity and seed canola crops in Alberta, Canada.
 Using both commodity and seed canola provides an opportunity to compare two plant varieties that differ strongly in their pollination requirements, using a similar type of structural model, while accounting for agricultural differences between varieties.
-We expected that extra pollination would increase pollination and seed production in commodity canola, but that the magnitude of the increase would be much higher in seed canola, and that plant size (a proxy for plant resources) would similarly increase seed production.
+We expected that extra visitation would increase pollination and seed production in commodity canola, but that the magnitude of the increase would be much higher in seed canola, and that plant size (a proxy for plant resources) would similarly increase seed production.
 This study assesses the strength of the connections between visitation, pollination, and yield, in a globally important crop species, and identifies the relative importance of bee pollination for seed production, using in-field data from two distinct cropping systems.
 
 % Since the processes linking insect visitation to seed production has several intermediate steps, and is contingent on resource factors, we need a more complete model of crop yield that links plant-level responses to biological processes that occur at the plot and field level.
