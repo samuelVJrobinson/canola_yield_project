@@ -123,7 +123,7 @@ d3 <- with(avgSeedData, #Leafcutters in seed fields
   # coord_cartesian(y=c(0,150),clip='on')+
   ylim(0,150)+
   coord_cartesian(y=c(0,150))+
-  labs(x='Distance from apiary (m)',y='Visits per hour',fill=NULL,col=NULL)+
+  labs(x='Distance from field edge (m)',y='Visits per hour',fill=NULL,col=NULL)+
   scale_colour_manual(values=labCols)+
   scale_fill_manual(values=labCols)
 )
@@ -160,7 +160,7 @@ d2 <- with(avgSeedData, #Lbee visits
   ggplot(aes(x=dist,y=mean))+
   geom_ribbon(aes(ymax=upr,ymin=lwr,fill=type),alpha=0.3)+
   geom_line(aes(col=type))+
-  labs(x='Distance from shelter (m)',y='Visits per hour',
+  labs(x='Distance from LCB shelter (m)',y='Visits per hour',
        fill=NULL,col=NULL)+
   coord_cartesian(y=c(0,300))+
   scale_colour_manual(values=labCols)+
@@ -297,7 +297,7 @@ d3 <- with(avgSeedData, #Lbee dist - seed
   ggplot(aes(x=dist,y=mean))+
   geom_ribbon(aes(ymax=upr,ymin=lwr,fill=type),alpha=0.3)+
   geom_line(aes(col=type))+
-  labs(x='Distance from apiary or shelter (m)',y='Pollen grains per stigma',fill=NULL,col=NULL)+
+  labs(x='Distance from field edge or shelter (m)',y='Pollen grains per stigma',fill=NULL,col=NULL)+
   scale_colour_manual(values=labCols)+
   scale_fill_manual(values=labCols)+
   scale_y_log10())
@@ -361,7 +361,7 @@ d2 <- with(avgSeedData,
   ggplot(aes(x=pol,y=mean))+
   geom_ribbon(aes(ymax=upr,ymin=lwr,fill=type),alpha=0.3)+
   geom_line(aes(col=type))+
-  labs(x='Pollen grains per stigma',y='Flower survival (%)',fill=NULL,col=NULL)+
+  labs(x='Pollen grains per stigma',y='Pod set (%)',fill=NULL,col=NULL)+
   scale_colour_manual(values=labCols)+scale_fill_manual(values=labCols)+
   scale_x_log10()+theme(legend.position = c(0.75,0.2),legend.background = element_rect(fill='white',colour='black',size=0.1)))
 
@@ -473,7 +473,7 @@ d2 <- with(avgSeedData,
   ggplot(aes(x=plSize,y=mean))+
   geom_ribbon(aes(ymax=upr,ymin=lwr,fill=type),alpha=0.3)+
   geom_line(aes(col=type))+
-  labs(x='Plant size (g)',y='Flower survival (%)',fill=NULL,col=NULL)+
+  labs(x='Plant size (g)',y='Pod set (%)',fill=NULL,col=NULL)+
   scale_colour_manual(values=labCols)+scale_fill_manual(values=labCols) +
   scale_x_log10()+theme(legend.position = 'none'))
 
@@ -550,7 +550,7 @@ d2 <- with(avgSeedData,
 # (p <- ggarrange(p1,p2,p3,ncol=3,common.legend = TRUE,legend='bottom'))
 # ggsave('allSeeds_plSize.png',p,bg='white',width = 12,height=4)
 
-(p <- ggarrange(p1,p2,p3,p4,p5,p6,nrow=2,ncol=3,common.legend = FALSE))
+(p <- ggarrange(p1,p2,p3,p4,p5,p6,nrow=2,ncol=3,common.legend = FALSE,labels='auto'))
 ggsave('allSeeds.png',p,bg='white',width = 10,height=6)
 
 # Total yield and seed size - plant density --------------------------

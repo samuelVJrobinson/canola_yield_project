@@ -39,7 +39,7 @@ load('./Models/modSummaries_seed.Rdata')
 nodeCoords <- data.frame(name=c('numHives','hbeeDist','hbeeVis','pollen',
                                 'plSize','plDens','flDens',
                                 'flwCount','flwSurv','seedCount','seedWeight'),
-                         labs=c('Number\nof Hives','Distance','Honey bee\nVisits','Pollen\nCount',
+                         labs=c('Number\nof Hives','Field Edge\nDistance','Honey bee\nVisits','Pollen\nCount',
                                 'Plant\nSize','Plant\nDensity','Flower\nDensity',
                                 'Flowers\nper Plant','Pod Set\n(%)','Seeds\nper Pod','Seed\nSize'),
                          x=c(0,1,0.5,0.5,
@@ -118,15 +118,15 @@ commDAG$data <- commDAG$data %>% #Match coefs to dagitty set
 
 # Seed SEM plot -----------------------------------------------------------
 
-nodeCoords <- data.frame(name=c('numHives','hbeeDist','lbeeDist','hbeeVis','lbeeVis','pollen',
+nodeCoords <- data.frame(name=c('hbeeDist','lbeeDist','hbeeVis','lbeeVis','pollen',
                                 'plSize','plDens','flDens','cent',
                                 'flwCount','flwSurv','seedCount','seedWeight'),
-                         labs=c('Number\nof Hives','Honey bee\nDistance','Leafcutter\nDistance',
+                         labs=c('Field Edge\nDistance','Shelter\nDistance',
                                 'Honey bee\nVisits','Leafcutter\nVisits','Pollen\nCount',
                                 'Plant\nSize','Plant\nDensity','Flower\nDensity','Bay Centre',
                                 'Flowers\nper Plant','Pod Set\n(%)','Seeds\nper Pod','Seed\nSize'),
-                         x=c(0,0,1,0,1,0.5,2.5,0,1,0.5,3.5,4,2.5,3.5),
-                         y=c(4,4,4,3,3,2,0,1,1,0.5,0,1,3,2))
+                         x=c(0,1,0,1,0.5,2.5,0,1,0.5,3.5,4,2.5,3.5),
+                         y=c(4,4,3,3,2,0,1,1,0.5,0,1,3,2))
 
 
 #Specify model
