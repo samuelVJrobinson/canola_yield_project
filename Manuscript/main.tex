@@ -74,11 +74,14 @@
 
 %%% The "real" document content comes below...
 
-\title{Bee visitation, pollination services, and plant yield in commodity and hybrid seed canola} 
-\author{Samuel Robinson, Ralph Cartar, Stephen Pernal, Riley Waytes, Shelley Hoover}
-% \author{Samuel Robinson}
-
-\date{}
+\title{Bee visitation, pollination services, and plant yield in commodity and hybrid seed canola}
+\author{Samuel V. J. Robinson$^1$\footnote{Corresponding author: samuel.robinson@ucalgary.ca}, Ralph V. Cartar$^1$,\\Stephen F. Pernal$^2$, Riley Waytes$^3$, Shelley E. Hoover$^4$}
+\date{
+$^1$ Department of Biological Sciences, University of Calgary, Calgary, AB\\
+$^2$ Agriculture and Agri-Food Canada, Beaverlodge Research Farm, Beaverlodge, AB\\
+$^3$ Ministry of Land, Water, and Resource Stewardship, Smithers, BC\\
+$^4$ Department of Biological Sciences, University of Lethbridge, Lethbridge, AB
+}
 
 \begin{document}
 \maketitle
@@ -218,7 +221,8 @@ Seed production in canola involves a sequence of processes (visitation $\rightar
 However, other studies of canola pollination focus on individual processes, such as visitation and pollination \citep{cresswell1999, thomson2001}, or visitation and yield \citep{steffan2003, manning2005, hudewenz2013}, but have not incorporated the links in a single framework (but see \citealp{saez2018}), and few have used realistic field data \citep{morandin2005, isaacs2010}.
 In this study, we examine how distance influences pollinator visitation, which in turn influences pollen deposition and seed yield, using commodity and seed canola crops in Alberta, Canada.
 Using both commodity and seed canola provides an opportunity to compare two plant varieties that differ strongly in their pollination requirements, using a similar type of structural model, while accounting for agricultural differences between varieties.
-We expected that extra visitation would increase pollination and seed production in commodity canola, but that the magnitude of the increase would be much higher in seed canola, and that plant size (a proxy for plant resources) would similarly increase seed production.
+We expected that bee visitation would decrease with distance from each species' hive or shelter, and that lower visitation would result in lower pollen deposition.
+We also expected that higher pollination would increase seed production in commodity canola crops, but that the magnitude of the increase would be higher in seed canola, and that plant size (a proxy for plant resources) would similarly increase seed production.
 This study assesses the strength of the connections between visitation, pollination, and yield, in a globally important crop species, and identifies the relative importance of bee pollination for seed production, using in-field data from two distinct cropping systems.
 
 % Since the processes linking insect visitation to seed production has several intermediate steps, and is contingent on resource factors, we need a more complete model of crop yield that links plant-level responses to biological processes that occur at the plot and field level.
@@ -246,7 +250,7 @@ Growers were also asked for canola variety information, but there was not enough
 %Maps + climate graphs needed for publication
 During 2015 and 2016, we also surveyed 35 hybrid seed canola fields (15 in 2015, 20 in 2016) near Lethbridge, Alberta, from June through August of each year, all of which had central-pivot irrigation, and were stocked with honey bee hives at a rate of 3.6 hives/ha (apiaries stationed in the corners of fields).
 In seed fields, bays of hermaphroditic (herafter ``male") and female plants are typically planted in 1- and 6-m wide bays, respectively. 
-Seed fields were also stocked with shelters (1.3 - 2.6 shelters/ha) containing alfalfa leafcutter bee cocoons (\textit{Megachile rotundata} F., hereafter LCB) at a rate of 50,000-100,000 coocoons/ha (Figure \ref{fig:seedfieldPhoto}, \ref{fig:seedfieldPlots}). 
+Seed fields were also stocked with shelters (1.3 - 2.6 shelters/ha, Figure \ref{fig:seedfieldPhoto}) containing alfalfa leafcutter bee cocoons (\textit{Megachile rotundata} F., hereafter LCB) at a rate of 50-100,000 coocoons/ha. 
 % (1.3 or 2.6 shelters/ha).
 % at a rate of approximately 2 shelters/ha
 % Shelters used either ``standard" or ``double"  LCB stocking ($\approx$50,000 vs. 100,000 cocoons/ha), and shelters were placed at either ``standard" or ``double" densities (1.3 vs. 2.6 shelters/ha) in each field.
@@ -346,14 +350,15 @@ Figures were made using \texttt{ggplot2} and \texttt{ggpubr} \citep{wickham2016,
 
 \section*{Results}
 
-\subsection*{Path analysis}
-The path analysis revealed that plant size and pollen deposition were the main drivers of seed production in seed canola, while plant size alone was the main driver in commodity canola (see Figure \ref{fig:allSEM} for paths and effect sizes). 
+\subsection*{Path analyses}
+The path analyses revealed that plant size and pollen deposition were the main drivers of seed production in seed canola, while plant size alone was the main driver in commodity canola (see Figure \ref{fig:allSEM} for paths and effect sizes). 
 LCB visitation strongly increased pollen deposition in seed canola, but there was no strong effect of HB visitation in either seed or commodity canola.
 Plant size increased with distance from the edge of the field in both crops, as well as plant density in seed fields.
 Plant size strongly increased the number of flowers per plant in both crops, and there were strong negative paths from pods per plant to flowers per plant, indicating that high flower survival suppressed future flower production in both crops.
 Plant size increased pod set and seeds per pod in both crop types, and also increased seed size in seed canola plants.
 Pollen deposition increased pod set and seeds per pod in seed canola, but did not affect seed or pod production in commodity canola, showing that plant resources matter strongly for both crops, but that pollen limitation matters only in seed canola.
-Finally, there was an indirect effect (not related to visitation) of bay centre, distance from edge, and distance from LCB shelter on pollen count and pod set in seed fields, pointing to possible differences in pollen transfer even at the same rate of visitation. 
+Finally, there was a direct effect (i.e. not mediated by visitation) of bay centre, distance from edge, and distance from LCB shelter on pollen count and pod set in seed fields, pointing to possible differences in pollen transfer even at the same rate of visitation. 
+We consider each component of each path analysis in greater detail below.
 
 \begin{figure}
     \centering
@@ -366,14 +371,16 @@ Finally, there was an indirect effect (not related to visitation) of bay centre,
 \subsection*{Flower Visitation}
 
 % HB visitation decreased with distance from the edge of the field in both commodity and seed canola, and increased with distance from LCB shelters; interestingly, LCB visitation also decreased with distance from the edge of the field in seed fields.
-Honey bee flower visitation per plot decreased with distance away from the edge of the field in both commodity and seed canola fields.
+Honey bee flower visitation (per plot) decreased with distance away from the edge of the field in both commodity and seed canola fields.
 In commodity fields, HB visitation decreased from 12 visits/hr per plot at the edge to 1.8 visits/hr at 400 m into the field (Figure \ref{fig:allVisits}a, apiary of 40 hives).
 Lower stocking rates decreased HB visitation at the edge of the field to 7.4 visits/hr at 20 hives, while unstocked field edges had an average of 0.8 visits/hr.
 Unsurprisingly (given the higher stocking rate of 160 hives per field), HB visitation was much higher in seed canola fields, and decreased from 96.4 visits/hr at edge to 85.7 visits/hr at the centre of the field (Figure \ref{fig:allVisits}a). 
 HB visitation was also much lower near LCB shelters, dropping from 81 visits/hr at 20 m to 31 at 2 m (Figure \ref{fig:allVisits}b), likely due to competition or aggression from LCBs.
+
 % Visitation rates were higher in both years in Lethbridge (2014: 9.3 visits/hr, 2015: 7.1), but were higher in 2015 than 2014 at Grande Prairie (Z=2.3, p$=$0.02), rising from 5 visits/hr at the field edge in 2014 to 17 visits/hr in 2015. % (at a stocking level of 20 hives). 
 
 LCB flower visitation was much higher close to their shelters, and surprisingly, was also higher at the edge than the centre of the field.
+Flower density was higher at further distances into the field in both field types, and had a positive effect on LCB visitation (but not HB visitation) in seed fields.
 LCB visitation dropped from 350 visits/hr at 2 m from the shelter to 50 visits/hr at 20 m (Figure \ref{fig:allVisits}b), and also decreased from 119 visits/hr at the edge of the field to 25 at the centre (Figure \ref{fig:allVisits}a, b)
 There was no large difference in LCB visitation between the edge and centre of the female bays, but HB visitation was higher at the centre of the bay (88 vs. 139 visits/hr, Figure \ref{fig:allVisits}c).
 Together, our results indicate that pollination is likely accomplished by different species in different parts of the field.
@@ -427,51 +434,48 @@ Commodity canola produced fewer flowers per plant than seed canola (mean: 196 vs
 In contrast, commodity canola also produced more seeds per pod than seed canola plants (mean: 23 vs. 16), but seed size was lower in commodity canola than seed canola (2.74 vs. 3.43 mg/seed). 
 Finally, commodity plants were also lower-yielding than seed canola plants (mean: 6.8 vs. 9.5 g seed per plant), but produced more seeds per gram of vegetative biomass than seed canola plants (mean: 0.38 vs. 0.32), likely due to lower pollen limitation.
 
-Plant size had by far the strongest positive effect on the number of pods produced, and there was evidence of pod set suppressing flower production (see plant paths in Figure \ref{fig:allSEM}), but pollen only directly affected pod and seed production in seed canola.
-
+Plant size had by far the strongest positive effect on the number of pods produced (see large plant paths in Figure \ref{fig:allSEM}), and there was evidence of pod set suppressing flower production, but pollen only directly affected seed production in seed canola.
+Pollen deposition did not alter seed production in commodity canola (Figure \ref{fig:allSeeds}a,b,c), nor was there a direct effect of honey bee visitation or distance from field edge, at least at the levels we observed.
 In both commodity and seed canola, plant size had a strong positive effect on \% pod set and seeds per pod, but did not increase seed size in commodity canola (Figure \ref{fig:allSeeds}d,e,f).
+Pod set in seed canola decreased with distance away from the field edge and LCB shelters, and was also lower at the centre of the female bay (independent of visitation and pollen deposition).
+This distance effect was not seen in commodity canola, suggesting a more long-term pollen limitation effect in seed canola that was not captured by our snapshot of pollen and visitation.
+Plant density also had a positive direct effect on seed size in both crops; this likely indicates field areas with better microclimate or soil resources rather than density effects \emph{per se}, as plants at edges of the field or in ``field holes" are typically both smaller and less dense.
+Finally, pod set also had a strong negative influence on flowers per plant in both crop types, indicating that high pod set suppresses future flower production.
 
-Plant density also had a positive direct effect on seed size in both crops, indicating that areas with better resources can support better-provisioned (but smaller) plants.
-Pod set also had a strong negative influence on flowers per plant in both crop types, indicating that high pod set suppresses future flower production.
-
-Pollen deposition did not alter seed production in commodity canola (Figure , nor was there a direct effect of honey bee visitation or distance from field edge (note log-scaled x-axis on Figure \ref{fig:allSeeds}).
-Pod set and seeds per pod in seed canola were increased by higher pollen deposition, and decreased with distance away from HB hives as well as distance from LCB shelters.
-Pod set was also lower in the centre of the female bay, again suggesting that pollen is lost when bees crossing over from male bays.
 
 \subsection*{Yield simulations}
 
-The path analysis simulations further confirmed the results of the analysis: HB visitation had little effect on yield in either crop type, but LCB visitation improved yield in seed crops.
-The simulations showed no large effect of HB stocking on seed size or total yield in commodity fields (Figure \ref{fig:allYield}a, b), aside from the effect associated with distance from the edge of the field.
-Similarly, the simulations for seed fields showed a small increase in seed size and total yield with distance from the HB hives at the field edges, but the effect of distance from the leafcutter shelters was much more dramatic (compare the spacing of isolines along the x-axis and y-axis in Figures \ref{fig:allYield}c, d).
-A second set of simulations were run only in seed fields, in order to compare the effect of pollinator distances between the bay edge and centre. 
-This revealed that not only total seed size and overall yield lower at the bay centre, but that the effect of HB distance is effectively \emph{nil} at the bay centre (yield isolines are essentially horizontal in bay centre, and slightly tilted at the bay edge, Figure \ref{fig:allYield}d, f).
+Our path analysis simulations further confirmed the results of the analysis: HB visitation had little effect on yield in either crop type, but LCB visitation improved yield in seed crops.
+The simulations showed no large effect of HB stocking on seed size or total yield in commodity fields (Figure \ref{fig:allYield}a and b, respectively), aside from the effect associated with distance from the edge of the field.
+Similarly, the simulations for seed fields showed a small increase in seed size and total yield with distance from the HB hives at the field edges, but the effect of distance from the leafcutter shelters was much more dramatic (compare the spacing of isolines along the x-axis and y-axis in Figures \ref{fig:allYield}c and d).
+Simulations run separately for the edge and centre of the female bay revealed that not only are total seed size and total yield lower at the bay centre, but that the effect of HB distance is effectively \emph{nil} at the bay centre (yield isolines are essentially horizontal in bay centre, and slightly tilted at the bay edge, Figure \ref{fig:allYield}d and f).
 Interestingly, the simulations also showed evidence of nonlinear behaviour occurring in the centre of seed field bays, where a local minima in yield appears at approximately 25 m away from HB hives and 45 m away from LCB shelters (Figure \ref{fig:allYield})f), likely because of an interaction between the components of yield (seeds per pod, pods per plant, and weight per seed). 
 
 \begin{figure}
     \centering
     \includegraphics[width=\textwidth,keepaspectratio=true]{../Figures/allYield.png}
-    \caption{Effect of honey bee distance and leafcutter distance on seed size (first column) and total yield (second column), using coefficients from paths for simulation, while holding plant density constant at its mean value. Shaded areas shown in a \& b are 95\% quantiles for the simulations. Lines on panels c - f are isolines of constant seed size (c, e) or yield (d, f).}
+    \caption{Effect of honey bee distance and leafcutter distance on seed size (mg/seed, first column) and total yield (tonnes/hectare, second column), using coefficients from paths for simulation, while holding plant density constant at its mean value. Shaded areas shown in a \& b are 95\% quantiles for the simulations. Lines on panels c - f are isolines of constant seed size (c, e) or yield (d, f).}
     \label{fig:allYield}
 \end{figure}
 
 \section*{Discussion}
 
-We examined how bee visitation contributes to pollen deposition and seed yield in two canola crops, and showed a strong link between visitation and yield in seed canola, but not in commodity canola.
-HB and LCB visitation decreased with distance from their respective hive or shelter, but unexpectedly, LCBs were found more at the edge of the crop.
+We examined how bee visitation contributes to pollen deposition and seed yield in two different canola crops, and showed a strong link between visitation and yield in seed canola, but not in commodity canola.
+HB and LCB visitation decreased with distance from their respective hive or shelter, but unexpectedly, LCBs visited more frequently at the edge of the crop.
 HB visitation had little direct influence on pollen deposition in either crop type, while LCB visitation had a positive effect on pollen deposition in seed canola.
 We found that commodity canola production is largely limited by plant size, while seed canola production is limited by both pollen and plant size.
 Finally, our simulation results from the path analyses confirmed this, and showed the strong influence of LCB visitation on seed size and yield.
-These results provide more realistic information on the value of pollination services in commodity and seed canola crops, and show how a statistical-mechanistic model of seed production provides richer insite into the process of seed production than linear models alone.
+These results provide more mechanistic information on the value of pollination services in commodity and seed canola crops, and show how a statistical-mechanistic model of seed production provides richer insight into the process of seed production than linear models alone.
 
 \subsection*{Bee visitation} 
 
-HB visitation in both field types declined with distance into the field, but overall visitation was much higher than commodity fields, due to the higher HB stocking rate used in seed fields (3.6 vs. 0.6 hives/ha).
-Since HBs travel from their hive outside the edge of the field, this decline was not surprising, but we did not expect a similar decrease in LCB visitation with distance into the field, as their shelters are located \textit{within} the field.
-This decrease with distance into the field may have been caused by LCBs migrating from shelters at the centre of the field to the edge \citep{goerzen1995}, as female LCBs are central-place foragers, and tend to not forage far from their nests \citep{peterson2005,pitts2011, brunet2019}.
+HB visitation in both field types declined with distance into the field, but overall visitation was much higher in seed fields than commodity fields, due to the higher HB stocking rate used in seed fields (3.6 vs. 0.6 hives/ha).
+Since HBs travel to the crop from their hive outside the edge of the field, this decline was not surprising \citep{robinson2022}, but we did not expect a similar decrease in LCB visitation with distance into the field, as their shelters are located \textit{within} the field.
+This decrease with distance into the field may have been caused by LCBs migrating from shelters at the centre of the field to the edge \citep{goerzen1995}, as female LCBs are central-place foragers and tend to not forage far from their nests \citep{peterson2005,pitts2011, brunet2019}.
 However, LCBs are not as constrained to a single nest as HBs are, and can drift between shelters within a given field \citep{goerzen1995, pittsSinger2013}.
-LCBs must also forage for leaf materials to create cocoons, but prefer thinner, non-canola leaf types, mainly plants in the families Fabaceae and Rosaceae \citep{sinu2018}.
-Since seed canola fields have very few weeds within the area of the crop, LCBs at the centre of the field may have few choices of leaf material, or alternative pollen and nectar sources.
-Therefore, LCBs likely move from the shelters at which they were released to the shelters at the edge of the field, so as to gain access to better leaf material or different sources of pollen and nectar \citep{horne1995, horne1995b}.
+LCBs must also forage for leaf materials to create cocoons, but seem to prefer thinner leaves than canola, mainly plants in the families Fabaceae and Rosaceae \citep{sinu2018}.
+Since seed canola fields have very few weeds within the crop, LCBs at the centre of the field may have few choices of leaf material, or alternative pollen and nectar sources.
+Therefore, LCBs likely move from the shelters at which they were released to the shelters at the edge of the field, so as to gain access to better leaf material or more diverse pollen and nectar sources \citep{horne1995, horne1995b}.
 % To test this, a mark-recapture study of female LCBs could be done to see if bees migrate to shelters at the edge of the field, or if visitation is higher due to other reasons (\textit{e.g.} feral populations migrating to edge of field, long-distance foraging from centre of field as in \citealp{peterson2005}).  %SH: FINE FOR THESIS, BUT CAN BE REMOVED FOR MANUSCRIPT
 % This would explain why LCB visitation was higher at the edge of the field, and may also explain why this pattern was not seen in fields with half-stocked shelters.
 % It would be interesting to see if there is a critical threshold of LCB density per-shelter that causes them to move to shelters at the edge of the field (similar to \citealp{pittsSinger2013}).
@@ -480,13 +484,13 @@ Therefore, LCBs likely move from the shelters at which they were released to the
 % Potential future studies should investigate how leafcutter bees shift among shelters after emergence, how cocoon production in seed fields varies with distance, and should investigate inter-cropping leaf material plants (e.g. \emph{Polygonum}, \emph{Pisum}, or other large, thin-leaved plants) to encourage leafcutter bees to stay within the field.
 
 %Leafcutter-honeybee interactions
-In seed fields, LCB visitation was higher, and HB visitation was correspondingly lower in areas close to LCB shelters. 
-Lower HB visitation may have been driven by lower nectar and pollen resources, as areas close to leafcutter shelters can become depleted in nectar and pollen \citep{currie1997}.
+In seed fields, HB visitation was correspondingly lower in areas close to LCB shelters, suggesting competition between species.
+Lower HB visitation may have been caused by lower nectar and pollen resources, as areas close to leafcutter shelters can become depleted in nectar and pollen \citep{currie1997}.
 HBs also suffer from direct interference by LCBs near to their shelters; during the study we observed LCBs directly harassing HBs during the plot-level observations, attacking HBs both on the flowers and in the air (also seen by \citealp{batra1978} and \citealp{waytesMsc}). 
 HB visitation and foraging behaviour varied strongly between the edge and centre of the female bays in seed fields, while there was little difference between LCB visitation rates.
-HB visitation rates were almost twice as high at the centre of the female bay, likely reflecting a stronger need for pollen among LCBs than HBs \citep{cane2011} (although interestingly, there was also no difference in LCB visitation between male and female bays).
+HB visitation rates were almost twice as high at the centre of the female bay, but there was no corresponding difference in LCB visitation between male and female bays; this may reflect a greater need for pollen among LCBs than HBs \citep{cane2011}, as female canola plants produce only nectar.
 
-Very few HBs in the female bay were pollen foragers (1.4\%, see Table \ref{tab:sideWorking}), meaning that foragers who have (recently) come into contact with pollen rare.
+Very few HBs in the female bay were pollen foragers (1.4\%, see Table \ref{tab:sideWorking}), meaning that foragers who have recently come into contact with pollen are rare.
 Both \citet{waytesMsc} and \citet{gaffney2019} showed that HBs exhibit floral fidelity during foraging trips, with minimal crossing between male and female bays ($\sim$5\% of observations, \citealp{waytesMsc}), limiting pollen transfer between the male and female flowers.
 Side-working was a very common behaviour among HBs in commodity fields (65\% of the total visits from HBs during 2015 were side-working), as well as the male bays of seed fields (36\%), but not in the female bays (3\%, Table \ref{tab:sideWorking}).
 This behaviour is relatively common on male-fertile flowers of \textit{Brassica} \citep{free1973,free1983,delbrassine1988,mohr1988} as well as other flowering crop flowers \citep{thomson2001}, and may be due to HBs avoiding contact with the stigmas to increase ease of access to nectar, or to reduce the amount of grooming needed during a nectar foraging bout.
@@ -503,23 +507,22 @@ Taken together, these pieces of evidence suggests that HBs have limited opportun
 
 \subsection*{Pollen deposition}
 %Pollen deposition in commodity fields
-HB visitation did not increase pollen deposition in commodity canola fields compared to unstocked fields, meaning that wind and/or self-pollination are the likely agents of pollen transfer.
-The stigmas and flowers of \emph{Brassica} are not aligned for dispersal and deposition from the wind, so cross-pollination likely occurs mainly via insects \citep{mesquida1982,cresswell2004}.
+HB visitation did not increase pollen deposition in commodity canola fields compared to unstocked fields, meaning that self-pollination are the likely agents of pollen transfer (\emph{Brassica} flowers are not aligned for dispersal and deposition from the wind, so cross-pollination likely occurs mainly via insects \citep{mesquida1982,cresswell2004}).
 However, wind-induced self-pollination (plant shaking) can increase yield in \textit{Brassica} \citep{williams1986, mesquida1988c}, and fields without bee pollination have outcrossing rates of about 20\% within the field \citep{rakow1987,becker1992}.
 % The style of \textit{Brassica} grows past the anthers during maturation, allowing deposition of large amounts of self-pollen, suggesting that self-pollination is the dominant mode of pollination.
 HBs can assist in deposition of self-pollen, as \citet{ali2011} found that \textit{Apis dorsata} and \textit{Apis florea} can both deposit 100-200 grains of pollen per visit on a canola flower (\emph{B. napus} var. \emph{Bulbul}).
-However, \citet{waytesMsc} used male-sterile flowers from seed canola fields and found that HB pollen foragers deposited far less outcrossed pollen ($\sim$ 2 grains per visit), suggesting that much of the pollen deposited on commodity canola stigmas may be self-pollen. 
+However, \citet{waytesMsc} used male-sterile flowers from seed canola fields and found that HB pollen foragers deposited far less outcrossed pollen than previously reported ($\sim$ 2 grains per visit), suggesting that much of the pollen deposited on commodity canola stigmas may be self-pollen. 
 Because the overall pollen deposition rates found in this study were high, HB visitation seems to have made little difference in the amount of self-pollination, as large amounts of pollen were present on commodity canola stigmas even at the centre of unstocked fields.
-This suggests that commodity canola stigmas are largely saturated with self-pollen, swamping any extra pollen deposition by HBs.
+This suggests that commodity canola stigmas are largely saturated with self-pollen, effectively ``swamping" any extra pollen deposition by HBs.
 % The typical lifetime of a canola flower is approximately 3 days, and the stigmatic surface is receptive for 24--36 hours within this period \citep{eisikowitch1981,hoyle2007}, so it may be that 10-minutes of observing flower visitors was too short of a time interval to relate to pollen deposition.
 % This is unlikely, however, 
 %SH: DOING A BACK-OF-ENVELOPE CALC: 0.23 VISITS/HR X 2 GRAINS/VISIT X 12 HR X 3 DAYS = 5-6 GRAINS PER DAY, LESS THAN 1% OF STIGMA LOAD
 % This runs contrary to other studies in commodity canola (\citealp{sabbahi2005}, but see \citealp{garibaldi2013} and \citealp{waytesMsc}), so why did 
 
-Our models also showed that pollen-transferring behaviour of HBs is limited in seed fields, as deposition strongly increased with LCB visitation but not HB visitation.
+Our models also revealed that pollen-transferring behaviour of HBs is limited in seed fields, as deposition strongly increased with LCB visitation but not HB visitation.
 HBs in seed fields tended to visit more in the centre of the female bay, even close to the edge of the field, yet pollen deposition was still about 40\% lower.
 LCBs switch between male and female flowers more frequently than HBs, travel further between flowers, transport more viable pollen, and tend not to side-work canola flowers \citep{soroka2001, parker2015, waytesMsc, brunet2019}, all of which may explain their higher pollination efficacy.
-Pollen deposition in seed fields also decreased with distance from the edge of the field, and was lower in the centre of the female bays independent of visitation, suggesting lower pollen tranfer per visit.
+Pollen deposition in seed fields also decreased with distance from the edge of the field, and was lower in the centre of the female bays independent of visitation, suggesting lower pollen transfer per visit.
 These may have been caused by two separate processes: a) low pollen carryover with distance into the female bays, and b) shorter trips between flowers at the centre of the field.
 Pollen carryover from the edge to the centre of the bay female is likely reduced as LCBs typically visit the edge of the female bay before venturing into the centre \citep{thomson1986, pinnisch1990}.
 \textit{Bombus} take shorter trips between flowers under nectar-rich conditions \citep{pyke1978b, heinrich1979}, suggesting that HBs and LCBs may operate similarly at the centre of seed fields, resulting in lower pollen transfer.
@@ -532,12 +535,12 @@ A simple test of this might be to remove HB hives from a seed field (mid-season)
 
 % Plant size was the only important factor in commodity canola seed production (i.e. pod set, seed size, and seeds per pod), but both plant size and pollen deposition were the main drivers of production in seed canola.
 
-Plant size increased the rate of pod set in commodity canola, but both plant size and pollen increased pod set in seed canola, suggesting that both pollen deposition and plant resources constrain pod production.
+Plant size increased the proportion of pod set in commodity canola, but both plant size and pollen deposition increased pod set in seed canola, suggesting that both pollen deposition and plant resources constrain pod production.
 This is similar to the findings of \citet{mesquida1981} and \citet{steffan2003}, who found that pod set in male-sterile plants responded positively to visitation, while male-fertile plants had no response (but see \citealp{adegas1992}).
 Both pod set and seeds per pod can increase with extra pollination \citep{jauker2008,sabbahi2005,sabbahi2006,duran2010}, so the low influence of pollination in commodity fields may be due to a high overall level of pollen deposition (Figure \ref{fig:allPollen}).
-There was no additional effect of HB visitation on pod set, meaning that that HB visitation did not cause more pollen deposition or improve its quality through increased outcrossing (as in \citealt{rosa2011}), but this may depend on the variety \citep{adamidis2019}.
+There was no additional effect of HB visitation on pod set, meaning that that HB visitation did not cause more pollen deposition or improve its quality through increased outcrossing (as in \citealt{rosa2011}), but this may depend on the variety \citep{marini2015, adamidis2019}.
 Flowers per plant was reduced by pod set, implying that high pod set suppresses further flower production or increases competition among pods for plant resources.
-The first scenario is more likely, as \citet{sabbahi2006} and \citet{mesquida1981} both found that canola plants compensated for experimental removal of flowers by increasing branch and flower production, until the plant reached about 170 pods.
+The first scenario is more likely, as \citet{sabbahi2006} and \citet{mesquida1981} both found that canola plants compensated for experimental removal of flowers by increasing branch and flower production, until the plant reached about 170 pods per plant (our plants had a mean of 143 and 299 pods per plant in commodity and seed canola, respectively).
 There were also effects of distance on pod set independent of pollen: pod set decreased with distance from the edge of the field, distance to LCB shelters, and was lower at the centre of the female bays.
 \citet{mesquida1978} also found that pod set in male-sterile canola declined quickly with distance from the male-fertile plants (due to wind pollination), but the effect we found is likely related to the earlier effect of lower pollen carryover at the centre of the female bays, and possibly the centre of the field.
 Finally, the effect of plant size was roughly 6x larger than that of pollen deposition, indicating that the factors controlling plant size (e.g. fertilizer application, soil quality) likely constrain pod production more strongly than pollination alone \citep{marini2015,tamburini2017, gagic2017, tamburini2019}. 
@@ -590,8 +593,8 @@ In summary, our results add to a growing body of literature on the context-depen
 
 This study has revealed some of the detailed aspects of pollination in commodity and seed canola crops.
 First, it shows how two important species of commercial pollinators decline with distance from their nesting sites, and how LCBs unexpectedly decline with distance from the edge of the field.
-Second, it sheds light on the relative importance of HBs and LCBs as pollinators, showing that commonly-used levels of HB stocking do not strongly influence yield in commodity canola crops, and that LCBs are likely the primary pollinators of seed canola.
-Finally, it contextualizes the value of pollination alongside plant resources, showing that plant resources and pollen limit production in seed canola, while only plant resources limit commodity production.
+Second, it sheds light on the relative importance of HBs and LCBs as pollinators, showing that levels of HB stocking used for honey production do not strongly influence yield in commodity canola crops, and the importance of LCBs as primary pollinators of seed canola.
+Finally, it contextualizes the value of pollination alongside plant resources, showing that plant resources and pollen limit production in seed canola, while only plant resources limit production in commodity fields.
 Our unique SEM approach allowed us to formulate and test relationships within a causal framework, which we consider to be extremely valuable, and highly underused in agricultural studies.
 Our model serves as an approximation of a dynamic process, but could be built upon by using dynamic linear models \citep{iwasa2000, nord2011, saez2018} to examine how plants dynamically respond to changes in pollination.
 These would lend greater understanding to the process of hybrid seed production, and could be used to more accurately predict crop yields in novel scenarios.

@@ -192,6 +192,5 @@ tidySeedDAG$data <- tidySeedDAG$data %>% #Match coefs to dagitty set
 # Combine plots -----------------------------------------------------------
 
 (p <- ggarrange(commSEM,seedSEM,ncol=1,nrow=2))
-ggsave('./Figures/allSEM.png',p,height = 14,width=12,bg='white')
-
-
+ggsave('./Figures/allSEM_new.png',p,height = 14,width=12,bg='white')
+# ggsave('./Figures/allSEM_new.svg',p,height = 14,width=12,bg='white') #Save to vector graphics file
