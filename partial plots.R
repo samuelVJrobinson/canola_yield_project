@@ -754,7 +754,7 @@ xaxis <- 'Distance from HB hives (m)'
 # summary(exp(commData$plDens_obs))
 
 datList <- expand.grid(hbeeDist=exp(seq(log(1),log(400),length=30)),
-                       plDens=48.5, #plSize=18,
+                       # plDens=48.5, #plSize=18,
                        numHives=c(0,40)
 ) %>% lapply(.,function(x) x)
 
@@ -774,13 +774,15 @@ d_mean <- genCommYield(datList) %>% as.data.frame() %>%
 quantRanges <- c(0.025,0.975) #Ranges of quantiles to use
 
 #Needed for placing annotations at the same place on each plot
-d1 <- d %>% mutate(numHives=factor(numHives)) %>% group_by(hbeeDist,numHives) %>% 
-  summarize(med=median(seedWeight),lwr=quantile(seedWeight,quantRanges[1]),upr=quantile(seedWeight,quantRanges[2]))
+d1 <- d %>% mutate(numHives=factor(numHives)) %>% 
+  group_by(hbeeDist,numHives) %>% 
+  summarize(med=median(seedWeight),lwr=quantile(seedWeight,quantRanges[1]),
+            upr=quantile(seedWeight,quantRanges[2]))
    
 (p1 <- d1 %>% ggplot(aes(x=hbeeDist,y=med,group=numHives))+
   geom_ribbon(aes(ymax=upr,ymin=lwr),alpha=0.3)+
   geom_line(data=d_mean,aes(x=hbeeDist,y=seedWeight))+
-  annotate('text',x=c(300,300),y=c(2.825,2.75),label=c('40 hives','0 hives'))+
+  annotate('text',x=c(300,300),y=c(2.81,2.72),label=c('40 hives','0 hives'))+
   annotate('label',x=300,y=min(d1$lwr)+(max(d1$upr)-min(d1$lwr))*0.2,label='Commodity fields\nSeed size (mg/seed)')+
   labs(x=xaxis,y='Seed size (mg/seed)'))
 
@@ -790,7 +792,7 @@ d2 <-  d %>% mutate(numHives=factor(numHives)) %>% group_by(hbeeDist,numHives) %
 (p2 <- d2 %>% ggplot(aes(x=hbeeDist,y=med,group=numHives))+
   geom_ribbon(aes(ymax=upr,ymin=lwr),alpha=0.3)+
   geom_line(data=d_mean,aes(x=hbeeDist,y=yield_tha))+
-  annotate('text',x=c(300,300),y=c(2.65,2.45),label=c('40 hives','0 hives'))+
+  annotate('text',x=c(300,300),y=c(2.55,2.38),label=c('40 hives','0 hives'))+
   annotate('label',x=300,y=min(d2$lwr)+(max(d2$upr)-min(d2$lwr))*0.2,label='Commodity fields\nYield (t/ha)')+
   labs(x=xaxis,y='Yield (t/ha)'))
 
@@ -806,7 +808,8 @@ d2 <-  d %>% mutate(numHives=factor(numHives)) %>% group_by(hbeeDist,numHives) %
 yaxis <- "Distance from LCB shelters (m)"
 
 datList <- expand.grid(hbeeDist=exp(seq(log(5),log(400),length.out=20)),
-                       plDens=38,isCent=0, #plSize=25.2
+                       # plDens=38,
+                       isCent=0, #plSize=25.2
                        lbeeDist=exp(seq(log(4),log(60),length.out=20))) %>% 
   lapply(.,function(x) x)
 d_mean <- genSeedYield(datList,mods=modSummaries_seed) %>% as.data.frame()
