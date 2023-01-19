@@ -995,8 +995,19 @@ commNames <- data.frame(name=c('numHives','hbeeDist','hbeeVis','pollen',
                                 'Plant size','Plant density','Flower density',
                                 'Flowers per plant','Pods per plant','Seeds per pod','Seed size'))
 
+#Compare parameters between years
+m1 <- lapply(modSummaries2014_commodity,function(x) x$summary) %>% bind_rows(.id='model') 
+m2 <- lapply(modSummaries2015_commodity,function(x) x$summary) %>% bind_rows(.id='model') 
+yearOverlap <- list('Y2014'=m1,'Y2015'=m2) %>% bind_rows(.id='data') %>%
+    select(data:param,mean,lwr,upr) %>% filter(data!='Both') %>%
+    pivot_wider(names_from=data,values_from=c(mean,lwr,upr)) %>%
+    mutate(overlap=ciOverlap(lwr_Y2014,upr_Y2014,lwr_Y2015,upr_Y2015)) %>% 
+    select(contains('mean'),overlap)
+
+#Create coefficient table
 commPars <- lapply(modSummaries_commodity,function(x) x$summary) %>% #Get path coefficients
   bind_rows(.id='model') %>% 
+  bind_cols(yearOverlap) %>% 
   filter(model!='yield') %>% #,!grepl('(int|sigma|lambda|Phi|phi|rho)',param)) %>%
   # mutate(param=gsub('int','Intercept',param))
   mutate(model=case_when(
@@ -1013,7 +1024,7 @@ commPars <- lapply(modSummaries_commodity,function(x) x$summary) %>% #Get path c
   select(-model) %>% rename(model=labs) %>% 
   left_join(commNames,by=c('param'='name')) %>%
   mutate(param=ifelse(is.na(labs),param,labs)) %>% 
-  select(model,param,mean:Rhat,-Z) %>% 
+  select(model,param,mean:overlap,-Z) %>% 
   mutate(param=capFirst(param)) %>% 
   mutate(param=case_when(
     param=='Int' ~ 'Intercept',
@@ -1028,8 +1039,10 @@ commPars <- lapply(modSummaries_commodity,function(x) x$summary) %>% #Get path c
     TRUE ~ formatC(pval)
   ))
 
+#Version in first draft
 commPars %>%
-  rename('Parameter'='param','SD'='sd','Min'='lwr','Max'='upr','p-value'='pval',
+  select(-mean_Y2014:-overlap) %>% 
+  rename('Parameter'='param','SD'='sd','Lower'='lwr','Upper'='upr','p-value'='pval',
          'N$_{eff}$'='n_eff','$\\hat{R}$'='Rhat') %>%
   rename_with(capFirst) %>%
   kable(format = 'latex',escape = FALSE,digits=c(0,0,2,2,2,2,2,3,0,3),longtable=TRUE) %>%
@@ -1038,28 +1051,22 @@ commPars %>%
   collapse_rows(columns=1,longtable_clean_cut=FALSE) %>% 
   clipr::write_clip() #Writes to clipboard
 
-#Other version comparing parameters between years
-m1 <- lapply(modSummaries2014_commodity,function(x) x$summary) %>% bind_rows(.id='model') %>% filter(model!='yield')
-m2 <- lapply(modSummaries2015_commodity,function(x) x$summary) %>% bind_rows(.id='model') %>% filter(model!='yield')
+#Version in revised manuscript
+commPars %>%
+  select(-median:-upr,-n_eff,-Rhat) %>% 
+  # mutate(overlap=ifelse(overlap,'','*')) %>% 
+  mutate(across(c(mean_Y2014,mean_Y2015),~as.character(round(.x,3)))) %>% 
+  mutate(across(c(mean_Y2014,mean_Y2015),~paste0(.x,ifelse(overlap,'','*')))) %>% 
+  select(-overlap) %>% 
+  filter(!grepl('Intercept',param)) %>% #Remove intercept values
+  rename('Parameter'='param','SD'='sd','p-value'='pval',
+         'mean$_{2014}$'='mean_Y2014','mean$_{2015}$'='mean_Y2015') %>%
+  rename_with(capFirst,-`p-value`) %>%
+  kable(format = 'latex',escape = FALSE,digits=c(0,0,3,3,4,3,3),longtable=TRUE) %>%
+  kable_styling(font_size = 9,latex_options = c("repeat_header")) %>%
+  collapse_rows(columns=1,longtable_clean_cut=FALSE) %>% 
+  clipr::write_clip() #Writes to clipboard
 
-yearOverlap <- list('Y2014'=m1,'Y2015'=m2) %>% bind_rows(.id='data') %>% 
-  select(data:param,mean,lwr,upr) %>% 
-  filter(data!='Both') %>% 
-  pivot_wider(names_from=data,values_from=c(mean,lwr,upr)) %>% 
-  mutate(overlap=ciOverlap(lwr_Y2014,upr_Y2014,lwr_Y2015,upr_Y2015)) 
-
-commPars %>% select(-median:-upr,-n_eff,-Rhat) %>% 
-  bind_cols(yearOverlap)
-  rename('Parameter'='param','Mean'='mean','SD'='sd','p-value'='pval') %>%
-  rename_with(capFirst) 
-# %>%
-#   kable(format = 'latex',escape = FALSE,digits=c(0,0,2,2,2,2,2,3,0,3),longtable=TRUE) %>%
-#   kable_styling(font_size = 9,latex_options = c("repeat_header")) %>%
-#   # column_spec(1, width = "8em") %>%
-#   collapse_rows(columns=1,longtable_clean_cut=FALSE) 
-  
-
-  
 #Seed model parameters
   
 seedNames <- data.frame(name=c('numHives','hbeeDist','lbeeDist','hbeeVis','lbeeVis','pollen',
@@ -1070,8 +1077,19 @@ seedNames <- data.frame(name=c('numHives','hbeeDist','lbeeDist','hbeeVis','lbeeV
                                 'Plant size','Plant density','Flower density','Bay centre',
                                 'Flowers per plant','Pods per plant','Seeds per pod','Seed size'))  
 
+#Compare parameters between years
+m1 <- lapply(modSummaries2015_seed,function(x) x$summary) %>% bind_rows(.id='model') 
+m2 <- lapply(modSummaries2016_seed,function(x) x$summary) %>% bind_rows(.id='model') 
+yearOverlap <- list('Y2015'=m1,'Y2016'=m2) %>% bind_rows(.id='data') %>%
+  select(data:param,mean,lwr,upr) %>% filter(data!='Both') %>%
+  pivot_wider(names_from=data,values_from=c(mean,lwr,upr)) %>%
+  mutate(overlap=ciOverlap(lwr_Y2015,upr_Y2015,lwr_Y2016,upr_Y2016)) %>% 
+  select(contains('mean'),overlap)
+
 seedPars <- lapply(modSummaries_seed,function(x) x$summary) %>% #Get path coefficients
-  bind_rows(.id='model') %>% filter(model!='yield') %>% 
+  bind_rows(.id='model') %>% 
+  bind_cols(yearOverlap) %>% 
+  filter(model!='yield') %>% 
   mutate(model=case_when(
     model=='flDens' & grepl('(PlDens$|PlDens_)',param) ~ 'plDens',
     model=='flDens' & grepl('(PlSize$|PlSize_)',param) ~ 'plSize',
@@ -1083,7 +1101,7 @@ seedPars <- lapply(modSummaries_seed,function(x) x$summary) %>% #Get path coeffi
   select(-model) %>% rename(model=labs) %>% 
   left_join(seedNames,by=c('param'='name')) %>%
   mutate(param=ifelse(is.na(labs),param,labs)) %>% 
-  select(model,param,mean:Rhat,-Z) %>% 
+  select(model,param,mean:overlap,-Z) %>% 
   mutate(param=capFirst(param)) %>% 
   mutate(param=case_when(
     param=='Int'|param=='IntVisit' ~ 'Intercept',
@@ -1101,7 +1119,8 @@ seedPars <- lapply(modSummaries_seed,function(x) x$summary) %>% #Get path coeffi
     TRUE ~ formatC(pval)
   ))
 
-seedPars %>%
+#Version in first draft
+seedPars %>% select(-mean_Y2014:-overlap) %>% 
   rename('Parameter'='param','SD'='sd','Min'='lwr','Max'='upr','p-value'='pval',
          'N$_{eff}$'='n_eff','$\\hat{R}$'='Rhat') %>%
   rename_with(capFirst) %>%
@@ -1111,6 +1130,19 @@ seedPars %>%
   collapse_rows(columns=1,longtable_clean_cut=FALSE) %>% 
   clipr::write_clip() #Writes to clipboard
 
+#Version in revised manuscript
+seedPars %>% select(-median:-upr,-n_eff,-Rhat) %>% 
+  mutate(across(c(mean_Y2015,mean_Y2016),~as.character(round(.x,3)))) %>%
+  mutate(across(c(mean_Y2015,mean_Y2016),~paste0(.x,ifelse(overlap,'','*')))) %>%
+  select(-overlap) %>%
+  filter(!grepl('Intercept',param)) %>% #Remove intercept values
+  rename('Parameter'='param','SD'='sd','p-value'='pval',
+         'mean$_{2015}$'='mean_Y2015','mean$_{2016}$'='mean_Y2016') %>%
+  rename_with(capFirst,-`p-value`) %>%
+  kable(format = 'latex',escape = FALSE,digits=c(0,0,3,3,4,3,3),longtable=TRUE) %>%
+  kable_styling(font_size = 9,latex_options = c("repeat_header")) %>%
+  collapse_rows(columns=1,longtable_clean_cut=FALSE) %>% 
+  clipr::write_clip() #Writes to clipboard
 
 # Summary of parameters for total yield models ---------------
 
@@ -1128,54 +1160,14 @@ bind_rows(modSummaries_commodity$yield$summary,
     param=='rhoField' ~ 'Correlation (Int:Slope field)',
     param=='rhoPlot' ~ 'Correlation (Int:Slope plot)'
   )) %>%
-  rename('Parameter'='param','Mean'='mean','SD'='sd','Min'='lwr','Max'='upr','p-value'='pval',
-         'N$_{eff}$'='n_eff','$\\hat{R}$'='Rhat') %>% 
-  kable(format = 'latex',escape = FALSE,digits=c(0,0,3,3,2,3,3,3,3,0,3)) %>%
-  kable_styling(font_size = 9) %>%
-  # column_spec(1, width = "8em") %>%
-  collapse_rows(columns=1) %>% 
-  clipr::write_clip() #Writes to clipboard
-
-# Compare parameters between years ----------------------------------------
-
-  
-  mutate(model=case_when(
-    model=='flDens' & grepl('(PlDens$|PlDens_)',param) ~ 'plDens',
-    model=='flDens' & grepl('(PlSize$|PlSize_)',param) ~ 'plSize',
-    TRUE ~ gsub('avg','seed',model)
-  )) %>% 
-  mutate(param=gsub('slope','',param)) %>% 
-  filter(!grepl('Pol$',param)&model!='pollen') %>%   
-  # filter(mapply(grepl,capFirst(model),param)) %>% 
-  mutate(param=mapply(gsub,capFirst(model),'',param)) %>% 
-  mutate(param=capFirst(param,TRUE)) %>% 
-  left_join(commNames,by=c('model'='name')) %>% 
-  select(-model) %>% rename(model=labs) %>% 
-  left_join(commNames,by=c('param'='name')) %>%
-  mutate(param=ifelse(is.na(labs),param,labs)) %>% 
-  select(model,param,mean:Rhat,-Z) %>% 
-  mutate(param=capFirst(param)) %>% 
-  mutate(param=case_when(
-    param=='Int' ~ 'Intercept',
-    model=='Pods per plant' & param=='IntPhi' ~ 'Phi',
-    model=='Flowers per plant' & param=='IntPhi' ~ 'Intercept (Phi)',
-    model=='Flowers per plant' & param=='PlSizePhi' ~ 'Plant size (Phi)',
-    model=='Flowers per plant' & param=='SigmaPhi (field)' ~ 'Sigma (field Phi)',
-    TRUE ~ gsub('_(f|F)ield',' (field)',param)
-  )) %>% mutate(pval=case_when(
-    grepl('(Sigma|Lambda|Phi|Theta)',param) ~ '-',
+  select(-median:-upr,-Z,-n_eff,-Rhat) %>% 
+  mutate(pval=case_when(
+    grepl('(Sigma|Correlation)',param) ~ '-',
     pval==0 ~ '$<$0.0001',
     TRUE ~ formatC(pval)
-  ))
-
-commPars %>%
-  rename('Parameter'='param','SD'='sd','Min'='lwr','Max'='upr','p-value'='pval',
-         'N$_{eff}$'='n_eff','$\\hat{R}$'='Rhat') %>%
-  rename_with(capFirst) %>%
-  kable(format = 'latex',escape = FALSE,digits=c(0,0,2,2,2,2,2,3,0,3),longtable=TRUE) %>%
-  kable_styling(font_size = 9,latex_options = c("repeat_header")) %>%
-  # column_spec(1, width = "8em") %>%
-  collapse_rows(columns=1,longtable_clean_cut=FALSE) %>% 
+  )) %>% 
+  rename('Parameter'='param','Mean'='mean','SD'='sd','p-value'='pval') %>% 
+  kable(format = 'latex',escape = FALSE,digits=c(0,0,3,3,2,3,3,3,3,0,3)) %>%
+  kable_styling(font_size = 9) %>%
+  collapse_rows(columns=1) %>% 
   clipr::write_clip() #Writes to clipboard
-
-  

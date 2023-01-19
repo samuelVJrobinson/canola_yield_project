@@ -198,131 +198,244 @@ Formulas for commodity canola model using \texttt{lmer}-style R formulas. Terms 
 
 \begingroup\fontsize{9}{11}\selectfont
 
-\begin{longtable}{l|l|r|r|r|r|r|l|r|r}
-\caption{Summary of parameters for commodity canola models} \\
+% \begin{longtable}{l|l|r|r|r|r|r|l|r|r} %First manuscript
+% \caption{Summary of parameters for commodity canola models} \\
+% \hline
+% Model & Parameter & Mean & SD & Median & Min & Max & P-value & N$_{eff}$ & $\hat{R}$\\
+% \hline
+% \endfirsthead
+% \multicolumn{10}{@{}l}{\textit{(continued)}}\\
+% \hline
+% Model & Parameter & Mean & SD & Median & Min & Max & P-value & N$_{eff}$ & $\hat{R}$\\
+% \hline
+% \endhead
+%  & Intercept & 3.76 & 0.05 & 3.77 & 3.66 & 3.87 & $<$0.0001 & 855 & 1.005\\
+% \cline{2-10}
+%  & HB distance & 0.02 & 0.01 & 0.02 & 0.00 & 0.04 & 0.0868 & 10154 & 1.000\\
+% \cline{2-10}
+%  & Sigma & 0.31 & 0.02 & 0.31 & 0.28 & 0.34 & - & 5039 & 0.999\\
+% \cline{2-10}
+% \multirow{-4}{*}{\raggedright\arraybackslash Plant density} & Sigma (field) & 0.37 & 0.04 & 0.37 & 0.30 & 0.46 & - & 3774 & 1.000\\
+% \cline{1-10}
+%  & Intercept & 5.24 & 0.24 & 5.24 & 4.77 & 5.72 & $<$0.0001 & 2108 & 1.001\\
+% \cline{2-10}
+%  & Plant density & -0.70 & 0.06 & -0.70 & -0.82 & -0.57 & $<$0.0001 & 2097 & 1.001\\
+% \cline{2-10}
+%  & HB distance & 0.03 & 0.01 & 0.03 & 0.01 & 0.06 & 0.0095 & 9212 & 1.000\\
+% \cline{2-10}
+%  & Sigma (field) & 0.22 & 0.04 & 0.22 & 0.15 & 0.29 & - & 1456 & 1.000\\
+% \cline{2-10}
+% \multirow{-5}{*}{\raggedright\arraybackslash Plant size} & Sigma & 0.64 & 0.02 & 0.64 & 0.61 & 0.68 & - & 7845 & 0.999\\
+% \cline{1-10}
+%  & Intercept & 5.74 & 4.70 & 5.70 & -3.62 & 15.01 & 0.222 & 1822 & 1.001\\
+% \cline{2-10}
+%  & Plant size & -1.66 & 0.98 & -1.66 & -3.60 & 0.25 & 0.0926 & 1632 & 1.001\\
+% \cline{2-10}
+%  & HB distance & 0.75 & 0.11 & 0.75 & 0.53 & 0.96 & $<$0.0001 & 6878 & 1.000\\
+% \cline{2-10}
+%  & Plant density & -0.41 & 0.74 & -0.42 & -1.86 & 1.06 & 0.5792 & 2243 & 1.001\\
+% \cline{2-10}
+%  & Sigma & 3.52 & 0.17 & 3.51 & 3.19 & 3.87 & - & 4976 & 0.999\\
+% \cline{2-10}
+% \multirow{-6}{*}{\raggedright\arraybackslash Flower density} & Sigma (field) & 3.55 & 0.39 & 3.53 & 2.88 & 4.40 & - & 4133 & 1.000\\
+% \cline{1-10}
+%  & Intercept & -1.98 & 0.45 & -1.96 & -2.89 & -1.17 & $<$0.0001 & 936 & 1.006\\
+% \cline{2-10}
+%  & HB distance & -0.31 & 0.10 & -0.31 & -0.50 & -0.13 & 0.0011 & 3526 & 1.001\\
+% \cline{2-10}
+%  & Number of hives & 0.72 & 0.15 & 0.72 & 0.43 & 1.04 & $<$0.0001 & 1534 & 1.003\\
+% \cline{2-10}
+%  & Flower density & 0.03 & 0.04 & 0.03 & -0.06 & 0.12 & 0.541 & 2397 & 1.000\\
+% \cline{2-10}
+%  & Sigma (field) & 1.44 & 0.34 & 1.43 & 0.80 & 2.14 & - & 494 & 1.014\\
+% \cline{2-10}
+% \multirow{-6}{*}{\raggedright\arraybackslash HB visits} & Phi & 0.35 & 0.08 & 0.34 & 0.22 & 0.53 & - & 1630 & 1.003\\
+% \cline{1-10}
+%  & Intercept & 2.56 & 0.04 & 2.56 & 2.50 & 2.63 & $<$0.0001 & 594 & 1.006\\
+% \cline{2-10}
+%  & Plant size & 0.94 & 0.01 & 0.94 & 0.92 & 0.96 & $<$0.0001 & 1709 & 1.002\\
+% \cline{2-10}
+%  & Pods per plant & -0.16 & 0.01 & -0.16 & -0.19 & -0.14 & $<$0.0001 & 2108 & 1.003\\
+% \cline{2-10}
+%  & Phi (field) & 0.16 & 0.02 & 0.16 & 0.13 & 0.19 & - & 3461 & 1.000\\
+% \cline{2-10}
+%  & Intercept (Phi) & 2.17 & 0.32 & 2.17 & 1.56 & 2.81 & - & 1517 & 1.001\\
+% \cline{2-10}
+%  & Plant size (Phi) & 0.66 & 0.11 & 0.66 & 0.44 & 0.87 & - & 1587 & 1.002\\
+% \cline{2-10}
+% \multirow{-7}{*}{\raggedright\arraybackslash Flowers per plant} & SigmaPhi (field) & 0.66 & 0.12 & 0.65 & 0.45 & 0.90 & - & 844 & 1.005\\
+% \cline{1-10}
+%  & Intercept & 0.66 & 0.08 & 0.66 & 0.50 & 0.82 & $<$0.0001 & 1946 & 0.999\\
+% \cline{2-10}
+%  & HB visits & 0.00 & 0.03 & 0.00 & -0.05 & 0.05 & 0.96 & 3292 & 1.000\\
+% \cline{2-10}
+%  & Plant size & 0.13 & 0.03 & 0.13 & 0.08 & 0.18 & $<$0.0001 & 3345 & 1.000\\
+% \cline{2-10}
+%  & Pollen count & 0.16 & 0.11 & 0.15 & -0.05 & 0.38 & 0.1515 & 638 & 1.002\\
+% \cline{2-10}
+%  & Sigma (field) & 0.29 & 0.03 & 0.29 & 0.23 & 0.37 & - & 2675 & 1.000\\
+% \cline{2-10}
+% \multirow{-6}{*}{\raggedright\arraybackslash Pods per plant} & Phi & 3.35 & 0.07 & 3.35 & 3.21 & 3.48 & - & 3828 & 1.003\\
+% \cline{1-10}
+%  & Intercept & 25.07 & 1.77 & 25.07 & 21.64 & 28.54 & $<$0.0001 & 2277 & 1.000\\
+% \cline{2-10}
+%  & HB visits & 0.17 & 0.21 & 0.17 & -0.24 & 0.60 & 0.4284 & 4417 & 1.000\\
+% \cline{2-10}
+%  & Pollen count & -0.97 & 0.84 & -0.98 & -2.60 & 0.68 & 0.2447 & 707 & 1.003\\
+% \cline{2-10}
+%  & Plant size & 4.31 & 0.65 & 4.31 & 3.03 & 5.58 & $<$0.0001 & 2229 & 1.000\\
+% \cline{2-10}
+%  & Pods per plant & 0.56 & 0.29 & 0.56 & 0.00 & 1.12 & 0.0529 & 4888 & 0.999\\
+% \cline{2-10}
+%  & Flowers per plant & -2.80 & 0.65 & -2.79 & -4.08 & -1.55 & $<$0.0001 & 2105 & 1.000\\
+% \cline{2-10}
+%  & Sigma & 4.06 & 0.12 & 4.06 & 3.83 & 4.29 & - & 6604 & 1.000\\
+% \cline{2-10}
+%  & Sigma (field) & 1.98 & 0.26 & 1.96 & 1.51 & 2.53 & - & 2526 & 0.999\\
+% \cline{2-10}
+% \multirow{-9}{*}{\raggedright\arraybackslash Seeds per pod} & Lambda & 2.00 & 1.03 & 1.74 & 0.84 & 4.64 & - & 3265 & 1.000\\
+% \cline{1-10}
+%  & Intercept & 0.64 & 0.54 & 0.64 & -0.40 & 1.72 & 0.2367 & 1402 & 1.000\\
+% \cline{2-10}
+%  & HB visits & 0.02 & 0.04 & 0.02 & -0.05 & 0.09 & 0.6113 & 2748 & 1.000\\
+% \cline{2-10}
+%  & Pollen count & -0.15 & 0.17 & -0.15 & -0.48 & 0.20 & 0.3744 & 358 & 1.008\\
+% \cline{2-10}
+%  & Seeds per pod & 0.00 & 0.01 & 0.00 & -0.01 & 0.02 & 0.4508 & 3348 & 1.000\\
+% \cline{2-10}
+%  & Plant size & -0.03 & 0.12 & -0.03 & -0.26 & 0.20 & 0.7955 & 1633 & 1.000\\
+% \cline{2-10}
+%  & Plant density & 0.30 & 0.08 & 0.30 & 0.14 & 0.45 & 0.0001 & 1704 & 1.001\\
+% \cline{2-10}
+%  & HB distance & 0.02 & 0.01 & 0.02 & -0.01 & 0.05 & 0.1686 & 1404 & 1.003\\
+% \cline{2-10}
+%  & Pods per plant & 0.11 & 0.04 & 0.11 & 0.02 & 0.19 & 0.0159 & 3037 & 1.000\\
+% \cline{2-10}
+%  & Flowers per plant & 0.11 & 0.12 & 0.11 & -0.13 & 0.34 & 0.363 & 1526 & 1.000\\
+% \cline{2-10}
+%  & Flower density & -0.03 & 0.01 & -0.03 & -0.04 & -0.02 & $<$0.0001 & 2213 & 1.003\\
+% \cline{2-10}
+%  & Sigma & 0.52 & 0.03 & 0.52 & 0.46 & 0.59 & - & 2100 & 1.000\\
+% \cline{2-10}
+%  & Sigma (field) & 0.47 & 0.05 & 0.47 & 0.37 & 0.58 & - & 2828 & 0.999\\
+% \cline{2-10}
+% \multirow{-13}{*}{\raggedright\arraybackslash Seed size} & Lambda & 2.71 & 0.48 & 2.63 & 2.08 & 3.86 & - & 1792 & 1.001\\
+% \hline
+% \end{longtable}
+% \endgroup{}
+
+\clearpage
+
+\begingroup\fontsize{9}{11}\selectfont
+\begin{longtable}{l|l|r|r|l|l|l}
+\caption{Summary of parameters for commodity canola models. p-values indicate whether means differed from zero (variance terms were excluded). Means are also shown for 2014 and 2015 models, with * indicating whether parameters differed between years (i.e. posterior 95\% quantiles did not overlap).} \\
 \hline
-Model & Parameter & Mean & SD & Median & Min & Max & P-value & N$_{eff}$ & $\hat{R}$\\
+Model & Parameter & Mean & SD & p-value & Mean$_{2014}$ & Mean$_{2015}$\\
 \hline
 \endfirsthead
-\multicolumn{10}{@{}l}{\textit{(continued)}}\\
+\multicolumn{7}{@{}l}{\textit{(continued)}}\\
 \hline
-Model & Parameter & Mean & SD & Median & Min & Max & P-value & N$_{eff}$ & $\hat{R}$\\
+Model & Parameter & Mean & SD & p-value & Mean$_{2014}$ & Mean$_{2015}$\\
 \hline
 \endhead
- & Intercept & 3.76 & 0.05 & 3.77 & 3.66 & 3.87 & $<$0.0001 & 855 & 1.005\\
-\cline{2-10}
- & HB distance & 0.02 & 0.01 & 0.02 & 0.00 & 0.04 & 0.0868 & 10154 & 1.000\\
-\cline{2-10}
- & Sigma & 0.31 & 0.02 & 0.31 & 0.28 & 0.34 & - & 5039 & 0.999\\
-\cline{2-10}
-\multirow{-4}{*}{\raggedright\arraybackslash Plant density} & Sigma (field) & 0.37 & 0.04 & 0.37 & 0.30 & 0.46 & - & 3774 & 1.000\\
-\cline{1-10}
- & Intercept & 5.24 & 0.24 & 5.24 & 4.77 & 5.72 & $<$0.0001 & 2108 & 1.001\\
-\cline{2-10}
- & Plant density & -0.70 & 0.06 & -0.70 & -0.82 & -0.57 & $<$0.0001 & 2097 & 1.001\\
-\cline{2-10}
- & HB distance & 0.03 & 0.01 & 0.03 & 0.01 & 0.06 & 0.0095 & 9212 & 1.000\\
-\cline{2-10}
- & Sigma (field) & 0.22 & 0.04 & 0.22 & 0.15 & 0.29 & - & 1456 & 1.000\\
-\cline{2-10}
-\multirow{-5}{*}{\raggedright\arraybackslash Plant size} & Sigma & 0.64 & 0.02 & 0.64 & 0.61 & 0.68 & - & 7845 & 0.999\\
-\cline{1-10}
- & Intercept & 5.74 & 4.70 & 5.70 & -3.62 & 15.01 & 0.222 & 1822 & 1.001\\
-\cline{2-10}
- & Plant size & -1.66 & 0.98 & -1.66 & -3.60 & 0.25 & 0.0926 & 1632 & 1.001\\
-\cline{2-10}
- & HB distance & 0.75 & 0.11 & 0.75 & 0.53 & 0.96 & $<$0.0001 & 6878 & 1.000\\
-\cline{2-10}
- & Plant density & -0.41 & 0.74 & -0.42 & -1.86 & 1.06 & 0.5792 & 2243 & 1.001\\
-\cline{2-10}
- & Sigma & 3.52 & 0.17 & 3.51 & 3.19 & 3.87 & - & 4976 & 0.999\\
-\cline{2-10}
-\multirow{-6}{*}{\raggedright\arraybackslash Flower density} & Sigma (field) & 3.55 & 0.39 & 3.53 & 2.88 & 4.40 & - & 4133 & 1.000\\
-\cline{1-10}
- & Intercept & -1.98 & 0.45 & -1.96 & -2.89 & -1.17 & $<$0.0001 & 936 & 1.006\\
-\cline{2-10}
- & HB distance & -0.31 & 0.10 & -0.31 & -0.50 & -0.13 & 0.0011 & 3526 & 1.001\\
-\cline{2-10}
- & Number of hives & 0.72 & 0.15 & 0.72 & 0.43 & 1.04 & $<$0.0001 & 1534 & 1.003\\
-\cline{2-10}
- & Flower density & 0.03 & 0.04 & 0.03 & -0.06 & 0.12 & 0.541 & 2397 & 1.000\\
-\cline{2-10}
- & Sigma (field) & 1.44 & 0.34 & 1.43 & 0.80 & 2.14 & - & 494 & 1.014\\
-\cline{2-10}
-\multirow{-6}{*}{\raggedright\arraybackslash HB visits} & Phi & 0.35 & 0.08 & 0.34 & 0.22 & 0.53 & - & 1630 & 1.003\\
-\cline{1-10}
- & Intercept & 2.56 & 0.04 & 2.56 & 2.50 & 2.63 & $<$0.0001 & 594 & 1.006\\
-\cline{2-10}
- & Plant size & 0.94 & 0.01 & 0.94 & 0.92 & 0.96 & $<$0.0001 & 1709 & 1.002\\
-\cline{2-10}
- & Pods per plant & -0.16 & 0.01 & -0.16 & -0.19 & -0.14 & $<$0.0001 & 2108 & 1.003\\
-\cline{2-10}
- & Phi (field) & 0.16 & 0.02 & 0.16 & 0.13 & 0.19 & - & 3461 & 1.000\\
-\cline{2-10}
- & Intercept (Phi) & 2.17 & 0.32 & 2.17 & 1.56 & 2.81 & - & 1517 & 1.001\\
-\cline{2-10}
- & Plant size (Phi) & 0.66 & 0.11 & 0.66 & 0.44 & 0.87 & - & 1587 & 1.002\\
-\cline{2-10}
-\multirow{-7}{*}{\raggedright\arraybackslash Flowers per plant} & SigmaPhi (field) & 0.66 & 0.12 & 0.65 & 0.45 & 0.90 & - & 844 & 1.005\\
-\cline{1-10}
- & Intercept & 0.66 & 0.08 & 0.66 & 0.50 & 0.82 & $<$0.0001 & 1946 & 0.999\\
-\cline{2-10}
- & HB visits & 0.00 & 0.03 & 0.00 & -0.05 & 0.05 & 0.96 & 3292 & 1.000\\
-\cline{2-10}
- & Plant size & 0.13 & 0.03 & 0.13 & 0.08 & 0.18 & $<$0.0001 & 3345 & 1.000\\
-\cline{2-10}
- & Pollen count & 0.16 & 0.11 & 0.15 & -0.05 & 0.38 & 0.1515 & 638 & 1.002\\
-\cline{2-10}
- & Sigma (field) & 0.29 & 0.03 & 0.29 & 0.23 & 0.37 & - & 2675 & 1.000\\
-\cline{2-10}
-\multirow{-6}{*}{\raggedright\arraybackslash Pods per plant} & Phi & 3.35 & 0.07 & 3.35 & 3.21 & 3.48 & - & 3828 & 1.003\\
-\cline{1-10}
- & Intercept & 25.07 & 1.77 & 25.07 & 21.64 & 28.54 & $<$0.0001 & 2277 & 1.000\\
-\cline{2-10}
- & HB visits & 0.17 & 0.21 & 0.17 & -0.24 & 0.60 & 0.4284 & 4417 & 1.000\\
-\cline{2-10}
- & Pollen count & -0.97 & 0.84 & -0.98 & -2.60 & 0.68 & 0.2447 & 707 & 1.003\\
-\cline{2-10}
- & Plant size & 4.31 & 0.65 & 4.31 & 3.03 & 5.58 & $<$0.0001 & 2229 & 1.000\\
-\cline{2-10}
- & Pods per plant & 0.56 & 0.29 & 0.56 & 0.00 & 1.12 & 0.0529 & 4888 & 0.999\\
-\cline{2-10}
- & Flowers per plant & -2.80 & 0.65 & -2.79 & -4.08 & -1.55 & $<$0.0001 & 2105 & 1.000\\
-\cline{2-10}
- & Sigma & 4.06 & 0.12 & 4.06 & 3.83 & 4.29 & - & 6604 & 1.000\\
-\cline{2-10}
- & Sigma (field) & 1.98 & 0.26 & 1.96 & 1.51 & 2.53 & - & 2526 & 0.999\\
-\cline{2-10}
-\multirow{-9}{*}{\raggedright\arraybackslash Seeds per pod} & Lambda & 2.00 & 1.03 & 1.74 & 0.84 & 4.64 & - & 3265 & 1.000\\
-\cline{1-10}
- & Intercept & 0.64 & 0.54 & 0.64 & -0.40 & 1.72 & 0.2367 & 1402 & 1.000\\
-\cline{2-10}
- & HB visits & 0.02 & 0.04 & 0.02 & -0.05 & 0.09 & 0.6113 & 2748 & 1.000\\
-\cline{2-10}
- & Pollen count & -0.15 & 0.17 & -0.15 & -0.48 & 0.20 & 0.3744 & 358 & 1.008\\
-\cline{2-10}
- & Seeds per pod & 0.00 & 0.01 & 0.00 & -0.01 & 0.02 & 0.4508 & 3348 & 1.000\\
-\cline{2-10}
- & Plant size & -0.03 & 0.12 & -0.03 & -0.26 & 0.20 & 0.7955 & 1633 & 1.000\\
-\cline{2-10}
- & Plant density & 0.30 & 0.08 & 0.30 & 0.14 & 0.45 & 0.0001 & 1704 & 1.001\\
-\cline{2-10}
- & HB distance & 0.02 & 0.01 & 0.02 & -0.01 & 0.05 & 0.1686 & 1404 & 1.003\\
-\cline{2-10}
- & Pods per plant & 0.11 & 0.04 & 0.11 & 0.02 & 0.19 & 0.0159 & 3037 & 1.000\\
-\cline{2-10}
- & Flowers per plant & 0.11 & 0.12 & 0.11 & -0.13 & 0.34 & 0.363 & 1526 & 1.000\\
-\cline{2-10}
- & Flower density & -0.03 & 0.01 & -0.03 & -0.04 & -0.02 & $<$0.0001 & 2213 & 1.003\\
-\cline{2-10}
- & Sigma & 0.52 & 0.03 & 0.52 & 0.46 & 0.59 & - & 2100 & 1.000\\
-\cline{2-10}
- & Sigma (field) & 0.47 & 0.05 & 0.47 & 0.37 & 0.58 & - & 2828 & 0.999\\
-\cline{2-10}
-\multirow{-13}{*}{\raggedright\arraybackslash Seed size} & Lambda & 2.71 & 0.48 & 2.63 & 2.08 & 3.86 & - & 1792 & 1.001\\
+ & HB distance & 0.016 & 0.010 & 0.0868 & 0.02 & 0.012\\
+\cline{2-7}
+ & Sigma & 0.309 & 0.016 & - & 0.307 & 0.318\\
+\cline{2-7}
+\multirow{-3}{*}{\raggedright\arraybackslash Plant density} & Sigma (field) & 0.371 & 0.040 & - & 0.387 & 0.365\\
+\cline{1-7}
+ & Plant density & -0.695 & 0.063 & $<$0.0001 & -0.826 & -0.492\\
+\cline{2-7}
+ & HB distance & 0.032 & 0.012 & 0.0095 & 0.025 & 0.042\\
+\cline{2-7}
+ & Sigma (field) & 0.217 & 0.036 & - & 0.189 & 0.196\\
+\cline{2-7}
+\multirow{-4}{*}{\raggedright\arraybackslash Plant size} & Sigma & 0.640 & 0.018 & - & 0.65 & 0.626\\
+\cline{1-7}
+ & Plant size & -1.658 & 0.985 & 0.0926 & -0.602 & -2.193\\
+\cline{2-7}
+ & HB distance & 0.750 & 0.111 & $<$0.0001 & 0.885 & 0.518\\
+\cline{2-7}
+ & Plant density & -0.409 & 0.737 & 0.5792 & -0.573 & 0.279\\
+\cline{2-7}
+ & Sigma & 3.520 & 0.171 & - & 3.965* & 2.663*\\
+\cline{2-7}
+\multirow{-5}{*}{\raggedright\arraybackslash Flower density} & Sigma (field) & 3.554 & 0.389 & - & 3.779 & 2.834\\
+\cline{1-7}
+ & HB distance & -0.313 & 0.096 & 0.0011 & -0.442 & -0.262\\
+\cline{2-7}
+ & Number of hives & 0.720 & 0.153 & $<$0.0001 & 0.848 & 0.654\\
+\cline{2-7}
+ & Flower density & 0.028 & 0.045 & 0.541 & 0.137 & -0.117\\
+\cline{2-7}
+ & Sigma (field) & 1.441 & 0.340 & - & 1.019 & 1.383\\
+\cline{2-7}
+\multirow{-5}{*}{\raggedright\arraybackslash HB visits} & Phi & 0.350 & 0.080 & - & 0.29 & 0.396\\
+\cline{1-7}
+ & Plant size & 0.937 & 0.010 & $<$0.0001 & 0.935 & 0.946\\
+\cline{2-7}
+ & Pods per plant & -0.162 & 0.013 & $<$0.0001 & -0.136* & -0.242*\\
+\cline{2-7}
+ & Phi (field) & 0.160 & 0.016 & - & 0.141 & 0.165\\
+\cline{2-7}
+ & Plant size (Phi) & 0.659 & 0.110 & - & 0.884* & 0.196*\\
+\cline{2-7}
+\multirow{-5}{*}{\raggedright\arraybackslash Flowers per plant} & SigmaPhi (field) & 0.660 & 0.116 & - & 0.61 & 0.897\\
+\cline{1-7}
+ & HB visits & 0.001 & 0.026 & 0.96 & 0.003 & 0.033\\
+\cline{2-7}
+ & Plant size & 0.133 & 0.026 & $<$0.0001 & 0.108 & 0.167\\
+\cline{2-7}
+ & Pollen count & 0.158 & 0.110 & 0.1515 & 0.244 & 0.045\\
+\cline{2-7}
+ & Sigma (field) & 0.294 & 0.034 & - & 0.351 & 0.231\\
+\cline{2-7}
+\multirow{-5}{*}{\raggedright\arraybackslash Pods per plant} & Phi & 3.346 & 0.067 & - & 3.036* & 3.975*\\
+\cline{1-7}
+ & HB visits & 0.170 & 0.214 & 0.4284 & 0.262 & 0.342\\
+\cline{2-7}
+ & Pollen count & -0.974 & 0.837 & 0.2447 & 0.219 & -2.117\\
+\cline{2-7}
+ & Plant size & 4.310 & 0.650 & $<$0.0001 & 3.855 & 2.899\\
+\cline{2-7}
+ & Pods per plant & 0.557 & 0.288 & 0.0529 & 0.722 & 0.623\\
+\cline{2-7}
+ & Flowers per plant & -2.799 & 0.648 & $<$0.0001 & -2.221 & -1.576\\
+\cline{2-7}
+ & Sigma & 4.057 & 0.117 & - & 4.243 & 3.744\\
+\cline{2-7}
+ & Sigma (field) & 1.976 & 0.261 & - & 1.591 & 1.517\\
+\cline{2-7}
+\multirow{-8}{*}{\raggedright\arraybackslash Seeds per pod} & Lambda & 2.001 & 1.029 & - & 1.714 & 1.855\\
+\cline{1-7}
+ & HB visits & 0.019 & 0.037 & 0.6113 & -0.033 & 0.027\\
+\cline{2-7}
+ & Pollen count & -0.152 & 0.171 & 0.3744 & -0.341 & 0.147\\
+\cline{2-7}
+ & Seeds per pod & 0.004 & 0.006 & 0.4508 & -0.001 & 0.014\\
+\cline{2-7}
+ & Plant size & -0.031 & 0.118 & 0.7955 & 0.143 & -0.332\\
+\cline{2-7}
+ & Plant density & 0.298 & 0.078 & 0.0001 & 0.289 & 0.353\\
+\cline{2-7}
+ & HB distance & 0.021 & 0.015 & 0.1686 & -0.013 & 0.076\\
+\cline{2-7}
+ & Pods per plant & 0.108 & 0.045 & 0.0159 & 0.126 & 0.042\\
+\cline{2-7}
+ & Flowers per plant & 0.110 & 0.121 & 0.363 & -0.033 & 0.357\\
+\cline{2-7}
+ & Flower density & -0.030 & 0.007 & $<$0.0001 & -0.022 & -0.04\\
+\cline{2-7}
+ & Sigma & 0.520 & 0.033 & - & 0.492 & 0.542\\
+\cline{2-7}
+ & Sigma (field) & 0.468 & 0.052 & - & 0.416 & 0.494\\
+\cline{2-7}
+\multirow{-12}{*}{\raggedright\arraybackslash Seed size} & Lambda & 2.714 & 0.478 & - & 2.478 & 3.234\\
 \hline
 \end{longtable}
 \endgroup{}
+
+\clearpage
 
 \subsection*{Seed canola models}
 
@@ -349,178 +462,325 @@ Formulas for seed canola model using \texttt{lmer}-style R formulas. Terms on ri
 \end{align*}
 
 
+% \begingroup\fontsize{9}{11}\selectfont %First manuscript
+% \begin{longtable}{l|l|r|r|r|r|r|l|r|r}
+% \caption{Summary of parameters for seed canola models} \\
+% \hline
+% Model & Parameter & Mean & SD & Median & Min & Max & P-value & N$_{eff}$ & $\hat{R}$\\
+% \hline
+% \endfirsthead
+% \multicolumn{10}{@{}l}{\textit{(continued)}}\\
+% \hline
+% Model & Parameter & Mean & SD & Median & Min & Max & P-value & N$_{eff}$ & $\hat{R}$\\
+% \hline
+% \endhead
+%  & Intercept & 3.60 & 0.06 & 3.60 & 3.47 & 3.73 & $<$0.0001 & 524 & 1.004\\
+% \cline{2-10}
+%  & HB distance & 0.06 & 0.01 & 0.06 & 0.04 & 0.07 & $<$0.0001 & 5750 & 0.999\\
+% \cline{2-10}
+%  & Sigma & 0.27 & 0.01 & 0.27 & 0.24 & 0.30 & - & 5199 & 0.999\\
+% \cline{2-10}
+% \multirow{-4}{*}{\raggedright\arraybackslash Plant density} & Sigma (field) & 0.36 & 0.05 & 0.36 & 0.28 & 0.48 & - & 4182 & 1.000\\
+% \cline{1-10}
+%  & Intercept & 6.08 & 0.25 & 6.08 & 5.57 & 6.56 & $<$0.0001 & 2480 & 1.000\\
+% \cline{2-10}
+%  & Plant density & -0.79 & 0.07 & -0.80 & -0.92 & -0.66 & $<$0.0001 & 2470 & 1.000\\
+% \cline{2-10}
+%  & HB distance & 0.07 & 0.01 & 0.07 & 0.05 & 0.10 & $<$0.0001 & 6446 & 0.999\\
+% \cline{2-10}
+%  & Sigma & 0.50 & 0.03 & 0.50 & 0.45 & 0.56 & - & 2332 & 1.000\\
+% \cline{2-10}
+%  & Sigma (field) & 0.15 & 0.04 & 0.15 & 0.08 & 0.23 & - & 1053 & 1.001\\
+% \cline{2-10}
+% \multirow{-6}{*}{\raggedright\arraybackslash Plant size} & Nu (DF) & 1.91 & 0.32 & 1.87 & 1.37 & 2.65 & $<$0.0001 & 2700 & 1.000\\
+% \cline{1-10}
+%  & Intercept & 0.48 & 0.56 & 0.46 & -0.58 & 1.64 & 0.3827 & 661 & 1.005\\
+% \cline{2-10}
+%  & HB distance & 1.11 & 0.12 & 1.11 & 0.87 & 1.36 & $<$0.0001 & 5389 & 1.000\\
+% \cline{2-10}
+%  & Sigma & 4.06 & 0.24 & 4.05 & 3.59 & 4.56 & - & 2404 & 1.001\\
+% \cline{2-10}
+%  & Sigma (field) & 3.48 & 0.47 & 3.44 & 2.70 & 4.49 & - & 2640 & 1.001\\
+% \cline{2-10}
+% \multirow{-5}{*}{\raggedright\arraybackslash Flower density} & Nu (DF) & 1.88 & 0.38 & 1.84 & 1.30 & 2.68 & $<$0.0001 & 1500 & 1.004\\
+% \cline{1-10}
+%  & Intercept & 3.08 & 0.10 & 3.08 & 2.87 & 3.28 & $<$0.0001 & 2722 & 1.002\\
+% \cline{2-10}
+%  & Flower density & -0.01 & 0.01 & -0.01 & -0.03 & 0.01 & 0.5267 & 4150 & 1.000\\
+% \cline{2-10}
+%  & HB distance & -0.02 & 0.05 & -0.03 & -0.12 & 0.07 & 0.6229 & 4410 & 1.000\\
+% \cline{2-10}
+%  & LCB distance & 0.42 & 0.09 & 0.42 & 0.24 & 0.58 & $<$0.0001 & 5053 & 1.000\\
+% \cline{2-10}
+%  & Bay centre & 0.45 & 0.21 & 0.45 & 0.07 & 0.88 & 0.0284 & 6486 & 0.999\\
+% \cline{2-10}
+%  & Phi & 0.72 & 0.09 & 0.72 & 0.55 & 0.92 & - & 4354 & 1.001\\
+% \cline{2-10}
+%  & Theta (ZI) & 0.32 & 0.03 & 0.32 & 0.26 & 0.38 & - & 3955 & 1.001\\
+% \cline{2-10}
+% \multirow{-8}{*}{\raggedright\arraybackslash HB visits} & Sigma (field) & 0.41 & 0.11 & 0.41 & 0.22 & 0.64 & - & 600 & 1.001\\
+% \cline{1-10}
+%  & Intercept & 2.25 & 0.14 & 2.25 & 1.96 & 2.51 & $<$0.0001 & 1734 & 1.002\\
+% \cline{2-10}
+%  & LCB distance & -0.79 & 0.07 & -0.79 & -0.94 & -0.65 & $<$0.0001 & 4016 & 1.000\\
+% \cline{2-10}
+%  & HB distance & -0.32 & 0.06 & -0.32 & -0.43 & -0.21 & $<$0.0001 & 5128 & 1.000\\
+% \cline{2-10}
+%  & Bay centre & -0.34 & 0.23 & -0.34 & -0.77 & 0.16 & 0.1458 & 6667 & 1.000\\
+% \cline{2-10}
+%  & Flower density & 0.03 & 0.01 & 0.03 & 0.01 & 0.05 & 0.0115 & 4364 & 1.000\\
+% \cline{2-10}
+%  & Sigma (field) & 0.63 & 0.13 & 0.62 & 0.40 & 0.91 & - & 1072 & 1.004\\
+% \cline{2-10}
+%  & Phi & 0.70 & 0.11 & 0.69 & 0.50 & 0.93 & - & 3097 & 0.999\\
+% \cline{2-10}
+% \multirow{-8}{*}{\raggedright\arraybackslash LCB visits} & Theta (ZI) & 0.25 & 0.04 & 0.25 & 0.15 & 0.33 & - & 2383 & 1.000\\
+% \cline{1-10}
+%  & Intercept & 2.49 & 0.19 & 2.50 & 2.12 & 2.85 & $<$0.0001 & 1141 & 1.002\\
+% \cline{2-10}
+%  & HB visits & 0.05 & 0.04 & 0.05 & -0.03 & 0.12 & 0.195 & 2317 & 1.000\\
+% \cline{2-10}
+%  & LCB visits & 0.15 & 0.06 & 0.14 & 0.02 & 0.26 & 0.0155 & 2239 & 1.000\\
+% \cline{2-10}
+%  & Bay centre & -0.55 & 0.13 & -0.55 & -0.80 & -0.30 & $<$0.0001 & 2540 & 1.000\\
+% \cline{2-10}
+%  & HB distance & -0.17 & 0.04 & -0.17 & -0.25 & -0.09 & $<$0.0001 & 2265 & 1.003\\
+% \cline{2-10}
+%  & LCB distance & -0.35 & 0.14 & -0.35 & -0.63 & -0.07 & 0.0164 & 2513 & 1.000\\
+% \cline{2-10}
+%  & Flower density & -0.03 & 0.02 & -0.03 & -0.06 & 0.01 & 0.1284 & 2058 & 1.001\\
+% \cline{2-10}
+%  & Sigma (field) & 0.86 & 0.13 & 0.85 & 0.64 & 1.15 & - & 2978 & 1.000\\
+% \cline{2-10}
+%  & Sigma (plot) & 0.65 & 0.06 & 0.65 & 0.53 & 0.78 & - & 1142 & 1.003\\
+% \cline{2-10}
+% \multirow{-10}{*}{\raggedright\arraybackslash Pollen count} & Phi & 0.82 & 0.04 & 0.82 & 0.74 & 0.90 & - & 5125 & 0.999\\
+% \cline{1-10}
+%  & Intercept & 3.05 & 0.04 & 3.05 & 2.96 & 3.14 & $<$0.0001 & 3283 & 0.999\\
+% \cline{2-10}
+%  & Plant size & 0.93 & 0.01 & 0.93 & 0.90 & 0.95 & $<$0.0001 & 3712 & 0.999\\
+% \cline{2-10}
+%  & Bay centre & 0.09 & 0.02 & 0.09 & 0.06 & 0.12 & $<$0.0001 & 6790 & 0.999\\
+% \cline{2-10}
+%  & Pods per plant & -0.14 & 0.01 & -0.14 & -0.17 & -0.12 & $<$0.0001 & 5503 & 0.999\\
+% \cline{2-10}
+%  & Sigma (field) & 0.08 & 0.01 & 0.08 & 0.06 & 0.11 & - & 2649 & 1.000\\
+% \cline{2-10}
+%  & Intercept (Phi) & 2.24 & 0.32 & 2.24 & 1.62 & 2.87 & - & 2875 & 1.001\\
+% \cline{2-10}
+% \multirow{-7}{*}{\raggedright\arraybackslash Flowers per plant} & Plant size (Phi) & 0.38 & 0.10 & 0.39 & 0.19 & 0.57 & - & 2871 & 1.001\\
+% \cline{1-10}
+%  & Intercept & 0.18 & 0.12 & 0.18 & -0.05 & 0.40 & 0.1211 & 2261 & 1.000\\
+% \cline{2-10}
+%  & Pollen count & 0.12 & 0.04 & 0.12 & 0.03 & 0.20 & 0.0074 & 915 & 1.004\\
+% \cline{2-10}
+%  & Plant size & 0.19 & 0.03 & 0.19 & 0.14 & 0.24 & $<$0.0001 & 4570 & 1.000\\
+% \cline{2-10}
+%  & Bay centre & -0.21 & 0.06 & -0.21 & -0.33 & -0.10 & 0.0003 & 1886 & 1.000\\
+% \cline{2-10}
+%  & HB distance & -0.12 & 0.02 & -0.12 & -0.15 & -0.08 & $<$0.0001 & 1929 & 1.002\\
+% \cline{2-10}
+%  & LCB distance & -0.21 & 0.06 & -0.21 & -0.34 & -0.10 & 0.0005 & 2637 & 1.000\\
+% \cline{2-10}
+%  & Flower density & 0.00 & 0.01 & 0.00 & -0.02 & 0.01 & 0.5456 & 2998 & 1.000\\
+% \cline{2-10}
+%  & Sigma (plot) & 0.30 & 0.03 & 0.30 & 0.25 & 0.35 & - & 1367 & 1.004\\
+% \cline{2-10}
+%  & Sigma (field) & 0.37 & 0.06 & 0.36 & 0.27 & 0.49 & - & 2905 & 1.000\\
+% \cline{2-10}
+%  & Intercept (Phi) & 3.07 & 0.38 & 3.05 & 2.36 & 3.85 & - & 2268 & 1.004\\
+% \cline{2-10}
+% \multirow{-11}{*}{\raggedright\arraybackslash Pods per plant} & Plant size (Phi) & 0.22 & 0.12 & 0.22 & -0.01 & 0.44 & - & 2538 & 1.003\\
+% \cline{1-10}
+%  & Intercept & 25.38 & 2.29 & 25.48 & 20.64 & 29.38 & $<$0.0001 & 1651 & 1.001\\
+% \cline{2-10}
+%  & Pollen count & 1.21 & 0.32 & 1.20 & 0.61 & 1.87 & 0.0001 & 1046 & 1.002\\
+% \cline{2-10}
+%  & Plant size & 4.76 & 0.78 & 4.76 & 3.24 & 6.23 & $<$0.0001 & 1752 & 1.001\\
+% \cline{2-10}
+%  & Bay centre & -0.50 & 0.45 & -0.50 & -1.39 & 0.38 & 0.2639 & 5315 & 0.999\\
+% \cline{2-10}
+%  & HB distance & -0.02 & 0.12 & -0.01 & -0.25 & 0.21 & 0.881 & 3007 & 1.000\\
+% \cline{2-10}
+%  & Flower density & -0.11 & 0.06 & -0.11 & -0.23 & 0.00 & 0.0451 & 2596 & 1.000\\
+% \cline{2-10}
+%  & Pods per plant & 1.65 & 0.35 & 1.65 & 0.94 & 2.34 & $<$0.0001 & 2485 & 1.001\\
+% \cline{2-10}
+%  & Flowers per plant & -4.26 & 0.74 & -4.27 & -5.60 & -2.73 & $<$0.0001 & 1571 & 1.001\\
+% \cline{2-10}
+%  & Sigma & 4.25 & 0.16 & 4.25 & 3.92 & 4.56 & - & 2951 & 1.000\\
+% \cline{2-10}
+%  & Sigma (field) & 1.97 & 0.32 & 1.95 & 1.41 & 2.68 & - & 1767 & 1.002\\
+% \cline{2-10}
+% \multirow{-11}{*}{\raggedright\arraybackslash Seeds per pod} & Lambda & 1.67 & 1.00 & 1.39 & 0.60 & 4.28 & - & 2448 & 0.999\\
+% \cline{1-10}
+%  & Intercept & 1.17 & 0.50 & 1.18 & 0.21 & 2.16 & 0.0189 & 2004 & 1.001\\
+% \cline{2-10}
+%  & Pollen count & -0.02 & 0.05 & -0.02 & -0.12 & 0.08 & 0.7002 & 2345 & 1.000\\
+% \cline{2-10}
+%  & Seeds per pod & -0.01 & 0.01 & -0.01 & -0.03 & 0.00 & 0.0765 & 3719 & 0.999\\
+% \cline{2-10}
+%  & Plant size & 0.23 & 0.06 & 0.23 & 0.12 & 0.34 & $<$0.0001 & 3607 & 1.000\\
+% \cline{2-10}
+%  & Plant density & 0.41 & 0.11 & 0.41 & 0.20 & 0.63 & 0.0002 & 1988 & 1.000\\
+% \cline{2-10}
+%  & LCB distance & 0.07 & 0.07 & 0.07 & -0.06 & 0.22 & 0.3146 & 4466 & 1.000\\
+% \cline{2-10}
+%  & Sigma & 0.75 & 0.03 & 0.75 & 0.69 & 0.81 & - & 3533 & 1.000\\
+% \cline{2-10}
+%  & Sigma (field) & 0.36 & 0.06 & 0.35 & 0.25 & 0.49 & - & 2060 & 1.000\\
+% \cline{2-10}
+% \multirow{-9}{*}{\raggedright\arraybackslash Seed size} & Lambda & 4.44 & 1.22 & 4.23 & 2.70 & 7.42 & - & 2125 & 1.000\\
+% \hline
+% \end{longtable}
+% \endgroup{}
+
 \begingroup\fontsize{9}{11}\selectfont
 
-\begin{longtable}{l|l|r|r|r|r|r|l|r|r}
-
-\caption{Summary of parameters for seed canola models} \\
-
+\begin{longtable}{l|l|r|r|l|l|l}
+\caption{Summary of parameters for seed canola models. p-values indicate whether means differed from zero (variance terms were excluded). Means are also shown for 2015 and 2016 models, with * indicating whether parameters differed between years (i.e. posterior 95\% quantiles did not overlap).} \\
 \hline
-Model & Parameter & Mean & SD & Median & Min & Max & P-value & N$_{eff}$ & $\hat{R}$\\
+Model & Parameter & Mean & SD & p-value & Mean$_{2015}$ & Mean$_{2016}$\\
 \hline
 \endfirsthead
-\multicolumn{10}{@{}l}{\textit{(continued)}}\\
+\multicolumn{7}{@{}l}{\textit{(continued)}}\\
 \hline
-Model & Parameter & Mean & SD & Median & Min & Max & P-value & N$_{eff}$ & $\hat{R}$\\
+Model & Parameter & Mean & SD & p-value & Mean$_{2015}$ & Mean$_{2016}$\\
 \hline
 \endhead
- & Intercept & 3.60 & 0.06 & 3.60 & 3.47 & 3.73 & $<$0.0001 & 524 & 1.004\\
-\cline{2-10}
- & HB distance & 0.06 & 0.01 & 0.06 & 0.04 & 0.07 & $<$0.0001 & 5750 & 0.999\\
-\cline{2-10}
- & Sigma & 0.27 & 0.01 & 0.27 & 0.24 & 0.30 & - & 5199 & 0.999\\
-\cline{2-10}
-\multirow{-4}{*}{\raggedright\arraybackslash Plant density} & Sigma (field) & 0.36 & 0.05 & 0.36 & 0.28 & 0.48 & - & 4182 & 1.000\\
-\cline{1-10}
- & Intercept & 6.08 & 0.25 & 6.08 & 5.57 & 6.56 & $<$0.0001 & 2480 & 1.000\\
-\cline{2-10}
- & Plant density & -0.79 & 0.07 & -0.80 & -0.92 & -0.66 & $<$0.0001 & 2470 & 1.000\\
-\cline{2-10}
- & HB distance & 0.07 & 0.01 & 0.07 & 0.05 & 0.10 & $<$0.0001 & 6446 & 0.999\\
-\cline{2-10}
- & Sigma & 0.50 & 0.03 & 0.50 & 0.45 & 0.56 & - & 2332 & 1.000\\
-\cline{2-10}
- & Sigma (field) & 0.15 & 0.04 & 0.15 & 0.08 & 0.23 & - & 1053 & 1.001\\
-\cline{2-10}
-\multirow{-6}{*}{\raggedright\arraybackslash Plant size} & Nu (DF) & 1.91 & 0.32 & 1.87 & 1.37 & 2.65 & $<$0.0001 & 2700 & 1.000\\
-\cline{1-10}
- & Intercept & 0.48 & 0.56 & 0.46 & -0.58 & 1.64 & 0.3827 & 661 & 1.005\\
-\cline{2-10}
- & HB distance & 1.11 & 0.12 & 1.11 & 0.87 & 1.36 & $<$0.0001 & 5389 & 1.000\\
-\cline{2-10}
- & Sigma & 4.06 & 0.24 & 4.05 & 3.59 & 4.56 & - & 2404 & 1.001\\
-\cline{2-10}
- & Sigma (field) & 3.48 & 0.47 & 3.44 & 2.70 & 4.49 & - & 2640 & 1.001\\
-\cline{2-10}
-\multirow{-5}{*}{\raggedright\arraybackslash Flower density} & Nu (DF) & 1.88 & 0.38 & 1.84 & 1.30 & 2.68 & $<$0.0001 & 1500 & 1.004\\
-\cline{1-10}
- & Intercept & 3.08 & 0.10 & 3.08 & 2.87 & 3.28 & $<$0.0001 & 2722 & 1.002\\
-\cline{2-10}
- & Flower density & -0.01 & 0.01 & -0.01 & -0.03 & 0.01 & 0.5267 & 4150 & 1.000\\
-\cline{2-10}
- & HB distance & -0.02 & 0.05 & -0.03 & -0.12 & 0.07 & 0.6229 & 4410 & 1.000\\
-\cline{2-10}
- & LCB distance & 0.42 & 0.09 & 0.42 & 0.24 & 0.58 & $<$0.0001 & 5053 & 1.000\\
-\cline{2-10}
- & Bay centre & 0.45 & 0.21 & 0.45 & 0.07 & 0.88 & 0.0284 & 6486 & 0.999\\
-\cline{2-10}
- & Phi & 0.72 & 0.09 & 0.72 & 0.55 & 0.92 & - & 4354 & 1.001\\
-\cline{2-10}
- & Theta (ZI) & 0.32 & 0.03 & 0.32 & 0.26 & 0.38 & - & 3955 & 1.001\\
-\cline{2-10}
-\multirow{-8}{*}{\raggedright\arraybackslash HB visits} & Sigma (field) & 0.41 & 0.11 & 0.41 & 0.22 & 0.64 & - & 600 & 1.001\\
-\cline{1-10}
- & Intercept & 2.25 & 0.14 & 2.25 & 1.96 & 2.51 & $<$0.0001 & 1734 & 1.002\\
-\cline{2-10}
- & LCB distance & -0.79 & 0.07 & -0.79 & -0.94 & -0.65 & $<$0.0001 & 4016 & 1.000\\
-\cline{2-10}
- & HB distance & -0.32 & 0.06 & -0.32 & -0.43 & -0.21 & $<$0.0001 & 5128 & 1.000\\
-\cline{2-10}
- & Bay centre & -0.34 & 0.23 & -0.34 & -0.77 & 0.16 & 0.1458 & 6667 & 1.000\\
-\cline{2-10}
- & Flower density & 0.03 & 0.01 & 0.03 & 0.01 & 0.05 & 0.0115 & 4364 & 1.000\\
-\cline{2-10}
- & Sigma (field) & 0.63 & 0.13 & 0.62 & 0.40 & 0.91 & - & 1072 & 1.004\\
-\cline{2-10}
- & Phi & 0.70 & 0.11 & 0.69 & 0.50 & 0.93 & - & 3097 & 0.999\\
-\cline{2-10}
-\multirow{-8}{*}{\raggedright\arraybackslash LCB visits} & Theta (ZI) & 0.25 & 0.04 & 0.25 & 0.15 & 0.33 & - & 2383 & 1.000\\
-\cline{1-10}
- & Intercept & 2.49 & 0.19 & 2.50 & 2.12 & 2.85 & $<$0.0001 & 1141 & 1.002\\
-\cline{2-10}
- & HB visits & 0.05 & 0.04 & 0.05 & -0.03 & 0.12 & 0.195 & 2317 & 1.000\\
-\cline{2-10}
- & LCB visits & 0.15 & 0.06 & 0.14 & 0.02 & 0.26 & 0.0155 & 2239 & 1.000\\
-\cline{2-10}
- & Bay centre & -0.55 & 0.13 & -0.55 & -0.80 & -0.30 & $<$0.0001 & 2540 & 1.000\\
-\cline{2-10}
- & HB distance & -0.17 & 0.04 & -0.17 & -0.25 & -0.09 & $<$0.0001 & 2265 & 1.003\\
-\cline{2-10}
- & LCB distance & -0.35 & 0.14 & -0.35 & -0.63 & -0.07 & 0.0164 & 2513 & 1.000\\
-\cline{2-10}
- & Flower density & -0.03 & 0.02 & -0.03 & -0.06 & 0.01 & 0.1284 & 2058 & 1.001\\
-\cline{2-10}
- & Sigma (field) & 0.86 & 0.13 & 0.85 & 0.64 & 1.15 & - & 2978 & 1.000\\
-\cline{2-10}
- & Sigma (plot) & 0.65 & 0.06 & 0.65 & 0.53 & 0.78 & - & 1142 & 1.003\\
-\cline{2-10}
-\multirow{-10}{*}{\raggedright\arraybackslash Pollen count} & Phi & 0.82 & 0.04 & 0.82 & 0.74 & 0.90 & - & 5125 & 0.999\\
-\cline{1-10}
- & Intercept & 3.05 & 0.04 & 3.05 & 2.96 & 3.14 & $<$0.0001 & 3283 & 0.999\\
-\cline{2-10}
- & Plant size & 0.93 & 0.01 & 0.93 & 0.90 & 0.95 & $<$0.0001 & 3712 & 0.999\\
-\cline{2-10}
- & Bay centre & 0.09 & 0.02 & 0.09 & 0.06 & 0.12 & $<$0.0001 & 6790 & 0.999\\
-\cline{2-10}
- & Pods per plant & -0.14 & 0.01 & -0.14 & -0.17 & -0.12 & $<$0.0001 & 5503 & 0.999\\
-\cline{2-10}
- & Sigma (field) & 0.08 & 0.01 & 0.08 & 0.06 & 0.11 & - & 2649 & 1.000\\
-\cline{2-10}
- & Intercept (Phi) & 2.24 & 0.32 & 2.24 & 1.62 & 2.87 & - & 2875 & 1.001\\
-\cline{2-10}
-\multirow{-7}{*}{\raggedright\arraybackslash Flowers per plant} & Plant size (Phi) & 0.38 & 0.10 & 0.39 & 0.19 & 0.57 & - & 2871 & 1.001\\
-\cline{1-10}
- & Intercept & 0.18 & 0.12 & 0.18 & -0.05 & 0.40 & 0.1211 & 2261 & 1.000\\
-\cline{2-10}
- & Pollen count & 0.12 & 0.04 & 0.12 & 0.03 & 0.20 & 0.0074 & 915 & 1.004\\
-\cline{2-10}
- & Plant size & 0.19 & 0.03 & 0.19 & 0.14 & 0.24 & $<$0.0001 & 4570 & 1.000\\
-\cline{2-10}
- & Bay centre & -0.21 & 0.06 & -0.21 & -0.33 & -0.10 & 0.0003 & 1886 & 1.000\\
-\cline{2-10}
- & HB distance & -0.12 & 0.02 & -0.12 & -0.15 & -0.08 & $<$0.0001 & 1929 & 1.002\\
-\cline{2-10}
- & LCB distance & -0.21 & 0.06 & -0.21 & -0.34 & -0.10 & 0.0005 & 2637 & 1.000\\
-\cline{2-10}
- & Flower density & 0.00 & 0.01 & 0.00 & -0.02 & 0.01 & 0.5456 & 2998 & 1.000\\
-\cline{2-10}
- & Sigma (plot) & 0.30 & 0.03 & 0.30 & 0.25 & 0.35 & - & 1367 & 1.004\\
-\cline{2-10}
- & Sigma (field) & 0.37 & 0.06 & 0.36 & 0.27 & 0.49 & - & 2905 & 1.000\\
-\cline{2-10}
- & Intercept (Phi) & 3.07 & 0.38 & 3.05 & 2.36 & 3.85 & - & 2268 & 1.004\\
-\cline{2-10}
-\multirow{-11}{*}{\raggedright\arraybackslash Pods per plant} & Plant size (Phi) & 0.22 & 0.12 & 0.22 & -0.01 & 0.44 & - & 2538 & 1.003\\
-\cline{1-10}
- & Intercept & 25.38 & 2.29 & 25.48 & 20.64 & 29.38 & $<$0.0001 & 1651 & 1.001\\
-\cline{2-10}
- & Pollen count & 1.21 & 0.32 & 1.20 & 0.61 & 1.87 & 0.0001 & 1046 & 1.002\\
-\cline{2-10}
- & Plant size & 4.76 & 0.78 & 4.76 & 3.24 & 6.23 & $<$0.0001 & 1752 & 1.001\\
-\cline{2-10}
- & Bay centre & -0.50 & 0.45 & -0.50 & -1.39 & 0.38 & 0.2639 & 5315 & 0.999\\
-\cline{2-10}
- & HB distance & -0.02 & 0.12 & -0.01 & -0.25 & 0.21 & 0.881 & 3007 & 1.000\\
-\cline{2-10}
- & Flower density & -0.11 & 0.06 & -0.11 & -0.23 & 0.00 & 0.0451 & 2596 & 1.000\\
-\cline{2-10}
- & Pods per plant & 1.65 & 0.35 & 1.65 & 0.94 & 2.34 & $<$0.0001 & 2485 & 1.001\\
-\cline{2-10}
- & Flowers per plant & -4.26 & 0.74 & -4.27 & -5.60 & -2.73 & $<$0.0001 & 1571 & 1.001\\
-\cline{2-10}
- & Sigma & 4.25 & 0.16 & 4.25 & 3.92 & 4.56 & - & 2951 & 1.000\\
-\cline{2-10}
- & Sigma (field) & 1.97 & 0.32 & 1.95 & 1.41 & 2.68 & - & 1767 & 1.002\\
-\cline{2-10}
-\multirow{-11}{*}{\raggedright\arraybackslash Seeds per pod} & Lambda & 1.67 & 1.00 & 1.39 & 0.60 & 4.28 & - & 2448 & 0.999\\
-\cline{1-10}
- & Intercept & 1.17 & 0.50 & 1.18 & 0.21 & 2.16 & 0.0189 & 2004 & 1.001\\
-\cline{2-10}
- & Pollen count & -0.02 & 0.05 & -0.02 & -0.12 & 0.08 & 0.7002 & 2345 & 1.000\\
-\cline{2-10}
- & Seeds per pod & -0.01 & 0.01 & -0.01 & -0.03 & 0.00 & 0.0765 & 3719 & 0.999\\
-\cline{2-10}
- & Plant size & 0.23 & 0.06 & 0.23 & 0.12 & 0.34 & $<$0.0001 & 3607 & 1.000\\
-\cline{2-10}
- & Plant density & 0.41 & 0.11 & 0.41 & 0.20 & 0.63 & 0.0002 & 1988 & 1.000\\
-\cline{2-10}
- & LCB distance & 0.07 & 0.07 & 0.07 & -0.06 & 0.22 & 0.3146 & 4466 & 1.000\\
-\cline{2-10}
- & Sigma & 0.75 & 0.03 & 0.75 & 0.69 & 0.81 & - & 3533 & 1.000\\
-\cline{2-10}
- & Sigma (field) & 0.36 & 0.06 & 0.35 & 0.25 & 0.49 & - & 2060 & 1.000\\
-\cline{2-10}
-\multirow{-9}{*}{\raggedright\arraybackslash Seed size} & Lambda & 4.44 & 1.22 & 4.23 & 2.70 & 7.42 & - & 2125 & 1.000\\
+ & HB distance & 0.055 & 0.010 & $<$0.0001 & 0.075 & 0.041\\
+\cline{2-7}
+ & Sigma & 0.272 & 0.015 & - & 0.324* & 0.229*\\
+\cline{2-7}
+\multirow{-3}{*}{\raggedright\arraybackslash Plant density} & Sigma (field) & 0.364 & 0.049 & - & 0.332 & 0.375\\
+\cline{1-7}
+ & Plant density & -0.794 & 0.069 & $<$0.0001 & -0.65 & -0.912\\
+\cline{2-7}
+ & HB distance & 0.074 & 0.013 & $<$0.0001 & 0.07 & 0.075\\
+\cline{2-7}
+ & Sigma & 0.505 & 0.029 & - & 0.561 & 0.491\\
+\cline{2-7}
+ & Sigma (field) & 0.151 & 0.037 & - & 0.141 & 0.146\\
+\cline{2-7}
+\multirow{-5}{*}{\raggedright\arraybackslash Plant size} & Nu (DF) & 1.905 & 0.325 & $<$0.0001 & 1.974 & 2.988\\
+\cline{1-7}
+ & HB distance & 1.109 & 0.124 & $<$0.0001 & 1.481 & 0.982\\
+\cline{2-7}
+ & Sigma & 4.055 & 0.244 & - & 5.232* & 3.688*\\
+\cline{2-7}
+ & Sigma (field) & 3.485 & 0.466 & - & 3.483 & 1.976\\
+\cline{2-7}
+\multirow{-4}{*}{\raggedright\arraybackslash Flower density} & Nu (DF) & 1.875 & 0.376 & $<$0.0001 & 3.045 & 3.999\\
+\cline{1-7}
+ & Flower density & -0.007 & 0.011 & 0.5267 & -0.018 & 0.033\\
+\cline{2-7}
+ & HB distance & -0.024 & 0.050 & 0.6229 & -0.128 & 0.012\\
+\cline{2-7}
+ & LCB distance & 0.415 & 0.085 & $<$0.0001 & 0.421 & 0.403\\
+\cline{2-7}
+ & Bay centre & 0.452 & 0.206 & 0.0284 & 0.441 & 0.382\\
+\cline{2-7}
+ & Phi & 0.719 & 0.094 & - & 0.632 & 0.796\\
+\cline{2-7}
+ & Theta (ZI) & 0.320 & 0.029 & - & 0.291 & 0.328\\
+\cline{2-7}
+\multirow{-7}{*}{\raggedright\arraybackslash HB visits} & Sigma (field) & 0.413 & 0.108 & - & 0.263 & 0.532\\
+\cline{1-7}
+ & LCB distance & -0.790 & 0.074 & $<$0.0001 & -0.752 & -0.858\\
+\cline{2-7}
+ & HB distance & -0.319 & 0.055 & $<$0.0001 & -0.374 & -0.233\\
+\cline{2-7}
+ & Bay centre & -0.335 & 0.231 & 0.1458 & -0.104 & -0.576\\
+\cline{2-7}
+ & Flower density & 0.028 & 0.011 & 0.0115 & 0.018 & 0.055\\
+\cline{2-7}
+ & Sigma (field) & 0.629 & 0.129 & - & 0.617 & 0.602\\
+\cline{2-7}
+ & Phi & 0.698 & 0.112 & - & 0.717 & 0.643\\
+\cline{2-7}
+\multirow{-7}{*}{\raggedright\arraybackslash LCB visits} & Theta (ZI) & 0.248 & 0.045 & - & 0.195 & 0.278\\
+\cline{1-7}
+ & HB visits & 0.050 & 0.039 & 0.195 & 0.038 & 0.079\\
+\cline{2-7}
+ & LCB visits & 0.146 & 0.060 & 0.0155 & 0.151 & 0.115\\
+\cline{2-7}
+ & Bay centre & -0.550 & 0.129 & $<$0.0001 & -0.424 & -0.626\\
+\cline{2-7}
+ & HB distance & -0.169 & 0.039 & $<$0.0001 & -0.166 & -0.171\\
+\cline{2-7}
+ & LCB distance & -0.348 & 0.145 & 0.0164 & 0.08 & -0.506\\
+\cline{2-7}
+ & Flower density & -0.026 & 0.017 & 0.1284 & -0.009 & -0.032\\
+\cline{2-7}
+ & Sigma (field) & 0.862 & 0.130 & - & 0.639 & 0.964\\
+\cline{2-7}
+ & Sigma (plot) & 0.651 & 0.064 & - & 0.663 & 0.679\\
+\cline{2-7}
+\multirow{-9}{*}{\raggedright\arraybackslash Pollen count} & Phi & 0.817 & 0.042 & - & 0.958 & 0.724\\
+\cline{1-7}
+ & Plant size & 0.926 & 0.013 & $<$0.0001 & 0.933 & 0.925\\
+\cline{2-7}
+ & Bay centre & 0.091 & 0.016 & $<$0.0001 & 0.08 & 0.09\\
+\cline{2-7}
+ & Pods per plant & -0.141 & 0.012 & $<$0.0001 & -0.215* & -0.118*\\
+\cline{2-7}
+ & Sigma (field) & 0.082 & 0.014 & - & 0.11 & 0.06\\
+\cline{2-7}
+\multirow{-5}{*}{\raggedright\arraybackslash Flowers per plant} & Plant size (Phi) & 0.384 & 0.097 & - & 0.606 & 0.14\\
+\cline{1-7}
+ & Pollen count & 0.119 & 0.044 & 0.0074 & -0.009 & 0.186\\
+\cline{2-7}
+ & Plant size & 0.190 & 0.027 & $<$0.0001 & 0.216 & 0.147\\
+\cline{2-7}
+ & Bay centre & -0.212 & 0.059 & 0.0003 & -0.362 & -0.113\\
+\cline{2-7}
+ & HB distance & -0.115 & 0.019 & $<$0.0001 & -0.118 & -0.131\\
+\cline{2-7}
+ & LCB distance & -0.214 & 0.062 & 0.0005 & -0.135 & -0.254\\
+\cline{2-7}
+ & Flower density & -0.005 & 0.008 & 0.5456 & -0.02 & 0.009\\
+\cline{2-7}
+ & Sigma (plot) & 0.296 & 0.026 & - & 0.259 & 0.32\\
+\cline{2-7}
+ & Sigma (field) & 0.366 & 0.056 & - & 0.105* & 0.464*\\
+\cline{2-7}
+\multirow{-9}{*}{\raggedright\arraybackslash Pods per plant} & Plant size (Phi) & 0.222 & 0.115 & - & 0.492 & -0.032\\
+\cline{1-7}
+ & Pollen count & 1.208 & 0.317 & 0.0001 & 0.369 & 1.48\\
+\cline{2-7}
+ & Plant size & 4.757 & 0.776 & $<$0.0001 & 4.309 & 3.009\\
+\cline{2-7}
+ & Bay centre & -0.502 & 0.449 & 0.2639 & -0.621 & -0.655\\
+\cline{2-7}
+ & HB distance & -0.018 & 0.120 & 0.881 & -0.287 & 0.128\\
+\cline{2-7}
+ & Flower density & -0.114 & 0.057 & 0.0451 & 0.02 & -0.184\\
+\cline{2-7}
+ & Pods per plant & 1.647 & 0.352 & $<$0.0001 & 3.201 & 1.305\\
+\cline{2-7}
+ & Flowers per plant & -4.257 & 0.743 & $<$0.0001 & -3.396 & -2.971\\
+\cline{2-7}
+ & Sigma & 4.250 & 0.156 & - & 4.14 & 4.252\\
+\cline{2-7}
+ & Sigma (field) & 1.972 & 0.322 & - & 1.476 & 1.972\\
+\cline{2-7}
+\multirow{-10}{*}{\raggedright\arraybackslash Seeds per pod} & Lambda & 1.673 & 0.995 & - & 1.5 & 1.453\\
+\cline{1-7}
+ & Pollen count & -0.020 & 0.051 & 0.7002 & -0.016 & 0.013\\
+\cline{2-7}
+ & Seeds per pod & -0.013 & 0.007 & 0.0765 & 0.016* & -0.04*\\
+\cline{2-7}
+ & Plant size & 0.233 & 0.055 & $<$0.0001 & 0.255 & 0.129\\
+\cline{2-7}
+ & Plant density & 0.413 & 0.110 & 0.0002 & 0.508 & 0.047\\
+\cline{2-7}
+ & LCB distance & 0.072 & 0.072 & 0.3146 & -0.117 & 0.138\\
+\cline{2-7}
+ & Sigma & 0.751 & 0.030 & - & 0.768 & 0.686\\
+\cline{2-7}
+ & Sigma (field) & 0.358 & 0.061 & - & 0.333 & 0.298\\
+\cline{2-7}
+\multirow{-8}{*}{\raggedright\arraybackslash Seed size} & Lambda & 4.436 & 1.219 & - & 3.491 & 4.191\\
 \hline
 \end{longtable}
 \endgroup{}
@@ -537,52 +797,98 @@ Formulas for total yield models are  using \texttt{lmer}-style R formulas. Predi
     & (log(\text{Predicted Yield})|\text{Plot}), \text{distribution = log-normal} \\
 \end{align*}
 
+% \begin{table}[h] %First manuscript
+% \centering\begingroup\fontsize{9}{11}\selectfont
+% \caption{Summary of parameters for total yield models} 
+% \begin{tabular}{l|l|r|r|r|r|r|r|r|r|r}
+% \hline
+% Field Type & Parameter & Mean & SD & Z & median & Min & Max & p-value & N$_{eff}$ & $\hat{R}$\\
+% \hline
+%  & Intercept & -0.318 & 0.042 & -7.62 & -0.317 & -0.397 & -0.236 & 0.000 & 982 & 1.000\\
+% \cline{2-11}
+%  & Predicted Yield & 1.007 & 0.018 & 55.64 & 1.007 & 0.972 & 1.044 & 0.000 & 1044 & 1.000\\
+% \cline{2-11}
+%  & Sigma (field intercept) & 0.119 & 0.041 & 2.89 & 0.112 & 0.051 & 0.216 & 0.004 & 292 & 1.020\\
+% \cline{2-11}
+%  & Sigma (field slope) & 0.026 & 0.019 & 1.37 & 0.023 & 0.001 & 0.072 & 0.170 & 295 & 1.013\\
+% \cline{2-11}
+%  & Sigma (plot intercept) & 0.389 & 0.037 & 10.47 & 0.388 & 0.318 & 0.465 & 0.000 & 506 & 1.005\\
+% \cline{2-11}
+%  & Sigma (plot slope) & 0.169 & 0.017 & 9.86 & 0.168 & 0.135 & 0.204 & 0.000 & 556 & 1.006\\
+% \cline{2-11}
+%  & Sigma & 0.253 & 0.008 & 33.30 & 0.253 & 0.239 & 0.268 & 0.000 & 2002 & 1.000\\
+% \cline{2-11}
+%  & Correlation (Int:Slope field) & -0.400 & 0.448 & -0.89 & -0.525 & -0.944 & 0.626 & 0.372 & 660 & 1.005\\
+% \cline{2-11}
+% \multirow{-9}{*}{\raggedright\arraybackslash Commodity} & Correlation (Int:Slope plot) & -0.989 & 0.007 & -140.44 & -0.990 & -0.998 & -0.972 & 0.000 & 936 & 1.005\\
+% \cline{1-11}
+%  & Intercept & -0.210 & 0.072 & -2.90 & -0.210 & -0.348 & -0.066 & 0.004 & 738 & 1.007\\
+% \cline{2-11}
+%  & Predicted Yield & 0.856 & 0.025 & 34.62 & 0.856 & 0.806 & 0.904 & 0.000 & 672 & 1.008\\
+% \cline{2-11}
+%  & Sigma (field intercept) & 0.040 & 0.018 & 2.28 & 0.038 & 0.011 & 0.079 & 0.022 & 226 & 1.005\\
+% \cline{2-11}
+%  & Sigma (field slope) & 0.010 & 0.007 & 1.56 & 0.009 & 0.001 & 0.023 & 0.118 & 217 & 1.005\\
+% \cline{2-11}
+%  & Sigma (plot intercept) & 0.097 & 0.013 & 7.26 & 0.097 & 0.072 & 0.124 & 0.000 & 470 & 1.005\\
+% \cline{2-11}
+%  & Sigma (plot slope) & 0.032 & 0.005 & 5.83 & 0.032 & 0.021 & 0.043 & 0.000 & 379 & 1.006\\
+% \cline{2-11}
+%  & Sigma & 0.289 & 0.012 & 23.59 & 0.289 & 0.266 & 0.314 & 0.000 & 1218 & 1.001\\
+% \cline{2-11}
+%  & Correlation (Int:Slope field) & -0.470 & 0.436 & -1.08 & -0.616 & -0.946 & 0.603 & 0.281 & 457 & 1.005\\
+% \cline{2-11}
+% \multirow{-9}{*}{\raggedright\arraybackslash Seed} & Correlation (Int:Slope plot) & -0.902 & 0.038 & -23.81 & -0.909 & -0.954 & -0.808 & 0.000 & 486 & 1.007\\
+% \hline
+% \end{tabular}
+% \label{tab:totalYieldCoefs}
+% \endgroup{}
+% \end{table}
+
 \begin{table}[h]
 \centering\begingroup\fontsize{9}{11}\selectfont
-\caption{Summary of parameters for total yield models}
-
-\begin{tabular}{l|l|r|r|r|r|r|r|r|r|r}
+\caption{Summary of parameters for total yield models. p-values indicate whether means differed from zero (variance terms were excluded).}
+\begin{tabular}{l|l|r|r|l}
 \hline
-Field Type & Parameter & Mean & SD & Z & median & Min & Max & p-value & N$_{eff}$ & $\hat{R}$\\
+Field Type & Parameter & Mean & SD & p-value\\
 \hline
- & Intercept & -0.318 & 0.042 & -7.62 & -0.317 & -0.397 & -0.236 & 0.000 & 982 & 1.000\\
-\cline{2-11}
- & Predicted Yield & 1.007 & 0.018 & 55.64 & 1.007 & 0.972 & 1.044 & 0.000 & 1044 & 1.000\\
-\cline{2-11}
- & Sigma (field intercept) & 0.119 & 0.041 & 2.89 & 0.112 & 0.051 & 0.216 & 0.004 & 292 & 1.020\\
-\cline{2-11}
- & Sigma (field slope) & 0.026 & 0.019 & 1.37 & 0.023 & 0.001 & 0.072 & 0.170 & 295 & 1.013\\
-\cline{2-11}
- & Sigma (plot intercept) & 0.389 & 0.037 & 10.47 & 0.388 & 0.318 & 0.465 & 0.000 & 506 & 1.005\\
-\cline{2-11}
- & Sigma (plot slope) & 0.169 & 0.017 & 9.86 & 0.168 & 0.135 & 0.204 & 0.000 & 556 & 1.006\\
-\cline{2-11}
- & Sigma & 0.253 & 0.008 & 33.30 & 0.253 & 0.239 & 0.268 & 0.000 & 2002 & 1.000\\
-\cline{2-11}
- & Correlation (Int:Slope field) & -0.400 & 0.448 & -0.89 & -0.525 & -0.944 & 0.626 & 0.372 & 660 & 1.005\\
-\cline{2-11}
-\multirow{-9}{*}{\raggedright\arraybackslash Commodity} & Correlation (Int:Slope plot) & -0.989 & 0.007 & -140.44 & -0.990 & -0.998 & -0.972 & 0.000 & 936 & 1.005\\
-\cline{1-11}
- & Intercept & -0.210 & 0.072 & -2.90 & -0.210 & -0.348 & -0.066 & 0.004 & 738 & 1.007\\
-\cline{2-11}
- & Predicted Yield & 0.856 & 0.025 & 34.62 & 0.856 & 0.806 & 0.904 & 0.000 & 672 & 1.008\\
-\cline{2-11}
- & Sigma (field intercept) & 0.040 & 0.018 & 2.28 & 0.038 & 0.011 & 0.079 & 0.022 & 226 & 1.005\\
-\cline{2-11}
- & Sigma (field slope) & 0.010 & 0.007 & 1.56 & 0.009 & 0.001 & 0.023 & 0.118 & 217 & 1.005\\
-\cline{2-11}
- & Sigma (plot intercept) & 0.097 & 0.013 & 7.26 & 0.097 & 0.072 & 0.124 & 0.000 & 470 & 1.005\\
-\cline{2-11}
- & Sigma (plot slope) & 0.032 & 0.005 & 5.83 & 0.032 & 0.021 & 0.043 & 0.000 & 379 & 1.006\\
-\cline{2-11}
- & Sigma & 0.289 & 0.012 & 23.59 & 0.289 & 0.266 & 0.314 & 0.000 & 1218 & 1.001\\
-\cline{2-11}
- & Correlation (Int:Slope field) & -0.470 & 0.436 & -1.08 & -0.616 & -0.946 & 0.603 & 0.281 & 457 & 1.005\\
-\cline{2-11}
-\multirow{-9}{*}{\raggedright\arraybackslash Seed} & Correlation (Int:Slope plot) & -0.902 & 0.038 & -23.81 & -0.909 & -0.954 & -0.808 & 0.000 & 486 & 1.007\\
+ & Intercept & -0.318 & 0.042 & $<$0.0001\\
+\cline{2-5}
+ & Predicted Yield & 1.007 & 0.018 & $<$0.0001\\
+\cline{2-5}
+ & Sigma (field intercept) & 0.119 & 0.041 & -\\
+\cline{2-5}
+ & Sigma (field slope) & 0.026 & 0.019 & -\\
+\cline{2-5}
+ & Sigma (plot intercept) & 0.389 & 0.037 & -\\
+\cline{2-5}
+ & Sigma (plot slope) & 0.169 & 0.017 & -\\
+\cline{2-5}
+ & Sigma & 0.253 & 0.008 & -\\
+\cline{2-5}
+ & Correlation (Int:Slope field) & -0.400 & 0.448 & -\\
+\cline{2-5}
+\multirow{-9}{*}{\raggedright\arraybackslash Commodity} & Correlation (Int:Slope plot) & -0.989 & 0.007 & -\\
+\cline{1-5}
+ & Intercept & -0.210 & 0.072 & 0.0037\\
+\cline{2-5}
+ & Predicted Yield & 0.856 & 0.025 & $<$0.0001\\
+\cline{2-5}
+ & Sigma (field intercept) & 0.040 & 0.018 & -\\
+\cline{2-5}
+ & Sigma (field slope) & 0.010 & 0.007 & -\\
+\cline{2-5}
+ & Sigma (plot intercept) & 0.097 & 0.013 & -\\
+\cline{2-5}
+ & Sigma (plot slope) & 0.032 & 0.005 & -\\
+\cline{2-5}
+ & Sigma & 0.289 & 0.012 & -\\
+\cline{2-5}
+ & Correlation (Int:Slope field) & -0.470 & 0.436 & -\\
+\cline{2-5}
+\multirow{-9}{*}{\raggedright\arraybackslash Seed} & Correlation (Int:Slope plot) & -0.902 & 0.038 & -\\
 \hline
 \end{tabular}
-\label{tab:totalYieldCoefs}
 \endgroup{}
 \end{table}
 
