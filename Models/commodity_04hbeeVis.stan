@@ -45,6 +45,7 @@ transformed data {
 	//Transformations
 	vector[Nfield] logNumHives; //Log number of hives	
 	vector[Nfield] stockingRate; //Stocking rate
+	vector[Nfield] logStockingRate; //Stocking rate
 	vector[Nplot] logHbeeDist=log(dist); //Log-transform distance	
 	vector[Nplot] logTime=log(totalTime); //Log-transform time
 	vector[Nplot] logHbeeVis;  //Hbee visitation rate
@@ -60,6 +61,7 @@ transformed data {
 	for(i in 1:Nfield){
 		logNumHives[i]=log(numHives[i]+1); //Log transform number of hives	
 		stockingRate[i] = numHives[i]/fieldSize[i]; //Stocking rate (hives/ha)
+		logStockingRate[i] = log(stockingRate[i]+0.01); //log-stocking rate
 	}
 	
 	for(i in 1:Nplot){ //Log transform of honeybee visitation rate (per 10 mins)
@@ -112,13 +114,10 @@ transformed parameters {
 		visitHbeeMu[i] = intHbeeVis + //Intercept
 		  intHbeeVis_field[plotIndex[i]] + //Field-level random intercept
 		  logTime[i] + //Time offset
-			// slopeYearVis*is2015[plotIndex[i]] + //Year effect
-			// slopeGpVis*isGP[plotIndex[i]] + //Grand Prairie effect
-			// slopeYearGpVis*is2015[plotIndex[i]]*isGP[plotIndex[i]] + //Year:area interaction
 			slopeHbeeDistHbeeVis*logHbeeDist[i] + //distance from edge
 			slopeNumHivesHbeeVis*logNumHives[plotIndex[i]] + //(log) Number of hives
+			// slopeNumHivesHbeeVis*logStockingRate[plotIndex[i]] + //log Stocking rate - gives essentially the same answer for all other parameters, and dAIC = 0.2
 			slopeFlDensHbeeVis*flDens[i]; //Flower density
-			// slopeIrrigVis*isIrrigated[plotIndex[i]]; //Irrigation
 	}
 }
 	

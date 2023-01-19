@@ -71,13 +71,24 @@ load('./datalist_seed.Rdata')
 # plantsAllSeed$Field <- gsub('Unrah','Unruh',plantsAllSeed$Field) #Fixes spelling error
 # seedsAllSeed$Field <- gsub('Unrah','Unruh',seedsAllSeed$Field)
 # seedsAllSeed$EdgeCent <- ifelse(seedsAllSeed$EdgeCent=='Cent','Center',seedsAllSeed$EdgeCent) #Fixes cent/center
-# rm(allFields,allPlants,allPollen,allSeeds,allSurvey,behav2015,visitors2016,nectar2016,folder)
+# rm(allFields,allPlants,allPollen,allSeeds,allSurvey,behav2015,visitors2016,nectar2016,folder,survey2015,survey2016)
 # #Set 'negative' missing pods (mistake in counting) to NA.
 # plantsAllSeed <- mutate(plantsAllSeed,Missing=ifelse(Missing<0,NA,Missing))
 # seedsAllSeed <- mutate(seedsAllSeed,Missing=ifelse(Missing<0,NA,Missing))
 # #Extra seed field data (from Riley W.)
 # rileyExtra <- read.csv('../Seed field analysis/rileyExtra.csv')
 # setwd('~/Projects/UofC/canola_yield_project')
+# 
+# # Filter for yearly model runs, if needed
+# {
+#   yfilt <- 2016
+#   rileyExtra <- filter(rileyExtra,Year==yfilt)
+#   fieldsAllSeed <- filter(fieldsAllSeed,Year==yfilt) %>% droplevels()
+#   surveyAllSeed <- filter(surveyAllSeed,Year==yfilt) %>% droplevels()
+#   pollenAllSeed <- filter(pollenAllSeed,Year==yfilt) %>% droplevels()
+#   plantsAllSeed <- filter(plantsAllSeed,Year==yfilt) %>% droplevels()
+#   seedsAllSeed <- filter(seedsAllSeed,Year==yfilt) %>% droplevels()
+# }
 # 
 # #Organize names of extra sites from Riley
 # rileyExtra$site <- factor(rileyExtra$site)
@@ -108,7 +119,6 @@ load('./datalist_seed.Rdata')
 # #   unite(ID,Year,Field,Distance,EdgeCent,Branch,Pods,Missing,remove=F) %>%
 # #   left_join(temp,by='ID') %>%  select(-ID)
 # # rm(temp)
-# 
 # # #Add average pollen per plot
 # # surveyAllSeed <- surveyAllSeed %>%
 # #   unite(plot,Field,Distance,EdgeCent,remove=F) %>%
@@ -425,7 +435,7 @@ read.csv('./Seed model claims 3/claimsList_updated2.csv',sep=',',strip.white = T
   shipley.dSep(.,pval,param)
 
 
-#Marginal plots ---------------------
+# Marginal plots ---------------------
 
 load('modSummaries_seed.Rdata') #Load existing list
 
@@ -646,3 +656,118 @@ with(mod3,PPplots(apply(seedMass_resid,1,function(x) sum(abs(x))),
                   apply(predSeedMass_resid,1,function(x) sum(abs(x))),
                   datalist$seedMass,apply(mod3$predSeedMass,2,median),
                   main='Weight per seed'))
+
+# Run yearly version of main models --------------------------------------------
+
+library(rstan)
+setwd('./Models')
+rstan_options(auto_write = TRUE) #Avoids recompilation
+rstan_options(javascript = FALSE)
+options(mc.cores = 6)
+
+load('./datalist2015_seed.Rdata')
+datalist2015 <- datalist
+load('./datalist2016_seed.Rdata')
+datalist2016 <- datalist; rm(datalist)
+
+# 2015 models
+modFiles <- dir(pattern = 'seed_.*\\.stan')
+modList2015 <- vector(mode = 'list',length = length(modFiles))
+names(modList2015) <- gsub('(seed_.*[0-9]{2}|\\.stan)','',modFiles)
+
+modList2015[1] <- stan(file=modFiles[1],data=datalist2015,iter=4000,warmup=3000,
+                       control=list(adapt_delta=0.9),chains=4,init=0.1) #Plant density, Plant size, Flower Density - OK
+modList2015[2] <- stan(file=modFiles[2],data=datalist2015,iter=2000,chains=4,init=0) #Hbee visitation - OK, but traces for RE aren't great
+modList2015[3] <- stan(file=modFiles[3],data=datalist2015,iter=2000,chains=4,init=0) #Lbee visitation - OK
+modList2015[4] <- stan(file=modFiles[4],data=datalist2015,iter=2000,chains=4,init=0) #Pollen - OK
+modList2015[5] <- stan(file=modFiles[5],data=datalist2015,iter=2000,chains=4,init=0) #Flower count per plant - OK
+modList2015[6] <- stan(file=modFiles[6],data=datalist2015,iter=2000,chains=4,init=0) #Pod count (flw survival) per plant
+modList2015[7] <- stan(file=modFiles[7],data=datalist2015,iter=2000,chains=4,init=0) #Seeds per pod
+modList2015[8] <- stan(file=modFiles[8],data=datalist2015,iter=2000,chains=4,init=0) #Weight per seed
+modList2015[9] <- stan(file=modFiles[9],data=datalist2015,iter=3000,chains=4,init=0,control=list(adapt_delta=0.9)) #Yield
+
+# #Traceplots
+# for(i in 1:length(modList2015)){
+#   if(!is.null(modList2015[[i]])){
+#     n <- names(modList2015[[i]]) #Model parameters
+#     n <- n[(!grepl('(\\[[0-9]+,*[0-9]*\\]|lp)',n))|grepl('[sS]igma',n)] #Gets rid of parameter vectors, unless it contains "sigma" (variance term)
+#     p <- traceplot(modList2015[[i]],pars=n,inc_warmup=FALSE)#+geom_hline(yintercept = 0) #Traceplots
+#     print(p); rm(p)
+#     a <- readline('Press Return to continue: ')
+#     if(a!='') break()
+#   }
+# }
+
+# Get model summaries into a list of tables
+# modSummaries2015_seed <- vector(mode = 'list',length = length(modList2015)) #Create new empty list
+# names(modSummaries2015_seed) <- names(modList2015)
+load('modSummaries2015_seed.Rdata') #Load existing list
+#Update model summaries if needed
+temp <- lapply(modList2015,parTable) #Get parameter summaries
+for(i in 1:length(temp)){
+  if(class(temp[[i]])=='data.frame'||length(temp[[i]])>1){ #If temp is not empty (model not run)
+    modSummaries2015_seed[[i]]$summary <- temp[[i]]$summary #Overwrite
+    modSummaries2015_seed[[i]]$covMat <- temp[[i]]$covMat
+  }
+}
+parNames <- lapply(modSummaries2015_seed,function(x) x$summary$param) #Clean up extra parameter names
+for(i in 2:length(modSummaries2015_seed)){
+  if(!is.null(modSummaries2015_seed[[i]])){
+    chooseThese <- !parNames[[i]] %in% unlist(parNames[1:(i-1)])
+    modSummaries2015_seed[[i]]$summary <- modSummaries2015_seed[[i]]$summary[chooseThese,]
+    modSummaries2015_seed[[i]]$covMat <- modSummaries2015_seed[[i]]$covMat[chooseThese,chooseThese]
+  }
+}
+save(modSummaries2015_seed,file = 'modSummaries2015_seed.Rdata'); rm(temp)
+
+#2016 models
+datalist2016$missPlDens_ind <- 0
+
+modFiles <- dir(pattern = 'seed_.*\\.stan')
+modList2016 <- vector(mode = 'list',length = length(modFiles))
+names(modList2016) <- gsub('(seed_.*[0-9]{2}|\\.stan)','',modFiles)
+
+modList2016[1] <- stan(file=modFiles[1],data=datalist2016,iter=4000,warmup=3000,
+                       control=list(adapt_delta=0.9),chains=4,init=0.1) #Plant density, Plant size, Flower Density - OK
+modList2016[2] <- stan(file=modFiles[2],data=datalist2016,iter=2000,chains=4,init=0) #Hbee visitation - OK, but traces for RE aren't great
+modList2016[3] <- stan(file=modFiles[3],data=datalist2016,iter=2000,chains=4,init=0) #Lbee visitation - OK
+modList2016[4] <- stan(file=modFiles[4],data=datalist2016,iter=2000,chains=4,init=0) #Pollen - OK
+modList2016[5] <- stan(file=modFiles[5],data=datalist2016,iter=2000,chains=4,init=0) #Flower count per plant - OK
+modList2016[6] <- stan(file=modFiles[6],data=datalist2016,iter=2000,chains=4,init=0) #Pod count (flw survival) per plant
+modList2016[7] <- stan(file=modFiles[7],data=datalist2016,iter=2000,chains=4,init=0) #Seeds per pod
+modList2016[8] <- stan(file=modFiles[8],data=datalist2016,iter=2000,chains=4,init=0) #Weight per seed
+modList2016[9] <- stan(file=modFiles[9],data=datalist2016,iter=3000,chains=4,init=0,control=list(adapt_delta=0.9)) #Yield
+
+#Traceplots
+for(i in 1:length(modList2016)){
+  if(!is.null(modList2016[[i]])){
+    n <- names(modList2016[[i]]) #Model parameters
+    n <- n[(!grepl('(\\[[0-9]+,*[0-9]*\\]|lp)',n))|grepl('[sS]igma',n)] #Gets rid of parameter vectors, unless it contains "sigma" (variance term)
+    p <- traceplot(modList2016[[i]],pars=n,inc_warmup=FALSE)#+geom_hline(yintercept = 0) #Traceplots
+    print(p); rm(p)
+    a <- readline('Press Return to continue: ')
+    if(a!='') break()
+  }
+}
+
+# Get model summaries into a list of tables
+# modSummaries2016_seed <- vector(mode = 'list',length = length(modList2016)) #Create new empty list
+# names(modSummaries2016_seed) <- names(modList2016)
+load('modSummaries2016_seed.Rdata') #Load existing list
+#Update model summaries if needed
+temp <- lapply(modList2016,parTable) #Get parameter summaries
+for(i in 1:length(temp)){
+  if(class(temp[[i]])=='data.frame'||length(temp[[i]])>1){ #If temp is not empty (model not run)
+    modSummaries2016_seed[[i]]$summary <- temp[[i]]$summary #Overwrite
+    modSummaries2016_seed[[i]]$covMat <- temp[[i]]$covMat
+  }
+}
+parNames <- lapply(modSummaries2016_seed,function(x) x$summary$param) #Clean up extra parameter names
+for(i in 2:length(modSummaries2016_seed)){
+  if(!is.null(modSummaries2016_seed[[i]])){
+    chooseThese <- !parNames[[i]] %in% unlist(parNames[1:(i-1)])
+    modSummaries2016_seed[[i]]$summary <- modSummaries2016_seed[[i]]$summary[chooseThese,]
+    modSummaries2016_seed[[i]]$covMat <- modSummaries2016_seed[[i]]$covMat[chooseThese,chooseThese]
+  }
+}
+save(modSummaries2016_seed,file = 'modSummaries2016_seed.Rdata'); rm(temp)

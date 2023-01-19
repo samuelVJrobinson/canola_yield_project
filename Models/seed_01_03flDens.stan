@@ -213,7 +213,9 @@ transformed parameters {
 	
 	//Combine observed with imputed		
 	plDens[plotIndex_F[obsPlDens_ind]]=plDens_obs; //Observed plant density from my fields
-	plDens[plotIndex_F[missPlDens_ind]]=plDens_miss; //Missing plant density (only 1) 
+	if(missPlDens_ind>0){
+	  plDens[plotIndex_F[missPlDens_ind]]=plDens_miss; //Missing plant density (only 1)  
+	}
 	flDens[obsflDens_ind]=flDens_obs; //Observed flower density
 	flDens[missflDens_ind]=flDens_miss;
  	for(i in 1:Nplot_flDensObs_extra) //For each extra observed plot

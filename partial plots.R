@@ -20,6 +20,8 @@ summaryDat <- function(x){
   data.frame(min=min(x),mean=mean(x),med=median(x),max=max(x))
 } 
 
+ciOverlap <- function(lwr1,upr1,lwr2,upr2)  !(lwr1>upr2 & upr1>upr2 | upr1<lwr2 & upr1<upr2) #Do posterior quantiles overlap?
+
 load('../Models/datalist_commodity.Rdata') #Commodity data
 commData <- datalist
 load('../Models/datalist_seed.Rdata') #Seed data
@@ -55,6 +57,12 @@ avgSeedData$logLbeeDistCent <- mean(log(with(seedData,c(lbee_dist,lbee_dist_extr
 
 load('../Models/modSummaries_commodity.Rdata') #Commodity data models
 load('../Models/modSummaries_seed.Rdata') #Seed data models
+
+#Yearly models
+load('../Models/modSummaries2014_commodity.Rdata') 
+load('../Models/modSummaries2015_commodity.Rdata')
+load('../Models/modSummaries2015_seed.Rdata') 
+load('../Models/modSummaries2016_seed.Rdata') 
 
 # Visitation plots --------------------------------------------------------
 
@@ -1029,6 +1037,28 @@ commPars %>%
   # column_spec(1, width = "8em") %>%
   collapse_rows(columns=1,longtable_clean_cut=FALSE) %>% 
   clipr::write_clip() #Writes to clipboard
+
+#Other version comparing parameters between years
+m1 <- lapply(modSummaries2014_commodity,function(x) x$summary) %>% bind_rows(.id='model') %>% filter(model!='yield')
+m2 <- lapply(modSummaries2015_commodity,function(x) x$summary) %>% bind_rows(.id='model') %>% filter(model!='yield')
+
+yearOverlap <- list('Y2014'=m1,'Y2015'=m2) %>% bind_rows(.id='data') %>% 
+  select(data:param,mean,lwr,upr) %>% 
+  filter(data!='Both') %>% 
+  pivot_wider(names_from=data,values_from=c(mean,lwr,upr)) %>% 
+  mutate(overlap=ciOverlap(lwr_Y2014,upr_Y2014,lwr_Y2015,upr_Y2015)) 
+
+commPars %>% select(-median:-upr,-n_eff,-Rhat) %>% 
+  bind_cols(yearOverlap)
+  rename('Parameter'='param','Mean'='mean','SD'='sd','p-value'='pval') %>%
+  rename_with(capFirst) 
+# %>%
+#   kable(format = 'latex',escape = FALSE,digits=c(0,0,2,2,2,2,2,3,0,3),longtable=TRUE) %>%
+#   kable_styling(font_size = 9,latex_options = c("repeat_header")) %>%
+#   # column_spec(1, width = "8em") %>%
+#   collapse_rows(columns=1,longtable_clean_cut=FALSE) 
+  
+
   
 #Seed model parameters
   
@@ -1082,18 +1112,6 @@ seedPars %>%
   clipr::write_clip() #Writes to clipboard
 
 
-
-# #Single table too large
-# bind_rows(commPars,seedPars,.id='Field Type') %>%
-#   mutate(`Field Type`=ifelse(`Field Type`==1,'Commodity','Seed')) %>% 
-#   rename('Parameter'='param','SD'='sd','Min'='lwr','Max'='upr','p-value'='pval',
-#          '$N_{eff}$'='n_eff','$\\hat{R}'='Rhat') %>%
-#   rename_with(capFirst) %>% 
-#   kable(format = 'latex',escape = FALSE,digits=c(0,0,2,2,2,2,2,2)) %>% 
-#   collapse_rows(columns=c(1,2))
-
-
-
 # Summary of parameters for total yield models ---------------
 
 bind_rows(modSummaries_commodity$yield$summary,
@@ -1117,4 +1135,47 @@ bind_rows(modSummaries_commodity$yield$summary,
   # column_spec(1, width = "8em") %>%
   collapse_rows(columns=1) %>% 
   clipr::write_clip() #Writes to clipboard
+
+# Compare parameters between years ----------------------------------------
+
+  
+  mutate(model=case_when(
+    model=='flDens' & grepl('(PlDens$|PlDens_)',param) ~ 'plDens',
+    model=='flDens' & grepl('(PlSize$|PlSize_)',param) ~ 'plSize',
+    TRUE ~ gsub('avg','seed',model)
+  )) %>% 
+  mutate(param=gsub('slope','',param)) %>% 
+  filter(!grepl('Pol$',param)&model!='pollen') %>%   
+  # filter(mapply(grepl,capFirst(model),param)) %>% 
+  mutate(param=mapply(gsub,capFirst(model),'',param)) %>% 
+  mutate(param=capFirst(param,TRUE)) %>% 
+  left_join(commNames,by=c('model'='name')) %>% 
+  select(-model) %>% rename(model=labs) %>% 
+  left_join(commNames,by=c('param'='name')) %>%
+  mutate(param=ifelse(is.na(labs),param,labs)) %>% 
+  select(model,param,mean:Rhat,-Z) %>% 
+  mutate(param=capFirst(param)) %>% 
+  mutate(param=case_when(
+    param=='Int' ~ 'Intercept',
+    model=='Pods per plant' & param=='IntPhi' ~ 'Phi',
+    model=='Flowers per plant' & param=='IntPhi' ~ 'Intercept (Phi)',
+    model=='Flowers per plant' & param=='PlSizePhi' ~ 'Plant size (Phi)',
+    model=='Flowers per plant' & param=='SigmaPhi (field)' ~ 'Sigma (field Phi)',
+    TRUE ~ gsub('_(f|F)ield',' (field)',param)
+  )) %>% mutate(pval=case_when(
+    grepl('(Sigma|Lambda|Phi|Theta)',param) ~ '-',
+    pval==0 ~ '$<$0.0001',
+    TRUE ~ formatC(pval)
+  ))
+
+commPars %>%
+  rename('Parameter'='param','SD'='sd','Min'='lwr','Max'='upr','p-value'='pval',
+         'N$_{eff}$'='n_eff','$\\hat{R}$'='Rhat') %>%
+  rename_with(capFirst) %>%
+  kable(format = 'latex',escape = FALSE,digits=c(0,0,2,2,2,2,2,3,0,3),longtable=TRUE) %>%
+  kable_styling(font_size = 9,latex_options = c("repeat_header")) %>%
+  # column_spec(1, width = "8em") %>%
+  collapse_rows(columns=1,longtable_clean_cut=FALSE) %>% 
+  clipr::write_clip() #Writes to clipboard
+
   

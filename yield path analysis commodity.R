@@ -208,8 +208,6 @@ for(i in 1:length(modList)){
   }
 }
 
-
-
 #Posterior predictive checks - OK 
 PPplots(modList[[1]],datalist$plDens_obs,c('predPlDens','plDens_resid','predPlDens_resid'),
         index = datalist$obsPlDens_ind,main='Plant Density')
@@ -242,7 +240,6 @@ compareRE(modList[[8]],'ranEffYield_field',1) #Intercepts
 compareRE(modList[[8]],'ranEffYield_field',2) #Slopes
 compareRE(modList[[8]],'ranEffYield_plot',1,0.3) #Intercepts
 compareRE(modList[[8]],'ranEffYield_plot',2,0.3) #Slopes - right skew
-
 
 # Run claims models ---------------------
 
@@ -326,3 +323,189 @@ read.csv('./Commodity model claims 3/claimsList_updated.csv',sep=',',strip.white
 read.csv('./Commodity model claims 3/claimsList_updated2.csv',sep=',',strip.white = TRUE) %>% 
   mutate(pval=pnorm(-abs(Z))*2) %>% 
   shipley.dSep(.,pval,param)
+
+# Run yearly version of main models ---------------------------------------
+
+# library(rstan)
+# setwd('./Models')
+# rstan_options(auto_write = TRUE) #Avoids recompilation
+# rstan_options(javascript = FALSE)
+# options(mc.cores = 6)
+# 
+# #Split datalist into 2014 and 2015 sets
+# 
+# datalist$plSizePlot_obs <- NULL #Not used
+# 
+# is2015 <- datalist$is2015 #Field-level
+# is2015_plot <- with(datalist,is2015[plotIndex])
+# is2015_flw <- with(datalist,is2015[plotIndex[flowerIndex]])
+# is2015_plant <- with(datalist,is2015[plotIndex[plantIndex]])
+# 
+# #2014 dataset
+# datalist2014 <- lapply(datalist,function(x){
+#   l <- length(x)
+#   if(l==60){
+#     r <- x[!is2015]
+#   } else if(l==271){
+#     r <- x[!is2015_plot]
+#   } else if(l==1294){
+#     r <- x[!is2015_flw]
+#   } else if(l==788){
+#     r <- x[!is2015_plant]
+#   } else r <- x
+#   return(r)
+# })
+# datalist2014$Nfield <- sum(!is2015); datalist2014$Nplot <- sum(!is2015_plot)
+# datalist2014$Nflw <- sum(!is2015_flw); datalist2014$Nplant <- sum(!is2015_plant)
+# #Missing plant density obs
+# {
+#   datalist2014$plDens_obs <- with(datalist,plDens_obs[!is2015_plot[obsPlDens_ind]]) 
+#   datalist2014$obsPlDens_ind <- with(datalist,obsPlDens_ind[!is2015_plot[obsPlDens_ind]])
+#   datalist2014$missPlDens_ind <- with(datalist,missPlDens_ind[!is2015_plot[missPlDens_ind]])
+#   datalist2014$Nplot_densObs <- length(datalist2014$plDens_obs)
+#   datalist2014$Nplot_densMiss <- length(datalist2014$missPlDens_ind)
+# }
+# #Missing flower count obs
+# { 
+#   datalist2014$flwCountPlot_obs <- with(datalist,flwCountPlot_obs[!is2015_plot[obsFlwCount_ind]]) 
+#   datalist2014$obsFlwCount_ind <- with(datalist,obsFlwCount_ind[!is2015_plot[obsFlwCount_ind]])
+#   datalist2014$missFlwCount_ind <- with(datalist,missFlwCount_ind[!is2015_plot[missFlwCount_ind]])
+#   datalist2014$Nplot_flwCountObs <- length(datalist2014$flwCountPlot_obs)
+#   datalist2014$Nplot_flwCountMiss <- length(datalist2014$missFlwCount_ind)  
+# }
+# 
+# #2015 dataset
+# datalist2015 <- lapply(datalist,function(x){
+#   l <- length(x)
+#   if(l==60){
+#     r <- x[is2015]
+#   } else if(l==271){
+#     r <- x[is2015_plot]
+#   } else if(l==1294){
+#     r <- x[is2015_flw]
+#   } else if(l==788){
+#     r <- x[is2015_plant]
+#   } else r <- x
+#   return(r)
+# })
+# datalist2015$Nfield <- sum(is2015); datalist2015$Nplot <- sum(is2015_plot)
+# datalist2015$Nflw <- sum(is2015_flw); datalist2015$Nplant <- sum(is2015_plant)
+# #Missing plant density obs
+# {
+#   datalist2015$plDens_obs <- with(datalist,plDens_obs[is2015_plot[obsPlDens_ind]]) 
+#   datalist2015$obsPlDens_ind <- with(datalist,obsPlDens_ind[is2015_plot[obsPlDens_ind]])
+#   datalist2015$missPlDens_ind <- with(datalist,missPlDens_ind[is2015_plot[missPlDens_ind]])
+#   datalist2015$Nplot_densObs <- length(datalist2015$plDens_obs)
+#   datalist2015$Nplot_densMiss <- length(datalist2015$missPlDens_ind)
+# }
+# #Missing flower count obs
+# { 
+#   datalist2015$flwCountPlot_obs <- with(datalist,flwCountPlot_obs[is2015_plot[obsFlwCount_ind]]) 
+#   datalist2015$obsFlwCount_ind <- with(datalist,obsFlwCount_ind[is2015_plot[obsFlwCount_ind]])
+#   datalist2015$missFlwCount_ind <- with(datalist,missFlwCount_ind[is2015_plot[missFlwCount_ind]])
+#   datalist2015$Nplot_flwCountObs <- length(datalist2015$flwCountPlot_obs)
+#   datalist2015$Nplot_flwCountMiss <- length(datalist2015$missFlwCount_ind)  
+# }
+# #Fix indices
+# datalist2015[grepl('Index$',names(datalist2015))] <- 
+#   lapply(datalist2015[grepl('Index$',names(datalist2015))],function(x) x-min(x)+1)
+# datalist2015$missPlDens_ind <- with(datalist2015,missPlDens_ind-min(obsPlDens_ind)+1)
+# datalist2015$obsPlDens_ind <- with(datalist2015,obsPlDens_ind-min(obsPlDens_ind)+1)
+# datalist2015$missFlwCount_ind <- with(datalist2015,missFlwCount_ind-min(obsFlwCount_ind)+1)
+# datalist2015$obsFlwCount_ind <- with(datalist2015,obsFlwCount_ind-min(obsFlwCount_ind)+1)
+# 
+# #Run 2014 models
+# modFiles <- dir(pattern = 'commodity.*\\.stan')
+# modFiles <- modFiles[!modFiles=='commodity_07flwSurv2.stan'] #Extra pod count model
+# modList2014 <- vector(mode = 'list',length = length(modFiles))
+# names(modList2014) <- gsub('(commodity.*[0-9]{2}|\\.stan)','',modFiles)
+# 
+# modList2014[1] <- stan(file=modFiles[1],data=datalist2014,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #OK - Plant density, Plant size, Flower Density
+# modList2014[2] <- stan(file=modFiles[2],data=datalist2014,iter=2000,chains=4,control=list(adapt_delta=0.85),init=0) #OK - Visitation
+# modList2014[3] <- stan(file=modFiles[3],data=datalist2014,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #OK - Pollen
+# modList2014[4] <- stan(file=modFiles[4],data=datalist2014,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #OK - Flower count
+# modList2014[5] <- stan(file=modFiles[5],data=datalist2014,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0); beep(1) #OK - Pod Count (flw survival)
+# modList2014[6] <- stan(file=modFiles[6],data=datalist2014,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #OK - Seed Count
+# modList2014[7] <- stan(file=modFiles[7],data=datalist2014,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #OK - Seed weight
+# modList2014[8] <- stan(file=modFiles[8],data=datalist2014,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #OK - Total yield
+# 
+# modSummaries2014_commodity <- vector(mode = 'list',length = length(modList2014)) #Create new empty list
+# names(modSummaries2014_commodity) <- names(modList2014)
+# #Update model summaries if needed
+# temp <- lapply(modList2014,parTable) #Get parameter summaries
+# for(i in 1:length(temp)){
+#   if(class(temp[[i]])=='data.frame'||length(temp[[i]])>1){ #If temp is not empty (model not run)
+#     modSummaries2014_commodity[[i]]$summary <- temp[[i]]$summary #Overwrite
+#     modSummaries2014_commodity[[i]]$covMat <- temp[[i]]$covMat
+#   }
+# }
+# parNames <- lapply(modSummaries2014_commodity,function(x) x$summary$param) #Clean up extra parameter names
+# for(i in 2:length(modSummaries2014_commodity)){
+#   if(!is.null(modSummaries2014_commodity[[i]])){
+#     chooseThese <- !parNames[[i]] %in% unlist(parNames[1:(i-1)])
+#     modSummaries2014_commodity[[i]]$summary <- modSummaries2014_commodity[[i]]$summary[chooseThese,]
+#     modSummaries2014_commodity[[i]]$covMat <- modSummaries2014_commodity[[i]]$covMat[chooseThese,chooseThese]
+#   }
+# }
+# save(modSummaries2014_commodity,file = 'modSummaries2014_commodity.Rdata')
+# #Traceplots
+# for(i in 1:length(modList2014)){
+#   if(!is.null(modList2014[[i]])){
+#     n <- names(modList2014[[i]]) #Model parameters
+#     n <- n[(!grepl('(\\[[0-9]+,*[0-9]*\\]|lp)',n))|grepl('[sS]igma',n)] #Gets rid of parameter vectors, unless it contains "sigma" (variance term)
+#     p <- traceplot(modList2014[[i]],pars=n,inc_warmup=FALSE)#+geom_hline(yintercept = 0) #Traceplots
+#     print(p)
+#     a <- readline('Press Return to continue: ')
+#     if(a!='') break()
+#   }
+# }
+# 
+# #Run 2015 models
+# modFiles <- dir(pattern = 'commodity.*\\.stan')
+# modFiles <- modFiles[!modFiles=='commodity_07flwSurv2.stan'] #Extra pod count model
+# modList2015 <- vector(mode = 'list',length = length(modFiles))
+# names(modList2015) <- gsub('(commodity.*[0-9]{2}|\\.stan)','',modFiles)
+# 
+# modList2015[1] <- stan(file=modFiles[1],data=datalist2015,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #OK - Plant density, Plant size, Flower Density
+# modList2015[2] <- stan(file=modFiles[2],data=datalist2015,iter=2000,chains=4,control=list(adapt_delta=0.85),init=0) #OK - Visitation
+# modList2015[3] <- stan(file=modFiles[3],data=datalist2015,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #OK - Pollen
+# modList2015[4] <- stan(file=modFiles[4],data=datalist2015,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #OK - Flower count
+# modList2015[5] <- stan(file=modFiles[5],data=datalist2015,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0); beep(1) #OK - Pod Count (flw survival)
+# modList2015[6] <- stan(file=modFiles[6],data=datalist2015,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #OK - Seed Count
+# modList2015[7] <- stan(file=modFiles[7],data=datalist2015,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #OK - Seed weight
+# modList2015[8] <- stan(file=modFiles[8],data=datalist2015,iter=2000,chains=4,control=list(adapt_delta=0.8),init=0) #OK - Total yield
+# 
+# modSummaries2015_commodity <- vector(mode = 'list',length = length(modList2015)) #Create new empty list
+# names(modSummaries2015_commodity) <- names(modList2015)
+# #Update model summaries if needed
+# temp <- lapply(modList2015,parTable) #Get parameter summaries
+# for(i in 1:length(temp)){
+#   if(class(temp[[i]])=='data.frame'||length(temp[[i]])>1){ #If temp is not empty (model not run)
+#     modSummaries2015_commodity[[i]]$summary <- temp[[i]]$summary #Overwrite
+#     modSummaries2015_commodity[[i]]$covMat <- temp[[i]]$covMat
+#   }
+# }
+# parNames <- lapply(modSummaries2015_commodity,function(x) x$summary$param) #Clean up extra parameter names
+# for(i in 2:length(modSummaries2015_commodity)){
+#   if(!is.null(modSummaries2015_commodity[[i]])){
+#     chooseThese <- !parNames[[i]] %in% unlist(parNames[1:(i-1)])
+#     modSummaries2015_commodity[[i]]$summary <- modSummaries2015_commodity[[i]]$summary[chooseThese,]
+#     modSummaries2015_commodity[[i]]$covMat <- modSummaries2015_commodity[[i]]$covMat[chooseThese,chooseThese]
+#   }
+# }
+# save(modSummaries2015_commodity,file = 'modSummaries2015_commodity.Rdata')
+# #Traceplots
+# for(i in 1:length(modList2015)){
+#   if(!is.null(modList2015[[i]])){
+#     n <- names(modList2015[[i]]) #Model parameters
+#     n <- n[(!grepl('(\\[[0-9]+,*[0-9]*\\]|lp)',n))|grepl('[sS]igma',n)] #Gets rid of parameter vectors, unless it contains "sigma" (variance term)
+#     p <- traceplot(modList2015[[i]],pars=n,inc_warmup=FALSE)#+geom_hline(yintercept = 0) #Traceplots
+#     print(p)
+#     a <- readline('Press Return to continue: ')
+#     if(a!='') break()
+#   }
+# }
+
+#Make tables of coefs
+
+
