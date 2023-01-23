@@ -561,11 +561,6 @@ d2 <- with(avgSeedData,
 (p <- ggarrange(p1,p2,p3,p4,p5,p6,nrow=2,ncol=3,common.legend = FALSE,labels='auto'))
 ggsave('allSeeds.png',p,bg='white',width = 10,height=6)
 
-# Total yield and seed size - plant density --------------------------
-
-
-
-
 # Total yield and seed size for commodity fields -----------------------------------------------------
 
 # avgCommData$flDensMean$mean #Avg sqrt flw dens
@@ -948,7 +943,7 @@ commDatSummary <- with(commData,list(
   'HB visitation (hr$^{-1}$)'=6*hbeeVis/totalTime,
   'Flower density (m$^2$)'=(flDens+flDensMean)^2,
   'Pollen per stigma'=pollenCount,
-  'Plant density (m$^2$)'=plDens_obs,
+  'Plant density (m$^2$)'=exp(plDens_obs),
   'Plant vegetative mass (g)'=VegMass,'Plant seed mass (g)'=yield,'Harvest index (g/g)'=yield/VegMass,
   'Flowers per plant'=flwCount,'Pods per plant'=podCount,'Seeds per pod'=seedCount,'Seed size (mg)'=seedMass
   )) %>% 
@@ -963,7 +958,7 @@ seedDatSummary <- with(seedData,list(
   'Bay Edge/Centre'=c(isCent,isCent_extra),
   'Flower density (m$^2$)'=(c(flDens_obs,flDens_obs_extra)+flDensMean)^2,
   'Pollen per stigma'=pollenCount,
-  'Plant density (m$^2$)'=plDens_obs,
+  'Plant density (m$^2$)'=exp(plDens_obs),
   'Plant vegetative mass (g)'=exp(plantSize),
   'Plant seed mass (g)'=yield,
   'Harvest index (g/g)'=yield/exp(plantSize),

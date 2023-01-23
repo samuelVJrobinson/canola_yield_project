@@ -226,7 +226,7 @@ compareRE(modList[[1]],'intPlDens_field')
 compareRE(modList[[1]],'intPlSize_field')
 # compareRE(modList[[1]],'intPlSize_plot') #Not great. Most overlap zero, and N_eff for sigma is low
 compareRE(modList[[1]],'intFlDens_field') 
-compareRE(modList[[2]],'intVisit_field') #skew-normal, but looks OK
+compareRE(modList[[2]],'intHbeeVis_field') #skew-normal, but looks OK
 compareRE(modList[[3]],'intPollen_field')
 compareRE(modList[[4]],'intFlwCount_field')
 compareRE(modList[[4]],'intFlwCount_plot')
@@ -240,6 +240,19 @@ compareRE(modList[[8]],'ranEffYield_field',1) #Intercepts
 compareRE(modList[[8]],'ranEffYield_field',2) #Slopes
 compareRE(modList[[8]],'ranEffYield_plot',1,0.3) #Intercepts
 compareRE(modList[[8]],'ranEffYield_plot',2,0.3) #Slopes - right skew
+
+#Compare visitation random intercepts across time ("does visitation differ throughout time"?)
+(pars <- extract(modList[[2]],pars='intHbeeVis_field')[[1]] %>% 
+  apply(.,2,function(x) quantile(x,c(0.1,0.5,0.9))) %>% 
+  t() %>% data.frame(datalist$fieldName) %>% setNames(c('lwr','med','upr','fieldName')))
+load("../Commodity field analysis/commodityfieldDataAll.RData")
+rm(AICc,brix2mgul,deltaAIC,DIC,plotFixedTerms,predFixef,se,varComp,zeroCheck,conversion,visitorsAll,visitors2015)
+p <- fieldsAll %>% mutate(fieldName=paste(Year,Field,sep=' ')) %>% 
+  left_join(pars,by='fieldName') %>% mutate(doy=as.numeric(format(Surveyed,format='%j'))) %>% 
+  ggplot(aes(x=doy,y=med,ymax=upr,ymin=lwr))+geom_pointrange()+
+  facet_grid(Year~Area,scales='free_x')+geom_hline(yintercept = 0,linetype='dashed')+
+  labs(x='Day of year',y='Field-level random intercept',title = 'Commodity visitation')
+ggsave('../Figures/comm_hbeeInt_time.png',p,width = 8,height=8)
 
 # Run claims models ---------------------
 

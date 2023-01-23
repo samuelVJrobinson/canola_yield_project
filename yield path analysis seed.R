@@ -77,23 +77,34 @@ load('./datalist_seed.Rdata')
 # seedsAllSeed <- mutate(seedsAllSeed,Missing=ifelse(Missing<0,NA,Missing))
 # #Extra seed field data (from Riley W.)
 # rileyExtra <- read.csv('../Seed field analysis/rileyExtra.csv')
-# setwd('~/Projects/UofC/canola_yield_project')
+# # setwd('~/Projects/UofC/canola_yield_project') #Multivac path
+# setwd('~/Documents/canola_yield_project') #Galpern01 path
 # 
-# # Filter for yearly model runs, if needed
-# {
-#   yfilt <- 2016
-#   rileyExtra <- filter(rileyExtra,Year==yfilt)
-#   fieldsAllSeed <- filter(fieldsAllSeed,Year==yfilt) %>% droplevels()
-#   surveyAllSeed <- filter(surveyAllSeed,Year==yfilt) %>% droplevels()
-#   pollenAllSeed <- filter(pollenAllSeed,Year==yfilt) %>% droplevels()
-#   plantsAllSeed <- filter(plantsAllSeed,Year==yfilt) %>% droplevels()
-#   seedsAllSeed <- filter(seedsAllSeed,Year==yfilt) %>% droplevels()
-# }
+# # # Filter for yearly model runs, if needed
+# # {
+# #   yfilt <- 2016
+# #   rileyExtra <- filter(rileyExtra,Year==yfilt)
+# #   fieldsAllSeed <- filter(fieldsAllSeed,Year==yfilt) %>% droplevels()
+# #   surveyAllSeed <- filter(surveyAllSeed,Year==yfilt) %>% droplevels()
+# #   pollenAllSeed <- filter(pollenAllSeed,Year==yfilt) %>% droplevels()
+# #   plantsAllSeed <- filter(plantsAllSeed,Year==yfilt) %>% droplevels()
+# #   seedsAllSeed <- filter(seedsAllSeed,Year==yfilt) %>% droplevels()
+# # }
+# 
+# #Fix date structure in Riley's fields
+# rileyExtra$date <- as.character(rileyExtra$date)
+# rileyExtra$date[grepl('-',rileyExtra$date)] <- as.character(as.Date(rileyExtra$date,format='%d-%b-%y')[grepl('-',rileyExtra$date)])
+# rileyExtra$date[grepl('/',rileyExtra$date)] <- as.character(as.Date(rileyExtra$date,format='%m/%d/%Y')[grepl('/',rileyExtra$date)])
+# rileyExtra$date <- as.Date(rileyExtra$date,format='%F')
 # 
 # #Organize names of extra sites from Riley
+# #   - currently I use the same intercept for all field names (mine and Riley's), regardless of survey day
+# #   - this could be redone to have intercepts for individual days, not fields (maybe matters for bee surveys, not for plants/pollen)
+# 
 # rileyExtra$site <- factor(rileyExtra$site)
-# rileyFields <- levels(rileyExtra$site)[!(levels(rileyExtra$site) %in% levels(fieldsAllSeed$Field))]
-# samFields <- levels(fieldsAllSeed$Field)
+# samFields <- levels(fieldsAllSeed$Field) #Fields that I surveyed
+# rileyFields <- levels(rileyExtra$site)[!(levels(rileyExtra$site) %in% levels(fieldsAllSeed$Field))] #Removes fields that I also surveyed (only unique fields)
+# 
 # fieldsAllSeed$Field <- factor(fieldsAllSeed$Field,levels=c(samFields,rileyFields)) #Apply new ordering of fields to dataframes
 # rileyExtra$site <- factor(rileyExtra$site,levels=c(samFields,rileyFields))
 # surveyAllSeed$Field <- factor(surveyAllSeed$Field,levels=c(samFields,rileyFields))
@@ -101,11 +112,7 @@ load('./datalist_seed.Rdata')
 # plantsAllSeed$Field <- factor(plantsAllSeed$Field,levels=c(samFields,rileyFields))
 # seedsAllSeed$Field <- factor(seedsAllSeed$Field,levels=c(samFields,rileyFields))
 # plantsAllSeed <- plantsAllSeed %>% group_by(Field,Distance,EdgeCent) %>% mutate(Plant=1:n()) %>% ungroup()
-# #Fix date structure in Riley's fields
-# rileyExtra$date <- as.character(rileyExtra$date)
-# rileyExtra$date[grepl('-',rileyExtra$date)] <- as.character(as.Date(rileyExtra$date,format='%d-%b-%y')[grepl('-',rileyExtra$date)])
-# rileyExtra$date[grepl('/',rileyExtra$date)] <- as.character(as.Date(rileyExtra$date,format='%m/%d/%Y')[grepl('/',rileyExtra$date)])
-# rileyExtra$date <- as.Date(rileyExtra$date,format='%F')
+# 
 # 
 # rileyExtra <- rileyExtra %>%
 #   #Filter out NA hdist/ldist plots - hard to impute, and no downstream info
@@ -125,9 +132,14 @@ load('./datalist_seed.Rdata')
 # #   left_join(summarize(group_by(unite(pollenAllSeed,plot,Field,Distance,EdgeCent),plot),
 # #                       polCountPlot=log(mean(Pollen))),by='plot')
 # 
+# rileyFieldsYear <- distinct(select(rileyExtra,Year,site,date))$Year[match(rileyFields,distinct(select(rileyExtra,Year,site,date))$site)]
+# rileyFieldsYear[is.na(rileyFieldsYear)] <- 2016 #Fixes one year
+# 
 # datalistField <- list( #Field-level measurements
 #   Nfield=length(fieldsAllSeed$Year), #Number of fields
-#   Nfield_extra=length(rileyFields) #Number of extra fields from Riley
+#   Nfield_extra=length(rileyFields), #Number of extra fields from Riley
+#   fieldName = paste(fieldsAllSeed$Year,fieldsAllSeed$Field), #Field name
+#   fieldName_extra = paste(rileyFieldsYear,rileyFields) #Field name
 # )
 # 
 # datalistPlot <- with(surveyAllSeed,list( #Plot-level measurements
@@ -256,7 +268,7 @@ load('./datalist_seed.Rdata')
 # 
 # if(any(sapply(datalist,function(x) sum(is.na(x)))!=0)){ beep(1); print("NAs found in datalist")}
 # 
-# rm(datalistField,datalistPlot,datalistFlw,datalistPlant,rileyFields,samFields,flDensMean) #Cleanup
+# rm(datalistField,datalistPlot,datalistFlw,datalistPlant,rileyFields,samFields,flDensMean,rileyFieldsYear) #Cleanup
 # str(datalist)
 # 
 # save(datalist,file = './datalist_seed.Rdata')
@@ -367,6 +379,41 @@ compareRE(modList[[9]],'ranEffYield_field',1) #Intercepts
 compareRE(modList[[9]],'ranEffYield_field',2) #Slopes
 compareRE(modList[[9]],'ranEffYield_plot',1,0.3) #Intercepts
 compareRE(modList[[9]],'ranEffYield_plot',2,0.3) #Slopes
+
+#Compare visitation random intercepts across time ("does visitation differ throughout time"?)
+(pars1 <- extract(modList[[2]],pars='intHbeeVis_field')[[1]] %>% #Hbee intercepts
+    apply(.,2,function(x) quantile(x,c(0.1,0.5,0.9))) %>% t() %>% 
+    data.frame(with(datalist,c(fieldName,fieldName_extra))) %>% 
+    setNames(c('lwr','med','upr','fieldName'))
+  )
+
+(pars2 <- extract(modList[[3]],pars='intLbeeVis_field')[[1]] %>% #Lbee intercepts
+    apply(.,2,function(x) quantile(x,c(0.1,0.5,0.9))) %>% t() %>% 
+    data.frame(with(datalist,c(fieldName,fieldName_extra))) %>% 
+    setNames(c('lwr','med','upr','fieldName'))
+)
+
+load("../Seed field analysis/seedfieldDataAll.RData")
+allFields <- allFields %>% 
+  transmute(fieldName=paste(Year,Field,sep=' '),doy=format(Surveyed,format='%j'),Year)
+rileyExtra <- read.csv('../Seed field analysis/rileyExtra.csv') 
+rileyExtra$date[grepl('-',rileyExtra$date)] <- as.character(as.Date(rileyExtra$date,format='%d-%b-%y')[grepl('-',rileyExtra$date)])
+rileyExtra$date[grepl('/',rileyExtra$date)] <- as.character(as.Date(rileyExtra$date,format='%m/%d/%Y')[grepl('/',rileyExtra$date)])
+rileyExtra <- rileyExtra %>% mutate(date =as.Date(date,format='%F')) %>% 
+  transmute(fieldName=paste(Year,site,sep=' '),doy2=format(date,format='%j'),Year2=Year) %>% 
+  distinct()
+
+(p <- bind_rows(list('hbee'=pars1,'lbee'=pars2),.id = 'beeSpp') %>% 
+  left_join(allFields,by='fieldName') %>% 
+  left_join(rileyExtra,by='fieldName') %>% 
+  mutate(doy=ifelse(is.na(doy),doy2,doy)) %>% select(-doy2) %>%
+  mutate(Year=ifelse(is.na(Year),Year2,Year)) %>% select(-Year2) %>% 
+  mutate(doy=as.numeric(doy)) %>% mutate(beeSpp=factor(beeSpp,label=c('HB','LCB'))) %>% 
+  ggplot(aes(x=doy,y=med,ymax=upr,ymin=lwr))+geom_pointrange()+
+  facet_grid(Year~beeSpp,scales='free_x')+geom_hline(yintercept = 0,linetype='dashed')+
+  labs(x='Day of year',y='Field-level random intercept',title = 'Seed visitation'))
+
+ggsave('../Figures/seed_hbeeInt_time.png',p,width = 8,height=8)
 
 # Dagitty claims list for seed fields -------------------------------------
 
