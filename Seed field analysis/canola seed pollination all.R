@@ -96,16 +96,24 @@ allPollen=bind_rows(transmute(pollen2015,Field,Distance,Treatment,Variety,minDis
 rm(pollen2015,pollen2016)
 
 #Plant data
-allPlants=bind_rows(transmute(plants2015,Year,Field,Distance,EdgeCent,EdgeDir,Variety,VegMass,SeedMass,Branch,Pods,Missing,AvPodCount,AvPodMass,lbee=Leafbee,hbee=Honeybee,TotalTime=5),
-                    transmute(plants2016,Year,Field,Distance,EdgeCent,EdgeDir,Variety,VegMass,SeedMass,Branch,Pods,Missing,AvPodCount,AvPodMass,lbee=Leafcutterbee,hbee=HoneybeeNectar+HoneybeePollen,TotalTime=10)) %>%
+allPlants=bind_rows(transmute(plants2015,Year,Field,Distance,EdgeCent,EdgeDir,Plant,Variety,VegMass,
+                              SeedMass,Branch,Pods,Missing,AvPodCount,AvPodMass,lbee=Leafbee,
+                              hbee=Honeybee,TotalTime=5),
+                    transmute(plants2016,Year,Field,Distance,EdgeCent,EdgeDir,Plant,Variety,VegMass,
+                              SeedMass,Branch,Pods,Missing,AvPodCount,AvPodMass,lbee=Leafcutterbee,
+                              hbee=HoneybeeNectar+HoneybeePollen,TotalTime=10)) %>%
   mutate(Field=factor(Field),EdgeCent=factor(ifelse(EdgeCent=='Cent','Center',EdgeCent))) %>%
   mutate(EdgeDir=factor(ifelse(nchar(EdgeDir)>2,substr(EdgeDir,1,1),EdgeDir))) %>%
   mutate(Variety=factor(Variety))
 rm(plants2015,plants2016)
 
 #Seed data
-allSeeds=bind_rows(transmute(seeds2015,Year,Field,Distance,EdgeCent,EdgeDir,Variety,VegMass,SeedMass,Branch,Pods,Missing,Pod,PodCount,PodMass,lbee=Leafbee,hbee=Honeybee,TotalTime=5),
-                   transmute(seeds2016,Year,Field,Distance,EdgeCent,EdgeDir,Variety,VegMass,SeedMass,Branch,Pods,Missing,Pod,PodCount,PodMass,lbee=Leafcutterbee,hbee=HoneybeeNectar+HoneybeePollen,TotalTime=10))
+allSeeds=bind_rows(transmute(seeds2015,Year,Field,Distance,EdgeCent,EdgeDir,Plant,Variety,VegMass,
+                             SeedMass,Branch,Pods,Missing,Pod,PodCount,PodMass,lbee=Leafbee,
+                             hbee=Honeybee,TotalTime=5),
+                   transmute(seeds2016,Year,Field,Distance,EdgeCent,EdgeDir,Plant,Variety,VegMass,
+                             SeedMass,Branch,Pods,Missing,Pod,PodCount,PodMass,lbee=Leafcutterbee,
+                             hbee=HoneybeeNectar+HoneybeePollen,TotalTime=10))
 rm(seeds2015,seeds2016)
 
 folder="C:\\Users\\Samuel\\Documents\\Projects\\UofC\\Seed field analysis\\Figures"

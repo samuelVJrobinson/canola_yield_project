@@ -15,7 +15,7 @@ prestheme=theme(legend.position='right',
                 axis.title=element_text(size=20),
                 title=element_text(size=20),
                 panel.grid.major=element_blank(),panel.grid.minor=element_blank(),
-                panel.border=element_rect(size=1,colour='black'),
+                panel.border=element_rect(linewidth=1,colour='black'),
                 strip.text=element_text(size=15))
 theme_set(theme_bw()+prestheme) #Sets graph theme to B/Ws + prestheme
 rm(prestheme)
