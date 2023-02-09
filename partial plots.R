@@ -253,6 +253,8 @@ d3 <- with(avgSeedData, #Lbee vis effect - seed
   getPreds(modSummaries_seed[[4]],parList = .,trans='exp',q=c(0.5,0.05,0.95)) %>% 
   transmute(vis=exp(hbeeVisSeed)-1,mean,med,lwr,upr)
 
+
+
 (p1 <- bind_rows(d2,d3,d1,.id = 'type') %>% 
   mutate(type=factor(type,labels=lab)) %>% 
   ggplot(aes(x=vis,y=mean))+
@@ -329,7 +331,19 @@ d3 <- with(avgSeedData, #Lbee dist - seed
 
 ggsave('allPollen.png',p,bg='white',width = 12,height=4)
 
-# data.frame(x=1,y=1:10) %>% ggplot(aes(x=x,y=y,col=y))+geom_point()+scale_color_gradient(low='darkorange',high='darkgreen')
+#Effect of minimal pollinators, maximum distance from shelters/hives, bay center (closest to "wind" pollination)
+with(avgSeedData, list('intPollen'=1, 'slopeHbeeVisPollen'=0,'slopeLbeeVisPollen'=0, 'slopeCentPollen'=1,
+          'slopeHbeeDistPollen'=avgSeedData$clogHbeeDist$max, 'slopeLbeeDistPollen'=avgSeedData$clogLbeeDist$max,
+          'slopeFlDensPollen'=0)) %>% 
+  getPreds(modSummaries_seed[[4]],parList = .,trans='exp',q=c(0.5,0.05,0.95))
+
+#Effect of maximum (90%ile) pollinators, minimum distance from shelters/hives, bay center (closest to "full" pollination)
+with(avgSeedData, list('intPollen'=1, 'slopeHbeeVisPollen'=unname(quantile(seedData$logHbeeVis,0.9)),
+                       'slopeLbeeVisPollen'=unname(quantile(seedData$logLbeeVis,0.9)), 'slopeCentPollen'=0,
+                       'slopeHbeeDistPollen'=avgSeedData$clogHbeeDist$min, 'slopeLbeeDistPollen'=avgSeedData$clogLbeeDist$min,
+                       'slopeFlDensPollen'=0)) %>% 
+  getPreds(modSummaries_seed[[4]],parList = .,trans='exp',q=c(0.5,0.05,0.95))
+
 
 # Seed production - pollen ---------------------------------------------------
 
